@@ -17,6 +17,8 @@ spring:
   flyway:
     enabled: true
     baseline-on-migrate: true
+  liquibase:
+    change-log: classpath:db/changelog-master.yaml
 server:
   servlet:
     context-path: /api
@@ -31,10 +33,6 @@ spring:
     url: "${DATABASE_URL}"
     username: "${DATABASE_USERNAME}"
     password: "${DATABASE_PASSWORD}"
-  flyway:
-    url: "${DATABASE_URL}"
-    user: "${DATABASE_USERNAME}"
-    password: "${DATABASE_PASSWORD}"
 
 ---
 
@@ -44,11 +42,9 @@ spring:
       on-profile: local
   jpa:
     show-sql: true
+    hibernate:
+      ddl-auto: create
   datasource:
-    url: jdbc:postgresql://localhost:2345/k-agent-database
+    url: jdbc:postgresql://localhost:2345/kio-school-database
     username: myuser
-    password: mypassword
-  flyway:
-    url: jdbc:postgresql://localhost:2345/k-agent-database
-    user: myuser
     password: mypassword
