@@ -9,6 +9,15 @@ plugins {
     kotlin("kapt") version "1.7.20"
 }
 
+allOpen {
+    annotations(
+        "jakarta.persistence.Entity",
+        "jakarta.persistence.MappedSuperclass",
+        "jakarta.persistence.Embedabble"
+    )
+}
+
+
 group = "com.kioschool"
 version = "0.0.1-SNAPSHOT"
 
