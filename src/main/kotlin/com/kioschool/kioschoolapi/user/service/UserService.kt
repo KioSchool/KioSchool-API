@@ -1,4 +1,4 @@
-package com.kioschool.kioschoolapi.user
+package com.kioschool.kioschoolapi.user.service
 
 import org.springframework.stereotype.Service
 

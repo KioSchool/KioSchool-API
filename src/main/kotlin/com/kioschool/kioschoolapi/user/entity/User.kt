@@ -1,4 +1,4 @@
-package com.kioschool.kioschoolapi.user
+package com.kioschool.kioschoolapi.user.entity
 
 import com.kioschool.kioschoolapi.common.entity.BaseEntity
 import com.kioschool.kioschoolapi.common.enums.UserRole

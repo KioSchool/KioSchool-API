@@ -1,4 +1,4 @@
-package com.kioschool.kioschoolapi.user
+package com.kioschool.kioschoolapi.user.controller
 
 import org.springframework.web.bind.annotation.RestController
 
