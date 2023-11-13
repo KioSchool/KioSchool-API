@@ -22,6 +22,8 @@ spring:
 server:
   servlet:
     context-path: /api
+jwt:
+  secret-key: "${JWT_SECRET_KEY}"
 
 ---
 
@@ -42,9 +44,9 @@ spring:
       on-profile: local
   jpa:
     show-sql: true
-    hibernate:
-      ddl-auto: create
   datasource:
     url: jdbc:postgresql://localhost:2345/kio-school-database
     username: myuser
     password: mypassword
+jwt:
+  secret-key: 512393ea8dee67633d7f1197c4938239f57c1a323a227e919977f0b478c5f5fd3a4dab07ba1a796297c5cd7c9519e6403ad2742e0c07024290aafa3d6f9f2424
