@@ -9,7 +9,7 @@ class UserController(
     private val userService: UserService
 ) {
     @PostMapping("/login")
-    fun login() {
-        userService.login("test", "test")
+    fun login(): String {
+        return userService.login("test", "test")
     }
 }

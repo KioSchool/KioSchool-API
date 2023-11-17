@@ -9,9 +9,8 @@ class UserService(
     private val userRepository: UserRepository,
     private val jwtProvider: JwtProvider
 ) {
-    fun login(loginId: String, loginPassword: String) {
+    fun login(loginId: String, loginPassword: String): String {
         val user = userRepository.findByLoginId(loginId)
-        val token = jwtProvider.createToken(user)
-        println(token)
+        return jwtProvider.createToken(user)
     }
 }
