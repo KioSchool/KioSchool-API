@@ -15,11 +15,11 @@ class SecurityConfiguration {
     fun filterChain(httpSecurity: HttpSecurity): DefaultSecurityFilterChain? {
         httpSecurity
             .csrf { it.disable() }
-            .authorizeHttpRequests { it.requestMatchers("/**").permitAll() }
             .authorizeHttpRequests {
                 it.requestMatchers("/admin/**")
                     .hasAnyRole(listOf(UserRole.ADMIN, UserRole.SUPER_ADMIN).joinToString { "," })
             }
+            .authorizeHttpRequests { it.requestMatchers("/**").permitAll() }
 
         return httpSecurity.build()
     }
