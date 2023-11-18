@@ -1,25 +1,34 @@
 package com.kioschool.kioschoolapi
 
 import com.kioschool.kioschoolapi.common.enums.UserRole
+import com.kioschool.kioschoolapi.security.JwtAuthenticationFilter
+import com.kioschool.kioschoolapi.security.JwtProvider
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.web.DefaultSecurityFilterChain
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 
 @Configuration
 @EnableWebSecurity
-class SecurityConfiguration {
+class SecurityConfiguration(
+    private val jwtProvider: JwtProvider
+) {
 
     @Bean
     fun filterChain(httpSecurity: HttpSecurity): DefaultSecurityFilterChain? {
         httpSecurity
             .csrf { it.disable() }
-            .authorizeHttpRequests {
+            .authorizeHttpRequests { it ->
                 it.requestMatchers("/admin/**")
-                    .hasAnyRole(listOf(UserRole.ADMIN, UserRole.SUPER_ADMIN).joinToString { "," })
+                    .hasAnyAuthority(UserRole.SUPER_ADMIN.name, UserRole.ADMIN.name)
             }
             .authorizeHttpRequests { it.requestMatchers("/**").permitAll() }
+            .addFilterBefore(
+                JwtAuthenticationFilter(jwtProvider),
+                UsernamePasswordAuthenticationFilter::class.java
+            )
 
         return httpSecurity.build()
     }
