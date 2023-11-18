@@ -1,6 +1,6 @@
 package com.kioschool.kioschoolapi.security
 
-import com.kioschool.kioschoolapi.user.exception.InvalidJwtException
+import com.kioschool.kioschoolapi.common.exception.InvalidJwtException
 import com.kioschool.kioschoolapi.user.repository.UserRepository
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UserDetailsService

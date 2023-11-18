@@ -1,9 +1,9 @@
 package com.kioschool.kioschoolapi.user.controller
 
+import com.kioschool.kioschoolapi.common.exception.InvalidJwtException
 import com.kioschool.kioschoolapi.user.dto.ExceptionResponseBody
 import com.kioschool.kioschoolapi.user.dto.LoginRequestBody
 import com.kioschool.kioschoolapi.user.dto.RegisterRequestBody
-import com.kioschool.kioschoolapi.user.exception.InvalidJwtException
 import com.kioschool.kioschoolapi.user.exception.LoginFailedException
 import com.kioschool.kioschoolapi.user.exception.RegisterException
 import com.kioschool.kioschoolapi.user.service.UserService

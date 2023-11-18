@@ -1,4 +1,4 @@
-package com.kioschool.kioschoolapi.user.exception
+package com.kioschool.kioschoolapi.common.exception
 
 class InvalidJwtException : Exception() {
     override val message: String
