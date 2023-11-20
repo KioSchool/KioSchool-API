@@ -1,20 +1,19 @@
 package com.kioschool.kioschoolapi.user.controller
 
 import com.kioschool.kioschoolapi.common.exception.InvalidJwtException
+import com.kioschool.kioschoolapi.email.EmailService
 import com.kioschool.kioschoolapi.user.dto.ExceptionResponseBody
 import com.kioschool.kioschoolapi.user.dto.LoginRequestBody
 import com.kioschool.kioschoolapi.user.dto.RegisterRequestBody
 import com.kioschool.kioschoolapi.user.exception.LoginFailedException
 import com.kioschool.kioschoolapi.user.exception.RegisterException
 import com.kioschool.kioschoolapi.user.service.UserService
-import org.springframework.web.bind.annotation.ExceptionHandler
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 
 @RestController
 class UserController(
-    private val userService: UserService
+    private val userService: UserService,
+    private val emailService: EmailService
 ) {
     @PostMapping("/login")
     fun login(@RequestBody body: LoginRequestBody): String {
@@ -24,6 +23,11 @@ class UserController(
     @PostMapping("/register")
     fun register(@RequestBody body: RegisterRequestBody): String {
         return userService.register(body.id, body.password, body.name, body.email)
+    }
+
+    @GetMapping("/email")
+    fun testEmail() {
+        emailService.sendTestEmail()
     }
 
     @ExceptionHandler(
