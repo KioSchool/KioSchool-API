@@ -1,0 +1,39 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1700632833432-1
+      author: ji-inpark (generated)
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  autoIncrement: true
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_email_code
+                  name: id
+                  type: BIGINT
+              - column:
+                  name: created_at
+                  type: DATETIME
+              - column:
+                  name: updated_at
+                  type: DATETIME
+              - column:
+                  name: email
+                  type: VARCHAR(255)
+              - column:
+                  name: code
+                  type: VARCHAR(255)
+            tableName: email_code
+  - changeSet:
+      id: 1700632833432-2
+      author: ji-inpark (generated)
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addUniqueConstraint:
+            columnNames: email
+            constraintName: uc_email_code_email
+            tableName: email_code
+

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <style>
+    /* 스타일링을 위한 CSS */
+    body {
+      font-family: 'Apple SD Gothic Neo', NanumGothic, 'Malgun Gothic', serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    .container {
+      text-align: center;
+      background-color: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .code-title {
+      font-family: 'Apple SD Gothic Neo', NanumGothic, 'Malgun Gothic', serif;
+      font-size: 20px;
+      font-weight: bold;
+      letter-spacing: -0.5px;
+      color: #424244;
+    }
+
+    .code-box {
+      background-color: #4caf50;
+      color: #ffffff;
+      font-size: 24px;
+      font-weight: bold;
+      text-align: center;
+      padding: 10px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>키오스쿨</h1>
+  <div class="code-title">
+    <p>이메일 인증코드 발송</p>
+  </div>
+  <div class="code-box">
+    <span>${code}</span>
+  </div>
+  <p>인증코드를 회원가입 페이지에 입력해 주세요.</p>
+</div>
+</body>
+</html>

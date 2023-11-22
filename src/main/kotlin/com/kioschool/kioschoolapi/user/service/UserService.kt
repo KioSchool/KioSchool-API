@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service
 class UserService(
     private val userRepository: UserRepository,
     private val jwtProvider: JwtProvider,
-    private val passwordEncoder: PasswordEncoder
+    private val passwordEncoder: PasswordEncoder,
 ) {
     fun login(loginId: String, loginPassword: String): String {
         val user = userRepository.findByLoginId(loginId) ?: throw LoginFailedException()
