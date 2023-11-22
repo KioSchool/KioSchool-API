@@ -1,0 +1,93 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1700660642714-1
+      author: ji-inpark (generated)
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  autoIncrement: true
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_workspace
+                  name: id
+                  type: BIGINT
+              - column:
+                  name: created_at
+                  type: DATETIME
+              - column:
+                  name: updated_at
+                  type: DATETIME
+              - column:
+                  name: name
+                  type: VARCHAR(255)
+              - column:
+                  name: owner_id
+                  type: BIGINT
+            tableName: workspace
+  - changeSet:
+      id: 1700660642714-2
+      author: ji-inpark (generated)
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  autoIncrement: true
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_workspace_member
+                  name: id
+                  type: BIGINT
+              - column:
+                  name: created_at
+                  type: DATETIME
+              - column:
+                  name: updated_at
+                  type: DATETIME
+              - column:
+                  name: workspace_id
+                  type: BIGINT
+              - column:
+                  name: user_id
+                  type: BIGINT
+            tableName: workspace_member
+  - changeSet:
+      id: 1700660642714-5
+      author: ji-inpark (generated)
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: user_id
+            baseTableName: workspace_member
+            constraintName: FK_WORKSPACE_MEMBER_ON_USER
+            referencedColumnNames: id
+            referencedTableName: user
+            referencedTableSchemaName: public
+  - changeSet:
+      id: 1700660642714-6
+      author: ji-inpark (generated)
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: workspace_id
+            baseTableName: workspace_member
+            constraintName: FK_WORKSPACE_MEMBER_ON_WORKSPACE
+            referencedColumnNames: id
+            referencedTableName: workspace
+  - changeSet:
+      id: 1700660642714-7
+      author: ji-inpark (generated)
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: owner_id
+            baseTableName: workspace
+            constraintName: FK_WORKSPACE_ON_OWNER
+            referencedColumnNames: id
+            referencedTableName: user
+            referencedTableSchemaName: public
+
