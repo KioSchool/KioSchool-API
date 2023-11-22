@@ -1,6 +1,6 @@
 databaseChangeLog:
   - changeSet:
-      id: 1700660642714-1
+      id: 1700666379680-1
       author: ji-inpark (generated)
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
@@ -28,58 +28,25 @@ databaseChangeLog:
                   type: BIGINT
             tableName: workspace
   - changeSet:
-      id: 1700660642714-2
+      id: 1700666379680-2
       author: ji-inpark (generated)
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
         - createTable:
             columns:
               - column:
-                  autoIncrement: true
                   constraints:
                     nullable: false
-                    primaryKey: true
-                    primaryKeyName: pk_workspace_member
-                  name: id
-                  type: BIGINT
-              - column:
-                  name: created_at
-                  type: DATETIME
-              - column:
-                  name: updated_at
-                  type: DATETIME
-              - column:
-                  name: workspace_id
-                  type: BIGINT
-              - column:
                   name: user_id
                   type: BIGINT
-            tableName: workspace_member
+              - column:
+                  constraints:
+                    nullable: false
+                  name: workspace_id
+                  type: BIGINT
+            tableName: user_workspace
   - changeSet:
-      id: 1700660642714-5
-      author: ji-inpark (generated)
-      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
-      changes:
-        - addForeignKeyConstraint:
-            baseColumnNames: user_id
-            baseTableName: workspace_member
-            constraintName: FK_WORKSPACE_MEMBER_ON_USER
-            referencedColumnNames: id
-            referencedTableName: user
-            referencedTableSchemaName: public
-  - changeSet:
-      id: 1700660642714-6
-      author: ji-inpark (generated)
-      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
-      changes:
-        - addForeignKeyConstraint:
-            baseColumnNames: workspace_id
-            baseTableName: workspace_member
-            constraintName: FK_WORKSPACE_MEMBER_ON_WORKSPACE
-            referencedColumnNames: id
-            referencedTableName: workspace
-  - changeSet:
-      id: 1700660642714-7
+      id: 1700666379680-3
       author: ji-inpark (generated)
       objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
       changes:
@@ -90,4 +57,27 @@ databaseChangeLog:
             referencedColumnNames: id
             referencedTableName: user
             referencedTableSchemaName: public
+  - changeSet:
+      id: 1700666379680-4
+      author: ji-inpark (generated)
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: user_id
+            baseTableName: user_workspace
+            constraintName: fk_usewor_on_user
+            referencedColumnNames: id
+            referencedTableName: user
+            referencedTableSchemaName: public
+  - changeSet:
+      id: 1700666379680-5
+      author: ji-inpark (generated)
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: workspace_id
+            baseTableName: user_workspace
+            constraintName: fk_usewor_on_workspace
+            referencedColumnNames: id
+            referencedTableName: workspace
 

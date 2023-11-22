@@ -39,7 +39,8 @@ class UserService(
                 loginPassword = passwordEncoder.encode(loginPassword),
                 name = name,
                 email = email,
-                role = UserRole.ADMIN
+                role = UserRole.ADMIN,
+                workspaces = mutableListOf()
             )
         )
 

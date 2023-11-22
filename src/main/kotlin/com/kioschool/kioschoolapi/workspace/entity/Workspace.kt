@@ -2,10 +2,7 @@ package com.kioschool.kioschoolapi.workspace.entity
 
 import com.kioschool.kioschoolapi.common.entity.BaseEntity
 import com.kioschool.kioschoolapi.user.entity.User
-import jakarta.persistence.Entity
-import jakarta.persistence.ManyToOne
-import jakarta.persistence.OneToMany
-import jakarta.persistence.Table
+import jakarta.persistence.*
 
 @Entity
 @Table(name = "workspace")
@@ -14,5 +11,7 @@ class Workspace(
     @ManyToOne
     val owner: User,
     @OneToMany
-    val members: MutableList<WorkspaceMember>,
+    @JoinTable(name = "user_workspace")
+    @JoinColumn(name = "workspace_id")
+    val users: MutableList<User>
 ) : BaseEntity()

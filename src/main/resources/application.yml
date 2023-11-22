@@ -19,6 +19,8 @@ spring:
     baseline-on-migrate: true
   liquibase:
     change-log: classpath:db/changelog-master.yaml
+  thymeleaf:
+    enabled: false
   mail:
     host: smtp.gmail.com
     port: 587
