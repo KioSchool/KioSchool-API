@@ -2,10 +2,7 @@ package com.kioschool.kioschoolapi.user.controller
 
 import com.kioschool.kioschoolapi.common.exception.InvalidJwtException
 import com.kioschool.kioschoolapi.email.service.EmailService
-import com.kioschool.kioschoolapi.user.dto.ExceptionResponseBody
-import com.kioschool.kioschoolapi.user.dto.LoginRequestBody
-import com.kioschool.kioschoolapi.user.dto.RegisterRequestBody
-import com.kioschool.kioschoolapi.user.dto.SendEmailCodeBody
+import com.kioschool.kioschoolapi.user.dto.*
 import com.kioschool.kioschoolapi.user.exception.LoginFailedException
 import com.kioschool.kioschoolapi.user.exception.RegisterException
 import com.kioschool.kioschoolapi.user.service.UserService
@@ -29,8 +26,13 @@ class UserController(
         return userService.register(body.id, body.password, body.name, body.email)
     }
 
+    @PostMapping("/duplicate")
+    fun isDuplicateLoginId(@RequestBody body: IsDuplicateLoginIdRequestBody): Boolean {
+        return userService.isDuplicateLoginId(body.id)
+    }
+
     @PostMapping("/email")
-    fun sendEmailCode(@RequestBody body: SendEmailCodeBody) {
+    fun sendEmailCode(@RequestBody body: SendEmailCodeRequestBody) {
         return emailService.sendRegisterCodeEmail(body.email)
     }
 
