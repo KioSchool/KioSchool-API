@@ -11,4 +11,5 @@ class EmailCode(
     @Column(unique = true)
     val email: String,
     var code: String,
+    var isVerified: Boolean = false,
 ) : BaseEntity()

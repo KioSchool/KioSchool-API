@@ -1,0 +1,13 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1700634258069-1
+      author: ji-inpark (generated)
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addNotNullConstraint:
+            columnDataType: BOOLEAN
+            columnName: is_verified
+            defaultNullValue: 'false'
+            tableName: email_code
+            validate: true
+
