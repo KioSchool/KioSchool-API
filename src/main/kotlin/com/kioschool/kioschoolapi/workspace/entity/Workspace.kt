@@ -14,5 +14,5 @@ class Workspace(
     @ManyToOne
     val owner: User,
     @OneToMany
-    val member: List<WorkspaceMember>,
+    val members: MutableList<WorkspaceMember>,
 ) : BaseEntity()

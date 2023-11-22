@@ -18,7 +18,7 @@ class UserService(
     private val emailService: EmailService
 ) {
     fun login(loginId: String, loginPassword: String): String {
-        val user = userRepository.findByLoginId(loginId) ?: throw LoginFailedException()
+        val user = getUser(loginId)
 
         if (!passwordEncoder.matches(
                 loginPassword,
@@ -48,5 +48,9 @@ class UserService(
 
     fun isDuplicateLoginId(loginId: String): Boolean {
         return userRepository.findByLoginId(loginId) != null
+    }
+
+    fun getUser(loginId: String): User {
+        return userRepository.findByLoginId(loginId) ?: throw LoginFailedException()
     }
 }
