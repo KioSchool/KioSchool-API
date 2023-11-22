@@ -1,6 +1,7 @@
 package com.kioschool.kioschoolapi.user.service
 
 import com.kioschool.kioschoolapi.common.enums.UserRole
+import com.kioschool.kioschoolapi.email.service.EmailService
 import com.kioschool.kioschoolapi.security.JwtProvider
 import com.kioschool.kioschoolapi.user.entity.User
 import com.kioschool.kioschoolapi.user.exception.LoginFailedException
@@ -14,6 +15,7 @@ class UserService(
     private val userRepository: UserRepository,
     private val jwtProvider: JwtProvider,
     private val passwordEncoder: PasswordEncoder,
+    private val emailService: EmailService
 ) {
     fun login(loginId: String, loginPassword: String): String {
         val user = userRepository.findByLoginId(loginId) ?: throw LoginFailedException()
@@ -29,6 +31,7 @@ class UserService(
 
     fun register(loginId: String, loginPassword: String, name: String, email: String): String {
         if (isDuplicateLoginId(loginId)) throw RegisterException()
+        if (!emailService.isEmailVerified(email)) throw RegisterException()
 
         val user = userRepository.save(
             User(

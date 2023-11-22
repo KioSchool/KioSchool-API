@@ -36,6 +36,11 @@ class EmailService(
         javaMailSender.send(message)
     }
 
+    fun isEmailVerified(address: String): Boolean {
+        val emailCode = emailCodeRepository.findByEmail(address) ?: return false
+        return emailCode.isVerified
+    }
+
     private fun registerCodeEmailText(code: String): String {
         val context = Context()
         context.setVariable("code", code)
