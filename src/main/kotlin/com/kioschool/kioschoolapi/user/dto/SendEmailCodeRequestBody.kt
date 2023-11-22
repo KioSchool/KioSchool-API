@@ -1,5 +1,5 @@
 package com.kioschool.kioschoolapi.user.dto
 
-data class SendEmailCodeBody(
+data class SendEmailCodeRequestBody(
     val email: String,
 )
