@@ -40,7 +40,7 @@ class UserService(
                 name = name,
                 email = email,
                 role = UserRole.ADMIN,
-                workspaces = mutableListOf()
+                members = mutableListOf()
             )
         )
 
