@@ -9,10 +9,10 @@ import jakarta.persistence.Table
 @Entity
 @Table(name = "product")
 class Product(
-    val name: String,
-    val description: String,
-    val price: Int,
-    val imageUrl: String,
+    var name: String,
+    var description: String,
+    var price: Int,
+    var imageUrl: String? = null,
     @ManyToOne
     val workspace: Workspace,
 ) : BaseEntity()

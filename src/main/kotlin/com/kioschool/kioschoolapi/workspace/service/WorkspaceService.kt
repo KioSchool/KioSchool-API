@@ -48,4 +48,8 @@ class WorkspaceService(
 
         return workspace
     }
+
+    fun getWorkspace(workspaceId: Long): Workspace {
+        return workspaceRepository.findById(workspaceId).get()
+    }
 }
