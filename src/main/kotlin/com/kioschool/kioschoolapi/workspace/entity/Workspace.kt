@@ -2,6 +2,7 @@ package com.kioschool.kioschoolapi.workspace.entity
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.kioschool.kioschoolapi.common.entity.BaseEntity
+import com.kioschool.kioschoolapi.product.Product
 import com.kioschool.kioschoolapi.user.entity.User
 import jakarta.persistence.Entity
 import jakarta.persistence.ManyToOne
@@ -16,5 +17,7 @@ class Workspace(
     val owner: User,
     @OneToMany(mappedBy = "workspace")
     @JsonIgnore
-    val members: MutableList<WorkspaceMember>
+    val members: MutableList<WorkspaceMember> = mutableListOf(),
+    @OneToMany(mappedBy = "workspace")
+    val products: MutableList<Product> = mutableListOf()
 ) : BaseEntity()

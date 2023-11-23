@@ -1,0 +1,52 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1700758347405-1
+      author: ji-inpark (generated)
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  autoIncrement: true
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_product
+                  name: id
+                  type: BIGINT
+              - column:
+                  name: created_at
+                  type: DATETIME
+              - column:
+                  name: updated_at
+                  type: DATETIME
+              - column:
+                  name: name
+                  type: VARCHAR(255)
+              - column:
+                  name: description
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: price
+                  type: INT
+              - column:
+                  name: image_url
+                  type: VARCHAR(255)
+              - column:
+                  name: workspace_id
+                  type: BIGINT
+            tableName: product
+  - changeSet:
+      id: 1700758347405-2
+      author: ji-inpark (generated)
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: workspace_id
+            baseTableName: product
+            constraintName: FK_PRODUCT_ON_WORKSPACE
+            referencedColumnNames: id
+            referencedTableName: workspace
+
