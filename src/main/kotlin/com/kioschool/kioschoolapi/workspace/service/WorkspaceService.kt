@@ -22,7 +22,6 @@ class WorkspaceService(
             Workspace(
                 name = name,
                 owner = user,
-                members = mutableListOf()
             )
         )
         val workspaceMember = WorkspaceMember(
