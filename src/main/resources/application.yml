@@ -60,6 +60,10 @@ spring:
     url: "${DATABASE_URL}"
     username: "${DATABASE_USERNAME}"
     password: "${DATABASE_PASSWORD}"
+cloud:
+  aws:
+    s3:
+      default-path: production
 
 ---
 
@@ -75,3 +79,7 @@ spring:
     password: mypassword
 jwt:
   secret-key: 512393ea8dee67633d7f1197c4938239f57c1a323a227e919977f0b478c5f5fd3a4dab07ba1a796297c5cd7c9519e6403ad2742e0c07024290aafa3d6f9f2424
+cloud:
+  aws:
+    s3:
+      default-path: local
