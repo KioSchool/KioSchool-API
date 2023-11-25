@@ -13,9 +13,8 @@ class S3Service(
 ) {
 
     fun uploadFile(file: MultipartFile, path: String): String {
-        val key = "$path/${file.originalFilename}"
-
-        amazonS3Client.putObject(bucketName, key, file.inputStream, null)
-        return amazonS3Client.getUrl(bucketName, key).toString()
+        val extension = file.originalFilename
+        amazonS3Client.putObject(bucketName, path, file.inputStream, null)
+        return amazonS3Client.getUrl(bucketName, path).toString()
     }
 }

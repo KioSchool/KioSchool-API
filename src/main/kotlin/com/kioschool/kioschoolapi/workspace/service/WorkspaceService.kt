@@ -52,4 +52,9 @@ class WorkspaceService(
     fun getWorkspace(workspaceId: Long): Workspace {
         return workspaceRepository.findById(workspaceId).get()
     }
+
+    fun isAccessible(username: String, workspace: Workspace): Boolean {
+        val user = userService.getUser(username)
+        return workspace.members.any { it.user == user }
+    }
 }

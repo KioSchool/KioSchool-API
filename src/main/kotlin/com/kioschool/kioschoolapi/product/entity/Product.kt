@@ -1,5 +1,6 @@
-package com.kioschool.kioschoolapi.product
+package com.kioschool.kioschoolapi.product.entity
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.kioschool.kioschoolapi.common.entity.BaseEntity
 import com.kioschool.kioschoolapi.workspace.entity.Workspace
 import jakarta.persistence.Entity
@@ -14,5 +15,6 @@ class Product(
     var price: Int,
     var imageUrl: String? = null,
     @ManyToOne
+    @JsonIgnore
     val workspace: Workspace,
 ) : BaseEntity()

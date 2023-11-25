@@ -1,6 +1,9 @@
-package com.kioschool.kioschoolapi.product
+package com.kioschool.kioschoolapi.product.service
 
 import com.kioschool.kioschoolapi.aws.S3Service
+import com.kioschool.kioschoolapi.product.entity.Product
+import com.kioschool.kioschoolapi.product.repository.ProductRepository
+import com.kioschool.kioschoolapi.workspace.exception.WorkspaceInaccessibleException
 import com.kioschool.kioschoolapi.workspace.service.WorkspaceService
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
@@ -19,6 +22,7 @@ class ProductService(
     }
 
     fun createProduct(
+        username: String,
         workspaceId: Long,
         name: String,
         description: String,
@@ -26,17 +30,24 @@ class ProductService(
         file: MultipartFile?
     ): Product {
         val workspace = workspaceService.getWorkspace(workspaceId)
-        val path = "$productPath/$workspaceId"
-        val imageUrl = if (file != null) s3Service.uploadFile(file, path) else null
+        if (!workspaceService.isAccessible(
+                username,
+                workspace
+            )
+        ) throw WorkspaceInaccessibleException()
 
-        return productRepository.save(
+        val product = productRepository.save(
             Product(
                 name = name,
                 price = price,
                 description = description,
                 workspace = workspace,
-                imageUrl = imageUrl
             )
         )
+        val path = "$productPath/workspace$workspaceId/product${product.id}"
+        val imageUrl = if (file != null) s3Service.uploadFile(file, path) else null
+        product.imageUrl = imageUrl
+
+        return productRepository.save(product)
     }
 }

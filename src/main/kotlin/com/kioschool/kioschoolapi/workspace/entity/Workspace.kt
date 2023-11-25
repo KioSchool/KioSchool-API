@@ -2,7 +2,7 @@ package com.kioschool.kioschoolapi.workspace.entity
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.kioschool.kioschoolapi.common.entity.BaseEntity
-import com.kioschool.kioschoolapi.product.Product
+import com.kioschool.kioschoolapi.product.entity.Product
 import com.kioschool.kioschoolapi.user.entity.User
 import jakarta.persistence.Entity
 import jakarta.persistence.ManyToOne
