@@ -36,6 +36,11 @@ class UserController(
         return emailService.sendRegisterCodeEmail(body.email)
     }
 
+    @PostMapping("/verify")
+    fun verifyEmailCode(@RequestBody body: VerifyEmailCodeRequestBody): Boolean {
+        return emailService.verifyRegisterCode(body.email, body.code)
+    }
+
     @ExceptionHandler(
         InvalidJwtException::class,
         LoginFailedException::class,

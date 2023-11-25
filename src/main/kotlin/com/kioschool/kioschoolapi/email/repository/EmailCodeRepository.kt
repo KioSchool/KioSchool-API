@@ -7,4 +7,6 @@ import org.springframework.stereotype.Repository
 @Repository
 interface EmailCodeRepository : JpaRepository<EmailCode, Long> {
     fun findByEmail(email: String): EmailCode?
+
+    fun deleteByEmail(email: String)
 }

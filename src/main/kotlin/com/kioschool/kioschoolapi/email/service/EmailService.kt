@@ -41,6 +41,10 @@ class EmailService(
         return emailCode.isVerified
     }
 
+    fun deleteEmailCode(address: String) {
+        emailCodeRepository.deleteByEmail(address)
+    }
+
     private fun registerCodeEmailText(code: String): String {
         val context = Context()
         context.setVariable("code", code)
@@ -49,5 +53,13 @@ class EmailService(
 
     private fun generateEmailCode(): String {
         return (100000..999999).random().toString()
+    }
+
+    fun verifyRegisterCode(email: String, code: String): Boolean {
+        val emailCode = emailCodeRepository.findByEmail(email) ?: return false
+        if (emailCode.code != code) return false
+        emailCode.isVerified = true
+        emailCodeRepository.save(emailCode)
+        return true
     }
 }

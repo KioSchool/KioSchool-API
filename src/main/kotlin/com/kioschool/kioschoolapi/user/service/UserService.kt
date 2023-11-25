@@ -32,6 +32,7 @@ class UserService(
     fun register(loginId: String, loginPassword: String, name: String, email: String): String {
         if (isDuplicateLoginId(loginId)) throw RegisterException()
         if (!emailService.isEmailVerified(email)) throw RegisterException()
+        emailService.deleteEmailCode(email)
 
         val user = userRepository.save(
             User(
