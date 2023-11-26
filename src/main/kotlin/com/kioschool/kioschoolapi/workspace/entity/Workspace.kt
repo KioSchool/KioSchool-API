@@ -15,8 +15,8 @@ class Workspace(
     val name: String,
     @ManyToOne
     val owner: User,
-    @OneToMany(mappedBy = "workspace")
     @JsonIgnore
+    @OneToMany(mappedBy = "workspace")
     val members: MutableList<WorkspaceMember> = mutableListOf(),
     @OneToMany(mappedBy = "workspace")
     val products: MutableList<Product> = mutableListOf()

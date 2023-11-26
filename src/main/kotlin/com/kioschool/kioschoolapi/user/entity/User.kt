@@ -11,11 +11,14 @@ import jakarta.persistence.Table
 @Entity
 @Table(name = "user", schema = "PUBLIC")
 class User(
+    @JsonIgnore
     var loginId: String,
+    @JsonIgnore
     var loginPassword: String,
     var name: String,
     var email: String,
     var role: UserRole,
+    @JsonIgnore
     @OneToMany(mappedBy = "user")
     var members: MutableList<WorkspaceMember>
 ) : BaseEntity() {
