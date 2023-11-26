@@ -2,6 +2,7 @@ package com.kioschool.kioschoolapi.email.service
 
 import com.kioschool.kioschoolapi.email.entity.EmailCode
 import com.kioschool.kioschoolapi.email.repository.EmailCodeRepository
+import jakarta.transaction.Transactional
 import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.mail.javamail.MimeMessageHelper
 import org.springframework.stereotype.Service
@@ -41,6 +42,7 @@ class EmailService(
         return emailCode.isVerified
     }
 
+    @Transactional
     fun deleteEmailCode(address: String) {
         emailCodeRepository.deleteByEmail(address)
     }
