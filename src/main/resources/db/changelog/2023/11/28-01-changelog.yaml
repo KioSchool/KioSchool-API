@@ -1,0 +1,121 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1701181422721-1
+      author: ji-inpark (generated)
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  autoIncrement: true
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_order
+                  name: id
+                  type: BIGINT
+              - column:
+                  name: created_at
+                  type: DATETIME
+              - column:
+                  name: updated_at
+                  type: DATETIME
+              - column:
+                  name: workspace_id
+                  type: BIGINT
+              - column:
+                  constraints:
+                    nullable: false
+                  name: table_number
+                  type: INT
+              - column:
+                  constraints:
+                    nullable: false
+                  name: is_paid
+                  type: BOOLEAN
+              - column:
+                  constraints:
+                    nullable: false
+                  name: total_price
+                  type: INT
+              - column:
+                  name: status
+                  type: SMALLINT
+            tableName: order
+  - changeSet:
+      id: 1701181422721-2
+      author: ji-inpark (generated)
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  autoIncrement: true
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_order_product
+                  name: id
+                  type: BIGINT
+              - column:
+                  name: created_at
+                  type: DATETIME
+              - column:
+                  name: updated_at
+                  type: DATETIME
+              - column:
+                  name: order_id
+                  type: BIGINT
+              - column:
+                  name: product_id
+                  type: BIGINT
+              - column:
+                  constraints:
+                    nullable: false
+                  name: quantity
+                  type: INT
+              - column:
+                  constraints:
+                    nullable: false
+                  name: is_served
+                  type: BOOLEAN
+              - column:
+                  constraints:
+                    nullable: false
+                  name: total_price
+                  type: INT
+            tableName: order_product
+  - changeSet:
+      id: 1701181422721-3
+      author: ji-inpark (generated)
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: workspace_id
+            baseTableName: order
+            constraintName: FK_ORDER_ON_WORKSPACE
+            referencedColumnNames: id
+            referencedTableName: workspace
+  - changeSet:
+      id: 1701181422721-4
+      author: ji-inpark (generated)
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: order_id
+            baseTableName: order_product
+            constraintName: FK_ORDER_PRODUCT_ON_ORDER
+            referencedColumnNames: id
+            referencedTableName: order
+  - changeSet:
+      id: 1701181422721-5
+      author: ji-inpark (generated)
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: product_id
+            baseTableName: order_product
+            constraintName: FK_ORDER_PRODUCT_ON_PRODUCT
+            referencedColumnNames: id
+            referencedTableName: product
+
