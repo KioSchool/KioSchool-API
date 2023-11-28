@@ -36,14 +36,17 @@ class OrderService(
         )
         val productMap = productService.getProducts(workspaceId).associateBy { it.id }
         val orderProducts = rawOrderProducts.filter { productMap.containsKey(it.productId) }.map {
+            val product = productMap[it.productId]!!
             OrderProduct(
                 order = order,
-                product = productMap[it.productId]!!,
-                quantity = it.quantity
+                product = product,
+                quantity = it.quantity,
+                totalPrice = product.price * it.quantity
             )
         }
 
         order.orderProducts.addAll(orderProducts)
+        order.totalPrice = orderProducts.sumOf { it.totalPrice }
         return orderRepository.save(order)
     }
 }
