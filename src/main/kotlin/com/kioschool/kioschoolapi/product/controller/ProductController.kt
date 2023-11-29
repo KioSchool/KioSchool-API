@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
 
 @RestController
-@RequestMapping("/admin")
 class ProductController(
     private val productService: ProductService
 ) {
@@ -22,7 +21,7 @@ class ProductController(
         @RequestBody body: GetProductsRequestBody
     ) = productService.getProducts(body.workspaceId)
 
-    @PostMapping("/product", consumes = [MediaType.ALL_VALUE])
+    @PostMapping("/admin/product", consumes = [MediaType.ALL_VALUE])
     fun createProduct(
         authentication: Authentication,
         @RequestPart body: CreateProductRequestBody,
