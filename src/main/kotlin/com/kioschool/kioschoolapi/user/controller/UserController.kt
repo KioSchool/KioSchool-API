@@ -26,17 +26,17 @@ class UserController(
         return userService.register(body.id, body.password, body.name, body.email)
     }
 
-    @PostMapping("/duplicate")
+    @PostMapping("/user/duplicate")
     fun isDuplicateLoginId(@RequestBody body: IsDuplicateLoginIdRequestBody): Boolean {
         return userService.isDuplicateLoginId(body.id)
     }
 
-    @PostMapping("/email")
+    @PostMapping("/user/email")
     fun sendEmailCode(@RequestBody body: SendEmailCodeRequestBody) {
         return emailService.sendRegisterCodeEmail(body.email)
     }
 
-    @PostMapping("/verify")
+    @PostMapping("/user/verify")
     fun verifyEmailCode(@RequestBody body: VerifyEmailCodeRequestBody): Boolean {
         return emailService.verifyRegisterCode(body.email, body.code)
     }
