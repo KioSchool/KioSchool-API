@@ -63,6 +63,6 @@ class OrderService(
     }
 
     fun getOrdersByPhoneNumber(workspaceId: Long, phoneNumber: String): List<Order> {
-        return orderRepository.findAllByWorkspaceIdAndPhoneNumber(phoneNumber)
+        return orderRepository.findAllByWorkspaceIdAndPhoneNumber(workspaceId, phoneNumber)
     }
 }
