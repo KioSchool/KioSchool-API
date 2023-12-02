@@ -1,5 +1,6 @@
 package com.kioschool.kioschoolapi.order.service
 
+import com.kioschool.kioschoolapi.common.enums.OrderStatus
 import com.kioschool.kioschoolapi.order.dto.OrderProductRequestBody
 import com.kioschool.kioschoolapi.order.entity.Order
 import com.kioschool.kioschoolapi.order.entity.OrderProduct
@@ -25,6 +26,7 @@ class OrderService(
     fun createOrder(
         workspaceId: Long,
         tableNumber: Int,
+        phoneNumber: String,
         rawOrderProducts: List<OrderProductRequestBody>
     ): Order {
         val workspace = workspaceService.getWorkspace(workspaceId)
@@ -32,6 +34,7 @@ class OrderService(
             Order(
                 workspace = workspace,
                 tableNumber = tableNumber,
+                phoneNumber = phoneNumber
             )
         )
         val productMap = productService.getProducts(workspaceId).associateBy { it.id }
@@ -48,5 +51,18 @@ class OrderService(
         order.orderProducts.addAll(orderProducts)
         order.totalPrice = orderProducts.sumOf { it.totalPrice }
         return orderRepository.save(order)
+    }
+
+    fun cancelOrder(username: String, workspaceId: Long, orderId: Long): Order {
+        val workspace = workspaceService.getWorkspace(workspaceId)
+        if (workspace.owner.loginId != username) throw WorkspaceInaccessibleException()
+
+        val order = orderRepository.findById(orderId).get()
+        order.status = OrderStatus.CANCELLED
+        return orderRepository.save(order)
+    }
+
+    fun getOrdersByPhoneNumber(workspaceId: Long, phoneNumber: String): List<Order> {
+        return orderRepository.findAllByWorkspaceIdAndPhoneNumber(phoneNumber)
     }
 }

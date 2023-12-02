@@ -13,9 +13,9 @@ class Order(
     @JsonIgnore
     val workspace: Workspace,
     val tableNumber: Int,
+    val phoneNumber: String,
     @OneToMany(mappedBy = "order", cascade = [CascadeType.ALL])
     val orderProducts: MutableList<OrderProduct> = mutableListOf(),
-    var isPaid: Boolean = false,
     var totalPrice: Int = 0,
-    var status: OrderStatus = OrderStatus.NOT_PAID
+    var status: OrderStatus = OrderStatus.NOT_PAID,
 ) : BaseEntity()

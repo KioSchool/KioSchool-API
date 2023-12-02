@@ -4,4 +4,5 @@ enum class OrderStatus {
     NOT_PAID,
     PAID,
     SERVED,
+    CANCELLED,
 }
