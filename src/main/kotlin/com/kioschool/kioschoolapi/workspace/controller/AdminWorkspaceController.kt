@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/admin")
-class WorkspaceController(
+class AdminWorkspaceController(
     private val workspaceService: WorkspaceService,
 ) {
     @GetMapping("/workspaces")
