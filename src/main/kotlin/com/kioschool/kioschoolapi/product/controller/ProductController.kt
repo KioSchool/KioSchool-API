@@ -1,16 +1,13 @@
 package com.kioschool.kioschoolapi.product.controller
 
-import com.kioschool.kioschoolapi.product.dto.CreateProductRequestBody
 import com.kioschool.kioschoolapi.product.dto.GetProductsRequestBody
-import com.kioschool.kioschoolapi.product.entity.Product
 import com.kioschool.kioschoolapi.product.service.ProductService
-import com.kioschool.kioschoolapi.security.CustomUserDetails
 import com.kioschool.kioschoolapi.user.dto.ExceptionResponseBody
 import com.kioschool.kioschoolapi.workspace.exception.WorkspaceInaccessibleException
-import org.springframework.http.MediaType
-import org.springframework.security.core.Authentication
-import org.springframework.web.bind.annotation.*
-import org.springframework.web.multipart.MultipartFile
+import org.springframework.web.bind.annotation.ExceptionHandler
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RestController
 
 @RestController
 class ProductController(
@@ -20,23 +17,6 @@ class ProductController(
     fun getProducts(
         @RequestBody body: GetProductsRequestBody
     ) = productService.getProducts(body.workspaceId)
-
-    @PostMapping("/admin/product", consumes = [MediaType.ALL_VALUE])
-    fun createProduct(
-        authentication: Authentication,
-        @RequestPart body: CreateProductRequestBody,
-        @RequestPart file: MultipartFile?
-    ): Product {
-        val username = (authentication.principal as CustomUserDetails).username
-        return productService.createProduct(
-            username,
-            body.workspaceId,
-            body.name,
-            body.description,
-            body.price,
-            file
-        )
-    }
 
     @ExceptionHandler(
         WorkspaceInaccessibleException::class,
