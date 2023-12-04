@@ -5,6 +5,7 @@ import com.kioschool.kioschoolapi.workspace.entity.Workspace
 import com.kioschool.kioschoolapi.workspace.entity.WorkspaceInvitation
 import com.kioschool.kioschoolapi.workspace.entity.WorkspaceMember
 import com.kioschool.kioschoolapi.workspace.exception.NoPermissionToInviteException
+import com.kioschool.kioschoolapi.workspace.exception.NoPermissionToJoinWorkspaceException
 import com.kioschool.kioschoolapi.workspace.repository.WorkspaceRepository
 import org.springframework.stereotype.Service
 
@@ -40,7 +41,7 @@ class WorkspaceService(
     fun joinWorkspace(username: String, workspaceId: Long): Workspace {
         val user = userService.getUser(username)
         val workspace = workspaceRepository.findById(workspaceId).get()
-        if (workspace.invitations.removeIf { it.user == user }) throw NoPermissionToInviteException()
+        if (workspace.invitations.removeIf { it.user == user }) throw NoPermissionToJoinWorkspaceException()
 
         val workspaceMember = WorkspaceMember(
             workspace = workspace,
