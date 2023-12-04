@@ -65,4 +65,13 @@ class OrderService(
     fun getOrdersByPhoneNumber(workspaceId: Long, phoneNumber: String): List<Order> {
         return orderRepository.findAllByWorkspaceIdAndPhoneNumber(workspaceId, phoneNumber)
     }
+
+    fun serveOrder(username: String, workspaceId: Long, orderId: Long): Order {
+        val workspace = workspaceService.getWorkspace(workspaceId)
+        if (workspace.owner.loginId != username) throw WorkspaceInaccessibleException()
+
+        val order = orderRepository.findById(orderId).get()
+        order.status = OrderStatus.SERVED
+        return orderRepository.save(order)
+    }
 }

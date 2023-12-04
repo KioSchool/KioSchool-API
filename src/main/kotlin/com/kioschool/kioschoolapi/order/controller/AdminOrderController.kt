@@ -22,12 +22,21 @@ class AdminOrderController(
         return orderService.getAllOrders(username, body.workspaceId)
     }
 
-    @PostMapping("/order/{orderId}")
+    @PostMapping("/order/cancel")
     fun cancelOrder(
         authentication: Authentication,
-        @RequestBody body: CancelOrderRequestBody, @PathVariable orderId: Long
+        @RequestBody body: CancelOrderRequestBody
     ): Order {
         val username = (authentication.principal as CustomUserDetails).username
-        return orderService.cancelOrder(username, body.workspaceId, orderId)
+        return orderService.cancelOrder(username, body.workspaceId, body.orderId)
+    }
+
+    @PostMapping("/order/serve")
+    fun serveOrder(
+        authentication: Authentication,
+        @RequestBody body: CancelOrderRequestBody
+    ): Order {
+        val username = (authentication.principal as CustomUserDetails).username
+        return orderService.serveOrder(username, body.workspaceId, body.orderId)
     }
 }
