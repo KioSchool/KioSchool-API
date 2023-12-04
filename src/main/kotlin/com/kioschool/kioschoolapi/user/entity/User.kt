@@ -21,10 +21,10 @@ class User(
     var email: String,
     var role: UserRole,
     @JsonIgnore
-    @OneToMany(mappedBy = "user", cascade = [CascadeType.ALL])
+    @OneToMany(mappedBy = "user", cascade = [CascadeType.ALL], orphanRemoval = true)
     var members: MutableList<WorkspaceMember>,
     @JsonIgnore
-    @OneToMany(mappedBy = "user", cascade = [CascadeType.ALL])
+    @OneToMany(mappedBy = "user", cascade = [CascadeType.ALL], orphanRemoval = true)
     var invitations: MutableList<WorkspaceInvitation> = mutableListOf(),
 ) : BaseEntity() {
     @JsonIgnore

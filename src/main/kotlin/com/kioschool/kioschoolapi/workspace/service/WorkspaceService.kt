@@ -74,4 +74,12 @@ class WorkspaceService(
         workspace.invitations.add(workspaceInvitation)
         return workspaceRepository.save(workspace)
     }
+
+    fun leaveWorkspace(username: String, workspaceId: Long): Workspace {
+        val user = userService.getUser(username)
+        val workspace = workspaceRepository.findById(workspaceId).get()
+
+        workspace.members.removeIf { it.user == user }
+        return workspaceRepository.save(workspace)
+    }
 }

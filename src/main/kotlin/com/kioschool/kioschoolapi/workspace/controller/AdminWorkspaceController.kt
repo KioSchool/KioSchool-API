@@ -1,10 +1,7 @@
 package com.kioschool.kioschoolapi.workspace.controller
 
 import com.kioschool.kioschoolapi.security.CustomUserDetails
-import com.kioschool.kioschoolapi.workspace.dto.CreateWorkspaceRequestBody
-import com.kioschool.kioschoolapi.workspace.dto.GetWorkspacesResponseBody
-import com.kioschool.kioschoolapi.workspace.dto.InviteWorkspaceRequestBody
-import com.kioschool.kioschoolapi.workspace.dto.JoinWorkspaceRequestBody
+import com.kioschool.kioschoolapi.workspace.dto.*
 import com.kioschool.kioschoolapi.workspace.entity.Workspace
 import com.kioschool.kioschoolapi.workspace.service.WorkspaceService
 import org.springframework.security.core.Authentication
@@ -46,5 +43,14 @@ class AdminWorkspaceController(
     ): Workspace {
         val username = (authentication.principal as CustomUserDetails).username
         return workspaceService.joinWorkspace(username, body.workspaceId)
+    }
+
+    @PostMapping("/workspace/leave")
+    fun leaveWorkspace(
+        authentication: Authentication,
+        @RequestBody body: LeaveWorkspaceRequestBody
+    ): Workspace {
+        val username = (authentication.principal as CustomUserDetails).username
+        return workspaceService.leaveWorkspace(username, body.workspaceId)
     }
 }
