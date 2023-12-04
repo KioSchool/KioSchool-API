@@ -40,7 +40,7 @@ class WorkspaceService(
     fun joinWorkspace(username: String, workspaceId: Long): Workspace {
         val user = userService.getUser(username)
         val workspace = workspaceRepository.findById(workspaceId).get()
-        if (workspace.invitations.none { it.user == user }) throw NoPermissionToInviteException()
+        if (workspace.invitations.removeIf { it.user == user }) throw NoPermissionToInviteException()
 
         val workspaceMember = WorkspaceMember(
             workspace = workspace,
