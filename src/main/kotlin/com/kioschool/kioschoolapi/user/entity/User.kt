@@ -3,6 +3,7 @@ package com.kioschool.kioschoolapi.user.entity
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.kioschool.kioschoolapi.common.entity.BaseEntity
 import com.kioschool.kioschoolapi.common.enums.UserRole
+import com.kioschool.kioschoolapi.workspace.entity.WorkspaceInvitation
 import com.kioschool.kioschoolapi.workspace.entity.WorkspaceMember
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Entity
@@ -21,7 +22,10 @@ class User(
     var role: UserRole,
     @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = [CascadeType.ALL])
-    var members: MutableList<WorkspaceMember>
+    var members: MutableList<WorkspaceMember>,
+    @JsonIgnore
+    @OneToMany(mappedBy = "user", cascade = [CascadeType.ALL])
+    var invitations: MutableList<WorkspaceInvitation> = mutableListOf(),
 ) : BaseEntity() {
     @JsonIgnore
     fun getWorkspaces() = members.map { it.workspace }

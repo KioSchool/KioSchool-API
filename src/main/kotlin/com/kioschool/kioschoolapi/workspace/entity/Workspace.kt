@@ -16,5 +16,8 @@ class Workspace(
     @OneToMany(mappedBy = "workspace", cascade = [CascadeType.ALL])
     val members: MutableList<WorkspaceMember> = mutableListOf(),
     @OneToMany(mappedBy = "workspace", cascade = [CascadeType.ALL])
-    val products: MutableList<Product> = mutableListOf()
+    val products: MutableList<Product> = mutableListOf(),
+    @JsonIgnore
+    @OneToMany(mappedBy = "workspace", cascade = [CascadeType.ALL])
+    val invitations: MutableList<WorkspaceInvitation> = mutableListOf(),
 ) : BaseEntity()

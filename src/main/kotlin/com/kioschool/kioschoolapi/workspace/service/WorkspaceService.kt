@@ -2,7 +2,9 @@ package com.kioschool.kioschoolapi.workspace.service
 
 import com.kioschool.kioschoolapi.user.service.UserService
 import com.kioschool.kioschoolapi.workspace.entity.Workspace
+import com.kioschool.kioschoolapi.workspace.entity.WorkspaceInvitation
 import com.kioschool.kioschoolapi.workspace.entity.WorkspaceMember
+import com.kioschool.kioschoolapi.workspace.exception.NoPermissionToInviteException
 import com.kioschool.kioschoolapi.workspace.repository.WorkspaceRepository
 import org.springframework.stereotype.Service
 
@@ -38,11 +40,12 @@ class WorkspaceService(
     fun joinWorkspace(username: String, workspaceId: Long): Workspace {
         val user = userService.getUser(username)
         val workspace = workspaceRepository.findById(workspaceId).get()
+        if (workspace.invitations.none { it.user == user }) throw NoPermissionToInviteException()
+
         val workspaceMember = WorkspaceMember(
             workspace = workspace,
             user = user
         )
-
         workspace.members.add(workspaceMember)
         workspaceRepository.save(workspace)
 
@@ -56,5 +59,19 @@ class WorkspaceService(
     fun isAccessible(username: String, workspace: Workspace): Boolean {
         val user = userService.getUser(username)
         return workspace.members.any { it.user == user }
+    }
+
+    fun inviteWorkspace(hostUserName: String, workspaceId: Long, userLoginId: String): Workspace {
+        val hostUser = userService.getUser(hostUserName)
+        val workspace = workspaceRepository.findById(workspaceId).get()
+        if (hostUser != workspace.owner) throw NoPermissionToInviteException()
+
+        val user = userService.getUser(userLoginId)
+        val workspaceInvitation = WorkspaceInvitation(
+            workspace = workspace,
+            user = user
+        )
+        workspace.invitations.add(workspaceInvitation)
+        return workspaceRepository.save(workspace)
     }
 }
