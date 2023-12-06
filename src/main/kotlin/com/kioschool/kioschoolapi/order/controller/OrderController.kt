@@ -25,7 +25,7 @@ class OrderController(
         )
     }
 
-    @PostMapping("/orders/{phoneNumber}")
+    @PostMapping("/order/{phoneNumber}")
     fun getOrdersByPhoneNumber(
         @PathVariable phoneNumber: String,
         @RequestBody body: GetOrdersByPhoneNumberRequestBody
