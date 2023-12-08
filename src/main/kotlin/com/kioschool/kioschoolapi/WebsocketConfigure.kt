@@ -28,6 +28,4 @@ class WebsocketConfigure(
     override fun configureMessageBroker(registry: MessageBrokerRegistry) {
         registry.enableSimpleBroker("/sub")
     }
-
-
 }
