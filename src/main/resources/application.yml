@@ -32,9 +32,6 @@ spring:
           auth: true
           starttls:
             enable: true
-server:
-  servlet:
-    context-path: /api
 jwt:
   secret-key: "${JWT_SECRET_KEY}"
 cloud:
@@ -64,6 +61,8 @@ cloud:
   aws:
     s3:
       default-path: production
+websocket:
+  allowed-origins: "kio-school.com"
 
 ---
 
@@ -83,3 +82,5 @@ cloud:
   aws:
     s3:
       default-path: local
+websocket:
+  allowed-origins: "*"
