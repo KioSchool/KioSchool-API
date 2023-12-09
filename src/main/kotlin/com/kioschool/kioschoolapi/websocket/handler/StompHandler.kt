@@ -14,7 +14,7 @@ class StompHandler(
 ) : ChannelInterceptor {
     override fun preSend(message: Message<*>, channel: MessageChannel): Message<*>? {
         val accessor = StompHeaderAccessor.wrap(message)
-        if (accessor.command == StompCommand.SUBSCRIBE) {
+        if (accessor.command == StompCommand.CONNECT) {
             val token = accessor.getFirstNativeHeader("Authorization") ?: return null
             if (!jwtProvider.validateToken(token)) throw Exception("Invalid token")
         }

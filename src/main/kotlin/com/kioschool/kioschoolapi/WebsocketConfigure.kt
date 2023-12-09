@@ -4,6 +4,7 @@ import com.kioschool.kioschoolapi.websocket.handler.StompHandler
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Configuration
 import org.springframework.messaging.converter.MessageConverter
+import org.springframework.messaging.simp.config.ChannelRegistration
 import org.springframework.messaging.simp.config.MessageBrokerRegistry
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry
@@ -19,6 +20,10 @@ class WebsocketConfigure(
     override fun registerStompEndpoints(registry: StompEndpointRegistry) {
         registry.addEndpoint("/ws")
             .setAllowedOrigins(allowedOrigins)
+    }
+
+    override fun configureClientInboundChannel(registration: ChannelRegistration) {
+        registration.interceptors(stompHandler)
     }
 
     override fun configureMessageConverters(messageConverters: MutableList<MessageConverter>): Boolean {
