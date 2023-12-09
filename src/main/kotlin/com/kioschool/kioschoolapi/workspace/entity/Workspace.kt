@@ -13,11 +13,26 @@ class Workspace(
     @ManyToOne
     val owner: User,
     @JsonIgnore
-    @OneToMany(mappedBy = "workspace", cascade = [CascadeType.ALL], orphanRemoval = true)
+    @OneToMany(
+        mappedBy = "workspace",
+        cascade = [CascadeType.ALL],
+        orphanRemoval = true,
+        fetch = FetchType.EAGER
+    )
     val members: MutableList<WorkspaceMember> = mutableListOf(),
-    @OneToMany(mappedBy = "workspace", cascade = [CascadeType.ALL], orphanRemoval = true)
+    @OneToMany(
+        mappedBy = "workspace",
+        cascade = [CascadeType.ALL],
+        orphanRemoval = true,
+        fetch = FetchType.EAGER
+    )
     val products: MutableList<Product> = mutableListOf(),
     @JsonIgnore
-    @OneToMany(mappedBy = "workspace", cascade = [CascadeType.ALL], orphanRemoval = true)
+    @OneToMany(
+        mappedBy = "workspace",
+        cascade = [CascadeType.ALL],
+        orphanRemoval = true,
+        fetch = FetchType.EAGER
+    )
     val invitations: MutableList<WorkspaceInvitation> = mutableListOf(),
 ) : BaseEntity()

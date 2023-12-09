@@ -1,5 +1,6 @@
 package com.kioschool.kioschoolapi.workspace.service
 
+import com.kioschool.kioschoolapi.common.enums.UserRole
 import com.kioschool.kioschoolapi.user.service.UserService
 import com.kioschool.kioschoolapi.workspace.entity.Workspace
 import com.kioschool.kioschoolapi.workspace.entity.WorkspaceInvitation
@@ -59,7 +60,7 @@ class WorkspaceService(
 
     fun isAccessible(username: String, workspace: Workspace): Boolean {
         val user = userService.getUser(username)
-        return workspace.members.any { it.user == user }
+        return workspace.members.any { it.user == user } || user.role == UserRole.SUPER_ADMIN
     }
 
     fun inviteWorkspace(hostUserName: String, workspaceId: Long, userLoginId: String): Workspace {
