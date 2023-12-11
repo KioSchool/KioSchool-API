@@ -1,7 +1,6 @@
 package com.kioschool.kioschoolapi.order.controller
 
 import com.kioschool.kioschoolapi.order.dto.CancelOrderRequestBody
-import com.kioschool.kioschoolapi.order.dto.GetOrdersRequestBody
 import com.kioschool.kioschoolapi.order.entity.Order
 import com.kioschool.kioschoolapi.order.service.OrderService
 import com.kioschool.kioschoolapi.security.CustomUserDetails
@@ -13,13 +12,13 @@ import org.springframework.web.bind.annotation.*
 class AdminOrderController(
     private val orderService: OrderService
 ) {
-    @GetMapping("/orders")
+    @GetMapping("/{workspaceId}/orders")
     fun getAllOrders(
         authentication: Authentication,
-        @RequestBody body: GetOrdersRequestBody
+        @PathVariable("workspaceId") workspaceId: Long
     ): List<Order> {
         val username = (authentication.principal as CustomUserDetails).username
-        return orderService.getAllOrders(username, body.workspaceId)
+        return orderService.getAllOrders(username, workspaceId)
     }
 
     @PostMapping("/order/cancel")
