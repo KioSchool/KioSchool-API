@@ -35,7 +35,9 @@ class JwtProvider(
     }
 
     fun resolveToken(request: HttpServletRequest): String? {
-        val rawToken = request.getHeader("Authorization") ?: return null
+        val rawToken = request.cookies?.find { it.name == "Authorization" }?.value
+            ?: request.getHeader("Authorization")
+            ?: return null
 
         return rawToken.replace("Bearer ", "")
     }
