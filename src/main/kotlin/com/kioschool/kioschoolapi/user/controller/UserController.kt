@@ -6,10 +6,10 @@ import com.kioschool.kioschoolapi.user.dto.*
 import com.kioschool.kioschoolapi.user.exception.LoginFailedException
 import com.kioschool.kioschoolapi.user.exception.RegisterException
 import com.kioschool.kioschoolapi.user.service.UserService
-import org.springframework.web.bind.annotation.ExceptionHandler
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RestController
+import jakarta.servlet.http.Cookie
+import jakarta.servlet.http.HttpServletResponse
+import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.*
 
 @RestController
 class UserController(
@@ -17,13 +17,34 @@ class UserController(
     private val emailService: EmailService
 ) {
     @PostMapping("/login")
-    fun login(@RequestBody body: LoginRequestBody): String {
-        return userService.login(body.id, body.password)
+    @ResponseBody
+    fun login(
+        @RequestBody body: LoginRequestBody,
+        response: HttpServletResponse
+    ): ResponseEntity<String> {
+        val cookie = Cookie("Authorization", userService.login(body.id, body.password))
+        cookie.isHttpOnly = true
+        cookie.secure = true
+        cookie.path = "/"
+        response.addCookie(cookie)
+        return ResponseEntity.ok().body("login success")
     }
 
     @PostMapping("/register")
-    fun register(@RequestBody body: RegisterRequestBody): String {
-        return userService.register(body.id, body.password, body.name, body.email)
+    @ResponseBody
+    fun register(
+        @RequestBody body: RegisterRequestBody,
+        response: HttpServletResponse
+    ): ResponseEntity<String> {
+        val cookie = Cookie(
+            "Authorization",
+            userService.register(body.id, body.password, body.name, body.email)
+        )
+        cookie.isHttpOnly = true
+        cookie.secure = true
+        cookie.path = "/"
+        response.addCookie(cookie)
+        return ResponseEntity.ok().body("register success")
     }
 
     @PostMapping("/user/duplicate")
