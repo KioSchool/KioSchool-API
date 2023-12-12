@@ -5,6 +5,7 @@ import com.kioschool.kioschoolapi.email.service.EmailService
 import com.kioschool.kioschoolapi.security.JwtProvider
 import com.kioschool.kioschoolapi.user.entity.User
 import com.kioschool.kioschoolapi.user.exception.LoginFailedException
+import com.kioschool.kioschoolapi.user.exception.NoPermissionException
 import com.kioschool.kioschoolapi.user.exception.RegisterException
 import com.kioschool.kioschoolapi.user.repository.UserRepository
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -54,5 +55,14 @@ class UserService(
 
     fun getUser(loginId: String): User {
         return userRepository.findByLoginId(loginId) ?: throw LoginFailedException()
+    }
+
+    fun createSuperUser(username: String, id: String): User {
+        val superAdminUser = getUser(username)
+        if (superAdminUser.role != UserRole.SUPER_ADMIN) throw NoPermissionException()
+
+        val user = userRepository.findByLoginId(id) ?: throw Exception("user not found")
+        user.role = UserRole.ADMIN
+        return userRepository.save(user)
     }
 }
