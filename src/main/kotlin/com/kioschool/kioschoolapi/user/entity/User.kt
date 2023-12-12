@@ -20,6 +20,7 @@ class User(
     var name: String,
     var email: String,
     var role: UserRole,
+    var accountUrl: String? = null,
     @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = [CascadeType.ALL], orphanRemoval = true)
     var members: MutableList<WorkspaceMember>,

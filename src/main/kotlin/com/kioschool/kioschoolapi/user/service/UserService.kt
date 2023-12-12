@@ -65,4 +65,10 @@ class UserService(
         user.role = UserRole.ADMIN
         return userRepository.save(user)
     }
+
+    fun registerAccountUrl(username: String, accountUrl: String): User {
+        val user = getUser(username)
+        user.accountUrl = accountUrl
+        return userRepository.save(user)
+    }
 }
