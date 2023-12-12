@@ -68,7 +68,7 @@ class UserService(
 
     fun registerAccountUrl(username: String, accountUrl: String): User {
         val user = getUser(username)
-        user.accountUrl = accountUrl
+        user.accountUrl = accountUrl.replace(Regex("amount=\\d+&"), "")
         return userRepository.save(user)
     }
 }
