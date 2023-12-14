@@ -46,6 +46,11 @@ cloud:
       auto: false
     stack:
       auto: false
+server:
+  servlet:
+    session:
+      cookie:
+        same-site: none
 
 ---
 
