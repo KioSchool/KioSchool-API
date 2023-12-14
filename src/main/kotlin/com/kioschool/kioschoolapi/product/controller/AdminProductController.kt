@@ -16,6 +16,11 @@ import org.springframework.web.multipart.MultipartFile
 class AdminProductController(
     private val productService: ProductService
 ) {
+    @GetMapping("/{workspaceId}/products")
+    fun getProducts(
+        @PathVariable workspaceId: Long
+    ) = productService.getProducts(workspaceId)
+
     @PostMapping("/product", consumes = [MediaType.ALL_VALUE])
     fun createOrUpdateProduct(
         authentication: Authentication,
