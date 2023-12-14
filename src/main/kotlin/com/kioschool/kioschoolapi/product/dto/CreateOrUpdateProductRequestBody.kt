@@ -1,6 +1,7 @@
 package com.kioschool.kioschoolapi.product.dto
 
-data class CreateProductRequestBody(
+data class CreateOrUpdateProductRequestBody(
+    val productId: Long?,
     val name: String,
     val description: String,
     val price: Int,

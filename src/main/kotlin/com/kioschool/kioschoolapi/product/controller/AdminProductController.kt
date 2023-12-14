@@ -1,6 +1,6 @@
 package com.kioschool.kioschoolapi.product.controller
 
-import com.kioschool.kioschoolapi.product.dto.CreateProductRequestBody
+import com.kioschool.kioschoolapi.product.dto.CreateOrUpdateProductRequestBody
 import com.kioschool.kioschoolapi.product.entity.Product
 import com.kioschool.kioschoolapi.product.service.ProductService
 import com.kioschool.kioschoolapi.security.CustomUserDetails
@@ -17,20 +17,30 @@ class AdminProductController(
     private val productService: ProductService
 ) {
     @PostMapping("/product", consumes = [MediaType.ALL_VALUE])
-    fun createProduct(
+    fun createOrUpdateProduct(
         authentication: Authentication,
-        @RequestPart body: CreateProductRequestBody,
+        @RequestPart body: CreateOrUpdateProductRequestBody,
         @RequestPart file: MultipartFile?
     ): Product {
         val username = (authentication.principal as CustomUserDetails).username
-        return productService.createProduct(
-            username,
-            body.workspaceId,
-            body.name,
-            body.description,
-            body.price,
-            file
-        )
+        return if (body.productId == null)
+            productService.createProduct(
+                username,
+                body.workspaceId,
+                body.name,
+                body.description,
+                body.price,
+                file
+            ) else
+            productService.updateProduct(
+                username,
+                body.workspaceId,
+                body.productId,
+                body.name,
+                body.description,
+                body.price,
+                file
+            )
     }
 
     @ExceptionHandler(

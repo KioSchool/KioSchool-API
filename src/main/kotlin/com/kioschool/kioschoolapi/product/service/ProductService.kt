@@ -50,4 +50,31 @@ class ProductService(
 
         return productRepository.save(product)
     }
+
+    fun updateProduct(
+        username: String,
+        workspaceId: Long,
+        productId: Long,
+        name: String?,
+        description: String?,
+        price: Int?,
+        file: MultipartFile?
+    ): Product {
+        val workspace = workspaceService.getWorkspace(workspaceId)
+        if (!workspaceService.isAccessible(
+                username,
+                workspace
+            )
+        ) throw WorkspaceInaccessibleException()
+
+        val product = productRepository.findById(productId).orElseThrow()
+        if (name != null) product.name = name
+        if (description != null) product.description = description
+        if (price != null) product.price = price
+        val path = "$productPath/workspace$workspaceId/product${product.id}"
+        val imageUrl = if (file != null) s3Service.uploadFile(file, path) else null
+        if (imageUrl != null) product.imageUrl = imageUrl
+
+        return productRepository.save(product)
+    }
 }
