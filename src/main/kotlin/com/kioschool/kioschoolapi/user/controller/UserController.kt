@@ -6,8 +6,9 @@ import com.kioschool.kioschoolapi.user.dto.*
 import com.kioschool.kioschoolapi.user.exception.LoginFailedException
 import com.kioschool.kioschoolapi.user.exception.RegisterException
 import com.kioschool.kioschoolapi.user.service.UserService
-import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServletResponse
+import org.springframework.http.HttpHeaders
+import org.springframework.http.ResponseCookie
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
@@ -22,11 +23,14 @@ class UserController(
         @RequestBody body: LoginRequestBody,
         response: HttpServletResponse
     ): ResponseEntity<String> {
-        val cookie = Cookie("Authorization", userService.login(body.id, body.password))
-        cookie.isHttpOnly = true
-        cookie.secure = true
-        cookie.path = "/"
-        response.addCookie(cookie)
+        val cookie = ResponseCookie.from("Authorization", userService.login(body.id, body.password))
+            .httpOnly(true)
+            .secure(true)
+            .path("/")
+            .sameSite("None")
+            .build()
+
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString())
         return ResponseEntity.ok().body("login success")
     }
 
@@ -36,14 +40,17 @@ class UserController(
         @RequestBody body: RegisterRequestBody,
         response: HttpServletResponse
     ): ResponseEntity<String> {
-        val cookie = Cookie(
+        val cookie = ResponseCookie.from(
             "Authorization",
             userService.register(body.id, body.password, body.name, body.email)
         )
-        cookie.isHttpOnly = true
-        cookie.secure = true
-        cookie.path = "/"
-        response.addCookie(cookie)
+            .httpOnly(true)
+            .secure(true)
+            .path("/")
+            .sameSite("None")
+            .build()
+
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString())
         return ResponseEntity.ok().body("register success")
     }
 
