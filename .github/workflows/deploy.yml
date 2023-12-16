@@ -1,0 +1,37 @@
+name: Deploy to Flyio
+on:
+  push:
+    tags:
+      - \d+\.\d+\.\d+
+jobs:
+  deploy:
+    name: deploy
+    runs-on: ubuntu-latest
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Set up JDK
+        uses: actions/setup-java@v1
+        with:
+          java-version: 17
+      - name: Grant execute permissions for gradlew
+        run: chmod +x gradlew
+      - name: Build
+        shell: bash
+        env:
+          GRADLE_PROPERTIES: ${{ secrets.GRADLE_PROPERTIES }}
+        run: >-
+          mkdir -p ~/.gradle/
+          
+          echo "GRADLE_USER_HOME=${HOME}/.gradle" >> $GITHUB_ENV          
+          
+          echo "${GRADLE_PROPERTIES}" > ~/.gradle/gradle.properties          
+          
+          ./gradlew bootJar
+      - name: Set flyio
+        uses: superfly/flyctl-actions/setup-flyctl@master
+      - name: Deploy
+        run: flyctl deploy --remote-only
