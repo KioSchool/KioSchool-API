@@ -12,10 +12,10 @@ import org.springframework.web.bind.annotation.*
 class AdminOrderController(
     private val orderService: OrderService
 ) {
-    @GetMapping("/{workspaceId}/orders")
+    @GetMapping("/orders")
     fun getAllOrders(
         authentication: Authentication,
-        @PathVariable("workspaceId") workspaceId: Long
+        @RequestParam("workspaceId") workspaceId: Long
     ): List<Order> {
         val username = (authentication.principal as CustomUserDetails).username
         return orderService.getAllOrders(username, workspaceId)
