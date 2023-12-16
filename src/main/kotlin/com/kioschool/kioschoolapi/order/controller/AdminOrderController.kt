@@ -21,6 +21,24 @@ class AdminOrderController(
         return orderService.getAllOrders(username, workspaceId)
     }
 
+    @GetMapping("/orders")
+    fun getOrdersByCondition(
+        authentication: Authentication,
+        @RequestParam("workspaceId") workspaceId: Long,
+        @RequestParam("startDate") startDate: String? = null,
+        @RequestParam("endDate") endDate: String? = null,
+        @RequestParam("status") status: String? = null
+    ): List<Order> {
+        val username = (authentication.principal as CustomUserDetails).username
+        return orderService.getAllOrdersByCondition(
+            username,
+            workspaceId,
+            startDate,
+            endDate,
+            status
+        )
+    }
+
     @PostMapping("/order/cancel")
     fun cancelOrder(
         authentication: Authentication,

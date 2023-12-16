@@ -86,4 +86,15 @@ class OrderService(
         )
         return savedOrder
     }
+
+    fun getAllOrdersByCondition(
+        username: String,
+        workspaceId: Long,
+        startDate: String?,
+        endDate: String?,
+        status: String?
+    ): List<Order> {
+        // todo: implement
+        return getAllOrders(username, workspaceId)
+    }
 }
