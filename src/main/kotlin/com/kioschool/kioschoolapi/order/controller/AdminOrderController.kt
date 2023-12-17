@@ -13,15 +13,6 @@ class AdminOrderController(
     private val orderService: OrderService
 ) {
     @GetMapping("/orders")
-    fun getAllOrders(
-        authentication: Authentication,
-        @RequestParam("workspaceId") workspaceId: Long
-    ): List<Order> {
-        val username = (authentication.principal as CustomUserDetails).username
-        return orderService.getAllOrders(username, workspaceId)
-    }
-
-    @GetMapping("/orders")
     fun getOrdersByCondition(
         authentication: Authentication,
         @RequestParam("workspaceId") workspaceId: Long,
