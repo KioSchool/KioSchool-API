@@ -5,16 +5,16 @@ import com.kioschool.kioschoolapi.user.dto.ExceptionResponseBody
 import com.kioschool.kioschoolapi.workspace.exception.WorkspaceInaccessibleException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
 class ProductController(
     private val productService: ProductService
 ) {
-    @GetMapping("/{workspaceId}/products")
+    @GetMapping("/products")
     fun getProducts(
-        @PathVariable workspaceId: Long
+        @RequestParam workspaceId: Long
     ) = productService.getProducts(workspaceId)
 
     @ExceptionHandler(
