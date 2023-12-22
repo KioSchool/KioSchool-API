@@ -4,6 +4,7 @@ import com.kioschool.kioschoolapi.common.enums.OrderStatus
 import com.kioschool.kioschoolapi.order.dto.OrderProductRequestBody
 import com.kioschool.kioschoolapi.order.entity.Order
 import com.kioschool.kioschoolapi.order.entity.OrderProduct
+import com.kioschool.kioschoolapi.order.repository.CustomOrderRepository
 import com.kioschool.kioschoolapi.order.repository.OrderRepository
 import com.kioschool.kioschoolapi.product.service.ProductService
 import com.kioschool.kioschoolapi.websocket.dto.Message
@@ -11,13 +12,17 @@ import com.kioschool.kioschoolapi.websocket.service.WebsocketService
 import com.kioschool.kioschoolapi.workspace.exception.WorkspaceInaccessibleException
 import com.kioschool.kioschoolapi.workspace.service.WorkspaceService
 import org.springframework.stereotype.Service
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 
 @Service
 class OrderService(
     private val orderRepository: OrderRepository,
     private val workspaceService: WorkspaceService,
     private val productService: ProductService,
-    private val websocketService: WebsocketService
+    private val websocketService: WebsocketService,
+    private val customOrderRepository: CustomOrderRepository
 ) {
     fun getAllOrders(username: String, workspaceId: Long): List<Order> {
         val workspace = workspaceService.getWorkspace(workspaceId)
@@ -85,5 +90,37 @@ class OrderService(
             Message("CREATE", savedOrder)
         )
         return savedOrder
+    }
+
+    fun getAllOrdersByCondition(
+        username: String,
+        workspaceId: Long,
+        startDate: String?,
+        endDate: String?,
+        status: String?
+    ): List<Order> {
+        val workspace = workspaceService.getWorkspace(workspaceId)
+        if (workspace.owner.loginId != username) throw WorkspaceInaccessibleException()
+
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+        val parsedStartDate = startDate?.let { LocalDate.parse(it, formatter).atStartOfDay() }
+        val parsedEndDate = endDate?.let { LocalDate.parse(it, formatter).atTime(LocalTime.MAX) }
+        val parsedStatus = status?.let { OrderStatus.valueOf(it) }
+
+        return customOrderRepository.findAllByCondition(
+            workspaceId,
+            parsedStartDate,
+            parsedEndDate,
+            parsedStatus
+        )
+    }
+
+    fun payOrder(username: String, workspaceId: Long, orderId: Long): Order {
+        val workspace = workspaceService.getWorkspace(workspaceId)
+        if (workspace.owner.loginId != username) throw WorkspaceInaccessibleException()
+
+        val order = orderRepository.findById(orderId).get()
+        order.status = OrderStatus.PAID
+        return orderRepository.save(order)
     }
 }
