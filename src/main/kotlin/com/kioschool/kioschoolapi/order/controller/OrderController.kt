@@ -25,8 +25,8 @@ class OrderController(
     @GetMapping("/order")
     fun getOrdersByPhoneNumber(
         @RequestParam phoneNumber: String,
-        @RequestBody body: GetOrdersByPhoneNumberRequestBody
+        @RequestParam workspaceId: Long,
     ): List<Order> {
-        return orderService.getOrdersByPhoneNumber(body.workspaceId, phoneNumber)
+        return orderService.getOrdersByPhoneNumber(workspaceId, phoneNumber)
     }
 }
