@@ -42,9 +42,17 @@ class AdminOrderController(
     @PostMapping("/order/serve")
     fun serveOrder(
         authentication: Authentication,
-        @RequestBody body: CancelOrderRequestBody
+        @RequestBody body: ServeOrderRequestBody
     ): Order {
         val username = (authentication.principal as CustomUserDetails).username
         return orderService.serveOrder(username, body.workspaceId, body.orderId)
+    }
+    @PostMapping("/order/pay")
+    fun payOrder(
+        authentication: Authentication,
+        @RequestBody body: PayOrderRequestBody
+    ): Order {
+        val username = (authentication.principal as CustomUserDetails).username
+        return orderService.payOrder(username, body.workspaceId, body.orderId)
     }
 }

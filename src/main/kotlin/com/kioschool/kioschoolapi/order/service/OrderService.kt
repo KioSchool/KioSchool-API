@@ -114,4 +114,13 @@ class OrderService(
             parsedStatus
         )
     }
+
+    fun payOrder(username: String, workspaceId: Long, orderId: Long): Order {
+        val workspace = workspaceService.getWorkspace(workspaceId)
+        if (workspace.owner.loginId != username) throw WorkspaceInaccessibleException()
+
+        val order = orderRepository.findById(orderId).get()
+        order.status = OrderStatus.PAID
+        return orderRepository.save(order)
+    }
 }
