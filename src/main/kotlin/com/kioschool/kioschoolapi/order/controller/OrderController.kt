@@ -4,10 +4,7 @@ import com.kioschool.kioschoolapi.order.dto.CreateOrderRequestBody
 import com.kioschool.kioschoolapi.order.dto.GetOrdersByPhoneNumberRequestBody
 import com.kioschool.kioschoolapi.order.entity.Order
 import com.kioschool.kioschoolapi.order.service.OrderService
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 
 @RestController
 class OrderController(
@@ -25,9 +22,9 @@ class OrderController(
         )
     }
 
-    @PostMapping("/order/{phoneNumber}")
+    @GetMapping("/order")
     fun getOrdersByPhoneNumber(
-        @PathVariable phoneNumber: String,
+        @RequestParam phoneNumber: String,
         @RequestBody body: GetOrdersByPhoneNumberRequestBody
     ): List<Order> {
         return orderService.getOrdersByPhoneNumber(body.workspaceId, phoneNumber)
