@@ -22,6 +22,7 @@ class OrderController(
             body.workspaceId,
             body.tableNumber,
             body.phoneNumber,
+            body.customerName,
             body.orderProducts
         )
     }
