@@ -3,7 +3,6 @@ package com.kioschool.kioschoolapi.user.controller
 import com.kioschool.kioschoolapi.common.exception.InvalidJwtException
 import com.kioschool.kioschoolapi.email.service.EmailService
 import com.kioschool.kioschoolapi.user.dto.*
-import com.kioschool.kioschoolapi.user.exception.LoginFailedException
 import com.kioschool.kioschoolapi.user.exception.RegisterException
 import com.kioschool.kioschoolapi.user.service.UserService
 import io.swagger.v3.oas.annotations.Operation
@@ -82,7 +81,6 @@ class UserController(
 
     @ExceptionHandler(
         InvalidJwtException::class,
-        LoginFailedException::class,
         RegisterException::class
     )
     fun handle(e: Exception): ExceptionResponseBody {
