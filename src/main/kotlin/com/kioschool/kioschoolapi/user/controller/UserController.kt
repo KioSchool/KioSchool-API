@@ -1,17 +1,19 @@
 package com.kioschool.kioschoolapi.user.controller
 
-import com.kioschool.kioschoolapi.common.exception.InvalidJwtException
 import com.kioschool.kioschoolapi.email.service.EmailService
 import com.kioschool.kioschoolapi.user.dto.*
-import com.kioschool.kioschoolapi.user.exception.RegisterException
 import com.kioschool.kioschoolapi.user.service.UserService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.servlet.http.HttpServletResponse
+import jakarta.validation.Valid
 import org.springframework.http.HttpHeaders
 import org.springframework.http.ResponseCookie
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.ResponseBody
+import org.springframework.web.bind.annotation.RestController
 
 @Tag(name = "User Controller")
 @RestController
@@ -23,7 +25,7 @@ class UserController(
     @PostMapping("/login")
     @ResponseBody
     fun login(
-        @RequestBody body: LoginRequestBody,
+        @Valid @RequestBody body: LoginRequestBody,
         response: HttpServletResponse
     ): ResponseEntity<String> {
         val cookie = ResponseCookie.from("Authorization", userService.login(body.id, body.password))
@@ -44,7 +46,7 @@ class UserController(
     @PostMapping("/register")
     @ResponseBody
     fun register(
-        @RequestBody body: RegisterRequestBody,
+        @Valid @RequestBody body: RegisterRequestBody,
         response: HttpServletResponse
     ): ResponseEntity<String> {
         val cookie = ResponseCookie.from(
@@ -63,27 +65,19 @@ class UserController(
 
     @Operation(summary = "ID 중복 체크", description = "중복되는 ID가 있으면 true를 반환합니다.")
     @PostMapping("/user/duplicate")
-    fun isDuplicateLoginId(@RequestBody body: IsDuplicateLoginIdRequestBody): Boolean {
+    fun isDuplicateLoginId(@Valid @RequestBody body: IsDuplicateLoginIdRequestBody): Boolean {
         return userService.isDuplicateLoginId(body.id)
     }
 
     @Operation(summary = "이메일 인증코드 발송", description = "이메일 인증코드를 발송합니다.")
     @PostMapping("/user/email")
-    fun sendEmailCode(@RequestBody body: SendEmailCodeRequestBody) {
+    fun sendEmailCode(@Valid @RequestBody body: SendEmailCodeRequestBody) {
         return emailService.sendRegisterCodeEmail(body.email)
     }
 
     @Operation(summary = "이메일 인증코드 확인", description = "이메일 인증코드를 확인합니다.")
     @PostMapping("/user/verify")
-    fun verifyEmailCode(@RequestBody body: VerifyEmailCodeRequestBody): Boolean {
+    fun verifyEmailCode(@Valid @RequestBody body: VerifyEmailCodeRequestBody): Boolean {
         return emailService.verifyRegisterCode(body.email, body.code)
-    }
-
-    @ExceptionHandler(
-        InvalidJwtException::class,
-        RegisterException::class
-    )
-    fun handle(e: Exception): ExceptionResponseBody {
-        return ExceptionResponseBody(e.message ?: "알 수 없는 오류가 발생했습니다.")
     }
 }
