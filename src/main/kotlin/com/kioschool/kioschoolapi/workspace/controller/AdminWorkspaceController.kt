@@ -1,7 +1,10 @@
 package com.kioschool.kioschoolapi.workspace.controller
 
 import com.kioschool.kioschoolapi.security.CustomUserDetails
-import com.kioschool.kioschoolapi.workspace.dto.*
+import com.kioschool.kioschoolapi.workspace.dto.CreateWorkspaceRequestBody
+import com.kioschool.kioschoolapi.workspace.dto.InviteWorkspaceRequestBody
+import com.kioschool.kioschoolapi.workspace.dto.JoinWorkspaceRequestBody
+import com.kioschool.kioschoolapi.workspace.dto.LeaveWorkspaceRequestBody
 import com.kioschool.kioschoolapi.workspace.entity.Workspace
 import com.kioschool.kioschoolapi.workspace.service.WorkspaceService
 import io.swagger.v3.oas.annotations.Operation
@@ -18,9 +21,9 @@ class AdminWorkspaceController(
 
     @Operation(summary = "워크스페이스 조회", description = "가입한 모든 워크스페이스를 조회합니다.")
     @GetMapping("/workspaces")
-    fun getWorkspaces(authentication: Authentication): GetWorkspacesResponseBody {
+    fun getWorkspaces(authentication: Authentication): List<Workspace> {
         val username = (authentication.principal as CustomUserDetails).username
-        return GetWorkspacesResponseBody(workspaceService.getWorkspaces(username))
+        return workspaceService.getWorkspaces(username)
     }
 
     @Operation(summary = "워크스페이스 생성", description = "워크스페이스를 생성합니다.")
