@@ -39,6 +39,21 @@ class UserController(
         return ResponseEntity.ok().body("login success")
     }
 
+    @Operation(summary = "로그아웃", description = "쿠키에 담긴 JWT 토큰을 삭제합니다.")
+    @PostMapping("/logout")
+    @ResponseBody
+    fun logout(response: HttpServletResponse): ResponseEntity<String> {
+        val cookie = ResponseCookie.from("Authorization", "")
+            .httpOnly(true)
+            .secure(true)
+            .path("/")
+            .sameSite("None")
+            .build()
+
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString())
+        return ResponseEntity.ok().body("logout success")
+    }
+
     @Operation(
         summary = "회원가입",
         description = "이메일 인증이 되어있어야지만 회원가입에 성공합니다.<br>회원가입 성공 시 쿠키에 JWT 토큰을 담아 반환합니다."
