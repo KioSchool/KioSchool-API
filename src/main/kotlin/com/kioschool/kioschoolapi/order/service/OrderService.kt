@@ -35,6 +35,7 @@ class OrderService(
         workspaceId: Long,
         tableNumber: Int,
         phoneNumber: String,
+        customerName: String,
         rawOrderProducts: List<OrderProductRequestBody>
     ): Order {
         val workspace = workspaceService.getWorkspace(workspaceId)
@@ -42,7 +43,8 @@ class OrderService(
             Order(
                 workspace = workspace,
                 tableNumber = tableNumber,
-                phoneNumber = phoneNumber
+                phoneNumber = phoneNumber,
+                customerName = customerName
             )
         )
         val productMap = productService.getProducts(workspaceId).associateBy { it.id }

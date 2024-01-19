@@ -60,7 +60,7 @@ class WorkspaceService(
 
     fun isAccessible(username: String, workspace: Workspace): Boolean {
         val user = userService.getUser(username)
-        return workspace.members.any { it.user == user } || user.role == UserRole.SUPER_ADMIN
+        return workspace.members.any { it.user.loginId == username } || user.role == UserRole.SUPER_ADMIN
     }
 
     fun inviteWorkspace(hostUserName: String, workspaceId: Long, userLoginId: String): Workspace {

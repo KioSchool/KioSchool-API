@@ -5,4 +5,5 @@ data class CreateOrderRequestBody(
     val tableNumber: Int,
     val orderProducts: List<OrderProductRequestBody>,
     val phoneNumber: String,
+    val customerName: String
 )

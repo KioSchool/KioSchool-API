@@ -16,6 +16,17 @@ class JwtAuthenticationFilter(
     ) {
         val token = jwtProvider.resolveToken(request)
 
+        if (request.method == "OPTIONS") {
+            response.setHeader(
+                "Access-Control-Allow-Origin",
+                request.getHeader("Origin")
+            )
+            response.setHeader("Access-Control-Allow-Credentials", "true")
+            response.setHeader("Access-Control-Allow-Headers", "content-type, Authorization")
+            response.status = HttpServletResponse.SC_OK
+            return
+        }
+
         if (token != null && jwtProvider.validateToken(token)) {
             val authentication = jwtProvider.getAuthentication(token)
             SecurityContextHolder.getContext().authentication = authentication

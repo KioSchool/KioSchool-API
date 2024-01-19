@@ -29,7 +29,9 @@ class SecurityConfiguration(
             .addFilterBefore(
                 JwtAuthenticationFilter(jwtProvider),
                 UsernamePasswordAuthenticationFilter::class.java
-            )
+            ).logout {
+                it.disable()
+            }
 
         return httpSecurity.build()
     }
