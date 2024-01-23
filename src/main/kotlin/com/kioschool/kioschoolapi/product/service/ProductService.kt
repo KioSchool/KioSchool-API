@@ -2,6 +2,7 @@ package com.kioschool.kioschoolapi.product.service
 
 import com.kioschool.kioschoolapi.aws.S3Service
 import com.kioschool.kioschoolapi.product.entity.Product
+import com.kioschool.kioschoolapi.product.entity.ProductCategory
 import com.kioschool.kioschoolapi.product.repository.CustomProductRepository
 import com.kioschool.kioschoolapi.product.repository.ProductCategoryRepository
 import com.kioschool.kioschoolapi.product.repository.ProductRepository
@@ -96,6 +97,10 @@ class ProductService(
 
 
         return productRepository.save(product)
+    }
+
+    fun getAllProductCategories(workspaceId: Long): List<ProductCategory> {
+        return productCategoryRepository.findAllByWorkspaceId(workspaceId)
     }
 
     private fun getImageUrl(workspaceId: Long, productId: Long, file: MultipartFile?): String? {
