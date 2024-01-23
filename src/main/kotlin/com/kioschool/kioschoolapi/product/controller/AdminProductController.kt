@@ -25,6 +25,12 @@ class AdminProductController(
         @RequestParam workspaceId: Long
     ) = productService.getAllProductsByCondition(workspaceId)
 
+    @Operation(summary = "상품 카테고리 조회", description = "워크스페이스에 등록된 모든 상품 카테고리를 조회합니다.")
+    @GetMapping("/product-categories")
+    fun getProductCategories(
+        @RequestParam workspaceId: Long
+    ) = productService.getAllProductCategories(workspaceId)
+
     @Operation(summary = "상품 생성/수정", description = "상품을 생성/수정합니다.<br>상품 ID가 있으면 수정, 없으면 생성합니다.")
     @PostMapping("/product", consumes = [MediaType.ALL_VALUE])
     fun createOrUpdateProduct(
