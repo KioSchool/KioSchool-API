@@ -6,4 +6,5 @@ data class CreateOrUpdateProductRequestBody(
     val description: String,
     val price: Int,
     val workspaceId: Long,
+    val productCategoryId: Long?
 )

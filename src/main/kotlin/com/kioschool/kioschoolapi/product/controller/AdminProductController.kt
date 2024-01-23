@@ -40,6 +40,7 @@ class AdminProductController(
                 body.name,
                 body.description,
                 body.price,
+                body.productCategoryId,
                 file
             ) else
             productService.updateProduct(
@@ -49,6 +50,7 @@ class AdminProductController(
                 body.name,
                 body.description,
                 body.price,
+                body.productCategoryId,
                 file
             )
     }

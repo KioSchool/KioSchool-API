@@ -2,6 +2,7 @@ package com.kioschool.kioschoolapi.product.service
 
 import com.kioschool.kioschoolapi.aws.S3Service
 import com.kioschool.kioschoolapi.product.entity.Product
+import com.kioschool.kioschoolapi.product.repository.ProductCategoryRepository
 import com.kioschool.kioschoolapi.product.repository.ProductRepository
 import com.kioschool.kioschoolapi.workspace.exception.WorkspaceInaccessibleException
 import com.kioschool.kioschoolapi.workspace.service.WorkspaceService
@@ -14,6 +15,7 @@ class ProductService(
     @Value("\${cloud.aws.s3.default-path}")
     private val productPath: String,
     private val productRepository: ProductRepository,
+    private val productCategoryRepository: ProductCategoryRepository,
     private val workspaceService: WorkspaceService,
     private val s3Service: S3Service
 ) {
@@ -27,6 +29,7 @@ class ProductService(
         name: String,
         description: String,
         price: Int,
+        productCategoryId: Long?,
         file: MultipartFile?
     ): Product {
         val workspace = workspaceService.getWorkspace(workspaceId)
@@ -42,6 +45,9 @@ class ProductService(
                 price = price,
                 description = description,
                 workspace = workspace,
+                productCategory = productCategoryId?.let {
+                    productCategoryRepository.findById(it).orElseThrow()
+                }
             )
         )
         val path = "$productPath/workspace$workspaceId/product${product.id}"
@@ -58,6 +64,7 @@ class ProductService(
         name: String?,
         description: String?,
         price: Int?,
+        productCategoryId: Long?,
         file: MultipartFile?
     ): Product {
         val workspace = workspaceService.getWorkspace(workspaceId)
@@ -74,6 +81,11 @@ class ProductService(
         val path = "$productPath/workspace$workspaceId/product${product.id}"
         val imageUrl = if (file != null) s3Service.uploadFile(file, path) else null
         if (imageUrl != null) product.imageUrl = imageUrl
+        if (productCategoryId != null) {
+            val productCategory =
+                productCategoryRepository.findById(productCategoryId).orElseThrow()
+            product.productCategory = productCategory
+        }
 
         return productRepository.save(product)
     }
