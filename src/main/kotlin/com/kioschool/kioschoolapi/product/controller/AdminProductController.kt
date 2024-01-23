@@ -65,12 +65,11 @@ class AdminProductController(
     @PostMapping("/product-category")
     fun createProductCategory(
         authentication: Authentication,
-        @RequestParam workspaceId: Long,
-        @RequestParam name: String
+        @RequestBody body: CreateOrUpdateProductRequestBody
     ) = productService.createProductCategory(
         (authentication.principal as CustomUserDetails).username,
-        workspaceId,
-        name
+        body.workspaceId,
+        body.name
     )
 
     @Operation(summary = "상품 카테고리 삭제", description = "상품 카테고리를 삭제합니다.")
