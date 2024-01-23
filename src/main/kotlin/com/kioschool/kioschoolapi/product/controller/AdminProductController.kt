@@ -73,6 +73,18 @@ class AdminProductController(
         name
     )
 
+    @Operation(summary = "상품 카테고리 삭제", description = "상품 카테고리를 삭제합니다.")
+    @DeleteMapping("/product-category")
+    fun deleteProductCategory(
+        authentication: Authentication,
+        @RequestParam workspaceId: Long,
+        @RequestParam productCategoryId: Long
+    ) = productService.deleteProductCategory(
+        (authentication.principal as CustomUserDetails).username,
+        workspaceId,
+        productCategoryId
+    )
+
     @ExceptionHandler(
         WorkspaceInaccessibleException::class,
     )

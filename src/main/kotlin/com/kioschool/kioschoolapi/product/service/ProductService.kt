@@ -3,6 +3,7 @@ package com.kioschool.kioschoolapi.product.service
 import com.kioschool.kioschoolapi.aws.S3Service
 import com.kioschool.kioschoolapi.product.entity.Product
 import com.kioschool.kioschoolapi.product.entity.ProductCategory
+import com.kioschool.kioschoolapi.product.exception.CanNotDeleteUsingProductCategoryException
 import com.kioschool.kioschoolapi.product.repository.CustomProductRepository
 import com.kioschool.kioschoolapi.product.repository.ProductCategoryRepository
 import com.kioschool.kioschoolapi.product.repository.ProductRepository
@@ -122,5 +123,35 @@ class ProductService(
                 workspace = workspace
             )
         )
+    }
+
+    fun deleteProductCategory(
+        username: String,
+        workspaceId: Long,
+        productCategoryId: Long
+    ): ProductCategory {
+        val workspace = workspaceService.getWorkspace(workspaceId)
+        if (!workspaceService.isAccessible(
+                username,
+                workspace
+            )
+        ) throw WorkspaceInaccessibleException()
+
+        if (!isDeletableProductCategory(
+                workspaceId,
+                productCategoryId
+            )
+        ) throw CanNotDeleteUsingProductCategoryException()
+
+        val productCategory = productCategoryRepository.findById(productCategoryId).orElseThrow()
+        productCategoryRepository.delete(productCategory)
+        return productCategory
+    }
+
+    fun isDeletableProductCategory(workspaceId: Long, productCategoryId: Long): Boolean {
+        return productRepository.countByWorkspaceIdAndProductCategoryId(
+            workspaceId,
+            productCategoryId
+        ) == 0L
     }
 }
