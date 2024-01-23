@@ -9,6 +9,7 @@ import com.kioschool.kioschoolapi.workspace.service.WorkspaceService
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
+import kotlin.jvm.optionals.getOrNull
 
 @Service
 class ProductService(
@@ -50,9 +51,7 @@ class ProductService(
                 }
             )
         )
-        val path = "$productPath/workspace$workspaceId/product${product.id}"
-        val imageUrl = if (file != null) s3Service.uploadFile(file, path) else null
-        product.imageUrl = imageUrl
+        product.imageUrl = getImageUrl(workspaceId, product.id, file)
 
         return productRepository.save(product)
     }
@@ -75,18 +74,24 @@ class ProductService(
         ) throw WorkspaceInaccessibleException()
 
         val product = productRepository.findById(productId).orElseThrow()
-        if (name != null) product.name = name
-        if (description != null) product.description = description
-        if (price != null) product.price = price
-        val path = "$productPath/workspace$workspaceId/product${product.id}"
-        val imageUrl = if (file != null) s3Service.uploadFile(file, path) else null
-        if (imageUrl != null) product.imageUrl = imageUrl
-        if (productCategoryId != null) {
-            val productCategory =
-                productCategoryRepository.findById(productCategoryId).orElseThrow()
-            product.productCategory = productCategory
+
+        name?.let { product.name = it }
+        description?.let { product.description = it }
+        price?.let { product.price = it }
+
+        val imageUrl = getImageUrl(workspaceId, product.id, file)
+        imageUrl?.let { product.imageUrl = it }
+        productCategoryId?.let {
+            product.productCategory =
+                productCategoryRepository.findById(it).getOrNull()
         }
 
+
         return productRepository.save(product)
+    }
+
+    private fun getImageUrl(workspaceId: Long, productId: Long, file: MultipartFile?): String? {
+        val path = "$productPath/workspace$workspaceId/product${productId}"
+        return if (file != null) s3Service.uploadFile(file, path) else null
     }
 }
