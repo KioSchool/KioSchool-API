@@ -2,6 +2,7 @@ package com.kioschool.kioschoolapi.product.service
 
 import com.kioschool.kioschoolapi.aws.S3Service
 import com.kioschool.kioschoolapi.product.entity.Product
+import com.kioschool.kioschoolapi.product.repository.CustomProductRepository
 import com.kioschool.kioschoolapi.product.repository.ProductCategoryRepository
 import com.kioschool.kioschoolapi.product.repository.ProductRepository
 import com.kioschool.kioschoolapi.workspace.exception.WorkspaceInaccessibleException
@@ -16,12 +17,19 @@ class ProductService(
     @Value("\${cloud.aws.s3.default-path}")
     private val productPath: String,
     private val productRepository: ProductRepository,
+    private val customProductRepository: CustomProductRepository,
     private val productCategoryRepository: ProductCategoryRepository,
     private val workspaceService: WorkspaceService,
     private val s3Service: S3Service
 ) {
-    fun getProducts(workspaceId: Long): List<Product> {
-        return productRepository.findAllByWorkspaceId(workspaceId)
+    fun getAllProductsByCondition(
+        workspaceId: Long,
+        productCategoryId: Long? = null
+    ): List<Product> {
+        return customProductRepository.findAllByCondition(
+            workspaceId,
+            productCategoryId
+        )
     }
 
     fun createProduct(

@@ -23,7 +23,7 @@ class AdminProductController(
     @GetMapping("/products")
     fun getProducts(
         @RequestParam workspaceId: Long
-    ) = productService.getProducts(workspaceId)
+    ) = productService.getAllProductsByCondition(workspaceId)
 
     @Operation(summary = "상품 생성/수정", description = "상품을 생성/수정합니다.<br>상품 ID가 있으면 수정, 없으면 생성합니다.")
     @PostMapping("/product", consumes = [MediaType.ALL_VALUE])
