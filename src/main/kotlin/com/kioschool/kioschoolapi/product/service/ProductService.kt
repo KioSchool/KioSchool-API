@@ -107,4 +107,20 @@ class ProductService(
         val path = "$productPath/workspace$workspaceId/product${productId}"
         return if (file != null) s3Service.uploadFile(file, path) else null
     }
+
+    fun createProductCategory(username: String, workspaceId: Long, name: String): ProductCategory {
+        val workspace = workspaceService.getWorkspace(workspaceId)
+        if (!workspaceService.isAccessible(
+                username,
+                workspace
+            )
+        ) throw WorkspaceInaccessibleException()
+
+        return productCategoryRepository.save(
+            ProductCategory(
+                name = name,
+                workspace = workspace
+            )
+        )
+    }
 }

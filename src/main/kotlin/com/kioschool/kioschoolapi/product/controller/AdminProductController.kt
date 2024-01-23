@@ -61,6 +61,18 @@ class AdminProductController(
             )
     }
 
+    @Operation(summary = "상품 카테고리 생성", description = "상품 카테고리를 생성합니다.")
+    @PostMapping("/product-category")
+    fun createProductCategory(
+        authentication: Authentication,
+        @RequestParam workspaceId: Long,
+        @RequestParam name: String
+    ) = productService.createProductCategory(
+        (authentication.principal as CustomUserDetails).username,
+        workspaceId,
+        name
+    )
+
     @ExceptionHandler(
         WorkspaceInaccessibleException::class,
     )
