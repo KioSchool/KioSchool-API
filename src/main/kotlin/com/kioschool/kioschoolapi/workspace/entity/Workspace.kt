@@ -3,6 +3,7 @@ package com.kioschool.kioschoolapi.workspace.entity
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.kioschool.kioschoolapi.common.entity.BaseEntity
 import com.kioschool.kioschoolapi.product.entity.Product
+import com.kioschool.kioschoolapi.product.entity.ProductCategory
 import com.kioschool.kioschoolapi.user.entity.User
 import jakarta.persistence.*
 
@@ -27,6 +28,13 @@ class Workspace(
         fetch = FetchType.EAGER
     )
     val products: MutableList<Product> = mutableListOf(),
+    @OneToMany(
+        mappedBy = "workspace",
+        cascade = [CascadeType.ALL],
+        orphanRemoval = true,
+        fetch = FetchType.EAGER
+    )
+    val productCategories: MutableList<ProductCategory> = mutableListOf(),
     @JsonIgnore
     @OneToMany(
         mappedBy = "workspace",
