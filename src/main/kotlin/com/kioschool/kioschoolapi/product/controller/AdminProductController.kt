@@ -1,6 +1,7 @@
 package com.kioschool.kioschoolapi.product.controller
 
 import com.kioschool.kioschoolapi.product.dto.CreateOrUpdateProductRequestBody
+import com.kioschool.kioschoolapi.product.dto.CreateProductCategoryRequestBody
 import com.kioschool.kioschoolapi.product.entity.Product
 import com.kioschool.kioschoolapi.product.service.ProductService
 import com.kioschool.kioschoolapi.security.CustomUserDetails
@@ -65,7 +66,7 @@ class AdminProductController(
     @PostMapping("/product-category")
     fun createProductCategory(
         authentication: Authentication,
-        @RequestBody body: CreateOrUpdateProductRequestBody
+        @RequestBody body: CreateProductCategoryRequestBody
     ) = productService.createProductCategory(
         (authentication.principal as CustomUserDetails).username,
         body.workspaceId,
