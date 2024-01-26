@@ -8,15 +8,10 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 
 @Entity
-@Table(name = "product")
-class Product(
+@Table(name = "product_category")
+class ProductCategory(
     var name: String,
-    var description: String,
-    var price: Int,
-    var imageUrl: String? = null,
     @ManyToOne
     @JsonIgnore
     val workspace: Workspace,
-    @ManyToOne
-    var productCategory: ProductCategory? = null
 ) : BaseEntity()

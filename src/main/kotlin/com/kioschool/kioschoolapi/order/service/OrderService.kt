@@ -47,7 +47,7 @@ class OrderService(
                 customerName = customerName
             )
         )
-        val productMap = productService.getProducts(workspaceId).associateBy { it.id }
+        val productMap = productService.getAllProductsByCondition(workspaceId).associateBy { it.id }
         val orderProducts = rawOrderProducts.filter { productMap.containsKey(it.productId) }.map {
             val product = productMap[it.productId]!!
             OrderProduct(

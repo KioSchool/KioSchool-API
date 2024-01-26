@@ -1,0 +1,24 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1706019388740-1
+      author: ji-inpark (generated)
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: workspace_id
+                  type: BIGINT
+            tableName: product_category
+  - changeSet:
+      id: 1706019388740-2
+      author: ji-inpark (generated)
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: workspace_id
+            baseTableName: product_category
+            constraintName: FK_PRODUCT_CATEGORY_ON_WORKSPACE
+            referencedColumnNames: id
+            referencedTableName: workspace
+

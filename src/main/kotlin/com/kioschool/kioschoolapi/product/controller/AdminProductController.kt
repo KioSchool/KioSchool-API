@@ -1,6 +1,7 @@
 package com.kioschool.kioschoolapi.product.controller
 
 import com.kioschool.kioschoolapi.product.dto.CreateOrUpdateProductRequestBody
+import com.kioschool.kioschoolapi.product.dto.CreateProductCategoryRequestBody
 import com.kioschool.kioschoolapi.product.entity.Product
 import com.kioschool.kioschoolapi.product.service.ProductService
 import com.kioschool.kioschoolapi.security.CustomUserDetails
@@ -23,7 +24,13 @@ class AdminProductController(
     @GetMapping("/products")
     fun getProducts(
         @RequestParam workspaceId: Long
-    ) = productService.getProducts(workspaceId)
+    ) = productService.getAllProductsByCondition(workspaceId)
+
+    @Operation(summary = "상품 카테고리 조회", description = "워크스페이스에 등록된 모든 상품 카테고리를 조회합니다.")
+    @GetMapping("/product-categories")
+    fun getProductCategories(
+        @RequestParam workspaceId: Long
+    ) = productService.getAllProductCategories(workspaceId)
 
     @Operation(summary = "상품 생성/수정", description = "상품을 생성/수정합니다.<br>상품 ID가 있으면 수정, 없으면 생성합니다.")
     @PostMapping("/product", consumes = [MediaType.ALL_VALUE])
@@ -40,6 +47,7 @@ class AdminProductController(
                 body.name,
                 body.description,
                 body.price,
+                body.productCategoryId,
                 file
             ) else
             productService.updateProduct(
@@ -49,9 +57,33 @@ class AdminProductController(
                 body.name,
                 body.description,
                 body.price,
+                body.productCategoryId,
                 file
             )
     }
+
+    @Operation(summary = "상품 카테고리 생성", description = "상품 카테고리를 생성합니다.")
+    @PostMapping("/product-category")
+    fun createProductCategory(
+        authentication: Authentication,
+        @RequestBody body: CreateProductCategoryRequestBody
+    ) = productService.createProductCategory(
+        (authentication.principal as CustomUserDetails).username,
+        body.workspaceId,
+        body.name
+    )
+
+    @Operation(summary = "상품 카테고리 삭제", description = "상품 카테고리를 삭제합니다.")
+    @DeleteMapping("/product-category")
+    fun deleteProductCategory(
+        authentication: Authentication,
+        @RequestParam workspaceId: Long,
+        @RequestParam productCategoryId: Long
+    ) = productService.deleteProductCategory(
+        (authentication.principal as CustomUserDetails).username,
+        workspaceId,
+        productCategoryId
+    )
 
     @ExceptionHandler(
         WorkspaceInaccessibleException::class,

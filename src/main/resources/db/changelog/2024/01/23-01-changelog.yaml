@@ -1,0 +1,49 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1706017041416-1
+      author: ji-inpark (generated)
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  autoIncrement: true
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_product_category
+                  name: id
+                  type: BIGINT
+              - column:
+                  name: created_at
+                  type: DATETIME
+              - column:
+                  name: updated_at
+                  type: DATETIME
+              - column:
+                  name: name
+                  type: VARCHAR(255)
+            tableName: product_category
+  - changeSet:
+      id: 1706017041416-2
+      author: ji-inpark (generated)
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: product_category_id
+                  type: BIGINT
+            tableName: product
+  - changeSet:
+      id: 1706017041416-3
+      author: ji-inpark (generated)
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: product_category_id
+            baseTableName: product
+            constraintName: FK_PRODUCT_ON_PRODUCT_CATEGORY
+            referencedColumnNames: id
+            referencedTableName: product_category
+
