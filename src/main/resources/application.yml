@@ -67,7 +67,7 @@ cloud:
     s3:
       default-path: production
 websocket:
-  allowed-origins: "kio-school.com"
+  allowed-origins: "https://kio-school.com"
 
 ---
 
