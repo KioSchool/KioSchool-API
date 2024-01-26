@@ -22,6 +22,8 @@ class WorkspaceService(
 
     fun createWorkspace(username: String, name: String): Workspace {
         val user = userService.getUser(username)
+        if (user.accountUrl != null) throw NoPermissionToInviteException()
+
         val workspace = workspaceRepository.save(
             Workspace(
                 name = name,
