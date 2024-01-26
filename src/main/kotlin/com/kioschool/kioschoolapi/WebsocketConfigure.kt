@@ -29,10 +29,6 @@ class WebsocketConfigure(
         registry.addEndpoint("/ws")
             .setAllowedOrigins(allowedOrigins)
             .addInterceptors(stompHandshakeInterceptor())
-
-        registry.addEndpoint("/wss")
-                .setAllowedOrigins(allowedOrigins)
-                .addInterceptors(stompHandshakeInterceptor())
     }
 
     override fun configureClientInboundChannel(registration: ChannelRegistration) {
