@@ -1,7 +1,9 @@
 package com.kioschool.kioschoolapi.email.service
 
 import com.kioschool.kioschoolapi.email.entity.EmailCode
+import com.kioschool.kioschoolapi.email.exception.NotVerifiedEmailDomainException
 import com.kioschool.kioschoolapi.email.repository.EmailCodeRepository
+import com.kioschool.kioschoolapi.email.repository.EmailDomainRepository
 import jakarta.transaction.Transactional
 import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.mail.javamail.MimeMessageHelper
@@ -13,9 +15,12 @@ import org.thymeleaf.spring6.SpringTemplateEngine
 class EmailService(
     private val javaMailSender: JavaMailSender,
     private val templateEngine: SpringTemplateEngine,
-    private val emailCodeRepository: EmailCodeRepository
+    private val emailCodeRepository: EmailCodeRepository,
+    private val emailDomainRepository: EmailDomainRepository
 ) {
     fun sendRegisterCodeEmail(address: String) {
+        if (!isEmailDomainVerified(address)) throw NotVerifiedEmailDomainException()
+
         val code = generateEmailCode()
         sendEmail(
             address,
@@ -55,6 +60,11 @@ class EmailService(
 
     private fun generateEmailCode(): String {
         return (100000..999999).random().toString()
+    }
+
+    private fun isEmailDomainVerified(email: String): Boolean {
+        val domain = email.substringAfterLast("@")
+        return emailDomainRepository.findByDomain(domain) != null
     }
 
     fun verifyRegisterCode(email: String, code: String): Boolean {
