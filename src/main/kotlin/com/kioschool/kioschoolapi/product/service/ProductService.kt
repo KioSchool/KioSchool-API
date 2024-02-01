@@ -12,7 +12,6 @@ import com.kioschool.kioschoolapi.workspace.service.WorkspaceService
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
-import kotlin.jvm.optionals.getOrNull
 
 @Service
 class ProductService(
@@ -57,7 +56,9 @@ class ProductService(
                 description = description,
                 workspace = workspace,
                 productCategory = productCategoryId?.let {
-                    productCategoryRepository.findById(it).orElseThrow()
+                    val productCategory = productCategoryRepository.findById(it).orElseThrow()
+                    if (productCategory.workspace.id != workspaceId) throw WorkspaceInaccessibleException()
+                    productCategory
                 }
             )
         )
@@ -92,8 +93,9 @@ class ProductService(
         val imageUrl = getImageUrl(workspaceId, product.id, file)
         imageUrl?.let { product.imageUrl = it }
         productCategoryId?.let {
-            product.productCategory =
-                productCategoryRepository.findById(it).getOrNull()
+            val productCategory = productCategoryRepository.findById(it).orElseThrow()
+            if (productCategory.workspace.id != workspaceId) throw WorkspaceInaccessibleException()
+            product.productCategory = productCategory
         }
 
 
