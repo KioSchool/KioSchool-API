@@ -156,4 +156,17 @@ class ProductService(
             productCategoryId
         ) == 0L
     }
+
+    fun deleteProduct(username: String, workspaceId: Long, productId: Long): Product {
+        val workspace = workspaceService.getWorkspace(workspaceId)
+        if (!workspaceService.isAccessible(
+                username,
+                workspace
+            )
+        ) throw WorkspaceInaccessibleException()
+
+        val product = productRepository.findById(productId).orElseThrow()
+        productRepository.delete(product)
+        return product
+    }
 }
