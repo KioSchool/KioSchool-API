@@ -1,0 +1,10 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1707151122617-1
+      author: ji-inpark (generated)
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - dropColumn:
+            columnName: phone_number
+            tableName: order
+

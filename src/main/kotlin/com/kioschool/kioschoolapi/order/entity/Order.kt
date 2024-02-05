@@ -13,7 +13,6 @@ class Order(
     @JsonIgnore
     val workspace: Workspace,
     val tableNumber: Int,
-    val phoneNumber: String,
     val customerName: String,
     @OneToMany(mappedBy = "order", cascade = [CascadeType.ALL])
     val orderProducts: MutableList<OrderProduct> = mutableListOf(),
