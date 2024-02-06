@@ -7,5 +7,4 @@ import org.springframework.stereotype.Repository
 @Repository
 interface OrderRepository : JpaRepository<Order, Long> {
     fun findAllByWorkspaceId(workspaceId: Long): List<Order>
-    fun findAllByWorkspaceIdAndPhoneNumber(workspaceId: Long, phoneNumber: String): List<Order>
 }

@@ -1,7 +1,8 @@
 package com.kioschool.kioschoolapi.product.controller
 
-import com.kioschool.kioschoolapi.product.dto.CreateOrUpdateProductRequestBody
 import com.kioschool.kioschoolapi.product.dto.CreateProductCategoryRequestBody
+import com.kioschool.kioschoolapi.product.dto.CreateProductRequestBody
+import com.kioschool.kioschoolapi.product.dto.UpdateProductRequestBody
 import com.kioschool.kioschoolapi.product.entity.Product
 import com.kioschool.kioschoolapi.product.service.ProductService
 import com.kioschool.kioschoolapi.security.CustomUserDetails
@@ -32,35 +33,56 @@ class AdminProductController(
         @RequestParam workspaceId: Long
     ) = productService.getAllProductCategories(workspaceId)
 
-    @Operation(summary = "상품 생성/수정", description = "상품을 생성/수정합니다.<br>상품 ID가 있으면 수정, 없으면 생성합니다.")
+    @Operation(summary = "상품 생성", description = "상품을 생성합니다.")
     @PostMapping("/product", consumes = [MediaType.ALL_VALUE])
     fun createOrUpdateProduct(
         authentication: Authentication,
-        @RequestPart body: CreateOrUpdateProductRequestBody,
+        @RequestPart body: CreateProductRequestBody,
         @RequestPart file: MultipartFile?
     ): Product {
         val username = (authentication.principal as CustomUserDetails).username
-        return if (body.productId == null)
-            productService.createProduct(
-                username,
-                body.workspaceId,
-                body.name,
-                body.description,
-                body.price,
-                body.productCategoryId,
-                file
-            ) else
-            productService.updateProduct(
-                username,
-                body.workspaceId,
-                body.productId,
-                body.name,
-                body.description,
-                body.price,
-                body.productCategoryId,
-                file
-            )
+        return productService.createProduct(
+            username,
+            body.workspaceId,
+            body.name,
+            body.description,
+            body.price,
+            body.productCategoryId,
+            file
+        )
     }
+
+    @Operation(summary = "상품 수정", description = "상품을 수정합니다.")
+    @PutMapping("/product", consumes = [MediaType.ALL_VALUE])
+    fun updateProduct(
+        authentication: Authentication,
+        @RequestPart body: UpdateProductRequestBody,
+        @RequestPart file: MultipartFile?
+    ): Product {
+        val username = (authentication.principal as CustomUserDetails).username
+        return productService.updateProduct(
+            username,
+            body.workspaceId,
+            body.productId,
+            body.name,
+            body.description,
+            body.price,
+            body.productCategoryId,
+            file
+        )
+    }
+
+    @Operation(summary = "상품 삭제", description = "상품을 삭제합니다.")
+    @DeleteMapping("/product")
+    fun deleteProduct(
+        authentication: Authentication,
+        @RequestParam workspaceId: Long,
+        @RequestParam productId: Long
+    ) = productService.deleteProduct(
+        (authentication.principal as CustomUserDetails).username,
+        workspaceId,
+        productId
+    )
 
     @Operation(summary = "상품 카테고리 생성", description = "상품 카테고리를 생성합니다.")
     @PostMapping("/product-category")

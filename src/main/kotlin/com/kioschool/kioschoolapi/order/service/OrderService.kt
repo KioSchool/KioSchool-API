@@ -34,7 +34,6 @@ class OrderService(
     fun createOrder(
         workspaceId: Long,
         tableNumber: Int,
-        phoneNumber: String,
         customerName: String,
         rawOrderProducts: List<OrderProductRequestBody>
     ): Order {
@@ -43,7 +42,6 @@ class OrderService(
             Order(
                 workspace = workspace,
                 tableNumber = tableNumber,
-                phoneNumber = phoneNumber,
                 customerName = customerName
             )
         )
@@ -70,10 +68,6 @@ class OrderService(
         val order = orderRepository.findById(orderId).get()
         order.status = OrderStatus.CANCELLED
         return orderRepository.save(order)
-    }
-
-    fun getOrdersByPhoneNumber(workspaceId: Long, phoneNumber: String): List<Order> {
-        return orderRepository.findAllByWorkspaceIdAndPhoneNumber(workspaceId, phoneNumber)
     }
 
     fun serveOrder(username: String, workspaceId: Long, orderId: Long): Order {

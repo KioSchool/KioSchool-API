@@ -5,7 +5,9 @@ import com.kioschool.kioschoolapi.order.entity.Order
 import com.kioschool.kioschoolapi.order.service.OrderService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RestController
 
 @Tag(name = "Order Controller")
 @RestController
@@ -21,18 +23,8 @@ class OrderController(
         return orderService.createOrder(
             body.workspaceId,
             body.tableNumber,
-            body.phoneNumber,
             body.customerName,
             body.orderProducts
         )
-    }
-
-    @Operation(summary = "전화번호로 주문 조회", description = "전화번호로 주문을 조회합니다.")
-    @GetMapping("/order")
-    fun getOrdersByPhoneNumber(
-        @RequestParam phoneNumber: String,
-        @RequestParam workspaceId: Long,
-    ): List<Order> {
-        return orderService.getOrdersByPhoneNumber(workspaceId, phoneNumber)
     }
 }
