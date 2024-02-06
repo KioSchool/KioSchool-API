@@ -5,6 +5,7 @@ import com.kioschool.kioschoolapi.user.service.UserService
 import com.kioschool.kioschoolapi.workspace.entity.Workspace
 import com.kioschool.kioschoolapi.workspace.entity.WorkspaceInvitation
 import com.kioschool.kioschoolapi.workspace.entity.WorkspaceMember
+import com.kioschool.kioschoolapi.workspace.exception.NoPermissionToCreateWorkspaceException
 import com.kioschool.kioschoolapi.workspace.exception.NoPermissionToInviteException
 import com.kioschool.kioschoolapi.workspace.exception.NoPermissionToJoinWorkspaceException
 import com.kioschool.kioschoolapi.workspace.repository.WorkspaceRepository
@@ -22,7 +23,7 @@ class WorkspaceService(
 
     fun createWorkspace(username: String, name: String): Workspace {
         val user = userService.getUser(username)
-        if (user.accountUrl != null) throw NoPermissionToInviteException()
+        if (user.accountUrl != null) throw NoPermissionToCreateWorkspaceException()
 
         val workspace = workspaceRepository.save(
             Workspace(
