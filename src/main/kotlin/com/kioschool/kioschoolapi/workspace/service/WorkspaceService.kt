@@ -23,7 +23,7 @@ class WorkspaceService(
 
     fun createWorkspace(username: String, name: String): Workspace {
         val user = userService.getUser(username)
-        if (user.accountUrl != null) throw NoPermissionToCreateWorkspaceException()
+        if (user.accountUrl == null) throw NoPermissionToCreateWorkspaceException()
 
         val workspace = workspaceRepository.save(
             Workspace(
