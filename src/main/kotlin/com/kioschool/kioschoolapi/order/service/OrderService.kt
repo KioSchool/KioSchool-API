@@ -119,4 +119,8 @@ class OrderService(
         order.status = OrderStatus.PAID
         return orderRepository.save(order)
     }
+
+    fun getOrder(orderId: Long): Order {
+        return orderRepository.findById(orderId).get()
+    }
 }
