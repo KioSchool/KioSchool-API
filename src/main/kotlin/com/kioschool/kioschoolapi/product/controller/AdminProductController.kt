@@ -6,8 +6,6 @@ import com.kioschool.kioschoolapi.product.dto.UpdateProductRequestBody
 import com.kioschool.kioschoolapi.product.entity.Product
 import com.kioschool.kioschoolapi.product.service.ProductService
 import com.kioschool.kioschoolapi.security.CustomUserDetails
-import com.kioschool.kioschoolapi.user.dto.ExceptionResponseBody
-import com.kioschool.kioschoolapi.workspace.exception.WorkspaceInaccessibleException
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.MediaType
@@ -106,11 +104,4 @@ class AdminProductController(
         workspaceId,
         productCategoryId
     )
-
-    @ExceptionHandler(
-        WorkspaceInaccessibleException::class,
-    )
-    fun handle(e: Exception): ExceptionResponseBody {
-        return ExceptionResponseBody(e.message ?: "알 수 없는 오류가 발생했습니다.")
-    }
 }

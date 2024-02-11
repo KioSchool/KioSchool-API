@@ -1,11 +1,8 @@
 package com.kioschool.kioschoolapi.product.controller
 
 import com.kioschool.kioschoolapi.product.service.ProductService
-import com.kioschool.kioschoolapi.user.dto.ExceptionResponseBody
-import com.kioschool.kioschoolapi.workspace.exception.WorkspaceInaccessibleException
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
-import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
@@ -33,11 +30,4 @@ class ProductController(
     fun getProductCategories(
         @RequestParam workspaceId: Long
     ) = productService.getAllProductCategories(workspaceId)
-
-    @ExceptionHandler(
-        WorkspaceInaccessibleException::class,
-    )
-    fun handle(e: Exception): ExceptionResponseBody {
-        return ExceptionResponseBody(e.message ?: "알 수 없는 오류가 발생했습니다.")
-    }
 }
