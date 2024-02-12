@@ -1,9 +1,11 @@
 package com.kioschool.kioschoolapi.user.service
 
+import com.kioschool.kioschoolapi.bank.service.BankService
 import com.kioschool.kioschoolapi.common.enums.UserRole
 import com.kioschool.kioschoolapi.email.service.EmailService
 import com.kioschool.kioschoolapi.security.JwtProvider
 import com.kioschool.kioschoolapi.user.entity.User
+import com.kioschool.kioschoolapi.user.exception.BankHolderNotMatchedException
 import com.kioschool.kioschoolapi.user.exception.LoginFailedException
 import com.kioschool.kioschoolapi.user.exception.NoPermissionException
 import com.kioschool.kioschoolapi.user.exception.RegisterException
@@ -16,7 +18,8 @@ class UserService(
     private val userRepository: UserRepository,
     private val jwtProvider: JwtProvider,
     private val passwordEncoder: PasswordEncoder,
-    private val emailService: EmailService
+    private val emailService: EmailService,
+    private val bankService: BankService
 ) {
     fun login(loginId: String, loginPassword: String): String {
         val user = getUser(loginId)
@@ -69,6 +72,25 @@ class UserService(
     fun registerAccountUrl(username: String, accountUrl: String): User {
         val user = getUser(username)
         user.accountUrl = accountUrl.replace(Regex("amount=\\d+&"), "")
+
+        checkBankHolderNameMatched(accountUrl, user.name)
+
         return userRepository.save(user)
+    }
+
+    private fun checkBankHolderNameMatched(accountUrl: String, username: String) {
+        val bankName = extractBankName(accountUrl)
+        val accountNumber = extractAccountNumber(accountUrl)
+        val bankHolderName = bankService.getBankAccountHolderName(bankName, accountNumber)
+
+        if (bankHolderName != username) throw BankHolderNotMatchedException()
+    }
+
+    private fun extractBankName(accountUrl: String): String {
+        return accountUrl.substringAfter("bank=").substringBefore("&")
+    }
+
+    private fun extractAccountNumber(accountUrl: String): String {
+        return accountUrl.substringAfter("accountNo=").substringBefore("&")
     }
 }

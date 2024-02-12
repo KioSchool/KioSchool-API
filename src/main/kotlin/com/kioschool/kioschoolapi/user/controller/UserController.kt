@@ -28,14 +28,23 @@ class UserController(
         @Valid @RequestBody body: LoginRequestBody,
         response: HttpServletResponse
     ): ResponseEntity<String> {
-        val cookie = ResponseCookie.from("Authorization", userService.login(body.id, body.password))
-            .httpOnly(true)
+        val authCookie =
+            ResponseCookie.from("Authorization", userService.login(body.id, body.password))
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .sameSite("None")
+                .build()
+
+        val isLoggedInCookie = ResponseCookie.from("isLoggedIn", "true")
+            .httpOnly(false)
             .secure(true)
             .path("/")
             .sameSite("None")
             .build()
 
-        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString())
+        response.addHeader(HttpHeaders.SET_COOKIE, authCookie.toString())
+        response.addHeader(HttpHeaders.SET_COOKIE, isLoggedInCookie.toString())
         return ResponseEntity.ok().body("login success")
     }
 
@@ -43,14 +52,22 @@ class UserController(
     @PostMapping("/logout")
     @ResponseBody
     fun logout(response: HttpServletResponse): ResponseEntity<String> {
-        val cookie = ResponseCookie.from("Authorization", "")
+        val authCookie = ResponseCookie.from("Authorization", "")
             .httpOnly(true)
             .secure(true)
             .path("/")
             .sameSite("None")
             .build()
 
-        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString())
+        val isLoggedInCookie = ResponseCookie.from("isLoggedIn", "")
+            .httpOnly(false)
+            .secure(true)
+            .path("/")
+            .sameSite("None")
+            .build()
+
+        response.addHeader(HttpHeaders.SET_COOKIE, authCookie.toString())
+        response.addHeader(HttpHeaders.SET_COOKIE, isLoggedInCookie.toString())
         return ResponseEntity.ok().body("logout success")
     }
 

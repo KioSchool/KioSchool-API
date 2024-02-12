@@ -5,9 +5,7 @@ import com.kioschool.kioschoolapi.order.entity.Order
 import com.kioschool.kioschoolapi.order.service.OrderService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 
 @Tag(name = "Order Controller")
 @RestController
@@ -26,5 +24,13 @@ class OrderController(
             body.customerName,
             body.orderProducts
         )
+    }
+
+    @Operation(summary = "주문 조회", description = "주문을 조회합니다.")
+    @GetMapping("/order")
+    fun getOrder(
+        @RequestParam("orderId") orderId: Long
+    ): Order {
+        return orderService.getOrder(orderId)
     }
 }
