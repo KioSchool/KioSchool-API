@@ -46,6 +46,7 @@ dependencies {
     implementation("org.liquibase:liquibase-core:4.24.0")
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.0.2")
     implementation("com.querydsl:querydsl-jpa:5.0.0:jakarta")
+    implementation("com.squareup.okhttp3:okhttp:4.10.0")
     kapt("com.querydsl:querydsl-apt:5.0.0:jakarta")
     kapt("jakarta.annotation:jakarta.annotation-api")
     kapt("jakarta.persistence:jakarta.persistence-api")
