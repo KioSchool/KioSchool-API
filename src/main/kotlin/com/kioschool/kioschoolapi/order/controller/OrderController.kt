@@ -28,7 +28,7 @@ class OrderController(
 
     @Operation(summary = "주문 조회", description = "주문을 조회합니다.")
     @GetMapping("/order")
-    fun getAllOrders(
+    fun getOrder(
         @RequestParam("orderId") orderId: Long
     ): Order {
         return orderService.getOrder(orderId)
