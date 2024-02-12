@@ -2,6 +2,7 @@ package com.kioschool.kioschoolapi.factory
 
 import com.kioschool.kioschoolapi.common.entity.BaseEntity
 import com.kioschool.kioschoolapi.common.enums.UserRole
+import com.kioschool.kioschoolapi.order.entity.Order
 import com.kioschool.kioschoolapi.product.entity.Product
 import com.kioschool.kioschoolapi.product.entity.ProductCategory
 import com.kioschool.kioschoolapi.user.entity.User
@@ -45,6 +46,12 @@ object SampleEntity {
     )
 
     fun productWithId(id: Long) = product.apply { setId(id) }
+
+    val order = Order(
+        workspace,
+        0,
+        "test"
+    )
 
     private fun BaseEntity.setId(id: Long) {
         val f = this::class.superclasses.first().java.getDeclaredField("id")
