@@ -36,15 +36,7 @@ class UserController(
                 .sameSite("None")
                 .build()
 
-        val isLoggedInCookie = ResponseCookie.from("isLoggedIn", "true")
-            .httpOnly(false)
-            .secure(true)
-            .path("/")
-            .sameSite("None")
-            .build()
-
         response.addHeader(HttpHeaders.SET_COOKIE, authCookie.toString())
-        response.addHeader(HttpHeaders.SET_COOKIE, isLoggedInCookie.toString())
         return ResponseEntity.ok().body("login success")
     }
 
@@ -59,15 +51,7 @@ class UserController(
             .sameSite("None")
             .build()
 
-        val isLoggedInCookie = ResponseCookie.from("isLoggedIn", "")
-            .httpOnly(false)
-            .secure(true)
-            .path("/")
-            .sameSite("None")
-            .build()
-
         response.addHeader(HttpHeaders.SET_COOKIE, authCookie.toString())
-        response.addHeader(HttpHeaders.SET_COOKIE, isLoggedInCookie.toString())
         return ResponseEntity.ok().body("logout success")
     }
 
