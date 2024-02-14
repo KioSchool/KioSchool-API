@@ -16,3 +16,14 @@
 
 - Run 버튼 클릭 후 아래와 같이 포트 설정
   ![Run Image.png](src%2Fmain%2Fresources%2Freadme%2FRun%20Image.png)
+
+### 3. 로컬 서버 실행
+
+- 서버를 실행시키면 liquibase를 통해 DB 마이그레이션 실행됨
+- 제대로 실행되었다면 table이 생성된 것을 확인할 수 있음
+
+  ![DB Table.png](src%2Fmain%2Fresources%2Freadme%2FDatabase%20Table.png)
+
+### 4. 필수 데이터 추가
+
+- `src/main/resources/db/data.sql` 파일을 참고하여 필수 데이터 추가
