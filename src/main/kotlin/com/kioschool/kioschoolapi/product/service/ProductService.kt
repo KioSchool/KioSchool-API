@@ -9,6 +9,7 @@ import com.kioschool.kioschoolapi.product.repository.ProductCategoryRepository
 import com.kioschool.kioschoolapi.product.repository.ProductRepository
 import com.kioschool.kioschoolapi.workspace.exception.WorkspaceInaccessibleException
 import com.kioschool.kioschoolapi.workspace.service.WorkspaceService
+import jakarta.transaction.Transactional
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
@@ -127,6 +128,7 @@ class ProductService(
         )
     }
 
+    @Transactional
     fun deleteProductCategory(
         username: String,
         workspaceId: Long,
@@ -157,6 +159,7 @@ class ProductService(
         ) == 0L
     }
 
+    @Transactional
     fun deleteProduct(username: String, workspaceId: Long, productId: Long): Product {
         val workspace = workspaceService.getWorkspace(workspaceId)
         if (!workspaceService.isAccessible(
