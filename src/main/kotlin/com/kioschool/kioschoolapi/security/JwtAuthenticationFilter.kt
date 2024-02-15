@@ -23,6 +23,7 @@ class JwtAuthenticationFilter(
             )
             response.setHeader("Access-Control-Allow-Credentials", "true")
             response.setHeader("Access-Control-Allow-Headers", "content-type, Authorization")
+            response.setHeader("Access-Control-Allow-Methods", "POST, GET, PUT, DELETE, OPTIONS")
             response.status = HttpServletResponse.SC_OK
             return
         }
