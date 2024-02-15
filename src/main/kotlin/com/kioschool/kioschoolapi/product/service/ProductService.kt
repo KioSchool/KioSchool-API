@@ -134,7 +134,7 @@ class ProductService(
         workspaceId: Long,
         productCategoryId: Long
     ): ProductCategory {
-        // test commit 1
+        // test commit 2
         val workspace = workspaceService.getWorkspace(workspaceId)
         if (!workspaceService.isAccessible(
                 username,
