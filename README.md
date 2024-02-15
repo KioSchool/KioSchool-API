@@ -22,7 +22,7 @@
 - 서버를 실행시키면 liquibase를 통해 DB 마이그레이션 실행됨
 - 제대로 실행되었다면 table이 생성된 것을 확인할 수 있음
 
-  ![DB Table.png](src%2Fmain%2Fresources%2Freadme%2FDatabase%20Table.png)
+  ![Database table.png](src%2Fmain%2Fresources%2Freadme%2FDatabase%20table.png)
 
 ### 4. 필수 데이터 추가
 
