@@ -243,7 +243,7 @@ class ProductServiceTest : DescribeSpec({
 
     describe("getAllProductCategories") {
         it("should call categoryRepository.findAllByWorkspaceId") {
-            every { categoryRepository.findAllByWorkspaceId(workspaceId) } returns listOf()
+            every { categoryRepository.findAllByWorkspaceIdOrderByIdAsc(workspaceId) } returns listOf()
             sut.getAllProductCategories(workspaceId)
         }
     }
