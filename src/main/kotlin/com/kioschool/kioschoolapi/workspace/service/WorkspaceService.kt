@@ -1,6 +1,7 @@
 package com.kioschool.kioschoolapi.workspace.service
 
 import com.kioschool.kioschoolapi.common.enums.UserRole
+import com.kioschool.kioschoolapi.discord.DiscordService
 import com.kioschool.kioschoolapi.user.service.UserService
 import com.kioschool.kioschoolapi.workspace.entity.Workspace
 import com.kioschool.kioschoolapi.workspace.entity.WorkspaceInvitation
@@ -14,7 +15,8 @@ import org.springframework.stereotype.Service
 @Service
 class WorkspaceService(
     private val workspaceRepository: WorkspaceRepository,
-    private val userService: UserService
+    private val userService: UserService,
+    private val discordService: DiscordService
 ) {
     fun getWorkspaces(username: String): List<Workspace> {
         val user = userService.getUser(username)
@@ -38,6 +40,7 @@ class WorkspaceService(
 
         workspace.members.add(workspaceMember)
         workspaceRepository.save(workspace)
+        discordService.sendWorkspaceCreate(workspace)
 
         return workspace
     }
