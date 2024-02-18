@@ -58,6 +58,8 @@ server:
 portone:
   api-key: "${PORTONE_API_KEY}"
   api-secret: "${PORTONE_API_SECRET}"
+discord:
+  webhook-url: "${DISCORD_WEBHOOK_URL}"
 
 ---
 
