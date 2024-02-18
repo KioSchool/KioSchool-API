@@ -42,6 +42,13 @@ class ProductServiceTest : DescribeSpec({
         }
     }
 
+    describe("getProduct") {
+        it("should call repository.findById") {
+            every { repository.findById(SampleEntity.product.id) } returns Optional.of(SampleEntity.product)
+            sut.getProduct(workspaceId, SampleEntity.product.id)
+        }
+    }
+
     describe("createProduct") {
         every { workspaceService.getWorkspace(workspaceId) } returns SampleEntity.workspace
 
