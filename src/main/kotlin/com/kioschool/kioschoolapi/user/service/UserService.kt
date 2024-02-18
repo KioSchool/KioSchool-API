@@ -2,6 +2,7 @@ package com.kioschool.kioschoolapi.user.service
 
 import com.kioschool.kioschoolapi.bank.service.BankService
 import com.kioschool.kioschoolapi.common.enums.UserRole
+import com.kioschool.kioschoolapi.discord.DiscordService
 import com.kioschool.kioschoolapi.email.service.EmailService
 import com.kioschool.kioschoolapi.security.JwtProvider
 import com.kioschool.kioschoolapi.user.entity.User
@@ -19,7 +20,8 @@ class UserService(
     private val jwtProvider: JwtProvider,
     private val passwordEncoder: PasswordEncoder,
     private val emailService: EmailService,
-    private val bankService: BankService
+    private val bankService: BankService,
+    private val discordService: DiscordService
 ) {
     fun login(loginId: String, loginPassword: String): String {
         val user = getUser(loginId)
@@ -49,6 +51,7 @@ class UserService(
             )
         )
 
+        discordService.sendUserRegister(user)
         return jwtProvider.createToken(user)
     }
 
