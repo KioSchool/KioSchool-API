@@ -34,6 +34,10 @@ class ProductService(
         )
     }
 
+    fun getProduct(workspaceId: Long, productId: Long): Product {
+        return productRepository.findById(productId).orElseThrow()
+    }
+
     fun createProduct(
         username: String,
         workspaceId: Long,
