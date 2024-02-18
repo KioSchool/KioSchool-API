@@ -28,9 +28,8 @@ class AdminProductController(
     @Operation(summary = "상품 조회", description = "상품 하나를 조회합니다.")
     @GetMapping("/product")
     fun getProduct(
-        @RequestParam workspaceId: Long,
         @RequestParam productId: Long
-    ) = productService.getProduct(workspaceId, productId)
+    ) = productService.getProduct(productId)
 
     @Operation(summary = "상품 카테고리 조회", description = "워크스페이스에 등록된 모든 상품 카테고리를 조회합니다.")
     @GetMapping("/product-categories")

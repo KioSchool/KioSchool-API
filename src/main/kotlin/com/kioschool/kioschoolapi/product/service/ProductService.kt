@@ -34,7 +34,7 @@ class ProductService(
         )
     }
 
-    fun getProduct(workspaceId: Long, productId: Long): Product {
+    fun getProduct(productId: Long): Product {
         return productRepository.findById(productId).orElseThrow()
     }
 

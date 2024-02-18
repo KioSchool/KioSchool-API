@@ -30,8 +30,8 @@ class AdminProductControllerTest : DescribeSpec({
 
     describe("getProduct") {
         it("should return product") {
-            every { service.getProduct(1L, 1L) } returns SampleEntity.product
-            val result = sut.getProduct(workspaceId, 1L)
+            every { service.getProduct(1L) } returns SampleEntity.product
+            val result = sut.getProduct(1L)
             result shouldBe SampleEntity.product
         }
     }
