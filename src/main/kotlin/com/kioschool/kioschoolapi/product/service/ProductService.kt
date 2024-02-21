@@ -97,10 +97,14 @@ class ProductService(
 
         val imageUrl = getImageUrl(workspaceId, product.id, file)
         imageUrl?.let { product.imageUrl = it }
-        productCategoryId?.let {
-            val productCategory = productCategoryRepository.findById(it).orElseThrow()
+
+        if (productCategoryId != null) {
+            val productCategory =
+                productCategoryRepository.findById(productCategoryId).orElseThrow()
             if (productCategory.workspace.id != workspaceId) throw WorkspaceInaccessibleException()
             product.productCategory = productCategory
+        } else {
+            product.productCategory = null
         }
 
 
