@@ -96,7 +96,10 @@ class ProductService(
         price?.let { product.price = it }
 
         val imageUrl = getImageUrl(workspaceId, product.id, file)
-        imageUrl?.let { product.imageUrl = it }
+        imageUrl?.let {
+            s3Service.deleteFile(product.imageUrl!!)
+            product.imageUrl = it
+        }
 
         if (productCategoryId != null) {
             val productCategory =
