@@ -16,6 +16,7 @@ class CustomProductRepository(
         val product = QProduct.product
         val query = queryFactory.selectFrom(product)
             .where(product.workspace.id.eq(workspaceId))
+            .orderBy(product.id.asc())
 
         if (productCategoryId != null) query.where(product.productCategory.id.eq(productCategoryId))
 

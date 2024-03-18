@@ -23,7 +23,6 @@ class Workspace(
     val members: MutableList<WorkspaceMember> = mutableListOf(),
     @OneToMany(
         mappedBy = "workspace",
-        cascade = [CascadeType.ALL],
         orphanRemoval = true,
         fetch = FetchType.EAGER
     )
@@ -38,7 +37,6 @@ class Workspace(
     @JsonIgnore
     @OneToMany(
         mappedBy = "workspace",
-        cascade = [CascadeType.ALL],
         orphanRemoval = true,
         fetch = FetchType.EAGER
     )

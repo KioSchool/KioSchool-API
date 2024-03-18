@@ -29,5 +29,5 @@ class User(
     var invitations: MutableList<WorkspaceInvitation> = mutableListOf(),
 ) : BaseEntity() {
     @JsonIgnore
-    fun getWorkspaces() = members.map { it.workspace }
+    fun getWorkspaces() = members.map { it.workspace }.sortedBy { it.id }
 }

@@ -9,6 +9,7 @@ import com.kioschool.kioschoolapi.product.repository.ProductCategoryRepository
 import com.kioschool.kioschoolapi.product.repository.ProductRepository
 import com.kioschool.kioschoolapi.workspace.exception.WorkspaceInaccessibleException
 import com.kioschool.kioschoolapi.workspace.service.WorkspaceService
+import jakarta.transaction.Transactional
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
@@ -31,6 +32,10 @@ class ProductService(
             workspaceId,
             productCategoryId
         )
+    }
+
+    fun getProduct(productId: Long): Product {
+        return productRepository.findById(productId).orElseThrow()
     }
 
     fun createProduct(
@@ -91,11 +96,18 @@ class ProductService(
         price?.let { product.price = it }
 
         val imageUrl = getImageUrl(workspaceId, product.id, file)
-        imageUrl?.let { product.imageUrl = it }
-        productCategoryId?.let {
-            val productCategory = productCategoryRepository.findById(it).orElseThrow()
+        imageUrl?.let {
+            s3Service.deleteFile(product.imageUrl!!)
+            product.imageUrl = it
+        }
+
+        if (productCategoryId != null) {
+            val productCategory =
+                productCategoryRepository.findById(productCategoryId).orElseThrow()
             if (productCategory.workspace.id != workspaceId) throw WorkspaceInaccessibleException()
             product.productCategory = productCategory
+        } else {
+            product.productCategory = null
         }
 
 
@@ -103,11 +115,12 @@ class ProductService(
     }
 
     fun getAllProductCategories(workspaceId: Long): List<ProductCategory> {
-        return productCategoryRepository.findAllByWorkspaceId(workspaceId)
+        return productCategoryRepository.findAllByWorkspaceIdOrderByIdAsc(workspaceId)
     }
 
     private fun getImageUrl(workspaceId: Long, productId: Long, file: MultipartFile?): String? {
-        val path = "$productPath/workspace$workspaceId/product${productId}"
+        val date = System.currentTimeMillis()
+        val path = "$productPath/workspace$workspaceId/product${productId}/${date.hashCode()}.jpg"
         return if (file != null) s3Service.uploadFile(file, path) else null
     }
 
@@ -127,6 +140,7 @@ class ProductService(
         )
     }
 
+    @Transactional
     fun deleteProductCategory(
         username: String,
         workspaceId: Long,
@@ -157,6 +171,7 @@ class ProductService(
         ) == 0L
     }
 
+    @Transactional
     fun deleteProduct(username: String, workspaceId: Long, productId: Long): Product {
         val workspace = workspaceService.getWorkspace(workspaceId)
         if (!workspaceService.isAccessible(

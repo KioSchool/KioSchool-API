@@ -42,6 +42,13 @@ class ProductServiceTest : DescribeSpec({
         }
     }
 
+    describe("getProduct") {
+        it("should call repository.findById") {
+            every { repository.findById(SampleEntity.product.id) } returns Optional.of(SampleEntity.product)
+            sut.getProduct(SampleEntity.product.id)
+        }
+    }
+
     describe("createProduct") {
         every { workspaceService.getWorkspace(workspaceId) } returns SampleEntity.workspace
 
@@ -243,7 +250,7 @@ class ProductServiceTest : DescribeSpec({
 
     describe("getAllProductCategories") {
         it("should call categoryRepository.findAllByWorkspaceId") {
-            every { categoryRepository.findAllByWorkspaceId(workspaceId) } returns listOf()
+            every { categoryRepository.findAllByWorkspaceIdOrderByIdAsc(workspaceId) } returns listOf()
             sut.getAllProductCategories(workspaceId)
         }
     }

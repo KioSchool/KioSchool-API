@@ -37,6 +37,16 @@ class AdminOrderController(
         )
     }
 
+    @Operation(summary = "실시간 주문 조회", description = "실시간 주문을 조회합니다.")
+    @GetMapping("/orders/realtime")
+    fun getRealtimeOrders(
+        authentication: Authentication,
+        @RequestParam("workspaceId") workspaceId: Long
+    ): List<Order> {
+        val username = (authentication.principal as CustomUserDetails).username
+        return orderService.getRealtimeOrders(username, workspaceId)
+    }
+
     @Operation(summary = "주문 취소", description = "주문 상태를 취소로 변경합니다.")
     @PostMapping("/order/cancel")
     fun cancelOrder(

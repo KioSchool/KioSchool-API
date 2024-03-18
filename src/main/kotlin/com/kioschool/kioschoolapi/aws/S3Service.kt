@@ -16,4 +16,9 @@ class S3Service(
         amazonS3Client.putObject(bucketName, path, file.inputStream, null)
         return amazonS3Client.getUrl(bucketName, path).toString()
     }
+
+    fun deleteFile(url: String) {
+        val path = url.split(bucketName).last()
+        amazonS3Client.deleteObject(bucketName, path)
+    }
 }

@@ -19,11 +19,17 @@ import org.springframework.web.multipart.MultipartFile
 class AdminProductController(
     private val productService: ProductService
 ) {
-    @Operation(summary = "상품 조회", description = "워크스페이스에 등록된 모든 상품을 조회합니다.")
+    @Operation(summary = "상품 전체 조회", description = "워크스페이스에 등록된 모든 상품을 조회합니다.")
     @GetMapping("/products")
     fun getProducts(
         @RequestParam workspaceId: Long
     ) = productService.getAllProductsByCondition(workspaceId)
+
+    @Operation(summary = "상품 조회", description = "상품 하나를 조회합니다.")
+    @GetMapping("/product")
+    fun getProduct(
+        @RequestParam productId: Long
+    ) = productService.getProduct(productId)
 
     @Operation(summary = "상품 카테고리 조회", description = "워크스페이스에 등록된 모든 상품 카테고리를 조회합니다.")
     @GetMapping("/product-categories")
