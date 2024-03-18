@@ -13,6 +13,7 @@ import com.kioschool.kioschoolapi.workspace.exception.WorkspaceInaccessibleExcep
 import com.kioschool.kioschoolapi.workspace.service.WorkspaceService
 import org.springframework.stereotype.Service
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
@@ -122,5 +123,16 @@ class OrderService(
 
     fun getOrder(orderId: Long): Order {
         return orderRepository.findById(orderId).get()
+    }
+
+    fun getRealtimeOrders(username: String, workspaceId: Long): List<Order> {
+        val workspace = workspaceService.getWorkspace(workspaceId)
+        if (workspace.owner.loginId != username) throw WorkspaceInaccessibleException()
+
+        val startDate = LocalDateTime.now().minusHours(12)
+        val endDate = LocalDateTime.now()
+
+        return customOrderRepository.findAllByCondition(workspaceId, startDate, endDate, null)
+
     }
 }
