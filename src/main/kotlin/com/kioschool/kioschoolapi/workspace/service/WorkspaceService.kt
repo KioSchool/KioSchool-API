@@ -23,7 +23,7 @@ class WorkspaceService(
         return user.getWorkspaces()
     }
 
-    fun createWorkspace(username: String, name: String): Workspace {
+    fun createWorkspace(username: String, name: String, description: String): Workspace {
         val user = userService.getUser(username)
         if (user.accountUrl == null) throw NoPermissionToCreateWorkspaceException()
 
@@ -31,6 +31,7 @@ class WorkspaceService(
             Workspace(
                 name = name,
                 owner = user,
+                description = description
             )
         )
         val workspaceMember = WorkspaceMember(

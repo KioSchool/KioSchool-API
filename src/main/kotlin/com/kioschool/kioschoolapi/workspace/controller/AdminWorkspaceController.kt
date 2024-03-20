@@ -33,7 +33,7 @@ class AdminWorkspaceController(
         @RequestBody body: CreateWorkspaceRequestBody
     ): Workspace {
         val username = (authentication.principal as CustomUserDetails).username
-        return workspaceService.createWorkspace(username, body.name)
+        return workspaceService.createWorkspace(username, body.name, body.description)
     }
 
     @Operation(summary = "워크스페이스 초대", description = "워크스페이스에 사용자를 초대합니다.")
