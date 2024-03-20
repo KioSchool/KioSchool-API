@@ -6,10 +6,7 @@ import com.kioschool.kioschoolapi.discord.DiscordService
 import com.kioschool.kioschoolapi.email.service.EmailService
 import com.kioschool.kioschoolapi.security.JwtProvider
 import com.kioschool.kioschoolapi.user.entity.User
-import com.kioschool.kioschoolapi.user.exception.BankHolderNotMatchedException
-import com.kioschool.kioschoolapi.user.exception.LoginFailedException
-import com.kioschool.kioschoolapi.user.exception.NoPermissionException
-import com.kioschool.kioschoolapi.user.exception.RegisterException
+import com.kioschool.kioschoolapi.user.exception.*
 import com.kioschool.kioschoolapi.user.repository.UserRepository
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
@@ -38,7 +35,7 @@ class UserService(
     fun register(loginId: String, loginPassword: String, name: String, email: String): String {
         if (isDuplicateLoginId(loginId)) throw RegisterException()
         if (!emailService.isEmailVerified(email)) throw RegisterException()
-        emailService.deleteEmailCode(email)
+        emailService.deleteRegisterCode(email)
 
         val user = userRepository.save(
             User(
@@ -67,7 +64,7 @@ class UserService(
         val superAdminUser = getUser(username)
         if (superAdminUser.role != UserRole.SUPER_ADMIN) throw NoPermissionException()
 
-        val user = userRepository.findByLoginId(id) ?: throw Exception("user not found")
+        val user = userRepository.findByLoginId(id) ?: throw UserNotFoundException()
         user.role = UserRole.ADMIN
         return userRepository.save(user)
     }
@@ -95,5 +92,12 @@ class UserService(
 
     private fun extractAccountNumber(accountUrl: String): String {
         return accountUrl.substringAfter("accountNo=").substringBefore("&")
+    }
+
+    fun sendResetPasswordEmail(loginId: String, email: String) {
+        val user = userRepository.findByLoginId(loginId) ?: throw UserNotFoundException()
+        if (user.email != email) throw UserNotFoundException()
+
+        emailService.sendResetPasswordEmail(email)
     }
 }
