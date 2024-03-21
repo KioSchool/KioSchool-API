@@ -33,8 +33,9 @@ class UserService(
     }
 
     fun register(loginId: String, loginPassword: String, name: String, email: String): String {
-        if (isDuplicateLoginId(loginId)) throw RegisterException()
-        if (!emailService.isEmailVerified(email)) throw RegisterException()
+        if (isDuplicateLoginId(loginId)) throw RegisterException("이미 사용하고 있는 아이디입니다.")
+        if (!emailService.isEmailVerified(email)) throw RegisterException("이메일 인증이 안된 이메일입니다.")
+        if (isDuplicateEmail(email)) throw RegisterException("이미 사용하고 있는 이메일입니다.")
         emailService.deleteRegisterCode(email)
 
         val user = userRepository.save(
@@ -54,6 +55,10 @@ class UserService(
 
     fun isDuplicateLoginId(loginId: String): Boolean {
         return userRepository.findByLoginId(loginId) != null
+    }
+
+    fun isDuplicateEmail(email: String): Boolean {
+        return userRepository.findByEmail(email) != null
     }
 
     fun getUser(loginId: String): User {
