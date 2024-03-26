@@ -96,4 +96,10 @@ class UserController(
     fun verifyEmailCode(@Valid @RequestBody body: VerifyEmailCodeRequestBody): Boolean {
         return emailService.verifyRegisterCode(body.email, body.code)
     }
+
+    @Operation(summary = "비밀번호 재설정 이메일 전송", description = "비밀번호 재설정 이메일을 전송합니다.")
+    @PostMapping("/user/password")
+    fun sendResetPasswordEmail(@Valid @RequestBody body: SendResetPasswordEmailRequestBody) {
+        return userService.sendResetPasswordEmail(body.id, body.email)
+    }
 }

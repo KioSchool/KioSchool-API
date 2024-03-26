@@ -6,10 +6,7 @@ import com.kioschool.kioschoolapi.discord.DiscordService
 import com.kioschool.kioschoolapi.email.service.EmailService
 import com.kioschool.kioschoolapi.security.JwtProvider
 import com.kioschool.kioschoolapi.user.entity.User
-import com.kioschool.kioschoolapi.user.exception.BankHolderNotMatchedException
-import com.kioschool.kioschoolapi.user.exception.LoginFailedException
-import com.kioschool.kioschoolapi.user.exception.NoPermissionException
-import com.kioschool.kioschoolapi.user.exception.RegisterException
+import com.kioschool.kioschoolapi.user.exception.*
 import com.kioschool.kioschoolapi.user.repository.UserRepository
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
@@ -36,9 +33,10 @@ class UserService(
     }
 
     fun register(loginId: String, loginPassword: String, name: String, email: String): String {
-        if (isDuplicateLoginId(loginId)) throw RegisterException()
-        if (!emailService.isEmailVerified(email)) throw RegisterException()
-        emailService.deleteEmailCode(email)
+        if (isDuplicateLoginId(loginId)) throw RegisterException("이미 사용하고 있는 아이디입니다.")
+        if (!emailService.isEmailVerified(email)) throw RegisterException("이메일 인증이 안된 이메일입니다.")
+        if (isDuplicateEmail(email)) throw RegisterException("이미 사용하고 있는 이메일입니다.")
+        emailService.deleteRegisterCode(email)
 
         val user = userRepository.save(
             User(
@@ -59,6 +57,10 @@ class UserService(
         return userRepository.findByLoginId(loginId) != null
     }
 
+    fun isDuplicateEmail(email: String): Boolean {
+        return userRepository.findByEmail(email) != null
+    }
+
     fun getUser(loginId: String): User {
         return userRepository.findByLoginId(loginId) ?: throw LoginFailedException()
     }
@@ -67,7 +69,7 @@ class UserService(
         val superAdminUser = getUser(username)
         if (superAdminUser.role != UserRole.SUPER_ADMIN) throw NoPermissionException()
 
-        val user = userRepository.findByLoginId(id) ?: throw Exception("user not found")
+        val user = userRepository.findByLoginId(id) ?: throw UserNotFoundException()
         user.role = UserRole.ADMIN
         return userRepository.save(user)
     }
@@ -95,5 +97,12 @@ class UserService(
 
     private fun extractAccountNumber(accountUrl: String): String {
         return accountUrl.substringAfter("accountNo=").substringBefore("&")
+    }
+
+    fun sendResetPasswordEmail(loginId: String, email: String) {
+        val user = userRepository.findByLoginId(loginId) ?: throw UserNotFoundException()
+        if (user.email != email) throw UserNotFoundException()
+
+        emailService.sendResetPasswordEmail(email)
     }
 }

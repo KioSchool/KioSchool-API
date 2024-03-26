@@ -1,6 +1,9 @@
 package com.kioschool.kioschoolapi.user.exception
 
-class RegisterException : Exception() {
-    override val message: String
-        get() = "회원가입에 실패했습니다."
+import org.springframework.http.HttpStatus
+import org.springframework.web.bind.annotation.ResponseStatus
+
+@ResponseStatus(code = HttpStatus.BAD_REQUEST)
+class RegisterException(message: String = "회원가입에 실패하였습니다.") : Exception() {
+    override val message: String = message
 }
