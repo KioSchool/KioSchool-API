@@ -14,6 +14,7 @@ class Product(
     var description: String,
     var price: Int,
     var imageUrl: String? = null,
+    var isSellable: Boolean? = true,
     @ManyToOne
     @JsonIgnore
     val workspace: Workspace,
