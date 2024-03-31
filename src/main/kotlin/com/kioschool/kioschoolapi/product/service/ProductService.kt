@@ -184,4 +184,22 @@ class ProductService(
         productRepository.delete(product)
         return product
     }
+
+    fun updateProductSellable(
+        username: String,
+        workspaceId: Long,
+        productId: Long,
+        sellable: Boolean
+    ): Product {
+        val workspace = workspaceService.getWorkspace(workspaceId)
+        if (!workspaceService.isAccessible(
+                username,
+                workspace
+            )
+        ) throw WorkspaceInaccessibleException()
+
+        val product = productRepository.findById(productId).orElseThrow()
+        product.isSellable = sellable
+        return productRepository.save(product)
+    }
 }
