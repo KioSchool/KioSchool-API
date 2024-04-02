@@ -202,4 +202,23 @@ class ProductService(
         product.isSellable = sellable
         return productRepository.save(product)
     }
+
+    fun sortProductCategories(
+        username: String,
+        workspaceId: Long,
+        productCategoryIds: List<Long>
+    ): List<ProductCategory> {
+        val workspace = workspaceService.getWorkspace(workspaceId)
+        if (!workspaceService.isAccessible(
+                username,
+                workspace
+            )
+        ) throw WorkspaceInaccessibleException()
+
+        val productCategories = productCategoryRepository.findAllById(productCategoryIds)
+        productCategories.forEachIndexed { index, productCategory ->
+            productCategory.index = index
+        }
+        return productCategoryRepository.saveAll(productCategories)
+    }
 }
