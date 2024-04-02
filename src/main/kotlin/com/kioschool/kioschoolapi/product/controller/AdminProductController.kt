@@ -3,6 +3,7 @@ package com.kioschool.kioschoolapi.product.controller
 import com.kioschool.kioschoolapi.product.dto.CreateProductCategoryRequestBody
 import com.kioschool.kioschoolapi.product.dto.CreateProductRequestBody
 import com.kioschool.kioschoolapi.product.dto.UpdateProductRequestBody
+import com.kioschool.kioschoolapi.product.dto.UpdateProductSellableRequestBody
 import com.kioschool.kioschoolapi.product.entity.Product
 import com.kioschool.kioschoolapi.product.service.ProductService
 import com.kioschool.kioschoolapi.security.CustomUserDetails
@@ -73,6 +74,21 @@ class AdminProductController(
             body.price,
             body.productCategoryId,
             file
+        )
+    }
+
+    @Operation(summary = "상품 판매 여부 수정", description = "상품의 판매 여부를 수정합니다.")
+    @PutMapping("/product/sellable")
+    fun updateProductSellable(
+        authentication: Authentication,
+        @RequestBody body: UpdateProductSellableRequestBody,
+    ): Product {
+        val username = (authentication.principal as CustomUserDetails).username
+        return productService.updateProductSellable(
+            username,
+            body.workspaceId,
+            body.productId,
+            body.isSellable
         )
     }
 

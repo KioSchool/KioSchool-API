@@ -105,4 +105,10 @@ class UserService(
 
         emailService.sendResetPasswordEmail(email)
     }
+
+    fun deleteUser(username: String): User {
+        val user = getUser(username)
+        userRepository.delete(user)
+        return user
+    }
 }

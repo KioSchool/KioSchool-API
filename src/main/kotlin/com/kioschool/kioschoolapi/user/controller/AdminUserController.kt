@@ -23,6 +23,13 @@ class AdminUserController(
         return userService.getUser(username)
     }
 
+    @Operation(summary = "유저 탈퇴")
+    @DeleteMapping("/user")
+    fun deleteUser(authentication: Authentication): User {
+        val username = (authentication.principal as CustomUserDetails).username
+        return userService.deleteUser(username)
+    }
+
     @Operation(summary = "슈퍼 유저 생성", description = "슈퍼 유저를 생성합니다.<br>슈퍼 유저는 슈퍼 유저만 지정할 수 있습니다.")
     @PostMapping("/super-user")
     fun createSuperUser(
