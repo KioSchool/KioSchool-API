@@ -5,6 +5,7 @@ import com.kioschool.kioschoolapi.product.dto.CreateProductRequestBody
 import com.kioschool.kioschoolapi.product.dto.UpdateProductRequestBody
 import com.kioschool.kioschoolapi.product.dto.UpdateProductSellableRequestBody
 import com.kioschool.kioschoolapi.product.entity.Product
+import com.kioschool.kioschoolapi.product.entity.ProductCategory
 import com.kioschool.kioschoolapi.product.service.ProductService
 import com.kioschool.kioschoolapi.security.CustomUserDetails
 import io.swagger.v3.oas.annotations.Operation
@@ -126,4 +127,15 @@ class AdminProductController(
         workspaceId,
         productCategoryId
     )
+
+    @Operation(summary = "상품 카테고리 정렬", description = "주어진 순서대로 상품 카테고리를 정렬합니다.")
+    @PostMapping("/product-categories/sort")
+    fun sortProductCategories(
+        authentication: Authentication,
+        @RequestParam workspaceId: Long,
+        @RequestBody productCategoryIds: List<Long>
+    ): List<ProductCategory> {
+        val username = (authentication.principal as CustomUserDetails).username
+        return productService.sortProductCategories(username, workspaceId, productCategoryIds)
+    }
 }

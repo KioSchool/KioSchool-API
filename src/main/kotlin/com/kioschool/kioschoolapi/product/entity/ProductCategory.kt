@@ -14,4 +14,5 @@ class ProductCategory(
     @ManyToOne
     @JsonIgnore
     val workspace: Workspace,
+    var index: Int? = null
 ) : BaseEntity()
