@@ -115,7 +115,7 @@ class ProductService(
     }
 
     fun getAllProductCategories(workspaceId: Long): List<ProductCategory> {
-        return productCategoryRepository.findAllByWorkspaceIdOrderByIdAsc(workspaceId)
+        return productCategoryRepository.findAllByWorkspaceIdOrderByIndexAsc(workspaceId)
     }
 
     private fun getImageUrl(workspaceId: Long, productId: Long, file: MultipartFile?): String? {
