@@ -102,4 +102,10 @@ class UserController(
     fun sendResetPasswordEmail(@Valid @RequestBody body: SendResetPasswordEmailRequestBody) {
         return userService.sendResetPasswordEmail(body.id, body.email)
     }
+
+    @Operation(summary = "비밀번호 재설정", description = "비밀번호를 재설정합니다.")
+    @PostMapping("/user/reset")
+    fun resetPassword(@Valid @RequestBody body: ResetPasswordRequestBody) {
+        return userService.resetPassword(body.code, body.password)
+    }
 }

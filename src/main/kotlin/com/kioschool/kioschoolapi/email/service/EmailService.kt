@@ -94,6 +94,12 @@ class EmailService(
         return true
     }
 
+    fun getEmailByCode(code: String): String? {
+        val emailCode =
+            emailCodeRepository.findByCodeAndKind(code, EmailKind.RESET_PASSWORD) ?: return null
+        return emailCode.email
+    }
+
     fun sendResetPasswordEmail(email: String) {
         val code = generateResetPasswordEmailCode()
         sendEmail(
