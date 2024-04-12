@@ -24,20 +24,32 @@ class AdminProductController(
     @Operation(summary = "상품 전체 조회", description = "워크스페이스에 등록된 모든 상품을 조회합니다.")
     @GetMapping("/products")
     fun getProducts(
+        authentication: Authentication,
         @RequestParam workspaceId: Long
-    ) = productService.getAllProductsByCondition(workspaceId)
+    ): List<Product> {
+        val username = (authentication.principal as CustomUserDetails).username
+        return productService.getAllProductsByCondition(username, workspaceId)
+    }
 
     @Operation(summary = "상품 조회", description = "상품 하나를 조회합니다.")
     @GetMapping("/product")
     fun getProduct(
+        authentication: Authentication,
         @RequestParam productId: Long
-    ) = productService.getProduct(productId)
+    ): Product {
+        val username = (authentication.principal as CustomUserDetails).username
+        return productService.getProduct(username, productId)
+    }
 
     @Operation(summary = "상품 카테고리 조회", description = "워크스페이스에 등록된 모든 상품 카테고리를 조회합니다.")
     @GetMapping("/product-categories")
     fun getProductCategories(
+        authentication: Authentication,
         @RequestParam workspaceId: Long
-    ) = productService.getAllProductCategories(workspaceId)
+    ): List<ProductCategory> {
+        val username = (authentication.principal as CustomUserDetails).username
+        return productService.getAllProductCategories(username, workspaceId)
+    }
 
     @Operation(summary = "상품 생성", description = "상품을 생성합니다.")
     @PostMapping("/product", consumes = [MediaType.ALL_VALUE])
