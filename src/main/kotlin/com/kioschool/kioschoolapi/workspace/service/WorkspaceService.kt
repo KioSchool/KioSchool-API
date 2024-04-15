@@ -9,6 +9,7 @@ import com.kioschool.kioschoolapi.workspace.entity.WorkspaceMember
 import com.kioschool.kioschoolapi.workspace.exception.NoPermissionToCreateWorkspaceException
 import com.kioschool.kioschoolapi.workspace.exception.NoPermissionToInviteException
 import com.kioschool.kioschoolapi.workspace.exception.NoPermissionToJoinWorkspaceException
+import com.kioschool.kioschoolapi.workspace.exception.WorkspaceInaccessibleException
 import com.kioschool.kioschoolapi.workspace.repository.WorkspaceRepository
 import org.springframework.stereotype.Service
 
@@ -65,9 +66,18 @@ class WorkspaceService(
         return workspaceRepository.findById(workspaceId).get()
     }
 
+    fun getWorkspace(username: String, workspaceId: Long): Workspace {
+        if (!isAccessible(username, workspaceId)) throw WorkspaceInaccessibleException()
+        return getWorkspace(workspaceId)
+    }
+
     fun isAccessible(username: String, workspace: Workspace): Boolean {
         val user = userService.getUser(username)
         return workspace.members.any { it.user.loginId == username } || user.role == UserRole.SUPER_ADMIN
+    }
+
+    fun isAccessible(username: String, workspaceId: Long): Boolean {
+        return isAccessible(username, getWorkspace(workspaceId))
     }
 
     fun inviteWorkspace(hostUserName: String, workspaceId: Long, userLoginId: String): Workspace {

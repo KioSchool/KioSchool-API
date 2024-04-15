@@ -34,8 +34,19 @@ class ProductService(
         )
     }
 
+    fun getAllProductsByCondition(username: String, workspaceId: Long): List<Product> {
+        checkAccessible(username, workspaceId)
+        return getAllProductsByCondition(workspaceId)
+    }
+
     fun getProduct(productId: Long): Product {
         return productRepository.findById(productId).orElseThrow()
+    }
+
+    fun getProduct(username: String, productId: Long): Product {
+        val product = getProduct(productId)
+        checkAccessible(username, product.workspace.id)
+        return product
     }
 
     fun createProduct(
@@ -48,11 +59,7 @@ class ProductService(
         file: MultipartFile?
     ): Product {
         val workspace = workspaceService.getWorkspace(workspaceId)
-        if (!workspaceService.isAccessible(
-                username,
-                workspace
-            )
-        ) throw WorkspaceInaccessibleException()
+        checkAccessible(username, workspaceId)
 
         val product = productRepository.save(
             Product(
@@ -82,12 +89,7 @@ class ProductService(
         productCategoryId: Long?,
         file: MultipartFile?
     ): Product {
-        val workspace = workspaceService.getWorkspace(workspaceId)
-        if (!workspaceService.isAccessible(
-                username,
-                workspace
-            )
-        ) throw WorkspaceInaccessibleException()
+        checkAccessible(username, workspaceId)
 
         val product = productRepository.findById(productId).orElseThrow()
 
@@ -118,6 +120,11 @@ class ProductService(
         return productCategoryRepository.findAllByWorkspaceIdOrderByIndexAsc(workspaceId)
     }
 
+    fun getAllProductCategories(username: String, workspaceId: Long): List<ProductCategory> {
+        checkAccessible(username, workspaceId)
+        return getAllProductCategories(workspaceId)
+    }
+
     private fun getImageUrl(workspaceId: Long, productId: Long, file: MultipartFile?): String? {
         val date = System.currentTimeMillis()
         val path = "$productPath/workspace$workspaceId/product${productId}/${date.hashCode()}.jpg"
@@ -126,11 +133,7 @@ class ProductService(
 
     fun createProductCategory(username: String, workspaceId: Long, name: String): ProductCategory {
         val workspace = workspaceService.getWorkspace(workspaceId)
-        if (!workspaceService.isAccessible(
-                username,
-                workspace
-            )
-        ) throw WorkspaceInaccessibleException()
+        checkAccessible(username, workspaceId)
 
         return productCategoryRepository.save(
             ProductCategory(
@@ -146,12 +149,7 @@ class ProductService(
         workspaceId: Long,
         productCategoryId: Long
     ): ProductCategory {
-        val workspace = workspaceService.getWorkspace(workspaceId)
-        if (!workspaceService.isAccessible(
-                username,
-                workspace
-            )
-        ) throw WorkspaceInaccessibleException()
+        checkAccessible(username, workspaceId)
 
         if (!isDeletableProductCategory(
                 workspaceId,
@@ -173,12 +171,7 @@ class ProductService(
 
     @Transactional
     fun deleteProduct(username: String, workspaceId: Long, productId: Long): Product {
-        val workspace = workspaceService.getWorkspace(workspaceId)
-        if (!workspaceService.isAccessible(
-                username,
-                workspace
-            )
-        ) throw WorkspaceInaccessibleException()
+        checkAccessible(username, workspaceId)
 
         val product = productRepository.findById(productId).orElseThrow()
         productRepository.delete(product)
@@ -191,12 +184,7 @@ class ProductService(
         productId: Long,
         sellable: Boolean
     ): Product {
-        val workspace = workspaceService.getWorkspace(workspaceId)
-        if (!workspaceService.isAccessible(
-                username,
-                workspace
-            )
-        ) throw WorkspaceInaccessibleException()
+        checkAccessible(username, workspaceId)
 
         val product = productRepository.findById(productId).orElseThrow()
         product.isSellable = sellable
@@ -208,17 +196,18 @@ class ProductService(
         workspaceId: Long,
         productCategoryIds: List<Long>
     ): List<ProductCategory> {
-        val workspace = workspaceService.getWorkspace(workspaceId)
-        if (!workspaceService.isAccessible(
-                username,
-                workspace
-            )
-        ) throw WorkspaceInaccessibleException()
+        checkAccessible(username, workspaceId)
 
         val productCategories = productCategoryRepository.findAllById(productCategoryIds)
         productCategories.forEachIndexed { index, productCategory ->
             productCategory.index = index
         }
         return productCategoryRepository.saveAll(productCategories)
+    }
+
+    private fun checkAccessible(username: String, workspaceId: Long) {
+        if (!workspaceService.isAccessible(username, workspaceId)) {
+            throw WorkspaceInaccessibleException()
+        }
     }
 }

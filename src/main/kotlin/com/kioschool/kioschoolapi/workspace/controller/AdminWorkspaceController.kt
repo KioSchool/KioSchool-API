@@ -18,12 +18,21 @@ import org.springframework.web.bind.annotation.*
 class AdminWorkspaceController(
     private val workspaceService: WorkspaceService,
 ) {
-
     @Operation(summary = "워크스페이스 조회", description = "가입한 모든 워크스페이스를 조회합니다.")
     @GetMapping("/workspaces")
     fun getWorkspaces(authentication: Authentication): List<Workspace> {
         val username = (authentication.principal as CustomUserDetails).username
         return workspaceService.getWorkspaces(username)
+    }
+
+    @Operation(summary = "워크스페이스 조회", description = "워크스페이스를 조회합니다.")
+    @GetMapping("/workspace")
+    fun getWorkspace(
+        authentication: Authentication,
+        @RequestParam workspaceId: Long
+    ): Workspace {
+        val username = (authentication.principal as CustomUserDetails).username
+        return workspaceService.getWorkspace(username, workspaceId)
     }
 
     @Operation(summary = "워크스페이스 생성", description = "워크스페이스를 생성합니다.")
