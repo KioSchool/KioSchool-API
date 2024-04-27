@@ -56,7 +56,7 @@ class ProductServiceTest : DescribeSpec({
             every {
                 workspaceService.isAccessible(
                     "username",
-                    SampleEntity.workspace
+                    SampleEntity.workspace.id
                 )
             } returns true
 
@@ -159,7 +159,7 @@ class ProductServiceTest : DescribeSpec({
                 every {
                     workspaceService.isAccessible(
                         "username",
-                        SampleEntity.workspace
+                        SampleEntity.workspace.id
                     )
                 } returns false
 
@@ -182,7 +182,7 @@ class ProductServiceTest : DescribeSpec({
                 every {
                     workspaceService.isAccessible(
                         "username",
-                        SampleEntity.workspace
+                        SampleEntity.workspace.id
                     )
                 } returns true
                 every { categoryRepository.findById(1L) } returns Optional.of(
@@ -218,7 +218,7 @@ class ProductServiceTest : DescribeSpec({
             every {
                 workspaceService.isAccessible(
                     "username",
-                    SampleEntity.workspace
+                    SampleEntity.workspace.id
                 )
             } returns true
 
@@ -262,7 +262,7 @@ class ProductServiceTest : DescribeSpec({
             every {
                 workspaceService.isAccessible(
                     "username",
-                    SampleEntity.workspace
+                    SampleEntity.workspace.id
                 )
             } returns true
 
@@ -284,7 +284,7 @@ class ProductServiceTest : DescribeSpec({
                 every {
                     workspaceService.isAccessible(
                         "username",
-                        SampleEntity.workspace
+                        SampleEntity.workspace.id
                     )
                 } returns false
 
@@ -311,7 +311,7 @@ class ProductServiceTest : DescribeSpec({
             every {
                 workspaceService.isAccessible(
                     "username",
-                    SampleEntity.workspace
+                    SampleEntity.workspace.id
                 )
             } returns true
 
@@ -342,7 +342,7 @@ class ProductServiceTest : DescribeSpec({
                 every {
                     workspaceService.isAccessible(
                         "username",
-                        SampleEntity.workspace
+                        SampleEntity.workspace.id
                     )
                 } returns false
 
@@ -361,7 +361,7 @@ class ProductServiceTest : DescribeSpec({
                 every {
                     workspaceService.isAccessible(
                         "username",
-                        SampleEntity.workspace
+                        SampleEntity.workspace.id
                     )
                 } returns true
                 every {
@@ -392,7 +392,7 @@ class ProductServiceTest : DescribeSpec({
             every {
                 workspaceService.isAccessible(
                     "username",
-                    SampleEntity.workspace
+                    SampleEntity.workspace.id
                 )
             } returns true
 
@@ -414,7 +414,7 @@ class ProductServiceTest : DescribeSpec({
                 every {
                     workspaceService.isAccessible(
                         "username",
-                        SampleEntity.workspace
+                        SampleEntity.workspace.id
                     )
                 } returns false
 
