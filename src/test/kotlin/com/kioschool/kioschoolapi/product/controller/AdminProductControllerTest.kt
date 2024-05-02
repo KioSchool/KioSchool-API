@@ -22,24 +22,27 @@ class AdminProductControllerTest : DescribeSpec({
 
     describe("getProducts") {
         it("should return all products") {
-            every { service.getAllProductsByCondition(1L) } returns listOf()
-            val result = sut.getProducts(workspaceId)
+            val authentication = SecurityContextHolder.getContext().authentication
+            every { service.getAllProductsByCondition("test", 1L) } returns listOf()
+            val result = sut.getProducts(authentication, workspaceId)
             result shouldBe emptyList()
         }
     }
 
     describe("getProduct") {
         it("should return product") {
-            every { service.getProduct(1L) } returns SampleEntity.product
-            val result = sut.getProduct(1L)
+            val authentication = SecurityContextHolder.getContext().authentication
+            every { service.getProduct("test", 1L) } returns SampleEntity.product
+            val result = sut.getProduct(authentication, 1L)
             result shouldBe SampleEntity.product
         }
     }
 
     describe("getProductCategories") {
         it("should return all product categories") {
-            every { service.getAllProductCategories(1L) } returns listOf()
-            val result = sut.getProductCategories(workspaceId)
+            val authentication = SecurityContextHolder.getContext().authentication
+            every { service.getAllProductCategories("test", 1L) } returns listOf()
+            val result = sut.getProductCategories(authentication, workspaceId)
             result shouldBe emptyList()
         }
     }
