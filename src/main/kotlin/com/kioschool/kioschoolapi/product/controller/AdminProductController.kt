@@ -1,9 +1,6 @@
 package com.kioschool.kioschoolapi.product.controller
 
-import com.kioschool.kioschoolapi.product.dto.CreateProductCategoryRequestBody
-import com.kioschool.kioschoolapi.product.dto.CreateProductRequestBody
-import com.kioschool.kioschoolapi.product.dto.UpdateProductRequestBody
-import com.kioschool.kioschoolapi.product.dto.UpdateProductSellableRequestBody
+import com.kioschool.kioschoolapi.product.dto.*
 import com.kioschool.kioschoolapi.product.entity.Product
 import com.kioschool.kioschoolapi.product.entity.ProductCategory
 import com.kioschool.kioschoolapi.product.service.ProductService
@@ -144,10 +141,13 @@ class AdminProductController(
     @PostMapping("/product-categories/sort")
     fun sortProductCategories(
         authentication: Authentication,
-        @RequestParam workspaceId: Long,
-        @RequestBody productCategoryIds: List<Long>
+        @RequestBody body: SortProductCategoriesRequestBody
     ): List<ProductCategory> {
         val username = (authentication.principal as CustomUserDetails).username
-        return productService.sortProductCategories(username, workspaceId, productCategoryIds)
+        return productService.sortProductCategories(
+            username,
+            body.workspaceId,
+            body.productCategoryIds
+        )
     }
 }
