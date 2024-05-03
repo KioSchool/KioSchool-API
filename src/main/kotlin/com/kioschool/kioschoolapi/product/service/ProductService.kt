@@ -199,8 +199,9 @@ class ProductService(
         checkAccessible(username, workspaceId)
 
         val productCategories = productCategoryRepository.findAllById(productCategoryIds)
-        productCategories.forEachIndexed { index, productCategory ->
-            productCategory.index = index
+        val productCategoryMap = productCategories.associateBy { it.id }
+        productCategoryIds.forEachIndexed { index, productCategoryId ->
+            productCategoryMap[productCategoryId]!!.index = index
         }
         return productCategoryRepository.saveAll(productCategories)
     }
