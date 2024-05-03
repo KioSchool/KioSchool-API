@@ -29,7 +29,6 @@ class Workspace(
     val products: MutableList<Product> = mutableListOf(),
     @OneToMany(
         mappedBy = "workspace",
-        cascade = [CascadeType.ALL],
         orphanRemoval = true,
         fetch = FetchType.EAGER
     )
