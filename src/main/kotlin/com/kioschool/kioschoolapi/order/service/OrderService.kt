@@ -5,6 +5,7 @@ import com.kioschool.kioschoolapi.order.dto.OrderProductRequestBody
 import com.kioschool.kioschoolapi.order.entity.Order
 import com.kioschool.kioschoolapi.order.entity.OrderProduct
 import com.kioschool.kioschoolapi.order.repository.CustomOrderRepository
+import com.kioschool.kioschoolapi.order.repository.OrderProductRepository
 import com.kioschool.kioschoolapi.order.repository.OrderRepository
 import com.kioschool.kioschoolapi.product.service.ProductService
 import com.kioschool.kioschoolapi.websocket.dto.Message
@@ -23,7 +24,8 @@ class OrderService(
     private val workspaceService: WorkspaceService,
     private val productService: ProductService,
     private val websocketService: WebsocketService,
-    private val customOrderRepository: CustomOrderRepository
+    private val customOrderRepository: CustomOrderRepository,
+    private val orderProductRepository: OrderProductRepository
 ) {
     fun getAllOrders(username: String, workspaceId: Long): List<Order> {
         val workspace = workspaceService.getWorkspace(workspaceId)
@@ -134,5 +136,24 @@ class OrderService(
 
         return customOrderRepository.findAllByCondition(workspaceId, startDate, endDate, null)
 
+    }
+
+    fun serveOrderProduct(
+        username: String,
+        workspaceId: Long,
+        orderProductId: Long,
+        isServed: Boolean
+    ): OrderProduct {
+        checkAccessible(username, workspaceId)
+
+        val orderProduct = orderProductRepository.findById(orderProductId).orElseThrow()
+        orderProduct.isServed = isServed
+        return orderProductRepository.save(orderProduct)
+    }
+
+    private fun checkAccessible(username: String, workspaceId: Long) {
+        if (!workspaceService.isAccessible(username, workspaceId)) {
+            throw WorkspaceInaccessibleException()
+        }
     }
 }

@@ -2,8 +2,10 @@ package com.kioschool.kioschoolapi.order.controller
 
 import com.kioschool.kioschoolapi.order.dto.CancelOrderRequestBody
 import com.kioschool.kioschoolapi.order.dto.PayOrderRequestBody
+import com.kioschool.kioschoolapi.order.dto.ServeOrderProductRequestBody
 import com.kioschool.kioschoolapi.order.dto.ServeOrderRequestBody
 import com.kioschool.kioschoolapi.order.entity.Order
+import com.kioschool.kioschoolapi.order.entity.OrderProduct
 import com.kioschool.kioschoolapi.order.service.OrderService
 import com.kioschool.kioschoolapi.security.CustomUserDetails
 import io.swagger.v3.oas.annotations.Operation
@@ -75,5 +77,20 @@ class AdminOrderController(
     ): Order {
         val username = (authentication.principal as CustomUserDetails).username
         return orderService.payOrder(username, body.workspaceId, body.orderId)
+    }
+
+    @Operation(summary = "주문 별 상품 서빙 완료", description = "주문 별 상품의 서빙 상태를 변경합니다.")
+    @PostMapping("/order/product")
+    fun serveOrderProduct(
+        authentication: Authentication,
+        @RequestBody body: ServeOrderProductRequestBody
+    ): OrderProduct {
+        val username = (authentication.principal as CustomUserDetails).username
+        return orderService.serveOrderProduct(
+            username,
+            body.workspaceId,
+            body.orderProductId,
+            body.isServed
+        )
     }
 }
