@@ -152,6 +152,19 @@ class OrderService(
         return orderProductRepository.save(orderProduct)
     }
 
+    fun changeOrderStatus(
+        username: String,
+        workspaceId: Long,
+        orderId: Long,
+        status: String
+    ): Order {
+        checkAccessible(username, workspaceId)
+
+        val order = orderRepository.findById(orderId).orElseThrow()
+        order.status = OrderStatus.valueOf(status)
+        return orderRepository.save(order)
+    }
+
     private fun checkAccessible(username: String, workspaceId: Long) {
         if (!workspaceService.isAccessible(username, workspaceId)) {
             throw WorkspaceInaccessibleException()
