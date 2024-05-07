@@ -8,11 +8,11 @@ import java.util.*
 
 @SpringBootApplication
 @EnableJpaAuditing
-class KioSchoolApiApplication
-
-@PostConstruct
-fun started() {
-    TimeZone.setDefault(TimeZone.getTimeZone("Asia/Seoul"))
+class KioSchoolApiApplication {
+    @PostConstruct
+    fun started() {
+        TimeZone.setDefault(TimeZone.getTimeZone("Asia/Seoul"))
+    }
 }
 
 fun main(args: Array<String>) {
