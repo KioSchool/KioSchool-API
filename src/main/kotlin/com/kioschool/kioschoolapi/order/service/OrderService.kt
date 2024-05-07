@@ -79,6 +79,7 @@ class OrderService(
 
         val order = orderRepository.findById(orderId).get()
         order.status = OrderStatus.SERVED
+        order.orderProducts.forEach { it.isServed = true }
         return orderRepository.save(order)
     }
 
