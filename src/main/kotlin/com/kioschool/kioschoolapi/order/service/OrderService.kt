@@ -79,6 +79,7 @@ class OrderService(
 
         val order = orderRepository.findById(orderId).get()
         order.status = OrderStatus.SERVED
+        order.orderProducts.forEach { it.isServed = true }
         return orderRepository.save(order)
     }
 
@@ -131,7 +132,7 @@ class OrderService(
         val workspace = workspaceService.getWorkspace(workspaceId)
         if (workspace.owner.loginId != username) throw WorkspaceInaccessibleException()
 
-        val startDate = LocalDateTime.now().minusHours(12)
+        val startDate = LocalDateTime.now().minusHours(2)
         val endDate = LocalDateTime.now()
 
         return customOrderRepository.findAllByCondition(workspaceId, startDate, endDate, null)
@@ -149,6 +150,19 @@ class OrderService(
         val orderProduct = orderProductRepository.findById(orderProductId).orElseThrow()
         orderProduct.isServed = isServed
         return orderProductRepository.save(orderProduct)
+    }
+
+    fun changeOrderStatus(
+        username: String,
+        workspaceId: Long,
+        orderId: Long,
+        status: String
+    ): Order {
+        checkAccessible(username, workspaceId)
+
+        val order = orderRepository.findById(orderId).orElseThrow()
+        order.status = OrderStatus.valueOf(status)
+        return orderRepository.save(order)
     }
 
     private fun checkAccessible(username: String, workspaceId: Long) {

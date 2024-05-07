@@ -21,6 +21,7 @@ class CustomOrderRepository(
         val order = QOrder.order
         val query = queryFactory.selectFrom(order)
             .where(order.workspace.id.eq(workspaceId))
+            .orderBy(order.createdAt.asc())
 
         if (startDate != null) query.where(order.createdAt.goe(startDate))
         if (endDate != null) query.where(order.createdAt.loe(endDate))

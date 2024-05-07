@@ -1,9 +1,6 @@
 package com.kioschool.kioschoolapi.order.controller
 
-import com.kioschool.kioschoolapi.order.dto.CancelOrderRequestBody
-import com.kioschool.kioschoolapi.order.dto.PayOrderRequestBody
-import com.kioschool.kioschoolapi.order.dto.ServeOrderProductRequestBody
-import com.kioschool.kioschoolapi.order.dto.ServeOrderRequestBody
+import com.kioschool.kioschoolapi.order.dto.*
 import com.kioschool.kioschoolapi.order.entity.Order
 import com.kioschool.kioschoolapi.order.entity.OrderProduct
 import com.kioschool.kioschoolapi.order.service.OrderService
@@ -49,36 +46,16 @@ class AdminOrderController(
         return orderService.getRealtimeOrders(username, workspaceId)
     }
 
-    @Operation(summary = "주문 취소", description = "주문 상태를 취소로 변경합니다.")
-    @PostMapping("/order/cancel")
-    fun cancelOrder(
+    @Operation(summary = "주문 상태 변경", description = "주문을 상태를 변경합니다.")
+    @PostMapping("/order/status")
+    fun changeOrderStatus(
         authentication: Authentication,
-        @RequestBody body: CancelOrderRequestBody
+        @RequestBody body: ChangeOrderStatusRequestBody
     ): Order {
         val username = (authentication.principal as CustomUserDetails).username
-        return orderService.cancelOrder(username, body.workspaceId, body.orderId)
+        return orderService.changeOrderStatus(username, body.workspaceId, body.orderId, body.status)
     }
-
-    @Operation(summary = "주문 완료", description = "주문 상태를 완료로 변경합니다.")
-    @PostMapping("/order/serve")
-    fun serveOrder(
-        authentication: Authentication,
-        @RequestBody body: ServeOrderRequestBody
-    ): Order {
-        val username = (authentication.principal as CustomUserDetails).username
-        return orderService.serveOrder(username, body.workspaceId, body.orderId)
-    }
-
-    @Operation(summary = "주문 결제 완료", description = "주문 상태를 결제 완료로 변경합니다.")
-    @PostMapping("/order/pay")
-    fun payOrder(
-        authentication: Authentication,
-        @RequestBody body: PayOrderRequestBody
-    ): Order {
-        val username = (authentication.principal as CustomUserDetails).username
-        return orderService.payOrder(username, body.workspaceId, body.orderId)
-    }
-
+    
     @Operation(summary = "주문 별 상품 서빙 완료", description = "주문 별 상품의 서빙 상태를 변경합니다.")
     @PostMapping("/order/product")
     fun serveOrderProduct(

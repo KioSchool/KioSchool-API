@@ -15,6 +15,7 @@ class Order(
     val tableNumber: Int,
     val customerName: String,
     @OneToMany(mappedBy = "order", cascade = [CascadeType.ALL])
+    @OrderBy("id")
     val orderProducts: MutableList<OrderProduct> = mutableListOf(),
     var totalPrice: Int = 0,
     var status: OrderStatus = OrderStatus.NOT_PAID,
