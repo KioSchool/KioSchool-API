@@ -132,7 +132,7 @@ class OrderService(
         val workspace = workspaceService.getWorkspace(workspaceId)
         if (workspace.owner.loginId != username) throw WorkspaceInaccessibleException()
 
-        val startDate = LocalDateTime.now().minusHours(12)
+        val startDate = LocalDateTime.now().minusHours(2)
         val endDate = LocalDateTime.now()
 
         return customOrderRepository.findAllByCondition(workspaceId, startDate, endDate, null)
