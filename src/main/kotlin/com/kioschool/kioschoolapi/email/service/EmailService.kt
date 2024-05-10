@@ -117,4 +117,9 @@ class EmailService(
         emailCode.code = code
         emailCodeRepository.save(emailCode)
     }
+
+    @Transactional
+    fun deleteResetPasswordCode(email: String) {
+        emailCodeRepository.deleteByEmailAndKind(email, EmailKind.RESET_PASSWORD)
+    }
 }
