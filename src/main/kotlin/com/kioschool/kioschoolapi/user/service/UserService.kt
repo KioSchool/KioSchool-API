@@ -117,5 +117,6 @@ class UserService(
         val user = userRepository.findByEmail(email) ?: throw UserNotFoundException()
         user.loginPassword = passwordEncoder.encode(password)
         userRepository.save(user)
+        emailService.deleteResetPasswordCode(code)
     }
 }
