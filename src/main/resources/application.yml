@@ -55,6 +55,8 @@ server:
     session:
       cookie:
         same-site: none
+  error:
+    include-message: always
 portone:
   api-key: "${PORTONE_API_KEY}"
   api-secret: "${PORTONE_API_SECRET}"
