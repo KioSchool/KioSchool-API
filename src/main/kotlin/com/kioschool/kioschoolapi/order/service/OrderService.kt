@@ -99,8 +99,7 @@ class OrderService(
         endDate: String?,
         status: String?
     ): List<Order> {
-        val workspace = workspaceService.getWorkspace(workspaceId)
-        if (workspace.owner.loginId != username) throw WorkspaceInaccessibleException()
+        checkAccessible(username, workspaceId)
 
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
         val parsedStartDate = startDate?.let { LocalDate.parse(it, formatter).atStartOfDay() }
@@ -116,8 +115,7 @@ class OrderService(
     }
 
     fun payOrder(username: String, workspaceId: Long, orderId: Long): Order {
-        val workspace = workspaceService.getWorkspace(workspaceId)
-        if (workspace.owner.loginId != username) throw WorkspaceInaccessibleException()
+        checkAccessible(username, workspaceId)
 
         val order = orderRepository.findById(orderId).get()
         order.status = OrderStatus.PAID
@@ -129,8 +127,7 @@ class OrderService(
     }
 
     fun getRealtimeOrders(username: String, workspaceId: Long): List<Order> {
-        val workspace = workspaceService.getWorkspace(workspaceId)
-        if (workspace.owner.loginId != username) throw WorkspaceInaccessibleException()
+        checkAccessible(username, workspaceId)
 
         val startDate = LocalDateTime.now().minusHours(2)
         val endDate = LocalDateTime.now()
