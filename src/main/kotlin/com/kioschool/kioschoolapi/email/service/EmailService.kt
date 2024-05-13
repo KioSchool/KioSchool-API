@@ -119,7 +119,9 @@ class EmailService(
     }
 
     @Transactional
-    fun deleteResetPasswordCode(email: String) {
-        emailCodeRepository.deleteByEmailAndKind(email, EmailKind.RESET_PASSWORD)
+    fun deleteResetPasswordCode(code: String) {
+        val emailCode =
+            emailCodeRepository.findByCodeAndKind(code, EmailKind.RESET_PASSWORD) ?: return
+        emailCodeRepository.delete(emailCode)
     }
 }
