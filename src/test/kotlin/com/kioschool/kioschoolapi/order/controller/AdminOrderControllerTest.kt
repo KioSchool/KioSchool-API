@@ -2,9 +2,7 @@ package com.kioschool.kioschoolapi.order.controller
 
 import com.kioschool.kioschoolapi.factory.AuthenticationSample
 import com.kioschool.kioschoolapi.factory.SampleEntity
-import com.kioschool.kioschoolapi.order.dto.CancelOrderRequestBody
-import com.kioschool.kioschoolapi.order.dto.PayOrderRequestBody
-import com.kioschool.kioschoolapi.order.dto.ServeOrderRequestBody
+import com.kioschool.kioschoolapi.order.dto.ChangeOrderStatusRequestBody
 import com.kioschool.kioschoolapi.order.service.OrderService
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
@@ -37,66 +35,24 @@ class AdminOrderControllerTest : DescribeSpec({
         }
     }
 
-    describe("cancelOrder") {
-        it("should call orderService.cancelOrder") {
+    describe("changeOrderStatus") {
+        it("should call orderService.changeOrderStatus") {
             val authentication = SecurityContextHolder.getContext().authentication
             every {
-                service.cancelOrder(
+                service.changeOrderStatus(
                     "test",
                     workspaceId,
-                    1
+                    1,
+                    "status"
                 )
             } returns SampleEntity.order
 
-            val result = sut.cancelOrder(
+            val result = sut.changeOrderStatus(
                 authentication,
-                CancelOrderRequestBody(
+                ChangeOrderStatusRequestBody(
                     workspaceId,
-                    1
-                )
-            )
-            result shouldBe SampleEntity.order
-        }
-    }
-
-    describe("serveOrder") {
-        it("should call orderService.serveOrder") {
-            val authentication = SecurityContextHolder.getContext().authentication
-            every {
-                service.serveOrder(
-                    "test",
-                    workspaceId,
-                    1
-                )
-            } returns SampleEntity.order
-
-            val result = sut.serveOrder(
-                authentication,
-                ServeOrderRequestBody(
-                    workspaceId,
-                    1
-                )
-            )
-            result shouldBe SampleEntity.order
-        }
-    }
-
-    describe("payOrder") {
-        it("should call orderService.payOrder") {
-            val authentication = SecurityContextHolder.getContext().authentication
-            every {
-                service.payOrder(
-                    "test",
-                    workspaceId,
-                    1
-                )
-            } returns SampleEntity.order
-
-            val result = sut.payOrder(
-                authentication,
-                PayOrderRequestBody(
-                    workspaceId,
-                    1
+                    1,
+                    "status"
                 )
             )
             result shouldBe SampleEntity.order
