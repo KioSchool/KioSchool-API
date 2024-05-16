@@ -159,7 +159,7 @@ class OrderService(
 
         val order = orderRepository.findById(orderId).orElseThrow()
         order.status = OrderStatus.valueOf(status)
-        return orderRepository.save(order)
+        return saveOrderAndSendWebsocketMessage(order)
     }
 
     private fun checkAccessible(username: String, workspaceId: Long) {
