@@ -92,6 +92,15 @@ class OrderService(
         return savedOrder
     }
 
+    private fun saveOrderProductAndSendWebsocketMessage(orderProduct: OrderProduct): OrderProduct {
+        val savedOrderProduct = orderProductRepository.save(orderProduct)
+        websocketService.sendMessage(
+            "/sub/order/${orderProduct.order.workspace.id}",
+            Message("CREATE", savedOrderProduct)
+        )
+        return savedOrderProduct
+    }
+
     fun getAllOrdersByCondition(
         username: String,
         workspaceId: Long,
@@ -146,7 +155,7 @@ class OrderService(
 
         val orderProduct = orderProductRepository.findById(orderProductId).orElseThrow()
         orderProduct.isServed = isServed
-        return orderProductRepository.save(orderProduct)
+        return saveOrderProductAndSendWebsocketMessage(orderProduct)
     }
 
     fun changeOrderStatus(
