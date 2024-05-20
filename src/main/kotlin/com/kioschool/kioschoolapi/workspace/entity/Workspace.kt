@@ -26,6 +26,7 @@ class Workspace(
         orphanRemoval = true,
         fetch = FetchType.EAGER
     )
+    @OrderBy("id")
     val products: MutableList<Product> = mutableListOf(),
     @OneToMany(
         mappedBy = "workspace",
