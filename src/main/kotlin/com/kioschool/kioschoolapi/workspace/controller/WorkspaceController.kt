@@ -18,4 +18,12 @@ class WorkspaceController(
     ): Workspace {
         return workspaceService.getWorkspace(workspaceId)
     }
+
+    @Operation(summary = "워크스페이스 관리자 계좌 정보 조회", description = "워크스페이스 관리자의 계좌 정보를 조회합니다.")
+    @GetMapping("/workspace/account")
+    fun getWorkspaceAccount(
+        @RequestParam workspaceId: Long
+    ): String {
+        return workspaceService.getWorkspaceAccount(workspaceId)
+    }
 }
