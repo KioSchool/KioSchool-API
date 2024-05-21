@@ -12,6 +12,7 @@ import com.kioschool.kioschoolapi.workspace.exception.NoPermissionToJoinWorkspac
 import com.kioschool.kioschoolapi.workspace.exception.WorkspaceInaccessibleException
 import com.kioschool.kioschoolapi.workspace.repository.WorkspaceRepository
 import org.springframework.stereotype.Service
+import java.net.URLDecoder
 
 @Service
 class WorkspaceService(
@@ -100,5 +101,22 @@ class WorkspaceService(
 
         workspace.members.removeIf { it.user == user }
         return workspaceRepository.save(workspace)
+    }
+
+    fun getWorkspaceAccount(workspaceId: Long): String {
+        val workspace = getWorkspace(workspaceId)
+        val accountUrl = workspace.owner.accountUrl ?: ""
+
+        val bankRegex = "bank=([^&]+)"
+        val accountNoRegex = "accountNo=([^&]+)"
+
+        val bankMatcher = Regex(bankRegex).find(accountUrl)
+        val bank = bankMatcher?.groupValues?.get(1) ?: ""
+        val decodedBank = URLDecoder.decode(bank, "UTF-8")
+
+        val accountNoMatcher = Regex(accountNoRegex).find(accountUrl)
+        val accountNo = accountNoMatcher?.groupValues?.get(1) ?: ""
+
+        return "$decodedBank $accountNo"
     }
 }
