@@ -2,7 +2,6 @@ package com.kioschool.kioschoolapi.order.entity
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.kioschool.kioschoolapi.common.entity.BaseEntity
-import com.kioschool.kioschoolapi.product.entity.Product
 import jakarta.persistence.Entity
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
@@ -13,8 +12,7 @@ class OrderProduct(
     @ManyToOne
     @JsonIgnore
     val order: Order,
-    @ManyToOne
-    val product: Product,
+    val productId: Long,
     val productName: String,
     val productPrice: Int,
     var quantity: Int,
