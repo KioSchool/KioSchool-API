@@ -46,7 +46,7 @@ class OrderService(
             val product = productMap[it.productId]!!
             OrderProduct(
                 order = order,
-                product = product,
+                productId = product.id,
                 productName = product.name,
                 productPrice = product.price,
                 quantity = it.quantity,
