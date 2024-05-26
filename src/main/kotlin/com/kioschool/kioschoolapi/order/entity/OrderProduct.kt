@@ -15,6 +15,8 @@ class OrderProduct(
     val order: Order,
     @ManyToOne
     val product: Product,
+    val productName: String,
+    val productPrice: Int,
     var quantity: Int,
     var isServed: Boolean = false,
     var totalPrice: Int = 0

@@ -27,13 +27,6 @@ class OrderService(
     private val customOrderRepository: CustomOrderRepository,
     private val orderProductRepository: OrderProductRepository
 ) {
-    fun getAllOrders(username: String, workspaceId: Long): List<Order> {
-        val workspace = workspaceService.getWorkspace(workspaceId)
-        if (workspace.owner.loginId != username) throw WorkspaceInaccessibleException()
-
-        return orderRepository.findAllByWorkspaceId(workspaceId)
-    }
-
     fun createOrder(
         workspaceId: Long,
         tableNumber: Int,
@@ -54,6 +47,8 @@ class OrderService(
             OrderProduct(
                 order = order,
                 product = product,
+                productName = product.name,
+                productPrice = product.price,
                 quantity = it.quantity,
                 totalPrice = product.price * it.quantity
             )
@@ -62,25 +57,6 @@ class OrderService(
         order.orderProducts.addAll(orderProducts)
         order.totalPrice = orderProducts.sumOf { it.totalPrice }
         return saveOrderAndSendWebsocketMessage(order)
-    }
-
-    fun cancelOrder(username: String, workspaceId: Long, orderId: Long): Order {
-        val workspace = workspaceService.getWorkspace(workspaceId)
-        if (workspace.owner.loginId != username) throw WorkspaceInaccessibleException()
-
-        val order = orderRepository.findById(orderId).get()
-        order.status = OrderStatus.CANCELLED
-        return orderRepository.save(order)
-    }
-
-    fun serveOrder(username: String, workspaceId: Long, orderId: Long): Order {
-        val workspace = workspaceService.getWorkspace(workspaceId)
-        if (workspace.owner.loginId != username) throw WorkspaceInaccessibleException()
-
-        val order = orderRepository.findById(orderId).get()
-        order.status = OrderStatus.SERVED
-        order.orderProducts.forEach { it.isServed = true }
-        return orderRepository.save(order)
     }
 
     private fun saveOrderAndSendWebsocketMessage(order: Order): Order {
@@ -121,14 +97,6 @@ class OrderService(
             parsedEndDate,
             parsedStatus
         )
-    }
-
-    fun payOrder(username: String, workspaceId: Long, orderId: Long): Order {
-        checkAccessible(username, workspaceId)
-
-        val order = orderRepository.findById(orderId).get()
-        order.status = OrderStatus.PAID
-        return orderRepository.save(order)
     }
 
     fun getOrder(orderId: Long): Order {
