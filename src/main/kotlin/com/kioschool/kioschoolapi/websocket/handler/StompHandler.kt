@@ -39,9 +39,7 @@ class StompHandler(
 
     fun isAccessible(token: String, accessor: StompHeaderAccessor): Boolean {
         val username = jwtProvider.getLoginId(token)
-        val workspace = workspaceService.getWorkspace(
-            accessor.destination!!.filter { it.isDigit() }.toLong()
-        )
-        return workspaceService.isAccessible(username, workspace)
+        val workspaceId = accessor.destination!!.filter { it.isDigit() }.toLong()
+        return workspaceService.isAccessible(username, workspaceId)
     }
 }
