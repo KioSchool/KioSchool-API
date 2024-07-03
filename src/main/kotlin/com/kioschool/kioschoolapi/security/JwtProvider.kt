@@ -20,7 +20,7 @@ class JwtProvider(
     private val userDetailService: CustomUserDetailService
 ) {
     private val secretKey = Keys.hmacShaKeyFor(salt.toByteArray(StandardCharset.UTF_8))
-    private val expirationTime = 1000L * 60 * 60 * 24 * 7
+    private val expirationTime = 1000L * 60 * 60 * 24
 
     fun createToken(user: User): String {
         val claims = Jwts.claims().setSubject(user.loginId)
