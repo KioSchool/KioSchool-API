@@ -23,11 +23,11 @@ class JwtProvider(
     private val expirationTime = 1000L * 60 * 60 * 24
 
     fun createToken(user: User): String {
-        val claims = Jwts.claims().setSubject(user.loginId)
         val now = Date()
+        val claims = Jwts.claims().setSubject(user.loginId)
         claims["roles"] = listOf(user.role.name)
         return Jwts.builder()
-            .setIssuedAt(Date())
+            .setIssuedAt(now)
             .setClaims(claims)
             .setExpiration(Date(now.time + expirationTime))
             .signWith(secretKey, SignatureAlgorithm.HS256)
@@ -42,13 +42,14 @@ class JwtProvider(
         return rawToken.replace("Bearer ", "")
     }
 
-    fun validateToken(token: String): Boolean {
+    fun isValidToken(token: String): Boolean {
         return try {
+            val now = Date()
             val claims = Jwts.parserBuilder()
                 .setSigningKey(secretKey)
                 .build()
                 .parseClaimsJws(token)
-            return claims.body.expiration.after(Date())
+            return claims.body.expiration.after(now)
         } catch (e: Exception) {
             false
         }
