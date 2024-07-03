@@ -28,8 +28,9 @@ class UserController(
         @Valid @RequestBody body: LoginRequestBody,
         response: HttpServletResponse
     ): ResponseEntity<String> {
+        val token = userService.login(body.id, body.password)
         val authCookie =
-            ResponseCookie.from("Authorization", userService.login(body.id, body.password))
+            ResponseCookie.from("Authorization", token)
                 .httpOnly(true)
                 .secure(true)
                 .path("/")
@@ -65,10 +66,8 @@ class UserController(
         @Valid @RequestBody body: RegisterRequestBody,
         response: HttpServletResponse
     ): ResponseEntity<String> {
-        val cookie = ResponseCookie.from(
-            "Authorization",
-            userService.register(body.id, body.password, body.name, body.email)
-        )
+        val token = userService.register(body.id, body.password, body.name, body.email)
+        val cookie = ResponseCookie.from("Authorization", token)
             .httpOnly(true)
             .secure(true)
             .path("/")
