@@ -14,25 +14,32 @@ class JwtAuthenticationFilter(
         response: HttpServletResponse,
         filterChain: FilterChain
     ) {
-        val token = jwtProvider.resolveToken(request)
-
-        if (request.method == "OPTIONS") {
-            response.setHeader(
-                "Access-Control-Allow-Origin",
-                request.getHeader("Origin")
-            )
-            response.setHeader("Access-Control-Allow-Credentials", "true")
-            response.setHeader("Access-Control-Allow-Headers", "content-type, Authorization")
-            response.setHeader("Access-Control-Allow-Methods", "POST, GET, PUT, DELETE, OPTIONS")
-            response.status = HttpServletResponse.SC_OK
+        if (request.isPreflight()) {
+            allowCors(request, response)
             return
         }
 
-        if (token != null && jwtProvider.validateToken(token)) {
+        val token = jwtProvider.resolveToken(request)
+        if (token != null && jwtProvider.isValidToken(token)) {
             val authentication = jwtProvider.getAuthentication(token)
             SecurityContextHolder.getContext().authentication = authentication
         }
 
         filterChain.doFilter(request, response)
+    }
+
+    private fun HttpServletRequest.isPreflight(): Boolean {
+        return method == "OPTIONS"
+    }
+
+    private fun allowCors(request: HttpServletRequest, response: HttpServletResponse) {
+        response.setHeader(
+            "Access-Control-Allow-Origin",
+            request.getHeader("Origin")
+        )
+        response.setHeader("Access-Control-Allow-Credentials", "true")
+        response.setHeader("Access-Control-Allow-Headers", "content-type, Authorization")
+        response.setHeader("Access-Control-Allow-Methods", "POST, GET, PUT, DELETE, OPTIONS")
+        response.status = HttpServletResponse.SC_OK
     }
 }
