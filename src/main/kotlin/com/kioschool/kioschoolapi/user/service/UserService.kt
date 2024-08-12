@@ -10,6 +10,8 @@ import com.kioschool.kioschoolapi.user.exception.NoPermissionException
 import com.kioschool.kioschoolapi.user.exception.RegisterException
 import com.kioschool.kioschoolapi.user.exception.UserNotFoundException
 import com.kioschool.kioschoolapi.user.repository.UserRepository
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageRequest
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 
@@ -64,6 +66,10 @@ class UserService(
 
     fun getUser(loginId: String): User {
         return userRepository.findByLoginId(loginId) ?: throw LoginFailedException()
+    }
+
+    fun getAllUsers(page: Int, size: Int): Page<User> {
+        return userRepository.findAll(PageRequest.of(page, size))
     }
 
     fun isSuperAdminUser(username: String): Boolean {
