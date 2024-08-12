@@ -66,6 +66,10 @@ class UserService(
         return userRepository.findByLoginId(loginId) ?: throw LoginFailedException()
     }
 
+    fun isSuperAdminUser(username: String): Boolean {
+        return getUser(username).role == UserRole.SUPER_ADMIN
+    }
+
     fun createSuperUser(username: String, id: String): User {
         val superAdminUser = getUser(username)
         if (superAdminUser.role != UserRole.SUPER_ADMIN) throw NoPermissionException()

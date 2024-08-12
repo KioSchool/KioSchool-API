@@ -11,6 +11,8 @@ import com.kioschool.kioschoolapi.workspace.exception.NoPermissionToInviteExcept
 import com.kioschool.kioschoolapi.workspace.exception.NoPermissionToJoinWorkspaceException
 import com.kioschool.kioschoolapi.workspace.exception.WorkspaceInaccessibleException
 import com.kioschool.kioschoolapi.workspace.repository.WorkspaceRepository
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import java.net.URLDecoder
 
@@ -20,6 +22,10 @@ class WorkspaceService(
     private val userService: UserService,
     private val discordService: DiscordService
 ) {
+    fun getAllWorkspaces(page: Int, size: Int): Page<Workspace> {
+        return workspaceRepository.findAll(PageRequest.of(page, size))
+    }
+
     fun getWorkspaces(username: String): List<Workspace> {
         val user = userService.getUser(username)
         return user.getWorkspaces()
