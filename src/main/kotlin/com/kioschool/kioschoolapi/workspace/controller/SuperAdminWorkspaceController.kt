@@ -25,12 +25,13 @@ class SuperAdminWorkspaceController(
     @GetMapping("/workspaces")
     fun getWorkspaces(
         authentication: Authentication,
+        @RequestParam(required = false) name: String?,
         @RequestParam page: Int,
         @RequestParam size: Int
     ): Page<Workspace> {
         val username = (authentication.principal as CustomUserDetails).username
         if (!userService.isSuperAdminUser(username)) throw NoPermissionException()
 
-        return workspaceService.getAllWorkspaces(page, size)
+        return workspaceService.getAllWorkspaces(name, page, size)
     }
 }

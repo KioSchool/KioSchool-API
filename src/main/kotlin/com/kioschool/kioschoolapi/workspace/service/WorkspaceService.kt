@@ -22,7 +22,13 @@ class WorkspaceService(
     private val userService: UserService,
     private val discordService: DiscordService
 ) {
-    fun getAllWorkspaces(page: Int, size: Int): Page<Workspace> {
+    fun getAllWorkspaces(name: String?, page: Int, size: Int): Page<Workspace> {
+        if (name != null)
+            return workspaceRepository.findByNameContains(
+                name,
+                PageRequest.of(page, size)
+            )
+
         return workspaceRepository.findAll(PageRequest.of(page, size))
     }
 
