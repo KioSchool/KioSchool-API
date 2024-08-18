@@ -2,6 +2,7 @@ package com.kioschool.kioschoolapi.workspace.service
 
 import com.kioschool.kioschoolapi.common.enums.UserRole
 import com.kioschool.kioschoolapi.discord.DiscordService
+import com.kioschool.kioschoolapi.user.entity.User
 import com.kioschool.kioschoolapi.user.service.UserService
 import com.kioschool.kioschoolapi.workspace.entity.Workspace
 import com.kioschool.kioschoolapi.workspace.entity.WorkspaceInvitation
@@ -39,8 +40,19 @@ class WorkspaceService(
 
     fun createWorkspace(username: String, name: String, description: String): Workspace {
         val user = userService.getUser(username)
-        if (user.accountUrl == null) throw NoPermissionToCreateWorkspaceException()
+        checkCanCreateWorkspace(user)
 
+        val workspace = saveNewWorkspace(user, name, description)
+        discordService.sendWorkspaceCreate(workspace)
+
+        return workspace
+    }
+
+    private fun checkCanCreateWorkspace(user: User) {
+        if (user.accountUrl == null) throw NoPermissionToCreateWorkspaceException()
+    }
+
+    private fun saveNewWorkspace(user: User, name: String, description: String): Workspace {
         val workspace = workspaceRepository.save(
             Workspace(
                 name = name,
@@ -54,25 +66,30 @@ class WorkspaceService(
         )
 
         workspace.members.add(workspaceMember)
-        workspaceRepository.save(workspace)
-        discordService.sendWorkspaceCreate(workspace)
-
-        return workspace
+        return workspaceRepository.save(workspace)
     }
 
     fun joinWorkspace(username: String, workspaceId: Long): Workspace {
         val user = userService.getUser(username)
-        val workspace = workspaceRepository.findById(workspaceId).get()
-        if (workspace.invitations.removeIf { it.user == user }) throw NoPermissionToJoinWorkspaceException()
+        val workspace = getWorkspace(workspaceId)
 
+        checkCanJoinWorkspace(user, workspace)
+        addUserToWorkspace(workspace, user)
+
+        return workspace
+    }
+
+    private fun checkCanJoinWorkspace(user: User, workspace: Workspace) {
+        if (workspace.invitations.none { it.user == user }) throw NoPermissionToJoinWorkspaceException()
+    }
+
+    private fun addUserToWorkspace(workspace: Workspace, user: User) {
         val workspaceMember = WorkspaceMember(
             workspace = workspace,
             user = user
         )
         workspace.members.add(workspaceMember)
         workspaceRepository.save(workspace)
-
-        return workspace
     }
 
     fun getWorkspace(workspaceId: Long): Workspace {
@@ -95,10 +112,18 @@ class WorkspaceService(
 
     fun inviteWorkspace(hostUserName: String, workspaceId: Long, userLoginId: String): Workspace {
         val hostUser = userService.getUser(hostUserName)
-        val workspace = workspaceRepository.findById(workspaceId).get()
-        if (hostUser != workspace.owner) throw NoPermissionToInviteException()
+        val workspace = getWorkspace(workspaceId)
+        checkCanInviteWorkspace(hostUser, workspace)
 
         val user = userService.getUser(userLoginId)
+        return inviteUserToWorkspace(workspace, user)
+    }
+
+    private fun checkCanInviteWorkspace(user: User, workspace: Workspace) {
+        if (workspace.owner != user) throw NoPermissionToInviteException()
+    }
+
+    private fun inviteUserToWorkspace(workspace: Workspace, user: User): Workspace {
         val workspaceInvitation = WorkspaceInvitation(
             workspace = workspace,
             user = user
@@ -109,8 +134,12 @@ class WorkspaceService(
 
     fun leaveWorkspace(username: String, workspaceId: Long): Workspace {
         val user = userService.getUser(username)
-        val workspace = workspaceRepository.findById(workspaceId).get()
+        val workspace = getWorkspace(workspaceId)
 
+        return removeUserFromWorkspace(workspace, user)
+    }
+
+    private fun removeUserFromWorkspace(workspace: Workspace, user: User): Workspace {
         workspace.members.removeIf { it.user == user }
         return workspaceRepository.save(workspace)
     }
@@ -119,16 +148,22 @@ class WorkspaceService(
         val workspace = getWorkspace(workspaceId)
         val accountUrl = workspace.owner.accountUrl ?: ""
 
-        val bankRegex = "bank=([^&]+)"
-        val accountNoRegex = "accountNo=([^&]+)"
-
-        val bankMatcher = Regex(bankRegex).find(accountUrl)
-        val bank = bankMatcher?.groupValues?.get(1) ?: ""
-        val decodedBank = URLDecoder.decode(bank, "UTF-8")
-
-        val accountNoMatcher = Regex(accountNoRegex).find(accountUrl)
-        val accountNo = accountNoMatcher?.groupValues?.get(1) ?: ""
+        val decodedBank = extractDecodedBank(accountUrl)
+        val accountNo = extractAccountNo(accountUrl)
 
         return "$decodedBank $accountNo"
+    }
+
+    private fun extractDecodedBank(accountUrl: String): String {
+        val bankRegex = "bank=([^&]+)"
+        val bankMatcher = Regex(bankRegex).find(accountUrl)
+        val bank = bankMatcher?.groupValues?.get(1) ?: ""
+        return URLDecoder.decode(bank, "UTF-8")
+    }
+
+    private fun extractAccountNo(accountUrl: String): String {
+        val accountNoRegex = "accountNo=([^&]+)"
+        val accountNoMatcher = Regex(accountNoRegex).find(accountUrl)
+        return accountNoMatcher?.groupValues?.get(1) ?: ""
     }
 }
