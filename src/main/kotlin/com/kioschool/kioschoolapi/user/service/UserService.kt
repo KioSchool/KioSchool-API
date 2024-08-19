@@ -25,20 +25,22 @@ class UserService(
 ) {
     fun login(loginId: String, loginPassword: String): String {
         val user = getUser(loginId)
+        checkPassword(user, loginPassword)
 
+        return jwtProvider.createToken(user)
+    }
+
+    fun checkPassword(user: User, loginPassword: String) {
         if (!passwordEncoder.matches(
                 loginPassword,
                 user.loginPassword
             )
         ) throw LoginFailedException()
-
-        return jwtProvider.createToken(user)
     }
 
     fun register(loginId: String, loginPassword: String, name: String, email: String): String {
-        if (isDuplicateLoginId(loginId)) throw RegisterException("이미 사용하고 있는 아이디입니다.")
-        if (!emailService.isEmailVerified(email)) throw RegisterException("이메일 인증이 안된 이메일입니다.")
-        if (isDuplicateEmail(email)) throw RegisterException("이미 사용하고 있는 이메일입니다.")
+        validateLoginId(loginId)
+        validateEmail(email)
         emailService.deleteRegisterCode(email)
 
         val user = userRepository.save(
@@ -56,8 +58,25 @@ class UserService(
         return jwtProvider.createToken(user)
     }
 
+    fun validateLoginId(loginId: String) {
+        if (isDuplicateLoginId(loginId)) throw RegisterException("이미 사용하고 있는 아이디입니다.")
+    }
+
+    fun validateEmail(email: String) {
+        checkIsEmailVerified(email)
+        checkIsEmailDuplicate(email)
+    }
+
     fun isDuplicateLoginId(loginId: String): Boolean {
         return userRepository.findByLoginId(loginId) != null
+    }
+
+    fun checkIsEmailVerified(email: String) {
+        if (!emailService.isEmailVerified(email)) throw RegisterException("이메일 인증이 안된 이메일입니다.")
+    }
+
+    fun checkIsEmailDuplicate(email: String) {
+        if (isDuplicateEmail(email)) throw RegisterException("이미 사용하고 있는 이메일입니다.")
     }
 
     fun isDuplicateEmail(email: String): Boolean {
@@ -65,7 +84,7 @@ class UserService(
     }
 
     fun getUser(loginId: String): User {
-        return userRepository.findByLoginId(loginId) ?: throw LoginFailedException()
+        return userRepository.findByLoginId(loginId) ?: throw UserNotFoundException()
     }
 
     fun getAllUsers(page: Int, size: Int): Page<User> {
@@ -76,27 +95,39 @@ class UserService(
         return getUser(username).role == UserRole.SUPER_ADMIN
     }
 
-    fun createSuperUser(username: String, id: String): User {
+    fun createSuperAdminUser(username: String, id: String): User {
         val superAdminUser = getUser(username)
-        if (superAdminUser.role != UserRole.SUPER_ADMIN) throw NoPermissionException()
+        checkHasSuperAdminPermission(superAdminUser)
 
-        val user = userRepository.findByLoginId(id) ?: throw UserNotFoundException()
-        user.role = UserRole.ADMIN
+        val user = getUser(id)
+        user.role = UserRole.SUPER_ADMIN
         return userRepository.save(user)
+    }
+
+    fun checkHasSuperAdminPermission(user: User) {
+        if (user.role != UserRole.SUPER_ADMIN) throw NoPermissionException()
     }
 
     fun registerAccountUrl(username: String, accountUrl: String): User {
         val user = getUser(username)
-        user.accountUrl = accountUrl.replace(Regex("amount=\\d+&"), "")
+        user.accountUrl = removeAmountQueryFromAccountUrl(accountUrl)
 
         return userRepository.save(user)
     }
 
+    fun removeAmountQueryFromAccountUrl(accountUrl: String): String {
+        return accountUrl.replace(Regex("amount=\\d+&"), "")
+    }
+
     fun sendResetPasswordEmail(loginId: String, email: String) {
-        val user = userRepository.findByLoginId(loginId) ?: throw UserNotFoundException()
-        if (user.email != email) throw UserNotFoundException()
+        val user = getUser(loginId)
+        checkEmailAddress(user, email)
 
         emailService.sendResetPasswordEmail(email)
+    }
+
+    fun checkEmailAddress(user: User, email: String) {
+        if (user.email != email) throw UserNotFoundException()
     }
 
     fun deleteUser(username: String): User {

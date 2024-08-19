@@ -37,7 +37,7 @@ class AdminUserController(
         @RequestBody body: CreateSuperUserRequestBody
     ): User {
         val username = (authentication.principal as CustomUserDetails).username
-        return userService.createSuperUser(username, body.id)
+        return userService.createSuperAdminUser(username, body.id)
     }
 
     @Operation(summary = "토스 계좌 URL 등록", description = "토스 계좌 URL을 등록합니다.")
