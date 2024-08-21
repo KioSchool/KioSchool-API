@@ -12,6 +12,8 @@ import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
+import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.PageRequest
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
 
@@ -337,6 +339,18 @@ class UserServiceTest : DescribeSpec({
             } catch (e: Exception) {
                 e shouldBe UserNotFoundException()
             }
+        }
+    }
+
+    describe("getAllUsers") {
+        it("should return all users") {
+            val page = 0
+            val size = 10
+            val pageRequest = PageRequest.of(page, size)
+
+            every { repository.findAll(pageRequest) } returns PageImpl(listOf(SampleEntity.user))
+
+            sut.getAllUsers(page, size) shouldBe PageImpl(listOf(SampleEntity.user))
         }
     }
 })
