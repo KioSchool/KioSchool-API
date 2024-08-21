@@ -452,4 +452,12 @@ class UserServiceTest : DescribeSpec({
             sut.registerAccountUrl(username, accountUrl).accountUrl shouldBe accountUrl
         }
     }
+
+    describe("removeAmountQueryFromAccountUrl") {
+        it("should return account url without amount query") {
+            val accountUrl = "accountUrl?amount=1000&accountNo=1234"
+
+            sut.removeAmountQueryFromAccountUrl(accountUrl) shouldBe "accountUrl?accountNo=1234"
+        }
+    }
 })
