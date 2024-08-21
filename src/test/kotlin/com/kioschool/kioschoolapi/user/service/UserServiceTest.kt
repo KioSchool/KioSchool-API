@@ -200,4 +200,40 @@ class UserServiceTest : DescribeSpec({
             }
         }
     }
+
+    describe("validateEmail") {
+        it("should not throw exception when email is valid") {
+            val email = "email"
+
+            every { emailService.isEmailVerified(email) } returns true
+            every { repository.findByEmail(email) } returnsMany listOf(null)
+
+            sut.validateEmail(email)
+        }
+
+        it("should throw RegisterException when email is not verified") {
+            val email = "email"
+
+            every { emailService.isEmailVerified(email) } returns false
+
+            try {
+                sut.validateEmail(email)
+            } catch (e: Exception) {
+                e shouldBe RegisterException()
+            }
+        }
+
+        it("should throw RegisterException when email is duplicate") {
+            val email = "email"
+
+            every { emailService.isEmailVerified(email) } returns true
+            every { repository.findByEmail(email) } returnsMany listOf(SampleEntity.user)
+
+            try {
+                sut.validateEmail(email)
+            } catch (e: Exception) {
+                e shouldBe RegisterException()
+            }
+        }
+    }
 })
