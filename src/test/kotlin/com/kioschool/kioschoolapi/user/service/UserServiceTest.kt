@@ -111,3 +111,71 @@ class UserServiceTest : DescribeSpec({
         }
     }
 
+    describe("register") {
+        it("should return token when register success") {
+            val loginId = "newLoginId"
+            val loginPassword = "newLoginPassword"
+            val name = "newName"
+            val email = "newEmail"
+
+            every { repository.findByLoginId(loginId) } returnsMany listOf(null)
+            every { repository.findByEmail(email) } returnsMany listOf(null)
+            every { emailService.isEmailVerified(email) } returns true
+            every { emailService.deleteRegisterCode(email) } returns Unit
+            every { repository.save(any()) } returns SampleEntity.user
+            every { discordService.sendUserRegister(SampleEntity.user) } returns Unit
+            every { mockPasswordEncoder.encode(loginPassword) } returns loginPassword
+            every { jwtProvider.createToken(SampleEntity.user) } returns "token"
+
+            sut.register(loginId, loginPassword, name, email) shouldBe "token"
+        }
+
+        it("should throw RegisterException when loginId is duplicate") {
+            val loginId = "loginId"
+            val loginPassword = "loginPassword"
+            val name = "name"
+            val email = "email"
+
+            every { repository.findByLoginId(loginId) } returnsMany listOf(SampleEntity.user)
+
+            try {
+                sut.register(loginId, loginPassword, name, email)
+            } catch (e: Exception) {
+                e shouldBe RegisterException()
+            }
+        }
+
+        it("should throw RegisterException when email is not verified") {
+            val loginId = "loginId"
+            val loginPassword = "loginPassword"
+            val name = "name"
+            val email = "email"
+
+            every { repository.findByLoginId(loginId) } returnsMany listOf(null)
+            every { emailService.isEmailVerified(email) } returns false
+
+            try {
+                sut.register(loginId, loginPassword, name, email)
+            } catch (e: Exception) {
+                e shouldBe RegisterException()
+            }
+        }
+
+        it("should throw RegisterException when email is duplicate") {
+            val loginId = "loginId"
+            val loginPassword = "loginPassword"
+            val name = "name"
+            val email = "email"
+
+            every { repository.findByLoginId(loginId) } returnsMany listOf(null)
+            every { emailService.isEmailVerified(email) } returns false
+            every { repository.findByEmail(email) } returnsMany listOf(SampleEntity.user)
+
+            try {
+                sut.register(loginId, loginPassword, name, email)
+            } catch (e: Exception) {
+                e shouldBe RegisterException()
+            }
+        }
+    }
+})
