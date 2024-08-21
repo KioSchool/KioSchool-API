@@ -544,4 +544,47 @@ class UserServiceTest : DescribeSpec({
             }
         }
     }
+
+    describe("resetPassword") {
+        it("should reset password") {
+            val code = "code"
+            val password = "password"
+            val user = SampleEntity.user
+
+            every { emailService.getEmailByCode(code) } returns "email"
+            every { repository.findByEmail("email") } returns user
+            every { mockPasswordEncoder.encode(password) } returns password
+            every { repository.save(user) } returns user
+            every { emailService.deleteResetPasswordCode(code) } returns Unit
+
+            sut.resetPassword(code, password)
+        }
+
+        it("should throw UserNotFoundException when email is not exist") {
+            val code = "code"
+            val password = "password"
+
+            every { emailService.getEmailByCode(code) } returns null
+
+            try {
+                sut.resetPassword(code, password)
+            } catch (e: Exception) {
+                e shouldBe UserNotFoundException()
+            }
+        }
+
+        it("should throw UserNotFoundException when user is not exist") {
+            val code = "code"
+            val password = "password"
+
+            every { emailService.getEmailByCode(code) } returns "email"
+            every { repository.findByEmail("email") } returns null
+
+            try {
+                sut.resetPassword(code, password)
+            } catch (e: Exception) {
+                e shouldBe UserNotFoundException()
+            }
+        }
+    }
 })
