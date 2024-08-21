@@ -27,6 +27,7 @@ class UserServiceTest : DescribeSpec({
     val passwordEncoder = BCryptPasswordEncoder()
     val mockPasswordEncoder = mockk<PasswordEncoder>()
     val discordService = mockk<DiscordService>()
+    val mockService = mockk<UserService>()
     val sut =
         UserService(repository, jwtProvider, mockPasswordEncoder, emailService, discordService)
 
@@ -433,6 +434,22 @@ class UserServiceTest : DescribeSpec({
             } catch (e: Exception) {
                 e shouldBe NoPermissionException()
             }
+        }
+    }
+
+    describe("registerAccountUrl") {
+        it("should return user when register account url success") {
+            val user = SampleEntity.user
+            val username = user.loginId
+            val accountUrl = "accountUrl"
+
+            every { repository.findByLoginId(username) } returns user
+            every { repository.save(user) } returns user
+            every { mockService.removeAmountQueryFromAccountUrl(accountUrl) } returnsMany listOf(
+                accountUrl
+            )
+
+            sut.registerAccountUrl(username, accountUrl).accountUrl shouldBe accountUrl
         }
     }
 })
