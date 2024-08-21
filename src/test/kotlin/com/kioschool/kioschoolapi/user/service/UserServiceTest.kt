@@ -178,4 +178,26 @@ class UserServiceTest : DescribeSpec({
             }
         }
     }
+
+    describe("validateLoginId") {
+        it("should not throw exception when loginId is not duplicate") {
+            val loginId = "loginId"
+
+            every { repository.findByLoginId(loginId) } returnsMany listOf(null)
+
+            sut.validateLoginId(loginId)
+        }
+
+        it("should throw RegisterException when loginId is duplicate") {
+            val loginId = "loginId"
+
+            every { repository.findByLoginId(loginId) } returnsMany listOf(SampleEntity.user)
+
+            try {
+                sut.validateLoginId(loginId)
+            } catch (e: Exception) {
+                e shouldBe RegisterException()
+            }
+        }
+    }
 })
