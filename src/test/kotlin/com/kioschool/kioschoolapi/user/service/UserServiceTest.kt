@@ -236,4 +236,22 @@ class UserServiceTest : DescribeSpec({
             }
         }
     }
+
+    describe("isDuplicateLoginId") {
+        it("should return false when loginId is not duplicate") {
+            val loginId = "loginId"
+
+            every { repository.findByLoginId(loginId) } returnsMany listOf(null)
+
+            sut.isDuplicateLoginId(loginId) shouldBe false
+        }
+
+        it("should return true when loginId is duplicate") {
+            val loginId = "loginId"
+
+            every { repository.findByLoginId(loginId) } returnsMany listOf(SampleEntity.user)
+
+            sut.isDuplicateLoginId(loginId) shouldBe true
+        }
+    }
 })
