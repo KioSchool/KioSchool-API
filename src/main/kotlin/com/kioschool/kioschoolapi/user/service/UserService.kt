@@ -59,7 +59,7 @@ class UserService(
     }
 
     fun validateLoginId(loginId: String) {
-        if (isDuplicateLoginId(loginId)) throw RegisterException("이미 사용하고 있는 아이디입니다.")
+        if (isDuplicateLoginId(loginId)) throw RegisterException()
     }
 
     fun validateEmail(email: String) {
@@ -72,11 +72,11 @@ class UserService(
     }
 
     fun checkIsEmailVerified(email: String) {
-        if (!emailService.isEmailVerified(email)) throw RegisterException("이메일 인증이 안된 이메일입니다.")
+        if (!emailService.isEmailVerified(email)) throw RegisterException()
     }
 
     fun checkIsEmailDuplicate(email: String) {
-        if (isDuplicateEmail(email)) throw RegisterException("이미 사용하고 있는 이메일입니다.")
+        if (isDuplicateEmail(email)) throw RegisterException()
     }
 
     fun isDuplicateEmail(email: String): Boolean {
