@@ -276,4 +276,26 @@ class UserServiceTest : DescribeSpec({
             }
         }
     }
+
+    describe("checkIsEmailDuplicate") {
+        it("should not throw exception when email is not duplicate") {
+            val email = "email"
+
+            every { repository.findByEmail(email) } returnsMany listOf(null)
+
+            sut.checkIsEmailDuplicate(email)
+        }
+
+        it("should throw RegisterException when email is duplicate") {
+            val email = "email"
+
+            every { repository.findByEmail(email) } returnsMany listOf(SampleEntity.user)
+
+            try {
+                sut.checkIsEmailDuplicate(email)
+            } catch (e: Exception) {
+                e shouldBe RegisterException()
+            }
+        }
+    }
 })
