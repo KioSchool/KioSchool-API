@@ -460,4 +460,44 @@ class UserServiceTest : DescribeSpec({
             sut.removeAmountQueryFromAccountUrl(accountUrl) shouldBe "accountUrl?accountNo=1234"
         }
     }
+
+    describe("sendResetPasswordEmail") {
+        it("should send reset password email") {
+            val loginId = "loginId"
+            val user = SampleEntity.user
+            val email = user.email
+
+            every { repository.findByLoginId(loginId) } returns user
+            every { emailService.sendResetPasswordEmail(email) } returns Unit
+
+            sut.sendResetPasswordEmail(loginId, email)
+        }
+
+        it("should throw UserNotFoundException when email is different") {
+            val loginId = "loginId"
+            val user = SampleEntity.user
+            val email = "differentEmail"
+
+            every { repository.findByLoginId(loginId) } returns user
+
+            try {
+                sut.sendResetPasswordEmail(loginId, email)
+            } catch (e: Exception) {
+                e shouldBe UserNotFoundException()
+            }
+        }
+
+        it("should throw UserNotFoundException when user doesn't exist") {
+            val loginId = "loginId"
+            val email = "email"
+
+            every { repository.findByLoginId(loginId) } returns null
+
+            try {
+                sut.sendResetPasswordEmail(loginId, email)
+            } catch (e: Exception) {
+                e shouldBe UserNotFoundException()
+            }
+        }
+    }
 })
