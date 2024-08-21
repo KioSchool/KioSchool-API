@@ -254,4 +254,26 @@ class UserServiceTest : DescribeSpec({
             sut.isDuplicateLoginId(loginId) shouldBe true
         }
     }
+
+    describe("checkIsEmailVerified") {
+        it("should not throw exception when email is verified") {
+            val email = "email"
+
+            every { emailService.isEmailVerified(email) } returns true
+
+            sut.checkIsEmailVerified(email)
+        }
+
+        it("should throw RegisterException when email is not verified") {
+            val email = "email"
+
+            every { emailService.isEmailVerified(email) } returns false
+
+            try {
+                sut.checkIsEmailVerified(email)
+            } catch (e: Exception) {
+                e shouldBe RegisterException()
+            }
+        }
+    }
 })
