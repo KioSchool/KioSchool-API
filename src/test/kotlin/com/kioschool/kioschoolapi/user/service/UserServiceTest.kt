@@ -500,4 +500,48 @@ class UserServiceTest : DescribeSpec({
             }
         }
     }
+
+    describe("checkEmailAddress") {
+        it("should not throw exception when email is same") {
+            val user = SampleEntity.user
+            val email = user.email
+
+            sut.checkEmailAddress(user, email)
+        }
+
+        it("should throw UserNotFoundException when email is different") {
+            val user = SampleEntity.user
+            val email = "differentEmail"
+
+            try {
+                sut.checkEmailAddress(user, email)
+            } catch (e: Exception) {
+                e shouldBe UserNotFoundException()
+            }
+        }
+    }
+
+    describe("deleteUser") {
+        it("should return user when delete user success") {
+            val username = "username"
+            val user = SampleEntity.user
+
+            every { repository.findByLoginId(username) } returns user
+            every { repository.delete(user) } returns Unit
+
+            sut.deleteUser(username) shouldBe user
+        }
+
+        it("should throw UserNotFoundException when user doesn't exist") {
+            val username = "username"
+
+            every { repository.findByLoginId(username) } returns null
+
+            try {
+                sut.deleteUser(username)
+            } catch (e: Exception) {
+                e shouldBe UserNotFoundException()
+            }
+        }
+    }
 })
