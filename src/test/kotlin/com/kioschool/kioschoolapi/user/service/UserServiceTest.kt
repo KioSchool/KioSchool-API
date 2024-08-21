@@ -316,4 +316,27 @@ class UserServiceTest : DescribeSpec({
             sut.isDuplicateEmail(email) shouldBe true
         }
     }
+
+    describe("getUser") {
+        it("should return user when user exists") {
+            val loginId = "loginId"
+            val user = SampleEntity.user
+
+            every { repository.findByLoginId(loginId) } returns user
+
+            sut.getUser(loginId) shouldBe user
+        }
+
+        it("should throw UserNotFoundException when user doesn't exist") {
+            val loginId = "loginId"
+
+            every { repository.findByLoginId(loginId) } returns null
+
+            try {
+                sut.getUser(loginId)
+            } catch (e: Exception) {
+                e shouldBe UserNotFoundException()
+            }
+        }
+    }
 })
