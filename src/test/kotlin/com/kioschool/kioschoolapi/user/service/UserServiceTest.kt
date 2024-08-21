@@ -1,5 +1,6 @@
 package com.kioschool.kioschoolapi.user.service
 
+import com.kioschool.kioschoolapi.common.enums.UserRole
 import com.kioschool.kioschoolapi.discord.DiscordService
 import com.kioschool.kioschoolapi.email.service.EmailService
 import com.kioschool.kioschoolapi.factory.SampleEntity
@@ -351,6 +352,28 @@ class UserServiceTest : DescribeSpec({
             every { repository.findAll(pageRequest) } returns PageImpl(listOf(SampleEntity.user))
 
             sut.getAllUsers(page, size) shouldBe PageImpl(listOf(SampleEntity.user))
+        }
+    }
+
+    describe("isSuperAdminUser") {
+        it("should return true when user is super admin") {
+            val username = "username"
+            val user = SampleEntity.user
+            user.role = UserRole.SUPER_ADMIN
+
+            every { repository.findByLoginId(username) } returns user
+
+            sut.isSuperAdminUser(username) shouldBe true
+        }
+
+        it("should return false when user is not super admin") {
+            val username = "username"
+            val user = SampleEntity.user
+            user.role = UserRole.ADMIN
+
+            every { repository.findByLoginId(username) } returns user
+
+            sut.isSuperAdminUser(username) shouldBe false
         }
     }
 })
