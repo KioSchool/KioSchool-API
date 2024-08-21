@@ -415,4 +415,24 @@ class UserServiceTest : DescribeSpec({
             }
         }
     }
+
+    describe("checkHasSuperAdminPermission") {
+        it("should not throw exception when user is super admin") {
+            val user = SampleEntity.user
+            user.role = UserRole.SUPER_ADMIN
+
+            sut.checkHasSuperAdminPermission(user)
+        }
+
+        it("should throw NoPermissionException when user is not super admin") {
+            val user = SampleEntity.user
+            user.role = UserRole.ADMIN
+
+            try {
+                sut.checkHasSuperAdminPermission(user)
+            } catch (e: Exception) {
+                e shouldBe NoPermissionException()
+            }
+        }
+    }
 })
