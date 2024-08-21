@@ -76,3 +76,38 @@ class UserServiceTest : DescribeSpec({
         }
     }
 
+    describe("checkPassword") {
+        it("should not throw exception when password is same") {
+            val sampleUser = SampleEntity.user
+            val loginPassword = sampleUser.loginPassword
+            sampleUser.loginPassword = passwordEncoder.encode(loginPassword)
+
+            every {
+                mockPasswordEncoder.matches(
+                    loginPassword,
+                    sampleUser.loginPassword
+                )
+            } returns (passwordEncoder.matches(loginPassword, sampleUser.loginPassword))
+
+            sut.checkPassword(sampleUser, loginPassword)
+        }
+
+        it("should throw LoginFailedException when password is different") {
+            val sampleUser = SampleEntity.user
+            val loginPassword = "differentPassword"
+
+            every {
+                mockPasswordEncoder.matches(
+                    loginPassword,
+                    sampleUser.loginPassword
+                )
+            } returns (passwordEncoder.matches(loginPassword, sampleUser.loginPassword))
+
+            try {
+                sut.checkPassword(sampleUser, loginPassword)
+            } catch (e: Exception) {
+                e shouldBe LoginFailedException()
+            }
+        }
+    }
+
