@@ -5,7 +5,9 @@ import com.kioschool.kioschoolapi.discord.DiscordService
 import com.kioschool.kioschoolapi.email.service.EmailService
 import com.kioschool.kioschoolapi.factory.SampleEntity
 import com.kioschool.kioschoolapi.security.JwtProvider
+import com.kioschool.kioschoolapi.user.entity.User
 import com.kioschool.kioschoolapi.user.exception.LoginFailedException
+import com.kioschool.kioschoolapi.user.exception.NoPermissionException
 import com.kioschool.kioschoolapi.user.exception.RegisterException
 import com.kioschool.kioschoolapi.user.exception.UserNotFoundException
 import com.kioschool.kioschoolapi.user.repository.UserRepository
@@ -374,6 +376,43 @@ class UserServiceTest : DescribeSpec({
             every { repository.findByLoginId(username) } returns user
 
             sut.isSuperAdminUser(username) shouldBe false
+        }
+    }
+
+    describe("createSuperAdminUser") {
+        it("should return user when user is super admin") {
+            val username = "username"
+            val id = "id"
+            val superAdminUser = SampleEntity.user
+            superAdminUser.role = UserRole.SUPER_ADMIN
+
+            every { repository.findByLoginId(username) } returns superAdminUser
+            every { repository.findByLoginId(id) } returns User(
+                loginId = "test",
+                loginPassword = "test",
+                name = "test",
+                email = "test",
+                role = UserRole.ADMIN,
+                members = mutableListOf()
+            )
+            every { repository.save(any()) } returns SampleEntity.user
+
+            sut.createSuperAdminUser(username, id).role shouldBe UserRole.SUPER_ADMIN
+        }
+
+        it("should throw NoPermissionException when user is not super admin") {
+            val username = "username"
+            val id = "id"
+            val user = SampleEntity.user
+            user.role = UserRole.ADMIN
+
+            every { repository.findByLoginId(username) } returns user
+
+            try {
+                sut.createSuperAdminUser(username, id)
+            } catch (e: Exception) {
+                e shouldBe NoPermissionException()
+            }
         }
     }
 })
