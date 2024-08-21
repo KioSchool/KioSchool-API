@@ -298,4 +298,22 @@ class UserServiceTest : DescribeSpec({
             }
         }
     }
+
+    describe("isDuplicateEmail") {
+        it("should return false when email is not duplicate") {
+            val email = "email"
+
+            every { repository.findByEmail(email) } returnsMany listOf(null)
+
+            sut.isDuplicateEmail(email) shouldBe false
+        }
+
+        it("should return true when email is duplicate") {
+            val email = "email"
+
+            every { repository.findByEmail(email) } returnsMany listOf(SampleEntity.user)
+
+            sut.isDuplicateEmail(email) shouldBe true
+        }
+    }
 })
