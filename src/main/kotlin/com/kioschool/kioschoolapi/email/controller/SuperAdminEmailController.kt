@@ -31,8 +31,16 @@ class SuperAdminEmailController(
 
         return emailService.getAllEmailDomains(name, page, size)
     }
+
+    @Operation(summary = "이메일 도메인 등록", description = "키오스쿨에서 사용 가능하게끔 이메일 도메인을 등록합니다.")
+    @PostMapping("/email-domain")
+    fun registerEmailDomain(
+        authentication: Authentication,
+        @RequestParam domain: String
+    ): EmailDomain {
+        val username = (authentication.principal as CustomUserDetails).username
         if (!userService.isSuperAdminUser(username)) throw NoPermissionException()
 
-        emailService.registerEmailDomain(domain)
+        return emailService.registerEmailDomain(domain)
     }
 }

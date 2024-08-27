@@ -137,4 +137,8 @@ class EmailService(
 
         return emailDomainRepository.findAll(PageRequest.of(page, size))
     }
+
+    fun registerEmailDomain(domain: String): EmailDomain {
+        return emailDomainRepository.save(EmailDomain(domain))
+    }
 }
