@@ -43,4 +43,16 @@ class SuperAdminEmailController(
 
         return emailService.registerEmailDomain(domain)
     }
+
+    @Operation(summary = "이메일 도메인 삭제", description = "키오스쿨에 등록된 이메일 도메인을 삭제합니다.")
+    @DeleteMapping("/email-domain")
+    fun removeEmailDomain(
+        authentication: Authentication,
+        @RequestParam domainId: Long
+    ): EmailDomain {
+        val username = (authentication.principal as CustomUserDetails).username
+        if (!userService.isSuperAdminUser(username)) throw NoPermissionException()
+
+        return emailService.removeEmailDomain(domainId)
+    }
 }

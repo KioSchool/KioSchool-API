@@ -141,4 +141,10 @@ class EmailService(
     fun registerEmailDomain(domain: String): EmailDomain {
         return emailDomainRepository.save(EmailDomain(domain))
     }
+
+    fun removeEmailDomain(domainId: Long): EmailDomain {
+        val emailDomain = emailDomainRepository.findById(domainId).orElseThrow()
+        emailDomainRepository.delete(emailDomain)
+        return emailDomain
+    }
 }
