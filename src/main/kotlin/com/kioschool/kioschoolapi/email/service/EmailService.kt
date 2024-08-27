@@ -1,11 +1,14 @@
 package com.kioschool.kioschoolapi.email.service
 
 import com.kioschool.kioschoolapi.email.entity.EmailCode
+import com.kioschool.kioschoolapi.email.entity.EmailDomain
 import com.kioschool.kioschoolapi.email.enum.EmailKind
 import com.kioschool.kioschoolapi.email.exception.NotVerifiedEmailDomainException
 import com.kioschool.kioschoolapi.email.repository.EmailCodeRepository
 import com.kioschool.kioschoolapi.email.repository.EmailDomainRepository
 import jakarta.transaction.Transactional
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageRequest
 import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.mail.javamail.MimeMessageHelper
 import org.springframework.stereotype.Service
@@ -123,5 +126,15 @@ class EmailService(
         val emailCode =
             emailCodeRepository.findByCodeAndKind(code, EmailKind.RESET_PASSWORD) ?: return
         emailCodeRepository.delete(emailCode)
+    }
+
+    fun getAllEmailDomains(name: String?, page: Int, size: Int): Page<EmailDomain> {
+        if (name != null)
+            return emailDomainRepository.findByDomainContains(
+                name,
+                PageRequest.of(page, size)
+            )
+
+        return emailDomainRepository.findAll(PageRequest.of(page, size))
     }
 }
