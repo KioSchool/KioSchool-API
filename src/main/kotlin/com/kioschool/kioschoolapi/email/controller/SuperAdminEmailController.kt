@@ -1,5 +1,7 @@
 package com.kioschool.kioschoolapi.email.controller
 
+import com.kioschool.kioschoolapi.email.dto.RegisterEmailDomainRequestBody
+import com.kioschool.kioschoolapi.email.dto.RemoveEmailDomainRequestBody
 import com.kioschool.kioschoolapi.email.entity.EmailDomain
 import com.kioschool.kioschoolapi.email.service.EmailService
 import com.kioschool.kioschoolapi.security.CustomUserDetails
@@ -36,23 +38,23 @@ class SuperAdminEmailController(
     @PostMapping("/email-domain")
     fun registerEmailDomain(
         authentication: Authentication,
-        @RequestParam domain: String
+        @RequestBody body: RegisterEmailDomainRequestBody
     ): EmailDomain {
         val username = (authentication.principal as CustomUserDetails).username
         if (!userService.isSuperAdminUser(username)) throw NoPermissionException()
 
-        return emailService.registerEmailDomain(domain)
+        return emailService.registerEmailDomain(body.domain)
     }
 
     @Operation(summary = "이메일 도메인 삭제", description = "키오스쿨에 등록된 이메일 도메인을 삭제합니다.")
     @DeleteMapping("/email-domain")
     fun removeEmailDomain(
         authentication: Authentication,
-        @RequestParam domainId: Long
+        @RequestBody body: RemoveEmailDomainRequestBody
     ): EmailDomain {
         val username = (authentication.principal as CustomUserDetails).username
         if (!userService.isSuperAdminUser(username)) throw NoPermissionException()
 
-        return emailService.removeEmailDomain(domainId)
+        return emailService.removeEmailDomain(body.domainId)
     }
 }
