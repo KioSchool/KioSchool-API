@@ -19,9 +19,9 @@ import java.net.URLDecoder
 
 @Service
 class WorkspaceService(
-    private val workspaceRepository: WorkspaceRepository,
-    private val userService: UserService,
-    private val discordService: DiscordService
+    val workspaceRepository: WorkspaceRepository,
+    val userService: UserService,
+    val discordService: DiscordService
 ) {
     fun getAllWorkspaces(name: String?, page: Int, size: Int): Page<Workspace> {
         if (name != null)
@@ -48,11 +48,11 @@ class WorkspaceService(
         return workspace
     }
 
-    private fun checkCanCreateWorkspace(user: User) {
+    fun checkCanCreateWorkspace(user: User) {
         if (user.accountUrl == null) throw NoPermissionToCreateWorkspaceException()
     }
 
-    private fun saveNewWorkspace(user: User, name: String, description: String): Workspace {
+    fun saveNewWorkspace(user: User, name: String, description: String): Workspace {
         val workspace = workspaceRepository.save(
             Workspace(
                 name = name,
@@ -79,11 +79,11 @@ class WorkspaceService(
         return workspace
     }
 
-    private fun checkCanJoinWorkspace(user: User, workspace: Workspace) {
+    fun checkCanJoinWorkspace(user: User, workspace: Workspace) {
         if (workspace.invitations.none { it.user == user }) throw NoPermissionToJoinWorkspaceException()
     }
 
-    private fun addUserToWorkspace(workspace: Workspace, user: User) {
+    fun addUserToWorkspace(workspace: Workspace, user: User) {
         val workspaceMember = WorkspaceMember(
             workspace = workspace,
             user = user
@@ -119,11 +119,11 @@ class WorkspaceService(
         return inviteUserToWorkspace(workspace, user)
     }
 
-    private fun checkCanInviteWorkspace(user: User, workspace: Workspace) {
+    fun checkCanInviteWorkspace(user: User, workspace: Workspace) {
         if (workspace.owner != user) throw NoPermissionToInviteException()
     }
 
-    private fun inviteUserToWorkspace(workspace: Workspace, user: User): Workspace {
+    fun inviteUserToWorkspace(workspace: Workspace, user: User): Workspace {
         val workspaceInvitation = WorkspaceInvitation(
             workspace = workspace,
             user = user
@@ -139,7 +139,7 @@ class WorkspaceService(
         return removeUserFromWorkspace(workspace, user)
     }
 
-    private fun removeUserFromWorkspace(workspace: Workspace, user: User): Workspace {
+    fun removeUserFromWorkspace(workspace: Workspace, user: User): Workspace {
         workspace.members.removeIf { it.user == user }
         return workspaceRepository.save(workspace)
     }
@@ -154,14 +154,14 @@ class WorkspaceService(
         return "$decodedBank $accountNo"
     }
 
-    private fun extractDecodedBank(accountUrl: String): String {
+    fun extractDecodedBank(accountUrl: String): String {
         val bankRegex = "bank=([^&]+)"
         val bankMatcher = Regex(bankRegex).find(accountUrl)
         val bank = bankMatcher?.groupValues?.get(1) ?: ""
         return URLDecoder.decode(bank, "UTF-8")
     }
 
-    private fun extractAccountNo(accountUrl: String): String {
+    fun extractAccountNo(accountUrl: String): String {
         val accountNoRegex = "accountNo=([^&]+)"
         val accountNoMatcher = Regex(accountNoRegex).find(accountUrl)
         return accountNoMatcher?.groupValues?.get(1) ?: ""
