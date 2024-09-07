@@ -144,16 +144,6 @@ class WorkspaceService(
         return workspaceRepository.save(workspace)
     }
 
-    fun getWorkspaceAccount(workspaceId: Long): String {
-        val workspace = getWorkspace(workspaceId)
-        val accountUrl = workspace.owner.accountUrl ?: ""
-
-        val decodedBank = extractDecodedBank(accountUrl)
-        val accountNo = extractAccountNo(accountUrl)
-
-        return "$decodedBank $accountNo"
-    }
-
     fun extractDecodedBank(accountUrl: String): String {
         val bankRegex = "bank=([^&]+)"
         val bankMatcher = Regex(bankRegex).find(accountUrl)
