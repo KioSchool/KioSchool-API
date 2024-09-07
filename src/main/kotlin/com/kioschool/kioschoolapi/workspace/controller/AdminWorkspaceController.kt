@@ -31,8 +31,7 @@ class AdminWorkspaceController(
         @Username username: String,
         @RequestParam workspaceId: Long
     ): Workspace {
-        val result = workspaceService.getWorkspace(workspaceId)
-        return result
+        return workspaceService.getWorkspace(workspaceId)
     }
 
     @Operation(summary = "워크스페이스 생성", description = "워크스페이스를 생성합니다.")
