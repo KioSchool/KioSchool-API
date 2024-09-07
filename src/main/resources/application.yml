@@ -99,6 +99,6 @@ cloud:
     s3:
       default-path: local
 websocket:
-  allowed-origins: "*"
+  allowed-origins: "http://localhost:3000"
 discord:
   webhook-url: "${DISCORD_WEBHOOK_URL}"

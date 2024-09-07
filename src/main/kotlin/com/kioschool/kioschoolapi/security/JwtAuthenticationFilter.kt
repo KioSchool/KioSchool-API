@@ -7,17 +7,16 @@ import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.filter.OncePerRequestFilter
 
 class JwtAuthenticationFilter(
+    private val allowedOrigin: String,
     private val jwtProvider: JwtProvider
 ) : OncePerRequestFilter() {
+
     override fun doFilterInternal(
         request: HttpServletRequest,
         response: HttpServletResponse,
         filterChain: FilterChain
     ) {
-        if (request.isPreflight()) {
-            allowCors(request, response)
-            return
-        }
+        allowCors(request, response)
 
         val token = jwtProvider.resolveToken(request)
         if (token != null && jwtProvider.isValidToken(token)) {
@@ -28,14 +27,10 @@ class JwtAuthenticationFilter(
         filterChain.doFilter(request, response)
     }
 
-    private fun HttpServletRequest.isPreflight(): Boolean {
-        return method == "OPTIONS"
-    }
-
     private fun allowCors(request: HttpServletRequest, response: HttpServletResponse) {
         response.setHeader(
             "Access-Control-Allow-Origin",
-            request.getHeader("Origin")
+            allowedOrigin
         )
         response.setHeader("Access-Control-Allow-Credentials", "true")
         response.setHeader("Access-Control-Allow-Headers", "content-type, Authorization")
