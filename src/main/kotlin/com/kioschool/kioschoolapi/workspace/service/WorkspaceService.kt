@@ -12,6 +12,7 @@ import com.kioschool.kioschoolapi.workspace.exception.NoPermissionToInviteExcept
 import com.kioschool.kioschoolapi.workspace.exception.NoPermissionToJoinWorkspaceException
 import com.kioschool.kioschoolapi.workspace.exception.WorkspaceInaccessibleException
 import com.kioschool.kioschoolapi.workspace.repository.WorkspaceRepository
+import jakarta.transaction.Transactional
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
@@ -33,6 +34,7 @@ class WorkspaceService(
         return workspaceRepository.findAll(PageRequest.of(page, size))
     }
 
+    @Transactional
     fun getWorkspaces(username: String): List<Workspace> {
         val user = userService.getUser(username)
         return user.getWorkspaces()

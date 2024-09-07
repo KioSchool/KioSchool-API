@@ -1,5 +1,6 @@
 package com.kioschool.kioschoolapi.workspace.controller
 
+import com.kioschool.kioschoolapi.common.annotation.Username
 import com.kioschool.kioschoolapi.security.CustomUserDetails
 import com.kioschool.kioschoolapi.workspace.dto.CreateWorkspaceRequestBody
 import com.kioschool.kioschoolapi.workspace.dto.InviteWorkspaceRequestBody
@@ -20,19 +21,18 @@ class AdminWorkspaceController(
 ) {
     @Operation(summary = "워크스페이스 조회", description = "가입한 모든 워크스페이스를 조회합니다.")
     @GetMapping("/workspaces")
-    fun getWorkspaces(authentication: Authentication): List<Workspace> {
-        val username = (authentication.principal as CustomUserDetails).username
+    fun getWorkspaces(@Username username: String): List<Workspace> {
         return workspaceService.getWorkspaces(username)
     }
 
     @Operation(summary = "워크스페이스 조회", description = "워크스페이스를 조회합니다.")
     @GetMapping("/workspace")
     fun getWorkspace(
-        authentication: Authentication,
+        @Username username: String,
         @RequestParam workspaceId: Long
     ): Workspace {
-        val username = (authentication.principal as CustomUserDetails).username
-        return workspaceService.getWorkspace(username, workspaceId)
+        val result = workspaceService.getWorkspace(workspaceId)
+        return result
     }
 
     @Operation(summary = "워크스페이스 생성", description = "워크스페이스를 생성합니다.")

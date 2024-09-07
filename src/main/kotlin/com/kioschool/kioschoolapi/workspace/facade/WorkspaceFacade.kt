@@ -26,4 +26,8 @@ class WorkspaceFacade(
 
         return "$decodedBank $accountNo"
     }
+
+    fun getWorkspaces(username: String): List<Workspace> {
+        return workspaceService.getWorkspaces(username)
+    }
 }
