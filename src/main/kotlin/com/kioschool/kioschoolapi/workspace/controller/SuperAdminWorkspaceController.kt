@@ -1,7 +1,6 @@
 package com.kioschool.kioschoolapi.workspace.controller
 
-import com.kioschool.kioschoolapi.common.annotation.Username
-import com.kioschool.kioschoolapi.user.exception.NoPermissionException
+import com.kioschool.kioschoolapi.common.annotation.SuperAdmin
 import com.kioschool.kioschoolapi.user.service.UserService
 import com.kioschool.kioschoolapi.workspace.entity.Workspace
 import com.kioschool.kioschoolapi.workspace.service.WorkspaceService
@@ -23,13 +22,11 @@ class SuperAdminWorkspaceController(
     @Operation(summary = "워크스페이스 조회", description = "모든 워크스페이스를 조회합니다.")
     @GetMapping("/workspaces")
     fun getWorkspaces(
-        @Username username: String,
+        @SuperAdmin username: String,
         @RequestParam(required = false) name: String?,
         @RequestParam page: Int,
         @RequestParam size: Int
     ): Page<Workspace> {
-        if (!userService.isSuperAdminUser(username)) throw NoPermissionException()
-
         return workspaceService.getAllWorkspaces(name, page, size)
     }
 }
