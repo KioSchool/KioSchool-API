@@ -1,7 +1,6 @@
 package com.kioschool.kioschoolapi.workspace.controller
 
 import com.kioschool.kioschoolapi.common.annotation.SuperAdmin
-import com.kioschool.kioschoolapi.user.service.UserService
 import com.kioschool.kioschoolapi.workspace.entity.Workspace
 import com.kioschool.kioschoolapi.workspace.service.WorkspaceService
 import io.swagger.v3.oas.annotations.Operation
@@ -16,7 +15,6 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/super-admin")
 class SuperAdminWorkspaceController(
-    private val userService: UserService,
     private val workspaceService: WorkspaceService,
 ) {
     @Operation(summary = "워크스페이스 조회", description = "모든 워크스페이스를 조회합니다.")
