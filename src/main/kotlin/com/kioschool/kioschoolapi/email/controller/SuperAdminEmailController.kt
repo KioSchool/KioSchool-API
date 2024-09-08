@@ -43,7 +43,7 @@ class SuperAdminEmailController(
         val username = (authentication.principal as CustomUserDetails).username
         if (!userService.isSuperAdminUser(username)) throw NoPermissionException()
 
-        return emailService.registerEmailDomain(body.domain)
+        return emailService.registerEmailDomain(body.name, body.domain)
     }
 
     @Operation(summary = "이메일 도메인 삭제", description = "키오스쿨에 등록된 이메일 도메인을 삭제합니다.")
