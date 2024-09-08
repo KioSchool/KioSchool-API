@@ -16,6 +16,11 @@ class WorkspaceFacade(
         return workspaceService.getWorkspace(workspaceId)
     }
 
+    fun getWorkspaces(username: String): List<Workspace> {
+        val user = userService.getUser(username)
+        return user.getWorkspaces()
+    }
+
     fun getWorkspaceAccount(workspaceId: Long): String {
         val workspace = workspaceService.getWorkspace(workspaceId)
         val workspaceOwner = workspace.owner
@@ -27,7 +32,39 @@ class WorkspaceFacade(
         return "$decodedBank $accountNo"
     }
 
-    fun getWorkspaces(username: String): List<Workspace> {
-        return workspaceService.getWorkspaces(username)
+    fun createWorkspace(username: String, name: String, description: String): Workspace {
+        val user = userService.getUser(username)
+        workspaceService.checkCanCreateWorkspace(user)
+
+        val workspace = workspaceService.saveNewWorkspace(user, name, description)
+        discordService.sendWorkspaceCreate(workspace)
+
+        return workspace
+    }
+
+    fun inviteWorkspace(hostUserName: String, workspaceId: Long, userLoginId: String): Workspace {
+        val hostUser = userService.getUser(hostUserName)
+        val workspace = workspaceService.getWorkspace(workspaceId)
+        workspaceService.checkCanInviteWorkspace(hostUser, workspace)
+
+        val user = userService.getUser(userLoginId)
+        return workspaceService.inviteUserToWorkspace(workspace, user)
+    }
+
+    fun joinWorkspace(username: String, workspaceId: Long): Workspace {
+        val user = userService.getUser(username)
+        val workspace = workspaceService.getWorkspace(workspaceId)
+
+        workspaceService.checkCanJoinWorkspace(user, workspace)
+        workspaceService.addUserToWorkspace(workspace, user)
+
+        return workspace
+    }
+
+    fun leaveWorkspace(username: String, workspaceId: Long): Workspace {
+        val user = userService.getUser(username)
+        val workspace = workspaceService.getWorkspace(workspaceId)
+
+        return workspaceService.removeUserFromWorkspace(workspace, user)
     }
 }

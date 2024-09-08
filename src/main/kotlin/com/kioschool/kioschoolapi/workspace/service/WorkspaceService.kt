@@ -1,7 +1,6 @@
 package com.kioschool.kioschoolapi.workspace.service
 
 import com.kioschool.kioschoolapi.common.enums.UserRole
-import com.kioschool.kioschoolapi.discord.DiscordService
 import com.kioschool.kioschoolapi.user.entity.User
 import com.kioschool.kioschoolapi.user.service.UserService
 import com.kioschool.kioschoolapi.workspace.entity.Workspace
@@ -10,9 +9,7 @@ import com.kioschool.kioschoolapi.workspace.entity.WorkspaceMember
 import com.kioschool.kioschoolapi.workspace.exception.NoPermissionToCreateWorkspaceException
 import com.kioschool.kioschoolapi.workspace.exception.NoPermissionToInviteException
 import com.kioschool.kioschoolapi.workspace.exception.NoPermissionToJoinWorkspaceException
-import com.kioschool.kioschoolapi.workspace.exception.WorkspaceInaccessibleException
 import com.kioschool.kioschoolapi.workspace.repository.WorkspaceRepository
-import jakarta.transaction.Transactional
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
@@ -22,7 +19,6 @@ import java.net.URLDecoder
 class WorkspaceService(
     val workspaceRepository: WorkspaceRepository,
     val userService: UserService,
-    val discordService: DiscordService
 ) {
     fun getAllWorkspaces(name: String?, page: Int, size: Int): Page<Workspace> {
         if (name != null)
@@ -32,22 +28,6 @@ class WorkspaceService(
             )
 
         return workspaceRepository.findAll(PageRequest.of(page, size))
-    }
-
-    @Transactional
-    fun getWorkspaces(username: String): List<Workspace> {
-        val user = userService.getUser(username)
-        return user.getWorkspaces()
-    }
-
-    fun createWorkspace(username: String, name: String, description: String): Workspace {
-        val user = userService.getUser(username)
-        checkCanCreateWorkspace(user)
-
-        val workspace = saveNewWorkspace(user, name, description)
-        discordService.sendWorkspaceCreate(workspace)
-
-        return workspace
     }
 
     fun checkCanCreateWorkspace(user: User) {
@@ -71,16 +51,6 @@ class WorkspaceService(
         return workspaceRepository.save(workspace)
     }
 
-    fun joinWorkspace(username: String, workspaceId: Long): Workspace {
-        val user = userService.getUser(username)
-        val workspace = getWorkspace(workspaceId)
-
-        checkCanJoinWorkspace(user, workspace)
-        addUserToWorkspace(workspace, user)
-
-        return workspace
-    }
-
     fun checkCanJoinWorkspace(user: User, workspace: Workspace) {
         if (workspace.invitations.none { it.user == user }) throw NoPermissionToJoinWorkspaceException()
     }
@@ -98,11 +68,6 @@ class WorkspaceService(
         return workspaceRepository.findById(workspaceId).get()
     }
 
-    fun getWorkspace(username: String, workspaceId: Long): Workspace {
-        if (!isAccessible(username, workspaceId)) throw WorkspaceInaccessibleException()
-        return getWorkspace(workspaceId)
-    }
-
     fun isAccessible(username: String, workspace: Workspace): Boolean {
         val user = userService.getUser(username)
         return workspace.members.any { it.user.loginId == username } || user.role == UserRole.SUPER_ADMIN
@@ -110,15 +75,6 @@ class WorkspaceService(
 
     fun isAccessible(username: String, workspaceId: Long): Boolean {
         return isAccessible(username, getWorkspace(workspaceId))
-    }
-
-    fun inviteWorkspace(hostUserName: String, workspaceId: Long, userLoginId: String): Workspace {
-        val hostUser = userService.getUser(hostUserName)
-        val workspace = getWorkspace(workspaceId)
-        checkCanInviteWorkspace(hostUser, workspace)
-
-        val user = userService.getUser(userLoginId)
-        return inviteUserToWorkspace(workspace, user)
     }
 
     fun checkCanInviteWorkspace(user: User, workspace: Workspace) {
@@ -132,13 +88,6 @@ class WorkspaceService(
         )
         workspace.invitations.add(workspaceInvitation)
         return workspaceRepository.save(workspace)
-    }
-
-    fun leaveWorkspace(username: String, workspaceId: Long): Workspace {
-        val user = userService.getUser(username)
-        val workspace = getWorkspace(workspaceId)
-
-        return removeUserFromWorkspace(workspace, user)
     }
 
     fun removeUserFromWorkspace(workspace: Workspace, user: User): Workspace {
