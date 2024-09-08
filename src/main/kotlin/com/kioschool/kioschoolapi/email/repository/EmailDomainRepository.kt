@@ -7,5 +7,5 @@ import org.springframework.data.jpa.repository.JpaRepository
 
 interface EmailDomainRepository : JpaRepository<EmailDomain, Long> {
     fun findByDomain(domain: String): EmailDomain?
-    fun findByDomainContains(name: String, pageable: Pageable): Page<EmailDomain>
+    fun findByNameContains(name: String, pageable: Pageable): Page<EmailDomain>
 }
