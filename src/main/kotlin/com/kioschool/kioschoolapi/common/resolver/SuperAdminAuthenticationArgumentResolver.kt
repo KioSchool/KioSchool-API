@@ -1,6 +1,6 @@
 package com.kioschool.kioschoolapi.common.resolver
 
-import com.kioschool.kioschoolapi.common.annotation.Username
+import com.kioschool.kioschoolapi.common.annotation.SuperAdmin
 import com.kioschool.kioschoolapi.user.exception.NoPermissionException
 import com.kioschool.kioschoolapi.user.service.UserService
 import org.springframework.core.MethodParameter
@@ -15,7 +15,7 @@ class SuperAdminAuthenticationArgumentResolver(
     private val userService: UserService
 ) : HandlerMethodArgumentResolver {
     override fun supportsParameter(parameter: MethodParameter): Boolean {
-        return parameter.getParameterAnnotation(Username::class.java) != null &&
+        return parameter.getParameterAnnotation(SuperAdmin::class.java) != null &&
                 parameter.parameterType == String::class.java
     }
 
