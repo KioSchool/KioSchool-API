@@ -1,7 +1,6 @@
 package com.kioschool.kioschoolapi.order.service
 
 import com.kioschool.kioschoolapi.common.enums.OrderStatus
-import com.kioschool.kioschoolapi.order.dto.OrderProductRequestBody
 import com.kioschool.kioschoolapi.order.entity.Order
 import com.kioschool.kioschoolapi.order.entity.OrderProduct
 import com.kioschool.kioschoolapi.order.repository.CustomOrderRepository
@@ -27,39 +26,11 @@ class OrderService(
     private val customOrderRepository: CustomOrderRepository,
     private val orderProductRepository: OrderProductRepository
 ) {
-    fun createOrder(
-        workspaceId: Long,
-        tableNumber: Int,
-        customerName: String,
-        rawOrderProducts: List<OrderProductRequestBody>
-    ): Order {
-        val workspace = workspaceService.getWorkspace(workspaceId)
-        val order = orderRepository.save(
-            Order(
-                workspace = workspace,
-                tableNumber = tableNumber,
-                customerName = customerName
-            )
-        )
-        val productMap = productService.getAllProductsByCondition(workspaceId).associateBy { it.id }
-        val orderProducts = rawOrderProducts.filter { productMap.containsKey(it.productId) }.map {
-            val product = productMap[it.productId]!!
-            OrderProduct(
-                order = order,
-                productId = product.id,
-                productName = product.name,
-                productPrice = product.price,
-                quantity = it.quantity,
-                totalPrice = product.price * it.quantity
-            )
-        }
-
-        order.orderProducts.addAll(orderProducts)
-        order.totalPrice = orderProducts.sumOf { it.totalPrice }
-        return saveOrderAndSendWebsocketMessage(order)
+    fun saveOrder(order: Order): Order {
+        return orderRepository.save(order)
     }
 
-    private fun saveOrderAndSendWebsocketMessage(order: Order): Order {
+    fun saveOrderAndSendWebsocketMessage(order: Order): Order {
         val savedOrder = orderRepository.save(order)
         websocketService.sendMessage(
             "/sub/order/${order.workspace.id}",
