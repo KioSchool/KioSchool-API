@@ -12,10 +12,7 @@ import com.kioschool.kioschoolapi.websocket.service.WebsocketService
 import com.kioschool.kioschoolapi.workspace.exception.WorkspaceInaccessibleException
 import com.kioschool.kioschoolapi.workspace.service.WorkspaceService
 import org.springframework.stereotype.Service
-import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
 
 @Service
 class OrderService(
@@ -39,7 +36,7 @@ class OrderService(
         return savedOrder
     }
 
-    private fun saveOrderProductAndSendWebsocketMessage(orderProduct: OrderProduct): OrderProduct {
+    fun saveOrderProductAndSendWebsocketMessage(orderProduct: OrderProduct): OrderProduct {
         val savedOrderProduct = orderProductRepository.save(orderProduct)
         websocketService.sendMessage(
             "/sub/order/${orderProduct.order.workspace.id}",
@@ -49,24 +46,16 @@ class OrderService(
     }
 
     fun getAllOrdersByCondition(
-        username: String,
         workspaceId: Long,
-        startDate: String?,
-        endDate: String?,
-        status: String?
+        startDate: LocalDateTime?,
+        endDate: LocalDateTime?,
+        status: OrderStatus?
     ): List<Order> {
-        checkAccessible(username, workspaceId)
-
-        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-        val parsedStartDate = startDate?.let { LocalDate.parse(it, formatter).atStartOfDay() }
-        val parsedEndDate = endDate?.let { LocalDate.parse(it, formatter).atTime(LocalTime.MAX) }
-        val parsedStatus = status?.let { OrderStatus.valueOf(it) }
-
         return customOrderRepository.findAllByCondition(
             workspaceId,
-            parsedStartDate,
-            parsedEndDate,
-            parsedStatus
+            startDate,
+            endDate,
+            status
         )
     }
 
@@ -74,43 +63,11 @@ class OrderService(
         return orderRepository.findById(orderId).get()
     }
 
-    fun getRealtimeOrders(username: String, workspaceId: Long): List<Order> {
-        checkAccessible(username, workspaceId)
-
-        val startDate = LocalDateTime.now().minusHours(2)
-        val endDate = LocalDateTime.now()
-
-        return customOrderRepository.findAllByCondition(workspaceId, startDate, endDate, null)
-
+    fun getOrderProduct(orderProductId: Long): OrderProduct {
+        return orderProductRepository.findById(orderProductId).get()
     }
 
-    fun serveOrderProduct(
-        username: String,
-        workspaceId: Long,
-        orderProductId: Long,
-        isServed: Boolean
-    ): OrderProduct {
-        checkAccessible(username, workspaceId)
-
-        val orderProduct = orderProductRepository.findById(orderProductId).orElseThrow()
-        orderProduct.isServed = isServed
-        return saveOrderProductAndSendWebsocketMessage(orderProduct)
-    }
-
-    fun changeOrderStatus(
-        username: String,
-        workspaceId: Long,
-        orderId: Long,
-        status: String
-    ): Order {
-        checkAccessible(username, workspaceId)
-
-        val order = orderRepository.findById(orderId).orElseThrow()
-        order.status = OrderStatus.valueOf(status)
-        return saveOrderAndSendWebsocketMessage(order)
-    }
-
-    private fun checkAccessible(username: String, workspaceId: Long) {
+    fun checkAccessible(username: String, workspaceId: Long) {
         if (!workspaceService.isAccessible(username, workspaceId)) {
             throw WorkspaceInaccessibleException()
         }
