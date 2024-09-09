@@ -16,7 +16,10 @@ class JwtAuthenticationFilter(
         response: HttpServletResponse,
         filterChain: FilterChain
     ) {
-        allowCors(request, response)
+        if (request.isPreflight()) {
+            allowCors(request, response)
+            return
+        }
 
         val token = jwtProvider.resolveToken(request)
         if (token != null && jwtProvider.isValidToken(token)) {
@@ -25,6 +28,10 @@ class JwtAuthenticationFilter(
         }
 
         filterChain.doFilter(request, response)
+    }
+
+    private fun HttpServletRequest.isPreflight(): Boolean {
+        return method == "OPTIONS"
     }
 
     private fun allowCors(request: HttpServletRequest, response: HttpServletResponse) {
