@@ -1,6 +1,6 @@
 package com.kioschool.kioschoolapi.product.controller
 
-import com.kioschool.kioschoolapi.product.service.ProductService
+import com.kioschool.kioschoolapi.product.facade.ProductFacade
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.web.bind.annotation.GetMapping
@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController
 @Tag(name = "Product Controller")
 @RestController
 class ProductController(
-    private val productService: ProductService
+    private val productFacade: ProductFacade
 ) {
     @Operation(
         summary = "상품 조회",
@@ -20,7 +20,7 @@ class ProductController(
     fun getProducts(
         @RequestParam workspaceId: Long,
         @RequestParam categoryId: Long? = null
-    ) = productService.getAllProductsByCondition(workspaceId, categoryId)
+    ) = productFacade.getProducts(workspaceId, categoryId)
 
     @Operation(
         summary = "상품 카테고리 조회",
@@ -29,5 +29,5 @@ class ProductController(
     @GetMapping("/product-categories")
     fun getProductCategories(
         @RequestParam workspaceId: Long
-    ) = productService.getAllProductCategories(workspaceId)
+    ) = productFacade.getProductCategories(workspaceId)
 }
