@@ -27,6 +27,10 @@ class UserService(
         ) throw LoginFailedException()
     }
 
+    fun saveUser(user: User): User {
+        return userRepository.save(user)
+    }
+
     fun saveUser(loginId: String, loginPassword: String, name: String, email: String): User {
         return userRepository.save(
             User(
@@ -94,13 +98,6 @@ class UserService(
         if (user.role != UserRole.SUPER_ADMIN) throw NoPermissionException()
     }
 
-    fun registerAccountUrl(username: String, accountUrl: String): User {
-        val user = getUser(username)
-        user.accountUrl = removeAmountQueryFromAccountUrl(accountUrl)
-
-        return userRepository.save(user)
-    }
-
     fun removeAmountQueryFromAccountUrl(accountUrl: String): String {
         return accountUrl.replace(Regex("amount=\\d+&"), "")
     }
@@ -109,8 +106,7 @@ class UserService(
         if (user.email != email) throw UserNotFoundException()
     }
 
-    fun deleteUser(username: String): User {
-        val user = getUser(username)
+    fun deleteUser(user: User): User {
         userRepository.delete(user)
         return user
     }

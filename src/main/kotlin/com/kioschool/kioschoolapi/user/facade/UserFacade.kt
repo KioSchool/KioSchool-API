@@ -1,8 +1,10 @@
 package com.kioschool.kioschoolapi.user.facade
 
+import com.kioschool.kioschoolapi.common.enums.UserRole
 import com.kioschool.kioschoolapi.discord.DiscordService
 import com.kioschool.kioschoolapi.email.service.EmailService
 import com.kioschool.kioschoolapi.security.JwtProvider
+import com.kioschool.kioschoolapi.user.entity.User
 import com.kioschool.kioschoolapi.user.exception.UserNotFoundException
 import com.kioschool.kioschoolapi.user.service.UserService
 import jakarta.servlet.http.HttpServletResponse
@@ -102,5 +104,28 @@ class UserFacade(
         val user = userService.getUserByEmail(email)
         userService.savePassword(user, password)
         emailService.deleteResetPasswordCode(code)
+    }
+
+    fun getUser(loginId: String) = userService.getUser(loginId)
+
+    fun deleteUser(loginId: String): User {
+        val user = userService.getUser(loginId)
+        return userService.deleteUser(user)
+    }
+
+    fun createSuperAdminUser(username: String, id: String): User {
+        val superAdminUser = userService.getUser(username)
+        userService.checkHasSuperAdminPermission(superAdminUser)
+
+        val user = getUser(id)
+        user.role = UserRole.SUPER_ADMIN
+        return userService.saveUser(user)
+    }
+
+    fun registerAccountUrl(username: String, accountUrl: String): User {
+        val user = userService.getUser(username)
+        user.accountUrl = userService.removeAmountQueryFromAccountUrl(accountUrl)
+
+        return userService.saveUser(user)
     }
 }
