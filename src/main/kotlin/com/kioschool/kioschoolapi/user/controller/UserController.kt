@@ -1,14 +1,11 @@
 package com.kioschool.kioschoolapi.user.controller
 
-import com.kioschool.kioschoolapi.email.service.EmailService
 import com.kioschool.kioschoolapi.user.dto.*
-import com.kioschool.kioschoolapi.user.service.UserService
+import com.kioschool.kioschoolapi.user.facade.UserFacade
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.servlet.http.HttpServletResponse
 import jakarta.validation.Valid
-import org.springframework.http.HttpHeaders
-import org.springframework.http.ResponseCookie
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -18,8 +15,7 @@ import org.springframework.web.bind.annotation.RestController
 @Tag(name = "User Controller")
 @RestController
 class UserController(
-    private val userService: UserService,
-    private val emailService: EmailService
+    private val userFacade: UserFacade
 ) {
     @Operation(summary = "로그인", description = "로그인 성공 시 쿠키에 JWT 토큰을 담아 반환합니다.")
     @PostMapping("/login")
@@ -28,32 +24,14 @@ class UserController(
         @Valid @RequestBody body: LoginRequestBody,
         response: HttpServletResponse
     ): ResponseEntity<String> {
-        val token = userService.login(body.id, body.password)
-        val authCookie =
-            ResponseCookie.from("Authorization", token)
-                .httpOnly(true)
-                .secure(true)
-                .path("/")
-                .sameSite("None")
-                .build()
-
-        response.addHeader(HttpHeaders.SET_COOKIE, authCookie.toString())
-        return ResponseEntity.ok().body("login success")
+        return userFacade.login(body.id, body.password, response)
     }
 
     @Operation(summary = "로그아웃", description = "쿠키에 담긴 JWT 토큰을 삭제합니다.")
     @PostMapping("/logout")
     @ResponseBody
     fun logout(response: HttpServletResponse): ResponseEntity<String> {
-        val authCookie = ResponseCookie.from("Authorization", "")
-            .httpOnly(true)
-            .secure(true)
-            .path("/")
-            .sameSite("None")
-            .build()
-
-        response.addHeader(HttpHeaders.SET_COOKIE, authCookie.toString())
-        return ResponseEntity.ok().body("logout success")
+        return userFacade.logout(response)
     }
 
     @Operation(
@@ -66,45 +44,36 @@ class UserController(
         @Valid @RequestBody body: RegisterRequestBody,
         response: HttpServletResponse
     ): ResponseEntity<String> {
-        val token = userService.register(body.id, body.password, body.name, body.email)
-        val cookie = ResponseCookie.from("Authorization", token)
-            .httpOnly(true)
-            .secure(true)
-            .path("/")
-            .sameSite("None")
-            .build()
-
-        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString())
-        return ResponseEntity.ok().body("register success")
+        return userFacade.register(response, body.id, body.password, body.name, body.email)
     }
 
     @Operation(summary = "ID 중복 체크", description = "중복되는 ID가 있으면 true를 반환합니다.")
     @PostMapping("/user/duplicate")
     fun isDuplicateLoginId(@Valid @RequestBody body: IsDuplicateLoginIdRequestBody): Boolean {
-        return userService.isDuplicateLoginId(body.id)
+        return userFacade.isDuplicateLoginId(body.id)
     }
 
     @Operation(summary = "이메일 인증코드 발송", description = "이메일 인증코드를 발송합니다.")
     @PostMapping("/user/email")
     fun sendEmailCode(@Valid @RequestBody body: SendEmailCodeRequestBody) {
-        return emailService.sendRegisterCodeEmail(body.email)
+        return userFacade.sendEmailCode(body.email)
     }
 
     @Operation(summary = "이메일 인증코드 확인", description = "이메일 인증코드를 확인합니다.")
     @PostMapping("/user/verify")
     fun verifyEmailCode(@Valid @RequestBody body: VerifyEmailCodeRequestBody): Boolean {
-        return emailService.verifyRegisterCode(body.email, body.code)
+        return userFacade.verifyEmailCode(body.email, body.code)
     }
 
     @Operation(summary = "비밀번호 재설정 이메일 전송", description = "비밀번호 재설정 이메일을 전송합니다.")
     @PostMapping("/user/password")
     fun sendResetPasswordEmail(@Valid @RequestBody body: SendResetPasswordEmailRequestBody) {
-        return userService.sendResetPasswordEmail(body.id, body.email)
+        return userFacade.sendResetPasswordEmail(body.id, body.email)
     }
 
     @Operation(summary = "비밀번호 재설정", description = "비밀번호를 재설정합니다.")
     @PostMapping("/user/reset")
     fun resetPassword(@Valid @RequestBody body: ResetPasswordRequestBody) {
-        return userService.resetPassword(body.code, body.password)
+        return userFacade.resetPassword(body.code, body.password)
     }
 }

@@ -23,13 +23,6 @@ class UserService(
     private val emailService: EmailService,
     private val discordService: DiscordService
 ) {
-    fun login(loginId: String, loginPassword: String): String {
-        val user = getUser(loginId)
-        checkPassword(user, loginPassword)
-
-        return jwtProvider.createToken(user)
-    }
-
     fun checkPassword(user: User, loginPassword: String) {
         if (!passwordEncoder.matches(
                 loginPassword,
@@ -38,12 +31,8 @@ class UserService(
         ) throw LoginFailedException()
     }
 
-    fun register(loginId: String, loginPassword: String, name: String, email: String): String {
-        validateLoginId(loginId)
-        validateEmail(email)
-        emailService.deleteRegisterCode(email)
-
-        val user = userRepository.save(
+    fun saveUser(loginId: String, loginPassword: String, name: String, email: String): User {
+        return userRepository.save(
             User(
                 loginId = loginId,
                 loginPassword = passwordEncoder.encode(loginPassword),
@@ -53,9 +42,6 @@ class UserService(
                 members = mutableListOf()
             )
         )
-
-        discordService.sendUserRegister(user)
-        return jwtProvider.createToken(user)
     }
 
     fun validateLoginId(loginId: String) {
@@ -71,20 +57,24 @@ class UserService(
         return userRepository.findByLoginId(loginId) != null
     }
 
-    fun checkIsEmailVerified(email: String) {
+    private fun checkIsEmailVerified(email: String) {
         if (!emailService.isEmailVerified(email)) throw RegisterException()
     }
 
-    fun checkIsEmailDuplicate(email: String) {
+    private fun checkIsEmailDuplicate(email: String) {
         if (isDuplicateEmail(email)) throw RegisterException()
     }
 
-    fun isDuplicateEmail(email: String): Boolean {
+    private fun isDuplicateEmail(email: String): Boolean {
         return userRepository.findByEmail(email) != null
     }
 
     fun getUser(loginId: String): User {
         return userRepository.findByLoginId(loginId) ?: throw UserNotFoundException()
+    }
+
+    fun getUserByEmail(email: String): User {
+        return userRepository.findByEmail(email) ?: throw UserNotFoundException()
     }
 
     fun getAllUsers(page: Int, size: Int): Page<User> {
@@ -119,13 +109,6 @@ class UserService(
         return accountUrl.replace(Regex("amount=\\d+&"), "")
     }
 
-    fun sendResetPasswordEmail(loginId: String, email: String) {
-        val user = getUser(loginId)
-        checkEmailAddress(user, email)
-
-        emailService.sendResetPasswordEmail(email)
-    }
-
     fun checkEmailAddress(user: User, email: String) {
         if (user.email != email) throw UserNotFoundException()
     }
@@ -136,11 +119,8 @@ class UserService(
         return user
     }
 
-    fun resetPassword(code: String, password: String) {
-        val email = emailService.getEmailByCode(code) ?: throw UserNotFoundException()
-        val user = userRepository.findByEmail(email) ?: throw UserNotFoundException()
+    fun savePassword(user: User, password: String): User {
         user.loginPassword = passwordEncoder.encode(password)
-        userRepository.save(user)
-        emailService.deleteResetPasswordCode(code)
+        return userRepository.save(user)
     }
 }
