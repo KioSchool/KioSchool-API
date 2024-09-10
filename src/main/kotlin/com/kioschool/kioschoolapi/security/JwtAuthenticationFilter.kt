@@ -17,7 +17,7 @@ class JwtAuthenticationFilter(
         filterChain: FilterChain
     ) {
         if (request.isPreflight()) {
-            allowCors(request, response)
+            allowCors(response)
             return
         }
 
@@ -34,7 +34,7 @@ class JwtAuthenticationFilter(
         return method == "OPTIONS"
     }
 
-    private fun allowCors(request: HttpServletRequest, response: HttpServletResponse) {
+    private fun allowCors(response: HttpServletResponse) {
         response.setHeader(
             "Access-Control-Allow-Origin",
             allowedOrigin
