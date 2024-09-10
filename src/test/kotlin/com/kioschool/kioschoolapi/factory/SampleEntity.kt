@@ -7,6 +7,8 @@ import com.kioschool.kioschoolapi.product.entity.Product
 import com.kioschool.kioschoolapi.product.entity.ProductCategory
 import com.kioschool.kioschoolapi.user.entity.User
 import com.kioschool.kioschoolapi.workspace.entity.Workspace
+import com.kioschool.kioschoolapi.workspace.entity.WorkspaceInvitation
+import com.kioschool.kioschoolapi.workspace.entity.WorkspaceMember
 import kotlin.reflect.full.superclasses
 
 object SampleEntity {
@@ -20,11 +22,46 @@ object SampleEntity {
         members = mutableListOf()
     )
 
+    val otherUser = User(
+        loginId = "test2",
+        loginPassword = "test2",
+        name = "test2",
+        email = "test2@other.com",
+        role = UserRole.ADMIN,
+        accountUrl = "test2",
+        members = mutableListOf()
+    )
+
     fun userWithId(id: Long) = user.apply { setId(id) }
 
     val workspace = Workspace(
         name = "test",
         owner = user
+    )
+
+    fun workspace(user: User) = Workspace(
+        name = "test",
+        owner = user
+    )
+
+    val workspaceInvitation = WorkspaceInvitation(
+        workspace = workspace,
+        user = user
+    )
+
+    fun workspaceInvitation(user: User, workspace: Workspace) = WorkspaceInvitation(
+        workspace = workspace,
+        user = user
+    )
+
+    val workspaceMember = WorkspaceMember(
+        workspace = workspace,
+        user = user
+    )
+
+    fun workspaceMember(user: User, workspace: Workspace) = WorkspaceMember(
+        workspace = workspace,
+        user = user
     )
 
     fun workspaceWithId(id: Long) = workspace.apply { setId(id) }
