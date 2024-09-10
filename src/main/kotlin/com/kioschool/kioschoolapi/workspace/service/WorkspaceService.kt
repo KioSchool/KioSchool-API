@@ -68,13 +68,11 @@ class WorkspaceService(
         return workspaceRepository.findById(workspaceId).get()
     }
 
-    fun isAccessible(username: String, workspace: Workspace): Boolean {
-        val user = userService.getUser(username)
-        return workspace.members.any { it.user.loginId == username } || user.role == UserRole.SUPER_ADMIN
-    }
-
     fun isAccessible(username: String, workspaceId: Long): Boolean {
-        return isAccessible(username, getWorkspace(workspaceId))
+        val workspace = getWorkspace(workspaceId)
+        val user = userService.getUser(username)
+
+        return workspace.members.any { it.user.loginId == username } || user.role == UserRole.SUPER_ADMIN
     }
 
     fun checkCanInviteWorkspace(user: User, workspace: Workspace) {
