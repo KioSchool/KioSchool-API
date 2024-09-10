@@ -23,7 +23,7 @@ class OrderFacade(
         workspaceId: Long,
         tableNumber: Int,
         customerName: String,
-        orderProducts: List<OrderProductRequestBody>
+        rawOrderProducts: List<OrderProductRequestBody>
     ): Order {
         val workspace = workspaceService.getWorkspace(workspaceId)
         val order = orderService.saveOrder(
@@ -36,7 +36,7 @@ class OrderFacade(
 
         val products = productService.getAllProductsByCondition(workspaceId)
         val productMap = products.associateBy { it.id }
-        val orderProducts = orderProducts.filter { productMap.containsKey(it.productId) }.map {
+        val orderProducts = rawOrderProducts.filter { productMap.containsKey(it.productId) }.map {
             val product = productMap[it.productId]!!
             OrderProduct(
                 order = order,
