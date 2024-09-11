@@ -85,15 +85,6 @@ class UserService(
         return getUser(username).role == UserRole.SUPER_ADMIN
     }
 
-    fun createSuperAdminUser(username: String, id: String): User {
-        val superAdminUser = getUser(username)
-        checkHasSuperAdminPermission(superAdminUser)
-
-        val user = getUser(id)
-        user.role = UserRole.SUPER_ADMIN
-        return userRepository.save(user)
-    }
-
     fun checkHasSuperAdminPermission(user: User) {
         if (user.role != UserRole.SUPER_ADMIN) throw NoPermissionException()
     }
