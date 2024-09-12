@@ -6,7 +6,6 @@ import com.kioschool.kioschoolapi.order.entity.OrderProduct
 import com.kioschool.kioschoolapi.order.repository.CustomOrderRepository
 import com.kioschool.kioschoolapi.order.repository.OrderProductRepository
 import com.kioschool.kioschoolapi.order.repository.OrderRepository
-import com.kioschool.kioschoolapi.product.service.ProductService
 import com.kioschool.kioschoolapi.websocket.dto.Message
 import com.kioschool.kioschoolapi.websocket.service.WebsocketService
 import com.kioschool.kioschoolapi.workspace.exception.WorkspaceInaccessibleException
@@ -18,7 +17,6 @@ import java.time.LocalDateTime
 class OrderService(
     private val orderRepository: OrderRepository,
     private val workspaceService: WorkspaceService,
-    private val productService: ProductService,
     private val websocketService: WebsocketService,
     private val customOrderRepository: CustomOrderRepository,
     private val orderProductRepository: OrderProductRepository
