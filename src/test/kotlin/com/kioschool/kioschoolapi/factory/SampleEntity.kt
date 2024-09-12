@@ -3,6 +3,7 @@ package com.kioschool.kioschoolapi.factory
 import com.kioschool.kioschoolapi.common.entity.BaseEntity
 import com.kioschool.kioschoolapi.common.enums.UserRole
 import com.kioschool.kioschoolapi.order.entity.Order
+import com.kioschool.kioschoolapi.order.entity.OrderProduct
 import com.kioschool.kioschoolapi.product.entity.Product
 import com.kioschool.kioschoolapi.product.entity.ProductCategory
 import com.kioschool.kioschoolapi.user.entity.User
@@ -88,6 +89,14 @@ object SampleEntity {
         workspace,
         0,
         "test"
+    )
+
+    val orderProduct = OrderProduct(
+        order = order,
+        productId = product.id,
+        productName = product.name,
+        productPrice = product.price,
+        quantity = 1
     )
 
     private fun BaseEntity.setId(id: Long) {
