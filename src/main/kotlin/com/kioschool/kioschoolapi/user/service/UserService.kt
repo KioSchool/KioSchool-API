@@ -77,7 +77,14 @@ class UserService(
         return userRepository.findByEmail(email) ?: throw UserNotFoundException()
     }
 
-    fun getAllUsers(page: Int, size: Int): Page<User> {
+    fun getAllUsers(name: String?, page: Int, size: Int): Page<User> {
+        if (name != null) {
+            return userRepository.findByNameContains(
+                name,
+                PageRequest.of(page, size)
+            )
+        }
+
         return userRepository.findAll(PageRequest.of(page, size))
     }
 

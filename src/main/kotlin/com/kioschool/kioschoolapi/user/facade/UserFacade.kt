@@ -129,5 +129,5 @@ class UserFacade(
         return userService.saveUser(user)
     }
 
-    fun getAllUsers(page: Int, size: Int) = userService.getAllUsers(page, size)
+    fun getAllUsers(name: String?, page: Int, size: Int) = userService.getAllUsers(name, page, size)
 }

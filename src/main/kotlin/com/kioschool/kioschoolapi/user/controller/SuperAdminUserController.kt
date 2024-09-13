@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
-@Tag(name = "Admin User Controller")
+@Tag(name = "Super Admin User Controller")
 @RestController
 @RequestMapping("/super-admin")
 class SuperAdminUserController(
@@ -22,8 +22,9 @@ class SuperAdminUserController(
     fun getUser(
         @SuperAdmin username: String,
         @RequestParam page: Int,
-        @RequestParam size: Int
+        @RequestParam size: Int,
+        @RequestParam name: String?
     ): Page<User> {
-        return userFacade.getAllUsers(page, size)
+        return userFacade.getAllUsers(name, page, size)
     }
 }
