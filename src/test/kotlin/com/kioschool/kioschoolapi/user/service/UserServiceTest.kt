@@ -98,6 +98,7 @@ class UserServiceTest : DescribeSpec({
 
             // Mock
             every { repository.save(any<User>()) } returns SampleEntity.user
+            every { passwordEncoder.encode(loginPassword) } returns "encoded password"
 
             // Act
             sut.saveUser(loginId, loginPassword, name, email) shouldBe SampleEntity.user
@@ -241,25 +242,36 @@ class UserServiceTest : DescribeSpec({
     }
 
     describe("getAllUsers") {
-        it("should return all users") {
+        it("should call findByNameContains if name is not null") {
+            val name = "test"
             val page = 0
             val size = 10
 
             // Mock
-            every { repository.findAll(any<Pageable>()) } returns PageImpl(
-                listOf(
-                    SampleEntity.user,
-                    SampleEntity.otherUser
-                )
+            every { repository.findByNameContains(name, Pageable.ofSize(size)) } returns PageImpl(
+                listOf(SampleEntity.user)
             )
 
-            // Act & Assert
-            sut.getAllUsers(page, size) shouldBe PageImpl(
-                listOf(
-                    SampleEntity.user,
-                    SampleEntity.otherUser
-                )
-            )
+            // Act
+            sut.getAllUsers(name, page, size)
+
+            // Assert
+            verify { repository.findByNameContains(name, Pageable.ofSize(size)) }
+        }
+
+        it("should call findAll if name is null") {
+            val name = null
+            val page = 0
+            val size = 10
+
+            // Mock
+            every { repository.findAll(Pageable.ofSize(size)) } returns PageImpl(listOf(SampleEntity.user))
+
+            // Act
+            sut.getAllUsers(name, page, size)
+
+            // Assert
+            verify { repository.findAll(Pageable.ofSize(size)) }
         }
     }
 
