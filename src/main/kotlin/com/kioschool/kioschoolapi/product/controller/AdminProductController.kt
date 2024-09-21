@@ -99,9 +99,8 @@ class AdminProductController(
     @DeleteMapping("/product")
     fun deleteProduct(
         @Username username: String,
-        @RequestParam workspaceId: Long,
         @RequestParam productId: Long
-    ) = productFacade.deleteProduct(username, workspaceId, productId)
+    ) = productFacade.deleteProduct(username, productId)
 
     @Operation(summary = "상품 카테고리 생성", description = "상품 카테고리를 생성합니다.")
     @PostMapping("/product-category")

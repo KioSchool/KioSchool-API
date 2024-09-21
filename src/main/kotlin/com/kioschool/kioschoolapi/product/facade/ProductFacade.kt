@@ -108,7 +108,7 @@ class ProductFacade(
         return productService.saveProduct(product)
     }
 
-    fun deleteProduct(username: String, workspaceId: Long, productId: Long): Product {
+    fun deleteProduct(username: String, productId: Long): Product {
         val product = productService.getProduct(productId)
         productService.checkAccessible(username, product.workspace.id)
         return productService.deleteProduct(product)
