@@ -78,7 +78,7 @@ object SampleEntity {
         name = "test",
         description = "test",
         price = 1000,
-        imageUrl = "testImgaeUrl",
+        imageUrl = "testImageUrl",
         workspace = workspace,
         productCategory = productCategory
     )
