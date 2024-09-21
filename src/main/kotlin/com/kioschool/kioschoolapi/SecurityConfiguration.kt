@@ -24,7 +24,7 @@ class SecurityConfiguration(
     fun filterChain(httpSecurity: HttpSecurity): DefaultSecurityFilterChain? {
         httpSecurity
             .csrf { it.disable() }
-            .authorizeHttpRequests { it ->
+            .authorizeHttpRequests {
                 it.requestMatchers("/admin/**")
                     .hasAnyAuthority(UserRole.SUPER_ADMIN.name, UserRole.ADMIN.name)
             }
