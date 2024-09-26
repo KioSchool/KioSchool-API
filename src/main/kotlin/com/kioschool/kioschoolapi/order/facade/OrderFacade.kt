@@ -62,7 +62,8 @@ class OrderFacade(
         workspaceId: Long,
         startDate: String?,
         endDate: String?,
-        status: String?
+        status: String?,
+        tableNumber: Int?
     ): List<Order> {
         orderService.checkAccessible(username, workspaceId)
 
@@ -75,7 +76,8 @@ class OrderFacade(
             workspaceId,
             parsedStartDate,
             parsedEndDate,
-            parsedStatus
+            parsedStatus,
+            tableNumber
         )
     }
 
@@ -85,7 +87,7 @@ class OrderFacade(
         val startDate = LocalDateTime.now().minusHours(2)
         val endDate = LocalDateTime.now()
 
-        return orderService.getAllOrdersByCondition(workspaceId, startDate, endDate, null)
+        return orderService.getAllOrdersByCondition(workspaceId, startDate, endDate, null, null)
     }
 
     fun changeOrderStatus(
