@@ -8,6 +8,7 @@ import com.kioschool.kioschoolapi.order.entity.OrderProduct
 import com.kioschool.kioschoolapi.order.facade.OrderFacade
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.springframework.data.domain.Page
 import org.springframework.web.bind.annotation.*
 
 @Tag(name = "Admin Order Controller")
@@ -34,6 +35,24 @@ class AdminOrderController(
             endDate,
             status,
             tableNumber
+        )
+    }
+
+    @Operation(summary = "테이블별 주문 조회", description = "테이블별 주문을 조회합니다.")
+    @GetMapping("/orders/table")
+    fun getOrdersByTable(
+        @Username username: String,
+        @RequestParam("workspaceId") workspaceId: Long,
+        @RequestParam("tableNumber") tableNumber: Int,
+        @RequestParam("page") page: Int,
+        @RequestParam("size") size: Int
+    ): Page<Order> {
+        return orderFacade.getOrdersByTable(
+            username,
+            workspaceId,
+            tableNumber,
+            page,
+            size
         )
     }
 

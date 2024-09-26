@@ -10,6 +10,8 @@ import com.kioschool.kioschoolapi.websocket.dto.Message
 import com.kioschool.kioschoolapi.websocket.service.WebsocketService
 import com.kioschool.kioschoolapi.workspace.exception.WorkspaceInaccessibleException
 import com.kioschool.kioschoolapi.workspace.service.WorkspaceService
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 
@@ -71,5 +73,18 @@ class OrderService(
         if (!workspaceService.isAccessible(username, workspaceId)) {
             throw WorkspaceInaccessibleException()
         }
+    }
+
+    fun getAllOrdersByTable(
+        workspaceId: Long,
+        tableNumber: Int,
+        page: Int,
+        size: Int
+    ): Page<Order> {
+        return orderRepository.findAllByTableNumber(
+            workspaceId,
+            tableNumber,
+            PageRequest.of(page, size)
+        )
     }
 }

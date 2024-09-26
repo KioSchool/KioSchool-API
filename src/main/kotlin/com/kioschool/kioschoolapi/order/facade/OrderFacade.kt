@@ -7,6 +7,7 @@ import com.kioschool.kioschoolapi.order.entity.OrderProduct
 import com.kioschool.kioschoolapi.order.service.OrderService
 import com.kioschool.kioschoolapi.product.service.ProductService
 import com.kioschool.kioschoolapi.workspace.service.WorkspaceService
+import org.springframework.data.domain.Page
 import org.springframework.stereotype.Component
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -115,5 +116,16 @@ class OrderFacade(
         val orderProduct = orderService.getOrderProduct(orderProductId)
         orderProduct.isServed = isServed
         return orderService.saveOrderProductAndSendWebsocketMessage(orderProduct)
+    }
+
+    fun getOrdersByTable(
+        username: String,
+        workspaceId: Long,
+        tableNumber: Int,
+        page: Int,
+        size: Int
+    ): Page<Order> {
+        orderService.checkAccessible(username, workspaceId)
+        return orderService.getAllOrdersByTable(workspaceId, tableNumber, page, size)
     }
 }
