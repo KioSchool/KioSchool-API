@@ -67,4 +67,14 @@ class WorkspaceFacade(
 
         return workspaceService.removeUserFromWorkspace(workspace, user)
     }
+
+    fun updateTableCount(username: String, workspaceId: Long, tableCount: Int): Workspace {
+        val user = userService.getUser(username)
+        val workspace = workspaceService.getWorkspace(workspaceId)
+
+        workspaceService.checkCanAccessWorkspace(user, workspace)
+        workspaceService.updateTableCount(workspace, tableCount)
+
+        return workspace
+    }
 }

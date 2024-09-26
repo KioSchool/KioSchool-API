@@ -64,4 +64,13 @@ class AdminWorkspaceController(
     ): Workspace {
         return workspaceFacade.leaveWorkspace(username, body.workspaceId)
     }
+
+    @Operation(summary = "워크스페이스 테이블 개수 수정", description = "워크스페이스의 테이블 개수를 수정합니다.")
+    @PostMapping("/workspace/table")
+    fun updateTableCount(
+        @Username username: String,
+        @RequestBody body: UpdateTableCountRequestBody
+    ): Workspace {
+        return workspaceFacade.updateTableCount(username, body.workspaceId, body.tableCount)
+    }
 }

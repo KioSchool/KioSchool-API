@@ -75,6 +75,10 @@ class WorkspaceService(
         return workspace.members.any { it.user.loginId == username } || user.role == UserRole.SUPER_ADMIN
     }
 
+    fun checkCanAccessWorkspace(user: User, workspace: Workspace) {
+        isAccessible(user.loginId, workspace.id)
+    }
+
     fun checkCanInviteWorkspace(user: User, workspace: Workspace) {
         if (workspace.owner != user) throw NoPermissionToInviteException()
     }
@@ -104,5 +108,10 @@ class WorkspaceService(
         val accountNoRegex = "accountNo=([^&]+)"
         val accountNoMatcher = Regex(accountNoRegex).find(accountUrl)
         return accountNoMatcher?.groupValues?.get(1) ?: ""
+    }
+
+    fun updateTableCount(workspace: Workspace, tableCount: Int) {
+        workspace.tableCount = tableCount
+        workspaceRepository.save(workspace)
     }
 }
