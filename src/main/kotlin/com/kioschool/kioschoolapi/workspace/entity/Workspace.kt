@@ -41,5 +41,6 @@ class Workspace(
         fetch = FetchType.EAGER
     )
     val invitations: MutableList<WorkspaceInvitation> = mutableListOf(),
-    var description: String = ""
+    var description: String = "",
+    var tableCount: Int = 0
 ) : BaseEntity()
