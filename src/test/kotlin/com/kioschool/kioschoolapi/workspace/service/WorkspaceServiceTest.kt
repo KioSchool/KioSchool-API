@@ -335,4 +335,24 @@ class WorkspaceServiceTest : DescribeSpec({
             result shouldBe "accountNo"
         }
     }
+
+    describe("updateTableCount") {
+        it("should update table count") {
+            val workspace = SampleEntity.workspace
+            val tableCount = 10
+
+            // Mock
+            every {
+                repository.save(workspace)
+            } returns workspace
+
+            // Act
+            sut.updateTableCount(workspace, tableCount)
+
+            workspace.tableCount shouldBe tableCount
+
+            // Assert
+            verify { repository.save(workspace) }
+        }
+    }
 })
