@@ -13,6 +13,7 @@ import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import org.springframework.data.domain.PageRequest
 
 class OrderServiceTest : DescribeSpec({
     val repository = mockk<OrderRepository>()
@@ -182,6 +183,42 @@ class OrderServiceTest : DescribeSpec({
 
             // Act & Assert
             sut.checkAccessible(username, workspaceId)
+        }
+    }
+
+    describe("getAllOrdersByTable") {
+        it("should call orderRepository.findAllByTableNumber") {
+            // Arrange
+            val workspaceId = 1L
+            val tableNumber = 1
+            val page = 1
+            val size = 10
+
+            // Mock
+            every {
+                repository.findAllByTableNumber(
+                    workspaceId,
+                    tableNumber,
+                    PageRequest.of(page, size)
+                )
+            } returns mockk()
+
+            // Act
+            sut.getAllOrdersByTable(
+                workspaceId,
+                tableNumber,
+                page,
+                size
+            )
+
+            // Assert
+            verify {
+                repository.findAllByTableNumber(
+                    workspaceId,
+                    tableNumber,
+                    PageRequest.of(page, size)
+                )
+            }
         }
     }
 })
