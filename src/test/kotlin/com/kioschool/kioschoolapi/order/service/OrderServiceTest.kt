@@ -103,6 +103,7 @@ class OrderServiceTest : DescribeSpec({
             val startDate = null
             val endDate = null
             val status = null
+            val tableNumber = null
 
             // Mock
             every {
@@ -110,7 +111,8 @@ class OrderServiceTest : DescribeSpec({
                     workspaceId,
                     startDate,
                     endDate,
-                    status
+                    status,
+                    tableNumber
                 )
             } returns emptyList()
 
@@ -119,7 +121,8 @@ class OrderServiceTest : DescribeSpec({
                 workspaceId,
                 startDate,
                 endDate,
-                status
+                status,
+                tableNumber
             ) shouldBe emptyList()
 
             // Assert
@@ -128,7 +131,8 @@ class OrderServiceTest : DescribeSpec({
                     workspaceId,
                     startDate,
                     endDate,
-                    status
+                    status,
+                    tableNumber
                 )
             }
         }
