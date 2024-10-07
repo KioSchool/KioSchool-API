@@ -81,7 +81,7 @@ class OrderService(
         page: Int,
         size: Int
     ): Page<Order> {
-        return orderRepository.findAllByTableNumber(
+        return orderRepository.findAllByWorkspaceIdAndTableNumber(
             workspaceId,
             tableNumber,
             PageRequest.of(page, size)

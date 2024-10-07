@@ -196,7 +196,7 @@ class OrderServiceTest : DescribeSpec({
 
             // Mock
             every {
-                repository.findAllByTableNumber(
+                repository.findAllByWorkspaceIdAndTableNumber(
                     workspaceId,
                     tableNumber,
                     PageRequest.of(page, size)
@@ -213,7 +213,7 @@ class OrderServiceTest : DescribeSpec({
 
             // Assert
             verify {
-                repository.findAllByTableNumber(
+                repository.findAllByWorkspaceIdAndTableNumber(
                     workspaceId,
                     tableNumber,
                     PageRequest.of(page, size)

@@ -8,5 +8,9 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface OrderRepository : JpaRepository<Order, Long> {
-    fun findAllByTableNumber(workspaceId: Long, tableNumber: Int, pageable: Pageable): Page<Order>
+    fun findAllByWorkspaceIdAndTableNumber(
+        workspaceId: Long,
+        tableNumber: Int,
+        pageable: Pageable
+    ): Page<Order>
 }
