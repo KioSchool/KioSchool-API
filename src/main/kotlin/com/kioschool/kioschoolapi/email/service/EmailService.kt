@@ -129,7 +129,7 @@ class EmailService(
     }
 
     fun getAllEmailDomains(name: String?, page: Int, size: Int): Page<EmailDomain> {
-        if (name != null)
+        if (!name.isNullOrBlank())
             return emailDomainRepository.findByNameContains(
                 name,
                 PageRequest.of(page, size)

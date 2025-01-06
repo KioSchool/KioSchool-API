@@ -78,7 +78,7 @@ class UserService(
     }
 
     fun getAllUsers(name: String?, page: Int, size: Int): Page<User> {
-        if (name != null) {
+        if (!name.isNullOrBlank()) {
             return userRepository.findByNameContains(
                 name,
                 PageRequest.of(page, size)

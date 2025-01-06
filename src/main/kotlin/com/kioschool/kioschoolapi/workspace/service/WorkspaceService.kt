@@ -21,7 +21,7 @@ class WorkspaceService(
     val userService: UserService,
 ) {
     fun getAllWorkspaces(name: String?, page: Int, size: Int): Page<Workspace> {
-        if (name != null)
+        if (!name.isNullOrBlank())
             return workspaceRepository.findByNameContains(
                 name,
                 PageRequest.of(page, size)
@@ -31,7 +31,7 @@ class WorkspaceService(
     }
 
     fun checkCanCreateWorkspace(user: User) {
-        if (user.accountUrl == null) throw NoPermissionToCreateWorkspaceException()
+        if (user.accountUrl.isNullOrBlank()) throw NoPermissionToCreateWorkspaceException()
     }
 
     fun saveNewWorkspace(user: User, name: String, description: String): Workspace {
