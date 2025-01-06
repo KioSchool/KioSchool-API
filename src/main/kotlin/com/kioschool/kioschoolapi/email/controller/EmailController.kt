@@ -1,6 +1,5 @@
 package com.kioschool.kioschoolapi.email.controller
 
-import com.kioschool.kioschoolapi.common.annotation.SuperAdmin
 import com.kioschool.kioschoolapi.email.entity.EmailDomain
 import com.kioschool.kioschoolapi.email.service.EmailService
 import io.swagger.v3.oas.annotations.Operation
@@ -18,7 +17,6 @@ class EmailController(
     @Operation(summary = "이메일 도메인 조회", description = "키오스쿨에서 사용 가능한 모든 이메일 도메인을 조회합니다.")
     @GetMapping("/email-domains")
     fun getWorkspaces(
-        @SuperAdmin username: String,
         @RequestParam(required = false) name: String?,
         @RequestParam page: Int,
         @RequestParam size: Int
