@@ -8,6 +8,7 @@ import com.kioschool.kioschoolapi.user.entity.User
 import com.kioschool.kioschoolapi.user.exception.UserNotFoundException
 import com.kioschool.kioschoolapi.user.service.UserService
 import jakarta.servlet.http.HttpServletResponse
+import org.springframework.boot.web.server.Cookie.SameSite
 import org.springframework.http.HttpHeaders
 import org.springframework.http.ResponseCookie
 import org.springframework.http.ResponseEntity
@@ -30,11 +31,11 @@ class UserFacade(
 
         val token = jwtProvider.createToken(user)
         val authCookie =
-            ResponseCookie.from("Authorization", token)
+            ResponseCookie.from(HttpHeaders.AUTHORIZATION, token)
                 .httpOnly(true)
                 .secure(true)
                 .path("/")
-                .sameSite("None")
+                .sameSite(SameSite.NONE.name)
                 .build()
 
         response.addHeader(HttpHeaders.SET_COOKIE, authCookie.toString())
@@ -42,11 +43,11 @@ class UserFacade(
     }
 
     fun logout(response: HttpServletResponse): ResponseEntity<String> {
-        val authCookie = ResponseCookie.from("Authorization", "")
+        val authCookie = ResponseCookie.from(HttpHeaders.AUTHORIZATION, "")
             .httpOnly(true)
             .secure(true)
             .path("/")
-            .sameSite("None")
+            .sameSite(SameSite.NONE.name)
             .build()
 
         response.addHeader(HttpHeaders.SET_COOKIE, authCookie.toString())
@@ -69,11 +70,11 @@ class UserFacade(
         discordService.sendUserRegister(user)
 
         val token = jwtProvider.createToken(user)
-        val cookie = ResponseCookie.from("Authorization", token)
+        val cookie = ResponseCookie.from(HttpHeaders.AUTHORIZATION, token)
             .httpOnly(true)
             .secure(true)
             .path("/")
-            .sameSite("None")
+            .sameSite(SameSite.NONE.name)
             .build()
 
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString())
