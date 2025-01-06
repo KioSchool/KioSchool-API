@@ -138,6 +138,10 @@ class EmailService(
         return emailDomainRepository.findAll(PageRequest.of(page, size))
     }
 
+    fun isEmailDomainDuplicate(domain: String): Boolean {
+        return emailDomainRepository.findByDomain(domain) != null
+    }
+
     fun registerEmailDomain(name: String, domain: String): EmailDomain {
         return emailDomainRepository.save(EmailDomain(name, domain))
     }
