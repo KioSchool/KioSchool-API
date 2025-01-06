@@ -1,6 +1,6 @@
 package com.kioschool.kioschoolapi.product.controller
 
-import com.kioschool.kioschoolapi.common.annotation.Username
+import com.kioschool.kioschoolapi.common.annotation.AdminUsername
 import com.kioschool.kioschoolapi.product.dto.*
 import com.kioschool.kioschoolapi.product.entity.Product
 import com.kioschool.kioschoolapi.product.entity.ProductCategory
@@ -20,7 +20,7 @@ class AdminProductController(
     @Operation(summary = "상품 전체 조회", description = "워크스페이스에 등록된 모든 상품을 조회합니다.")
     @GetMapping("/products")
     fun getProducts(
-        @Username username: String,
+        @AdminUsername username: String,
         @RequestParam workspaceId: Long
     ): List<Product> {
         return productFacade.getProducts(username, workspaceId)
@@ -29,7 +29,7 @@ class AdminProductController(
     @Operation(summary = "상품 조회", description = "상품 하나를 조회합니다.")
     @GetMapping("/product")
     fun getProduct(
-        @Username username: String,
+        @AdminUsername username: String,
         @RequestParam productId: Long
     ): Product {
         return productFacade.getProduct(username, productId)
@@ -38,7 +38,7 @@ class AdminProductController(
     @Operation(summary = "상품 카테고리 조회", description = "워크스페이스에 등록된 모든 상품 카테고리를 조회합니다.")
     @GetMapping("/product-categories")
     fun getProductCategories(
-        @Username username: String,
+        @AdminUsername username: String,
         @RequestParam workspaceId: Long
     ): List<ProductCategory> {
         return productFacade.getProductCategories(username, workspaceId)
@@ -47,7 +47,7 @@ class AdminProductController(
     @Operation(summary = "상품 생성", description = "상품을 생성합니다.")
     @PostMapping("/product", consumes = [MediaType.ALL_VALUE])
     fun createOrUpdateProduct(
-        @Username username: String,
+        @AdminUsername username: String,
         @RequestPart body: CreateProductRequestBody,
         @RequestPart file: MultipartFile?
     ): Product {
@@ -65,7 +65,7 @@ class AdminProductController(
     @Operation(summary = "상품 수정", description = "상품을 수정합니다.")
     @PutMapping("/product", consumes = [MediaType.ALL_VALUE])
     fun updateProduct(
-        @Username username: String,
+        @AdminUsername username: String,
         @RequestPart body: UpdateProductRequestBody,
         @RequestPart file: MultipartFile?
     ): Product {
@@ -84,7 +84,7 @@ class AdminProductController(
     @Operation(summary = "상품 판매 여부 수정", description = "상품의 판매 여부를 수정합니다.")
     @PutMapping("/product/sellable")
     fun updateProductSellable(
-        @Username username: String,
+        @AdminUsername username: String,
         @RequestBody body: UpdateProductSellableRequestBody,
     ): Product {
         return productFacade.updateProductSellable(
@@ -98,14 +98,14 @@ class AdminProductController(
     @Operation(summary = "상품 삭제", description = "상품을 삭제합니다.")
     @DeleteMapping("/product")
     fun deleteProduct(
-        @Username username: String,
+        @AdminUsername username: String,
         @RequestParam productId: Long
     ) = productFacade.deleteProduct(username, productId)
 
     @Operation(summary = "상품 카테고리 생성", description = "상품 카테고리를 생성합니다.")
     @PostMapping("/product-category")
     fun createProductCategory(
-        @Username username: String,
+        @AdminUsername username: String,
         @RequestBody body: CreateProductCategoryRequestBody
     ) = productFacade.createProductCategory(
         username,
@@ -116,7 +116,7 @@ class AdminProductController(
     @Operation(summary = "상품 카테고리 삭제", description = "상품 카테고리를 삭제합니다.")
     @DeleteMapping("/product-category")
     fun deleteProductCategory(
-        @Username username: String,
+        @AdminUsername username: String,
         @RequestParam workspaceId: Long,
         @RequestParam productCategoryId: Long
     ) = productFacade.deleteProductCategory(username, workspaceId, productCategoryId)
@@ -124,7 +124,7 @@ class AdminProductController(
     @Operation(summary = "상품 카테고리 정렬", description = "주어진 순서대로 상품 카테고리를 정렬합니다.")
     @PostMapping("/product-categories/sort")
     fun sortProductCategories(
-        @Username username: String,
+        @AdminUsername username: String,
         @RequestBody body: SortProductCategoriesRequestBody
     ): List<ProductCategory> {
         return productFacade.sortProductCategories(

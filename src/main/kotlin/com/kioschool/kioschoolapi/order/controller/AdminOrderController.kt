@@ -1,6 +1,6 @@
 package com.kioschool.kioschoolapi.order.controller
 
-import com.kioschool.kioschoolapi.common.annotation.Username
+import com.kioschool.kioschoolapi.common.annotation.AdminUsername
 import com.kioschool.kioschoolapi.order.dto.ChangeOrderStatusRequestBody
 import com.kioschool.kioschoolapi.order.dto.ServeOrderProductRequestBody
 import com.kioschool.kioschoolapi.order.entity.Order
@@ -21,7 +21,7 @@ class AdminOrderController(
     @Operation(summary = "주문 조회", description = "주문을 조회합니다. 조건을 입력하지 않으면 모든 주문을 조회합니다.")
     @GetMapping("/orders")
     fun getOrdersByCondition(
-        @Username username: String,
+        @AdminUsername username: String,
         @RequestParam("workspaceId") workspaceId: Long,
         @RequestParam("startDate") startDate: String? = null,
         @RequestParam("endDate") endDate: String? = null,
@@ -41,7 +41,7 @@ class AdminOrderController(
     @Operation(summary = "테이블별 주문 조회", description = "테이블별 주문을 조회합니다.")
     @GetMapping("/orders/table")
     fun getOrdersByTable(
-        @Username username: String,
+        @AdminUsername username: String,
         @RequestParam("workspaceId") workspaceId: Long,
         @RequestParam("tableNumber") tableNumber: Int,
         @RequestParam("page") page: Int,
@@ -59,7 +59,7 @@ class AdminOrderController(
     @Operation(summary = "실시간 주문 조회", description = "실시간 주문을 조회합니다.")
     @GetMapping("/orders/realtime")
     fun getRealtimeOrders(
-        @Username username: String,
+        @AdminUsername username: String,
         @RequestParam("workspaceId") workspaceId: Long
     ): List<Order> {
         return orderFacade.getRealtimeOrders(username, workspaceId)
@@ -68,7 +68,7 @@ class AdminOrderController(
     @Operation(summary = "주문 상태 변경", description = "주문을 상태를 변경합니다.")
     @PostMapping("/order/status")
     fun changeOrderStatus(
-        @Username username: String,
+        @AdminUsername username: String,
         @RequestBody body: ChangeOrderStatusRequestBody
     ): Order {
         return orderFacade.changeOrderStatus(
@@ -82,7 +82,7 @@ class AdminOrderController(
     @Operation(summary = "주문 별 상품 서빙 완료", description = "주문 별 상품의 서빙 상태를 변경합니다.")
     @PostMapping("/order/product")
     fun serveOrderProduct(
-        @Username username: String,
+        @AdminUsername username: String,
         @RequestBody body: ServeOrderProductRequestBody
     ): OrderProduct {
         return orderFacade.serveOrderProduct(

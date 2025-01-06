@@ -1,6 +1,6 @@
 package com.kioschool.kioschoolapi.workspace.controller
 
-import com.kioschool.kioschoolapi.common.annotation.SuperAdmin
+import com.kioschool.kioschoolapi.common.annotation.SuperAdminUsername
 import com.kioschool.kioschoolapi.workspace.entity.Workspace
 import com.kioschool.kioschoolapi.workspace.service.WorkspaceService
 import io.swagger.v3.oas.annotations.Operation
@@ -20,7 +20,7 @@ class SuperAdminWorkspaceController(
     @Operation(summary = "워크스페이스 조회", description = "모든 워크스페이스를 조회합니다.")
     @GetMapping("/workspaces")
     fun getWorkspaces(
-        @SuperAdmin username: String,
+        @SuperAdminUsername username: String,
         @RequestParam(required = false) name: String?,
         @RequestParam page: Int,
         @RequestParam size: Int

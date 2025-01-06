@@ -1,6 +1,6 @@
 package com.kioschool.kioschoolapi.user.controller
 
-import com.kioschool.kioschoolapi.common.annotation.Username
+import com.kioschool.kioschoolapi.common.annotation.AdminUsername
 import com.kioschool.kioschoolapi.user.dto.admin.CreateSuperUserRequestBody
 import com.kioschool.kioschoolapi.user.dto.admin.RegisterAccountUrlRequestBody
 import com.kioschool.kioschoolapi.user.entity.User
@@ -17,20 +17,20 @@ class AdminUserController(
 ) {
     @Operation(summary = "로그인 유저 정보 조회", description = "현재 로그인한 유저의 정보를 조회합니다.")
     @GetMapping("/user")
-    fun getUser(@Username username: String): User {
+    fun getUser(@AdminUsername username: String): User {
         return userFacade.getUser(username)
     }
 
     @Operation(summary = "유저 탈퇴")
     @DeleteMapping("/user")
-    fun deleteUser(@Username username: String): User {
+    fun deleteUser(@AdminUsername username: String): User {
         return userFacade.deleteUser(username)
     }
 
     @Operation(summary = "슈퍼 유저 생성", description = "슈퍼 유저를 생성합니다.<br>슈퍼 유저는 슈퍼 유저만 지정할 수 있습니다.")
     @PostMapping("/super-user")
     fun createSuperUser(
-        @Username username: String,
+        @AdminUsername username: String,
         @RequestBody body: CreateSuperUserRequestBody
     ): User {
         return userFacade.createSuperAdminUser(username, body.id)
@@ -39,7 +39,7 @@ class AdminUserController(
     @Operation(summary = "토스 계좌 URL 등록", description = "토스 계좌 URL을 등록합니다.")
     @PostMapping("/user/toss-account")
     fun registerAccountUrl(
-        @Username username: String,
+        @AdminUsername username: String,
         @RequestBody body: RegisterAccountUrlRequestBody
     ): User {
         return userFacade.registerAccountUrl(username, body.accountUrl)
