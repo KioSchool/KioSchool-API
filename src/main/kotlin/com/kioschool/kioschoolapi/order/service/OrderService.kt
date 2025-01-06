@@ -7,7 +7,7 @@ import com.kioschool.kioschoolapi.order.repository.CustomOrderRepository
 import com.kioschool.kioschoolapi.order.repository.OrderProductRepository
 import com.kioschool.kioschoolapi.order.repository.OrderRepository
 import com.kioschool.kioschoolapi.websocket.dto.Message
-import com.kioschool.kioschoolapi.websocket.service.WebsocketService
+import com.kioschool.kioschoolapi.websocket.service.CustomWebSocketService
 import com.kioschool.kioschoolapi.workspace.exception.WorkspaceInaccessibleException
 import com.kioschool.kioschoolapi.workspace.service.WorkspaceService
 import org.springframework.data.domain.Page
@@ -19,7 +19,7 @@ import java.time.LocalDateTime
 class OrderService(
     private val orderRepository: OrderRepository,
     private val workspaceService: WorkspaceService,
-    private val websocketService: WebsocketService,
+    private val websocketService: CustomWebSocketService,
     private val customOrderRepository: CustomOrderRepository,
     private val orderProductRepository: OrderProductRepository
 ) {

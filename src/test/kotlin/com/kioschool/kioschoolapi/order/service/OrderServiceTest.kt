@@ -4,7 +4,7 @@ import com.kioschool.kioschoolapi.factory.SampleEntity
 import com.kioschool.kioschoolapi.order.repository.CustomOrderRepository
 import com.kioschool.kioschoolapi.order.repository.OrderProductRepository
 import com.kioschool.kioschoolapi.order.repository.OrderRepository
-import com.kioschool.kioschoolapi.websocket.service.WebsocketService
+import com.kioschool.kioschoolapi.websocket.service.CustomWebSocketService
 import com.kioschool.kioschoolapi.workspace.exception.WorkspaceInaccessibleException
 import com.kioschool.kioschoolapi.workspace.service.WorkspaceService
 import io.kotest.assertions.throwables.shouldThrow
@@ -18,7 +18,7 @@ import org.springframework.data.domain.PageRequest
 class OrderServiceTest : DescribeSpec({
     val repository = mockk<OrderRepository>()
     val workspaceService = mockk<WorkspaceService>()
-    val websocketService = mockk<WebsocketService>()
+    val websocketService = mockk<CustomWebSocketService>()
     val customOrderRepository = mockk<CustomOrderRepository>()
     val orderProductRepository = mockk<OrderProductRepository>()
 

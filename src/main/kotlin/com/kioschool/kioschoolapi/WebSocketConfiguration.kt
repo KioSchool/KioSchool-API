@@ -21,7 +21,7 @@ import org.springframework.web.util.WebUtils
 
 @Configuration
 @EnableWebSocketMessageBroker
-class WebsocketConfigure(
+class WebSocketConfiguration(
     private val stompHandler: StompHandler,
     @Value("\${websocket.allowed-origins}")
     private val allowedOrigins: String,
