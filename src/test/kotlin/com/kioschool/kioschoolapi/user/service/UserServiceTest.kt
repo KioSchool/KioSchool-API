@@ -137,7 +137,7 @@ class UserServiceTest : DescribeSpec({
             val email = "test@test.com"
 
             // Mock
-            every { emailService.isEmailVerified(email) } returns false
+            every { emailService.isRegisterEmailVerified(email) } returns false
 
             // Act & Assert
             shouldThrow<RegisterException> {
@@ -149,7 +149,7 @@ class UserServiceTest : DescribeSpec({
             val email = "test@test.com"
 
             // Mock
-            every { emailService.isEmailVerified(email) } returns true
+            every { emailService.isRegisterEmailVerified(email) } returns true
             every { repository.findByEmail(email) } returns SampleEntity.user
 
             // Act & Assert
@@ -162,7 +162,7 @@ class UserServiceTest : DescribeSpec({
             val email = "test@test.com"
 
             // Mock
-            every { emailService.isEmailVerified(email) } returns true
+            every { emailService.isRegisterEmailVerified(email) } returns true
             every { repository.findByEmail(email) } returns null
 
             // Act & Assert

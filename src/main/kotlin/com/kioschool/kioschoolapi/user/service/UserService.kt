@@ -58,7 +58,7 @@ class UserService(
     }
 
     private fun checkIsEmailVerified(email: String) {
-        if (!emailService.isEmailVerified(email)) throw RegisterException()
+        if (!emailService.isRegisterEmailVerified(email)) throw RegisterException()
     }
 
     private fun checkIsEmailDuplicate(email: String) {

@@ -53,16 +53,16 @@ class UserController(
         return userFacade.isDuplicateLoginId(body.id)
     }
 
-    @Operation(summary = "이메일 인증코드 발송", description = "이메일 인증코드를 발송합니다.")
+    @Operation(summary = "회원가입 이메일 인증코드 발송", description = "회원가입 이메일 인증코드를 발송합니다.")
     @PostMapping("/user/email")
-    fun sendEmailCode(@Valid @RequestBody body: SendEmailCodeRequestBody) {
-        return userFacade.sendEmailCode(body.email)
+    fun sendRegisterEmail(@Valid @RequestBody body: SendEmailCodeRequestBody) {
+        return userFacade.sendRegisterEmail(body.email)
     }
 
-    @Operation(summary = "이메일 인증코드 확인", description = "이메일 인증코드를 확인합니다.")
+    @Operation(summary = "회원가입 이메일 인증코드 확인", description = "회원가입 이메일 인증코드를 확인합니다.")
     @PostMapping("/user/verify")
     fun verifyEmailCode(@Valid @RequestBody body: VerifyEmailCodeRequestBody): Boolean {
-        return userFacade.verifyEmailCode(body.email, body.code)
+        return userFacade.verifyRegisterCode(body.email, body.code)
     }
 
     @Operation(summary = "비밀번호 재설정 이메일 전송", description = "비밀번호 재설정 이메일을 전송합니다.")

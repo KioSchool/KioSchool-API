@@ -4,6 +4,7 @@ import com.kioschool.kioschoolapi.common.enums.UserRole
 import com.kioschool.kioschoolapi.discord.DiscordService
 import com.kioschool.kioschoolapi.email.service.EmailService
 import com.kioschool.kioschoolapi.security.JwtProvider
+import com.kioschool.kioschoolapi.template.TemplateService
 import com.kioschool.kioschoolapi.user.entity.User
 import com.kioschool.kioschoolapi.user.exception.UserNotFoundException
 import com.kioschool.kioschoolapi.user.service.UserService
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Component
 class UserFacade(
     private val userService: UserService,
     private val emailService: EmailService,
+    private val templateService: TemplateService,
     private val discordService: DiscordService,
     private val jwtProvider: JwtProvider
 ) {
@@ -85,11 +87,20 @@ class UserFacade(
         return userService.isDuplicateLoginId(loginId)
     }
 
-    fun sendEmailCode(email: String) {
-        emailService.sendRegisterCodeEmail(email)
+    fun sendRegisterEmail(emailAddress: String) {
+        emailService.validateEmailDomain(emailAddress)
+
+        val code = emailService.generateRegisterCode()
+        emailService.sendEmail(
+            emailAddress,
+            "키오스쿨 회원가입 인증 코드",
+            templateService.getRegisterEmailTemplate(code)
+        )
+
+        emailService.createOrUpdateRegisterEmailCode(emailAddress, code)
     }
 
-    fun verifyEmailCode(email: String, code: String): Boolean {
+    fun verifyRegisterCode(email: String, code: String): Boolean {
         return emailService.verifyRegisterCode(email, code)
     }
 
@@ -97,7 +108,14 @@ class UserFacade(
         val user = userService.getUser(loginId)
         userService.checkEmailAddress(user, email)
 
-        emailService.sendResetPasswordEmail(email)
+        val code = emailService.generateResetPasswordCode()
+        emailService.sendEmail(
+            email,
+            "키오스쿨 비밀번호 재설정",
+            templateService.getResetPasswordEmailTemplate(code)
+        )
+
+        emailService.createOrUpdateResetPasswordEmailCode(email, code)
     }
 
     fun resetPassword(code: String, password: String) {

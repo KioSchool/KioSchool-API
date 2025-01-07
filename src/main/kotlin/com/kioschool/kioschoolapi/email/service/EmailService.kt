@@ -12,34 +12,26 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.mail.javamail.MimeMessageHelper
 import org.springframework.stereotype.Service
-import org.thymeleaf.context.Context
-import org.thymeleaf.spring6.SpringTemplateEngine
 
 @Service
 class EmailService(
     private val javaMailSender: JavaMailSender,
-    private val templateEngine: SpringTemplateEngine,
     private val emailCodeRepository: EmailCodeRepository,
     private val emailDomainRepository: EmailDomainRepository
 ) {
-    fun sendRegisterCodeEmail(address: String) {
-        if (!isEmailDomainVerified(address)) throw NotVerifiedEmailDomainException()
-
-        val code = generateEmailCode()
-        sendEmail(
-            address,
-            "키오스쿨 회원가입 인증 코드",
-            registerCodeEmailText(code)
-        )
-
+    fun createOrUpdateRegisterEmailCode(emailAddress: String, code: String) {
         val emailCode =
-            emailCodeRepository.findByEmailAndKind(address, EmailKind.REGISTER) ?: EmailCode(
-                address,
+            emailCodeRepository.findByEmailAndKind(emailAddress, EmailKind.REGISTER) ?: EmailCode(
+                emailAddress,
                 code,
                 kind = EmailKind.REGISTER
             )
         emailCode.code = code
         emailCodeRepository.save(emailCode)
+    }
+
+    fun validateEmailDomain(emailAddress: String) {
+        if (!isEmailDomainVerified(emailAddress)) throw NotVerifiedEmailDomainException()
     }
 
     fun sendEmail(address: String, subject: String, text: String) {
@@ -51,7 +43,7 @@ class EmailService(
         javaMailSender.send(message)
     }
 
-    fun isEmailVerified(address: String): Boolean {
+    fun isRegisterEmailVerified(address: String): Boolean {
         val emailCode =
             emailCodeRepository.findByEmailAndKind(address, EmailKind.REGISTER) ?: return false
         return emailCode.isVerified
@@ -62,30 +54,13 @@ class EmailService(
         emailCodeRepository.deleteByEmailAndKind(address, EmailKind.REGISTER)
     }
 
-    private fun registerCodeEmailText(code: String): String {
-        val context = Context()
-        context.setVariable("code", code)
-        return templateEngine.process("registerEmail", context)
-    }
-
-    private fun resetPasswordEmailText(code: String): String {
-        val context = Context()
-        context.setVariable("code", code)
-        return templateEngine.process("resetPasswordEmail", context)
-    }
-
-    private fun generateEmailCode(): String {
+    fun generateRegisterCode(): String {
         return (100000..999999).random().toString()
     }
 
-    private fun generateResetPasswordEmailCode(): String {
+    fun generateResetPasswordCode(): String {
         val charset = ('a'..'z') + ('A'..'Z') + ('0'..'9')
         return (1..50).map { charset.random() }.joinToString("")
-    }
-
-    private fun isEmailDomainVerified(email: String): Boolean {
-        val domain = email.substringAfterLast("@")
-        return emailDomainRepository.findByDomain(domain) != null
     }
 
     fun verifyRegisterCode(email: String, code: String): Boolean {
@@ -103,14 +78,7 @@ class EmailService(
         return emailCode.email
     }
 
-    fun sendResetPasswordEmail(email: String) {
-        val code = generateResetPasswordEmailCode()
-        sendEmail(
-            email,
-            "키오스쿨 비밀번호 재설정",
-            resetPasswordEmailText(code)
-        )
-
+    fun createOrUpdateResetPasswordEmailCode(email: String, code: String) {
         val emailCode =
             emailCodeRepository.findByEmailAndKind(email, EmailKind.RESET_PASSWORD) ?: EmailCode(
                 email,
@@ -150,5 +118,10 @@ class EmailService(
         val emailDomain = emailDomainRepository.findById(domainId).orElseThrow()
         emailDomainRepository.delete(emailDomain)
         return emailDomain
+    }
+
+    private fun isEmailDomainVerified(email: String): Boolean {
+        val domain = email.substringAfterLast("@")
+        return emailDomainRepository.findByDomain(domain) != null
     }
 }
