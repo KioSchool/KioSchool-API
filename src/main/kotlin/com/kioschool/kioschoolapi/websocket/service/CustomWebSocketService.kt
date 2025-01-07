@@ -5,7 +5,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.stereotype.Service
 
 @Service
-class WebsocketService(
+class CustomWebSocketService(
     private val simpMessagingTemplate: SimpMessagingTemplate
 ) {
     fun sendMessage(destination: String, message: Message) {

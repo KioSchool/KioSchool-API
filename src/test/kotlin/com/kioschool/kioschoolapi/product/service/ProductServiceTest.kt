@@ -3,17 +3,18 @@ package com.kioschool.kioschoolapi.product.service
 import com.kioschool.kioschoolapi.aws.S3Service
 import com.kioschool.kioschoolapi.factory.SampleEntity
 import com.kioschool.kioschoolapi.product.entity.Product
-import com.kioschool.kioschoolapi.product.entity.ProductCategory
 import com.kioschool.kioschoolapi.product.exception.CanNotDeleteUsingProductCategoryException
 import com.kioschool.kioschoolapi.product.repository.CustomProductRepository
 import com.kioschool.kioschoolapi.product.repository.ProductCategoryRepository
 import com.kioschool.kioschoolapi.product.repository.ProductRepository
 import com.kioschool.kioschoolapi.workspace.exception.WorkspaceInaccessibleException
 import com.kioschool.kioschoolapi.workspace.service.WorkspaceService
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import org.springframework.web.multipart.MultipartFile
 import java.util.*
 
@@ -32,402 +33,265 @@ class ProductServiceTest : DescribeSpec({
         s3Service
     )
 
-    val workspaceId = 0L
-    val file = mockk<MultipartFile>()
-
     describe("getAllProductsByCondition") {
-        it("should call customRepository.findAllByCondition") {
-            every { customRepository.findAllByCondition(workspaceId, null) } returns listOf()
-            sut.getAllProductsByCondition(workspaceId, null)
+        it("should call customProductRepository.findAllByCondition") {
+            //Mock
+            every { customRepository.findAllByCondition(1, null) } returns emptyList()
+
+            // Act
+            sut.getAllProductsByCondition(1)
+
+            verify { customRepository.findAllByCondition(1, null) }
         }
     }
 
     describe("getProduct") {
-        it("should call repository.findById") {
-            every { repository.findById(SampleEntity.product.id) } returns Optional.of(SampleEntity.product)
-            sut.getProduct(SampleEntity.product.id)
+        it("should call productRepository.findById") {
+            //Mock
+            every { repository.findById(1) } returns Optional.of(SampleEntity.product)
+
+            // Act
+            sut.getProduct(1)
+
+            verify { repository.findById(1) }
         }
     }
 
-    describe("createProduct") {
-        every { workspaceService.getWorkspace(workspaceId) } returns SampleEntity.workspace
+    describe("getProductCategory") {
+        it("should call productCategoryRepository.findById") {
+            //Mock
+            every { categoryRepository.findById(1) } returns Optional.of(SampleEntity.productCategory)
 
-        context("without WorkspaceInaccessibleException") {
-            every {
-                workspaceService.isAccessible(
-                    "username",
-                    SampleEntity.workspace.id
-                )
-            } returns true
+            // Act
+            sut.getProductCategory(1)
 
-            it("should create product") {
-                every { repository.save(any()) } returns SampleEntity.product
-
-                val result = sut.createProduct(
-                    "username",
-                    workspaceId,
-                    "name",
-                    "description",
-                    1000,
-                    null,
-                    null
-                )
-
-                result shouldBe SampleEntity.product
-            }
-
-            it("should product imageUrl is null if file is null") {
-                every { repository.save(any()) } answers {
-                    val product = arg<Product>(0)
-                    product.imageUrl shouldBe null
-                    product
-                }
-
-                sut.createProduct(
-                    "username",
-                    workspaceId,
-                    "test",
-                    "description",
-                    1000,
-                    null,
-                    null
-                )
-            }
-
-            it("should product imageUrl is not null if file is not null") {
-                every { repository.save(any()) } answers {
-                    val product = arg<Product>(0)
-                    product
-                } andThenAnswer {
-                    val product = arg<Product>(0)
-                    product.imageUrl shouldBe "testImageUrl"
-                    product
-                }
-                every { s3Service.uploadFile(any(), any()) } returns "testImageUrl"
-
-                sut.createProduct(
-                    "username",
-                    workspaceId,
-                    "test",
-                    "description",
-                    1000,
-                    null,
-                    file
-                )
-            }
-
-            it("should product productCategory is null if productCategoryId is null") {
-                every { repository.save(any()) } answers {
-                    val product = arg<Product>(0)
-                    product.productCategory shouldBe null
-                    product
-                }
-
-                sut.createProduct(
-                    "username",
-                    workspaceId,
-                    "test",
-                    "description",
-                    1000,
-                    null,
-                    null
-                )
-            }
-
-            it("should product productCategory is not null if productCategoryId is not null") {
-                every { repository.save(any()) } answers {
-                    val product = arg<Product>(0)
-                    product.productCategory shouldBe SampleEntity.productCategory
-                    product
-                }
-                every { categoryRepository.findById(1L) } returns Optional.of(SampleEntity.productCategory)
-
-                sut.createProduct(
-                    "username",
-                    workspaceId,
-                    "test",
-                    "description",
-                    1000,
-                    1L,
-                    null
-                )
-            }
-        }
-
-        context("with WorkspaceInaccessibleException") {
-            it("should raise WorkspaceInaccessibleException if given workspaceId is not accessible") {
-                every {
-                    workspaceService.isAccessible(
-                        "username",
-                        SampleEntity.workspace.id
-                    )
-                } returns false
-
-                try {
-                    sut.createProduct(
-                        "username",
-                        workspaceId,
-                        "name",
-                        "description",
-                        1000,
-                        null,
-                        null
-                    )
-                } catch (e: Exception) {
-                    e shouldBe WorkspaceInaccessibleException()
-                }
-            }
-
-            it("should raise WorkspaceInaccessibleException if given productCategoryId is from not accessible workspace") {
-                every {
-                    workspaceService.isAccessible(
-                        "username",
-                        SampleEntity.workspace.id
-                    )
-                } returns true
-                every { categoryRepository.findById(1L) } returns Optional.of(
-                    ProductCategory(
-                        "name",
-                        SampleEntity.workspaceWithId(2L)
-                    )
-                )
-
-                try {
-                    sut.createProduct(
-                        "username",
-                        workspaceId,
-                        "name",
-                        "description",
-                        1000,
-                        1L,
-                        null
-                    )
-                } catch (e: Exception) {
-                    e shouldBe WorkspaceInaccessibleException()
-                }
-            }
+            verify { categoryRepository.findById(1) }
         }
     }
 
-
-    describe("updateProduct") {
-        every { workspaceService.getWorkspace(workspaceId) } returns SampleEntity.workspace
-        every { repository.findById(SampleEntity.product.id) } returns Optional.of(SampleEntity.product)
-
-        context("without WorkspaceInaccessibleException") {
+    describe("getProductCategories") {
+        it("should call productCategoryRepository.findAllById") {
+            //Mock
             every {
-                workspaceService.isAccessible(
-                    "username",
-                    SampleEntity.workspace.id
+                categoryRepository.findAllById(
+                    listOf(
+                        1,
+                        2
+                    )
                 )
-            } returns true
+            } returns listOf(SampleEntity.productCategory)
 
-            it("should update product") {
-                every { repository.save(any()) } answers {
-                    val product = arg<Product>(0)
-                    product.name shouldBe "update name"
-                    product.description shouldBe "update description"
-                    product.price shouldBe 2000
-                    product
+            // Act
+            sut.getProductCategories(listOf(1, 2))
 
-                }
+            verify { categoryRepository.findAllById(listOf(1, 2)) }
+        }
+    }
 
-                val result = sut.updateProduct(
-                    "username",
-                    workspaceId,
-                    SampleEntity.product.id,
-                    "update name",
-                    "update description",
-                    2000,
-                    null,
-                    null
-                )
+    describe("saveProduct") {
+        it("should call productRepository.save") {
+            //Mock
+            every { repository.save(SampleEntity.product) } returns SampleEntity.product
 
-                result shouldBe SampleEntity.product
-            }
+            // Act
+            sut.saveProduct(SampleEntity.product)
+
+            verify { repository.save(SampleEntity.product) }
+        }
+
+        it("should call productRepository.save with product") {
+            //Mock
+            every { repository.save(any<Product>()) } returns SampleEntity.product
+
+            // Act
+            sut.saveProduct(
+                SampleEntity.product.name,
+                SampleEntity.product.price,
+                SampleEntity.product.description,
+                SampleEntity.workspace,
+                null
+            )
+
+            verify { repository.save(any<Product>()) }
+        }
+
+        it("should call productRepository.save with product and productCategory") {
+            //Mock
+            every { repository.save(any<Product>()) } returns SampleEntity.product
+            every { categoryRepository.findById(1) } returns Optional.of(SampleEntity.productCategory)
+
+            // Act
+            sut.saveProduct(
+                SampleEntity.product.name,
+                SampleEntity.product.price,
+                SampleEntity.product.description,
+                SampleEntity.workspace,
+                1
+            )
+
+            verify { repository.save(any<Product>()) }
+        }
+    }
+
+    describe("saveProductCategories") {
+        it("should call productCategoryRepository.saveAll") {
+            //Mock
+            every { categoryRepository.saveAll(listOf(SampleEntity.productCategory)) } returns listOf(
+                SampleEntity.productCategory
+            )
+
+            // Act
+            sut.saveProductCategories(listOf(SampleEntity.productCategory))
+
+            verify { categoryRepository.saveAll(listOf(SampleEntity.productCategory)) }
         }
     }
 
     describe("getAllProductCategories") {
-        it("should call categoryRepository.findAllByWorkspaceId") {
-            every { categoryRepository.findAllByWorkspaceIdOrderByIndexAsc(workspaceId) } returns listOf()
+        it("should call productCategoryRepository.findAllByWorkspaceIdOrderByIndexAsc") {
+            val workspaceId = 1L
+
+            //Mock
+            every { categoryRepository.findAllByWorkspaceIdOrderByIndexAsc(1) } returns listOf(
+                SampleEntity.productCategory
+            )
+
+            // Act
             sut.getAllProductCategories(workspaceId)
+
+            verify { categoryRepository.findAllByWorkspaceIdOrderByIndexAsc(workspaceId) }
         }
     }
 
-    describe("createProductCategory") {
-        every { workspaceService.getWorkspace(workspaceId) } returns SampleEntity.workspace
+    describe("getImageUrl") {
+        it("should call s3Service.uploadFile if file is not null") {
+            val workspaceId = 1L
+            val productId = 1L
+            val file = mockk<MultipartFile>()
 
-        context("without WorkspaceInaccessibleException") {
+
+            //Mock
             every {
-                workspaceService.isAccessible(
-                    "username",
-                    SampleEntity.workspace.id
+                s3Service.uploadFile(
+                    file,
+                    any<String>()
                 )
-            } returns true
+            } returns "test"
 
-            it("should create product category") {
-                every { categoryRepository.save(any()) } returns SampleEntity.productCategory
+            // Act
+            sut.getImageUrl(workspaceId, productId, file) shouldBe "test"
 
-                val result = sut.createProductCategory(
-                    "username",
-                    workspaceId,
-                    "name"
-                )
-
-                result shouldBe SampleEntity.productCategory
-            }
+            // Assert
+            verify { s3Service.uploadFile(file, any<String>()) }
         }
 
-        context("with WorkspaceInaccessibleException") {
-            it("should raise WorkspaceInaccessibleException if given workspaceId is not accessible") {
-                every {
-                    workspaceService.isAccessible(
-                        "username",
-                        SampleEntity.workspace.id
-                    )
-                } returns false
+        it("should return null if file is null") {
+            val workspaceId = 1L
+            val productId = 1L
+            val file = null
 
-                try {
-                    sut.createProductCategory(
-                        "username",
-                        workspaceId,
-                        "name"
-                    )
-                } catch (e: Exception) {
-                    e shouldBe WorkspaceInaccessibleException()
-                }
-            }
+            // Act
+            sut.getImageUrl(workspaceId, productId, file) shouldBe null
+        }
+    }
+
+    describe("saveProductCategory") {
+        it("should call productCategoryRepository.save") {
+            //Mock
+            every { categoryRepository.save(SampleEntity.productCategory) } returns SampleEntity.productCategory
+
+            // Act
+            sut.saveProductCategory(SampleEntity.productCategory)
+
+            verify { categoryRepository.save(SampleEntity.productCategory) }
         }
     }
 
     describe("deleteProductCategory") {
-        every { workspaceService.getWorkspace(workspaceId) } returns SampleEntity.workspace
-        every { categoryRepository.findById(SampleEntity.productCategory.id) } returns Optional.of(
-            SampleEntity.productCategory
-        )
+        it("should call productCategoryRepository.delete") {
+            //Mock
+            every { categoryRepository.delete(SampleEntity.productCategory) } returns Unit
 
-        context("without WorkspaceInaccessibleException") {
+            // Act
+            sut.deleteProductCategory(SampleEntity.productCategory)
+
+            verify { categoryRepository.delete(SampleEntity.productCategory) }
+        }
+    }
+
+    describe("checkProductCategoryDeletable") {
+        it("should throw CanNotDeleteUsingProductCategoryException if productCategory is used by product") {
+            val workspaceId = 1L
+            val productCategoryId = 1L
+
+            //Mock
             every {
-                workspaceService.isAccessible(
-                    "username",
-                    SampleEntity.workspace.id
-                )
-            } returns true
-
-            it("should delete product category") {
-                every {
-                    repository.countByWorkspaceIdAndProductCategoryId(
-                        workspaceId,
-                        SampleEntity.productCategory.id
-                    )
-                } returns 0
-                every { categoryRepository.findById(SampleEntity.productCategory.id) } returns Optional.of(
-                    SampleEntity.productCategory
-                )
-                every { categoryRepository.delete(SampleEntity.productCategory) } returns Unit
-
-                val result = sut.deleteProductCategory(
-                    "username",
+                repository.countByWorkspaceIdAndProductCategoryId(
                     workspaceId,
-                    SampleEntity.productCategory.id
+                    productCategoryId
                 )
+            } returns 1L
 
-                result shouldBe SampleEntity.productCategory
+            // Act and Assert
+            shouldThrow<CanNotDeleteUsingProductCategoryException> {
+                sut.checkProductCategoryDeletable(workspaceId, productCategoryId)
             }
         }
 
-        context("with WorkspaceInaccessibleException") {
-            it("should raise WorkspaceInaccessibleException if given workspaceId is not accessible") {
-                every {
-                    workspaceService.isAccessible(
-                        "username",
-                        SampleEntity.workspace.id
-                    )
-                } returns false
+        it("should not throw CanNotDeleteUsingProductCategoryException if productCategory is not used by product") {
+            val workspaceId = 1L
+            val productCategoryId = 1L
 
-                try {
-                    sut.deleteProductCategory(
-                        "username",
-                        workspaceId,
-                        SampleEntity.productCategory.id
-                    )
-                } catch (e: Exception) {
-                    e shouldBe WorkspaceInaccessibleException()
-                }
-            }
+            //Mock
+            every {
+                repository.countByWorkspaceIdAndProductCategoryId(
+                    workspaceId,
+                    productCategoryId
+                )
+            } returns 0L
 
-            it("should raise CanNotDeleteUsingProductCategoryException if productCategory is used by product") {
-                every {
-                    workspaceService.isAccessible(
-                        "username",
-                        SampleEntity.workspace.id
-                    )
-                } returns true
-                every {
-                    repository.countByWorkspaceIdAndProductCategoryId(
-                        workspaceId,
-                        SampleEntity.productCategory.id
-                    )
-                } returns 1
-
-                try {
-                    sut.deleteProductCategory(
-                        "username",
-                        workspaceId,
-                        SampleEntity.productCategory.id
-                    )
-                } catch (e: Exception) {
-                    e shouldBe CanNotDeleteUsingProductCategoryException()
-                }
-            }
+            // Act and Assert
+            sut.checkProductCategoryDeletable(workspaceId, productCategoryId)
         }
     }
 
     describe("deleteProduct") {
-        every { workspaceService.getWorkspace(workspaceId) } returns SampleEntity.workspace
-        every { repository.findById(SampleEntity.product.id) } returns Optional.of(SampleEntity.product)
+        it("should call productRepository.delete") {
+            val product = SampleEntity.product
 
-        context("without WorkspaceInaccessibleException") {
-            every {
-                workspaceService.isAccessible(
-                    "username",
-                    SampleEntity.workspace.id
-                )
-            } returns true
+            //Mock
+            every { repository.delete(product) } returns Unit
 
-            it("should delete product") {
-                every { repository.delete(SampleEntity.product) } returns Unit
+            // Act
+            sut.deleteProduct(product) shouldBe product
 
-                val result = sut.deleteProduct(
-                    "username",
-                    workspaceId,
-                    SampleEntity.product.id
-                )
+            verify { repository.delete(product) }
+        }
+    }
 
-                result shouldBe SampleEntity.product
+    describe("checkAccessible") {
+        it("should throw WorkspaceInaccessibleException if workspace is not accessible") {
+            val username = "test"
+            val workspaceId = 1L
+
+            //Mock
+            every { workspaceService.isAccessible(username, workspaceId) } returns false
+
+            // Act and Assert
+            shouldThrow<WorkspaceInaccessibleException> {
+                sut.checkAccessible(username, workspaceId)
             }
         }
 
-        context("with WorkspaceInaccessibleException") {
-            it("should raise WorkspaceInaccessibleException if given workspaceId is not accessible") {
-                every {
-                    workspaceService.isAccessible(
-                        "username",
-                        SampleEntity.workspace.id
-                    )
-                } returns false
+        it("should not throw WorkspaceInaccessibleException if workspace is accessible") {
+            val username = "test"
+            val workspaceId = 1L
 
-                try {
-                    sut.deleteProduct(
-                        "username",
-                        workspaceId,
-                        SampleEntity.product.id
-                    )
-                } catch (e: Exception) {
-                    e shouldBe WorkspaceInaccessibleException()
-                }
-            }
+            //Mock
+            every { workspaceService.isAccessible(username, workspaceId) } returns true
+
+            // Act and Assert
+            sut.checkAccessible(username, workspaceId)
         }
     }
 })

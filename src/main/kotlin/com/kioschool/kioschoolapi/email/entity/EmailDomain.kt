@@ -6,4 +6,7 @@ import jakarta.persistence.Table
 
 @Entity
 @Table(name = "email_domain")
-class EmailDomain(val domain: String) : BaseEntity()
+class EmailDomain(
+    val name: String,
+    val domain: String
+) : BaseEntity()

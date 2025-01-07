@@ -16,7 +16,8 @@ class CustomOrderRepository(
         workspaceId: Long,
         startDate: LocalDateTime?,
         endDate: LocalDateTime?,
-        status: OrderStatus?
+        status: OrderStatus?,
+        tableNumber: Int?
     ): List<Order> {
         val order = QOrder.order
         val query = queryFactory.selectFrom(order)
@@ -26,6 +27,7 @@ class CustomOrderRepository(
         if (startDate != null) query.where(order.createdAt.goe(startDate))
         if (endDate != null) query.where(order.createdAt.loe(endDate))
         if (status != null) query.where(order.status.eq(status))
+        if (tableNumber != null) query.where(order.tableNumber.eq(tableNumber))
 
         return query.fetch()
     }

@@ -22,12 +22,12 @@ class StompHandler(
         when (accessor.command) {
             StompCommand.CONNECT -> {
                 val token = sessionAttributes?.get("token") as String
-                if (!jwtProvider.validateToken(token)) throw InvalidJwtException()
+                if (!jwtProvider.isValidToken(token)) throw InvalidJwtException()
             }
 
             StompCommand.SUBSCRIBE -> {
                 val token = sessionAttributes?.get("token") as String
-                if (!jwtProvider.validateToken(token)) throw InvalidJwtException()
+                if (!jwtProvider.isValidToken(token)) throw InvalidJwtException()
                 if (!isAccessible(token, accessor)) throw WorkspaceInaccessibleException()
             }
 
@@ -39,9 +39,7 @@ class StompHandler(
 
     fun isAccessible(token: String, accessor: StompHeaderAccessor): Boolean {
         val username = jwtProvider.getLoginId(token)
-        val workspace = workspaceService.getWorkspace(
-            accessor.destination!!.filter { it.isDigit() }.toLong()
-        )
-        return workspaceService.isAccessible(username, workspace)
+        val workspaceId = accessor.destination!!.filter { it.isDigit() }.toLong()
+        return workspaceService.isAccessible(username, workspaceId)
     }
 }

@@ -47,7 +47,6 @@ cloud:
       secret-key: "${AWS_S3_SECRET_KEY}"
     region:
       static: ap-northeast-2
-      auto: false
     stack:
       auto: false
 server:
@@ -57,9 +56,6 @@ server:
         same-site: none
   error:
     include-message: always
-portone:
-  api-key: "${PORTONE_API_KEY}"
-  api-secret: "${PORTONE_API_SECRET}"
 
 ---
 
@@ -99,6 +95,6 @@ cloud:
     s3:
       default-path: local
 websocket:
-  allowed-origins: "*"
+  allowed-origins: "http://localhost:3000"
 discord:
   webhook-url: "${DISCORD_WEBHOOK_URL}"

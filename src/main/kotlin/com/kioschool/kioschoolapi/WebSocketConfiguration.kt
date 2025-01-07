@@ -5,6 +5,7 @@ import jakarta.servlet.http.Cookie
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.http.HttpHeaders
 import org.springframework.http.server.ServerHttpRequest
 import org.springframework.http.server.ServerHttpResponse
 import org.springframework.http.server.ServletServerHttpRequest
@@ -20,7 +21,7 @@ import org.springframework.web.util.WebUtils
 
 @Configuration
 @EnableWebSocketMessageBroker
-class WebsocketConfigure(
+class WebSocketConfiguration(
     private val stompHandler: StompHandler,
     @Value("\${websocket.allowed-origins}")
     private val allowedOrigins: String,
@@ -54,7 +55,8 @@ class WebsocketConfigure(
             ): Boolean {
                 if (request is ServletServerHttpRequest) {
                     val servletRequest = request.servletRequest
-                    val token: Cookie? = WebUtils.getCookie(servletRequest, "Authorization")
+                    val token: Cookie? =
+                        WebUtils.getCookie(servletRequest, HttpHeaders.AUTHORIZATION)
                     attributes["token"] = token?.value ?: ""
                 }
                 return true

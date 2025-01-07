@@ -6,6 +6,5 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface ProductRepository : JpaRepository<Product, Long> {
-    fun findAllByWorkspaceId(workspaceId: Long): List<Product>
     fun countByWorkspaceIdAndProductCategoryId(workspaceId: Long, productCategoryId: Long): Long
 }

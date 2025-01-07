@@ -2,7 +2,7 @@ package com.kioschool.kioschoolapi.order.controller
 
 import com.kioschool.kioschoolapi.order.dto.CreateOrderRequestBody
 import com.kioschool.kioschoolapi.order.entity.Order
-import com.kioschool.kioschoolapi.order.service.OrderService
+import com.kioschool.kioschoolapi.order.facade.OrderFacade
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.web.bind.annotation.*
@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*
 @Tag(name = "Order Controller")
 @RestController
 class OrderController(
-    private val orderService: OrderService
+    private val orderFacade: OrderFacade
 ) {
 
     @Operation(summary = "주문 생성", description = "주문을 생성합니다.")
@@ -18,7 +18,7 @@ class OrderController(
     fun createOrder(
         @RequestBody body: CreateOrderRequestBody
     ): Order {
-        return orderService.createOrder(
+        return orderFacade.createOrder(
             body.workspaceId,
             body.tableNumber,
             body.customerName,
@@ -31,6 +31,6 @@ class OrderController(
     fun getOrder(
         @RequestParam("orderId") orderId: Long
     ): Order {
-        return orderService.getOrder(orderId)
+        return orderFacade.getOrder(orderId)
     }
 }

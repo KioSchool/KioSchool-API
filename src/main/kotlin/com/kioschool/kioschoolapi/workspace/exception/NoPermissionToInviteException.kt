@@ -1,6 +1,7 @@
 package com.kioschool.kioschoolapi.workspace.exception
 
-class NoPermissionToInviteException : Exception() {
-    override val message: String
-        get() = "초대 권한이 없습니다."
-}
+import org.springframework.http.HttpStatus
+import org.springframework.web.bind.annotation.ResponseStatus
+
+@ResponseStatus(code = HttpStatus.FORBIDDEN, reason = "초대 권한이 없습니다.")
+class NoPermissionToInviteException : Exception()
