@@ -38,10 +38,10 @@ class SuperAdminEmailController(
 
     @Operation(summary = "이메일 도메인 삭제", description = "키오스쿨에 등록된 이메일 도메인을 삭제합니다.")
     @DeleteMapping("/email-domain")
-    fun removeEmailDomain(
+    fun deleteEmailDomain(
         @SuperAdminUsername username: String,
         @RequestBody body: RemoveEmailDomainRequestBody
     ): EmailDomain {
-        return emailFacade.removeEmailDomain(body.domainId)
+        return emailFacade.deleteEmailDomain(body.domainId)
     }
 }

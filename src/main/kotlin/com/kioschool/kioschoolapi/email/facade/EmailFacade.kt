@@ -18,5 +18,5 @@ class EmailFacade(
         return emailService.registerEmailDomain(name, domain)
     }
 
-    fun removeEmailDomain(domainId: Long) = emailService.removeEmailDomain(domainId)
+    fun deleteEmailDomain(domainId: Long) = emailService.deleteEmailDomain(domainId)
 }

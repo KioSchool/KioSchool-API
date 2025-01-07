@@ -19,7 +19,7 @@ class EmailService(
     private val emailCodeRepository: EmailCodeRepository,
     private val emailDomainRepository: EmailDomainRepository
 ) {
-    fun createOrUpdateRegisterEmailCode(emailAddress: String, code: String) {
+    fun createOrUpdateRegisterEmailCode(emailAddress: String, code: String): EmailCode {
         val emailCode =
             emailCodeRepository.findByEmailAndKind(emailAddress, EmailKind.REGISTER) ?: EmailCode(
                 emailAddress,
@@ -27,7 +27,7 @@ class EmailService(
                 kind = EmailKind.REGISTER
             )
         emailCode.code = code
-        emailCodeRepository.save(emailCode)
+        return emailCodeRepository.save(emailCode)
     }
 
     fun validateEmailDomain(emailAddress: String) {
@@ -114,7 +114,8 @@ class EmailService(
         return emailDomainRepository.save(EmailDomain(name, domain))
     }
 
-    fun removeEmailDomain(domainId: Long): EmailDomain {
+    @Transactional
+    fun deleteEmailDomain(domainId: Long): EmailDomain {
         val emailDomain = emailDomainRepository.findById(domainId).orElseThrow()
         emailDomainRepository.delete(emailDomain)
         return emailDomain
