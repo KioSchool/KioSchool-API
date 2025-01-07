@@ -78,7 +78,7 @@ class EmailService(
         return emailCode.email
     }
 
-    fun createOrUpdateResetPasswordEmailCode(email: String, code: String) {
+    fun createOrUpdateResetPasswordEmailCode(email: String, code: String): EmailCode {
         val emailCode =
             emailCodeRepository.findByEmailAndKind(email, EmailKind.RESET_PASSWORD) ?: EmailCode(
                 email,
@@ -86,7 +86,7 @@ class EmailService(
                 kind = EmailKind.RESET_PASSWORD
             )
         emailCode.code = code
-        emailCodeRepository.save(emailCode)
+        return emailCodeRepository.save(emailCode)
     }
 
     @Transactional
