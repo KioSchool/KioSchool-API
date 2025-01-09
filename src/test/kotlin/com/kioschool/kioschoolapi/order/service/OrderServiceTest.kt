@@ -8,9 +8,7 @@ import com.kioschool.kioschoolapi.websocket.service.CustomWebSocketService
 import com.kioschool.kioschoolapi.workspace.service.WorkspaceService
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.verify
+import io.mockk.*
 import org.springframework.data.domain.PageRequest
 
 class OrderServiceTest : DescribeSpec({
@@ -27,6 +25,18 @@ class OrderServiceTest : DescribeSpec({
         customOrderRepository,
         orderProductRepository
     )
+
+    beforeTest {
+        mockkObject(repository)
+        mockkObject(workspaceService)
+        mockkObject(websocketService)
+        mockkObject(customOrderRepository)
+        mockkObject(orderProductRepository)
+    }
+
+    afterTest {
+        clearAllMocks()
+    }
 
     describe("saveOrder") {
         it("should save order") {

@@ -11,9 +11,7 @@ import com.kioschool.kioschoolapi.workspace.service.WorkspaceService
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.verify
+import io.mockk.*
 import org.springframework.web.multipart.MultipartFile
 import java.util.*
 
@@ -31,6 +29,18 @@ class ProductServiceTest : DescribeSpec({
         workspaceService,
         s3Service
     )
+
+    beforeTest {
+        mockkObject(repository)
+        mockkObject(customRepository)
+        mockkObject(categoryRepository)
+        mockkObject(workspaceService)
+        mockkObject(s3Service)
+    }
+
+    afterTest {
+        clearAllMocks()
+    }
 
     describe("getAllProductsByCondition") {
         it("should call customProductRepository.findAllByCondition") {
