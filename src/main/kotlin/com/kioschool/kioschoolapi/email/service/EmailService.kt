@@ -3,6 +3,7 @@ package com.kioschool.kioschoolapi.email.service
 import com.kioschool.kioschoolapi.email.entity.EmailCode
 import com.kioschool.kioschoolapi.email.entity.EmailDomain
 import com.kioschool.kioschoolapi.email.enum.EmailKind
+import com.kioschool.kioschoolapi.email.exception.DuplicatedEmailDomainException
 import com.kioschool.kioschoolapi.email.exception.NotVerifiedEmailDomainException
 import com.kioschool.kioschoolapi.email.repository.EmailCodeRepository
 import com.kioschool.kioschoolapi.email.repository.EmailDomainRepository
@@ -30,7 +31,7 @@ class EmailService(
         return emailCodeRepository.save(emailCode)
     }
 
-    fun validateEmailDomain(emailAddress: String) {
+    fun validateEmailDomainVerified(emailAddress: String) {
         if (!isEmailDomainVerified(emailAddress)) throw NotVerifiedEmailDomainException()
     }
 
@@ -106,7 +107,11 @@ class EmailService(
         return emailDomainRepository.findAll(PageRequest.of(page, size))
     }
 
-    fun isEmailDomainDuplicate(domain: String): Boolean {
+    fun validateEmailDomainDuplicate(domain: String) {
+        if (isEmailDomainDuplicate(domain)) throw DuplicatedEmailDomainException()
+    }
+
+    private fun isEmailDomainDuplicate(domain: String): Boolean {
         return emailDomainRepository.findByDomain(domain) != null
     }
 

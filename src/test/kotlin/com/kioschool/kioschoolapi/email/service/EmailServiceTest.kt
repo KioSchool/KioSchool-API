@@ -1,6 +1,7 @@
 package com.kioschool.kioschoolapi.email.service
 
 import com.kioschool.kioschoolapi.email.enum.EmailKind
+import com.kioschool.kioschoolapi.email.exception.DuplicatedEmailDomainException
 import com.kioschool.kioschoolapi.email.exception.NotVerifiedEmailDomainException
 import com.kioschool.kioschoolapi.email.repository.EmailCodeRepository
 import com.kioschool.kioschoolapi.email.repository.EmailDomainRepository
@@ -83,7 +84,7 @@ class EmailServiceTest : DescribeSpec({
             every { emailDomainRepository.findByDomain(any()) } returns null
 
             assertThrows<NotVerifiedEmailDomainException> {
-                sut.validateEmailDomain(emailAddress)
+                sut.validateEmailDomainVerified(emailAddress)
             }
         }
 
@@ -92,7 +93,7 @@ class EmailServiceTest : DescribeSpec({
 
             every { emailDomainRepository.findByDomain(any()) } returns SampleEntity.emailDomain
 
-            sut.validateEmailDomain(emailAddress)
+            sut.validateEmailDomainVerified(emailAddress)
         }
     }
 
@@ -398,25 +399,23 @@ class EmailServiceTest : DescribeSpec({
         }
     }
 
-    describe("isEmailDomainDuplicate") {
-        it("should return true if email domain is duplicate") {
-            val domain = SampleEntity.emailDomain.domain
-
-            every { emailDomainRepository.findByDomain(domain) } returns SampleEntity.emailDomain
-
-            val result = sut.isEmailDomainDuplicate(domain)
-
-            assert(result)
-        }
-
-        it("should return false if email domain is not duplicate") {
+    describe("validateEmailDomainDuplicate") {
+        it("should not throw DuplicatedEmailDomainException if email domain is not duplicated") {
             val domain = SampleEntity.emailDomain.domain
 
             every { emailDomainRepository.findByDomain(domain) } returns null
 
-            val result = sut.isEmailDomainDuplicate(domain)
+            sut.validateEmailDomainDuplicate(domain)
+        }
 
-            assert(!result)
+        it("should throw DuplicatedEmailDomainException if email domain is duplicated") {
+            val domain = SampleEntity.emailDomain.domain
+
+            every { emailDomainRepository.findByDomain(domain) } returns SampleEntity.emailDomain
+
+            assertThrows<DuplicatedEmailDomainException> {
+                sut.validateEmailDomainDuplicate(domain)
+            }
         }
     }
 

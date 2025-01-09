@@ -88,7 +88,7 @@ class UserFacade(
     }
 
     fun sendRegisterEmail(emailAddress: String) {
-        emailService.validateEmailDomain(emailAddress)
+        emailService.validateEmailDomainVerified(emailAddress)
 
         val code = emailService.generateRegisterCode()
         emailService.sendEmail(
