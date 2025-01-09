@@ -118,10 +118,4 @@ class ProductService(
         productRepository.delete(product)
         return product
     }
-
-    fun checkAccessible(username: String, workspaceId: Long) {
-        if (!workspaceService.isAccessible(username, workspaceId)) {
-            throw WorkspaceInaccessibleException()
-        }
-    }
 }

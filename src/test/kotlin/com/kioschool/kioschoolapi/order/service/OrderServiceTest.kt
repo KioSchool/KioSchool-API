@@ -5,9 +5,7 @@ import com.kioschool.kioschoolapi.order.repository.CustomOrderRepository
 import com.kioschool.kioschoolapi.order.repository.OrderProductRepository
 import com.kioschool.kioschoolapi.order.repository.OrderRepository
 import com.kioschool.kioschoolapi.websocket.service.CustomWebSocketService
-import com.kioschool.kioschoolapi.workspace.exception.WorkspaceInaccessibleException
 import com.kioschool.kioschoolapi.workspace.service.WorkspaceService
-import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.every
@@ -155,34 +153,6 @@ class OrderServiceTest : DescribeSpec({
 
             // Assert
             verify { repository.findById(orderId) }
-        }
-    }
-
-    describe("checkAccessible") {
-        it("should throw WorkspaceInaccessibleException") {
-            // Arrange
-            val username = "test"
-            val workspaceId = 1L
-
-            // Mock
-            every { workspaceService.isAccessible(username, workspaceId) } returns false
-
-            // Act & Assert
-            shouldThrow<WorkspaceInaccessibleException> {
-                sut.checkAccessible(username, workspaceId)
-            }
-        }
-
-        it("should not throw WorkspaceInaccessibleException") {
-            // Arrange
-            val username = "test"
-            val workspaceId = 1L
-
-            // Mock
-            every { workspaceService.isAccessible(username, workspaceId) } returns true
-
-            // Act & Assert
-            sut.checkAccessible(username, workspaceId)
         }
     }
 

@@ -8,7 +8,6 @@ import com.kioschool.kioschoolapi.order.repository.OrderProductRepository
 import com.kioschool.kioschoolapi.order.repository.OrderRepository
 import com.kioschool.kioschoolapi.websocket.dto.Message
 import com.kioschool.kioschoolapi.websocket.service.CustomWebSocketService
-import com.kioschool.kioschoolapi.workspace.exception.WorkspaceInaccessibleException
 import com.kioschool.kioschoolapi.workspace.service.WorkspaceService
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
@@ -67,12 +66,6 @@ class OrderService(
 
     fun getOrderProduct(orderProductId: Long): OrderProduct {
         return orderProductRepository.findById(orderProductId).get()
-    }
-
-    fun checkAccessible(username: String, workspaceId: Long) {
-        if (!workspaceService.isAccessible(username, workspaceId)) {
-            throw WorkspaceInaccessibleException()
-        }
     }
 
     fun getAllOrdersByTable(

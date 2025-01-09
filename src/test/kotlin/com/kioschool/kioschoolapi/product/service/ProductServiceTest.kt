@@ -7,7 +7,6 @@ import com.kioschool.kioschoolapi.product.exception.CanNotDeleteUsingProductCate
 import com.kioschool.kioschoolapi.product.repository.CustomProductRepository
 import com.kioschool.kioschoolapi.product.repository.ProductCategoryRepository
 import com.kioschool.kioschoolapi.product.repository.ProductRepository
-import com.kioschool.kioschoolapi.workspace.exception.WorkspaceInaccessibleException
 import com.kioschool.kioschoolapi.workspace.service.WorkspaceService
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
@@ -266,32 +265,6 @@ class ProductServiceTest : DescribeSpec({
             sut.deleteProduct(product) shouldBe product
 
             verify { repository.delete(product) }
-        }
-    }
-
-    describe("checkAccessible") {
-        it("should throw WorkspaceInaccessibleException if workspace is not accessible") {
-            val username = "test"
-            val workspaceId = 1L
-
-            //Mock
-            every { workspaceService.isAccessible(username, workspaceId) } returns false
-
-            // Act and Assert
-            shouldThrow<WorkspaceInaccessibleException> {
-                sut.checkAccessible(username, workspaceId)
-            }
-        }
-
-        it("should not throw WorkspaceInaccessibleException if workspace is accessible") {
-            val username = "test"
-            val workspaceId = 1L
-
-            //Mock
-            every { workspaceService.isAccessible(username, workspaceId) } returns true
-
-            // Act and Assert
-            sut.checkAccessible(username, workspaceId)
         }
     }
 })

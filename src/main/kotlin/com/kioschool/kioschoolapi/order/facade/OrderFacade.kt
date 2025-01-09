@@ -66,7 +66,7 @@ class OrderFacade(
         status: String?,
         tableNumber: Int?
     ): List<Order> {
-        orderService.checkAccessible(username, workspaceId)
+        workspaceService.checkAccessible(username, workspaceId)
 
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
         val parsedStartDate = startDate?.let { LocalDate.parse(it, formatter).atStartOfDay() }
@@ -83,7 +83,7 @@ class OrderFacade(
     }
 
     fun getRealtimeOrders(username: String, workspaceId: Long): List<Order> {
-        orderService.checkAccessible(username, workspaceId)
+        workspaceService.checkAccessible(username, workspaceId)
 
         val startDate = LocalDateTime.now().minusHours(2)
         val endDate = LocalDateTime.now()
@@ -97,7 +97,7 @@ class OrderFacade(
         orderId: Long,
         status: String
     ): Order {
-        orderService.checkAccessible(username, workspaceId)
+        workspaceService.checkAccessible(username, workspaceId)
 
         val order = orderService.getOrder(orderId)
         order.status = OrderStatus.valueOf(status)
@@ -111,7 +111,7 @@ class OrderFacade(
         orderProductId: Long,
         isServed: Boolean
     ): OrderProduct {
-        orderService.checkAccessible(username, workspaceId)
+        workspaceService.checkAccessible(username, workspaceId)
 
         val orderProduct = orderService.getOrderProduct(orderProductId)
         orderProduct.isServed = isServed
@@ -125,7 +125,7 @@ class OrderFacade(
         page: Int,
         size: Int
     ): Page<Order> {
-        orderService.checkAccessible(username, workspaceId)
+        workspaceService.checkAccessible(username, workspaceId)
         return orderService.getAllOrdersByTable(workspaceId, tableNumber, page, size)
     }
 }
