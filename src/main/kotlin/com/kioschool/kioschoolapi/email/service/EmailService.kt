@@ -7,6 +7,7 @@ import com.kioschool.kioschoolapi.email.exception.DuplicatedEmailDomainException
 import com.kioschool.kioschoolapi.email.exception.NotVerifiedEmailDomainException
 import com.kioschool.kioschoolapi.email.repository.EmailCodeRepository
 import com.kioschool.kioschoolapi.email.repository.EmailDomainRepository
+import com.kioschool.kioschoolapi.user.exception.UserNotFoundException
 import jakarta.transaction.Transactional
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
@@ -73,9 +74,10 @@ class EmailService(
         return true
     }
 
-    fun getEmailByCode(code: String): String? {
+    fun getEmailByCode(code: String): String {
         val emailCode =
-            emailCodeRepository.findByCodeAndKind(code, EmailKind.RESET_PASSWORD) ?: return null
+            emailCodeRepository.findByCodeAndKind(code, EmailKind.RESET_PASSWORD)
+                ?: throw UserNotFoundException()
         return emailCode.email
     }
 

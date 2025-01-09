@@ -6,7 +6,6 @@ import com.kioschool.kioschoolapi.email.service.EmailService
 import com.kioschool.kioschoolapi.security.JwtProvider
 import com.kioschool.kioschoolapi.template.TemplateService
 import com.kioschool.kioschoolapi.user.entity.User
-import com.kioschool.kioschoolapi.user.exception.UserNotFoundException
 import com.kioschool.kioschoolapi.user.service.UserService
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.boot.web.server.Cookie.SameSite
@@ -119,7 +118,7 @@ class UserFacade(
     }
 
     fun resetPassword(code: String, password: String) {
-        val email = emailService.getEmailByCode(code) ?: throw UserNotFoundException()
+        val email = emailService.getEmailByCode(code)
         val user = userService.getUserByEmail(email)
         userService.savePassword(user, password)
         emailService.deleteResetPasswordCode(code)
