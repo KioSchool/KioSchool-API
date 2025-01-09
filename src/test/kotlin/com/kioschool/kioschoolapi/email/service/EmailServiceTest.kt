@@ -6,6 +6,7 @@ import com.kioschool.kioschoolapi.email.exception.NotVerifiedEmailDomainExceptio
 import com.kioschool.kioschoolapi.email.repository.EmailCodeRepository
 import com.kioschool.kioschoolapi.email.repository.EmailDomainRepository
 import com.kioschool.kioschoolapi.factory.SampleEntity
+import com.kioschool.kioschoolapi.user.exception.UserNotFoundException
 import io.kotest.core.spec.style.DescribeSpec
 import io.mockk.*
 import org.junit.jupiter.api.assertThrows
@@ -259,7 +260,7 @@ class EmailServiceTest : DescribeSpec({
             assert(result == emailCode.email)
         }
 
-        it("should return null if emailCode is not exists") {
+        it("should throw UserNotFoundException if emailCode is not exists") {
             val code = "123456"
 
             every {
@@ -269,9 +270,9 @@ class EmailServiceTest : DescribeSpec({
                 )
             } returns null
 
-            val result = sut.getEmailByCode(code)
-
-            assert(result == null)
+            assertThrows<UserNotFoundException> {
+                sut.getEmailByCode(code)
+            }
         }
     }
 
