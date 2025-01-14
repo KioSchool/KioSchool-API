@@ -128,4 +128,18 @@ class OrderFacade(
         workspaceService.checkAccessible(username, workspaceId)
         return orderService.getAllOrdersByTable(workspaceId, tableNumber, page, size)
     }
+
+    fun changeOrderProductServedCount(
+        username: String,
+        workspaceId: Long,
+        orderProductId: Long,
+        servedCount: Int
+    ): OrderProduct {
+        workspaceService.checkAccessible(username, workspaceId)
+
+        val orderProduct = orderService.getOrderProduct(orderProductId)
+        orderProduct.servedCount = servedCount
+        orderProduct.isServed = orderProduct.servedCount == orderProduct.quantity
+        return orderService.saveOrderProductAndSendWebsocketMessage(orderProduct)
+    }
 }
