@@ -73,9 +73,21 @@ object SampleEntity {
     val productCategory = ProductCategory(
         name = "test",
         workspace = workspace
-    )
+    ).apply { setId(1) }
+
+    val productCategory2 = ProductCategory(
+        name = "test2",
+        workspace = workspace
+    ).apply { setId(2) }
+
+    val productCategory3 = ProductCategory(
+        name = "test3",
+        workspace = workspace
+    ).apply { setId(3) }
 
     fun productCategoryWithId(id: Long) = productCategory.apply { setId(id) }
+
+    val productCategories = listOf(productCategory, productCategory2, productCategory3)
 
     val product = Product(
         name = "test",
