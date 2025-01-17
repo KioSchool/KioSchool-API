@@ -135,7 +135,7 @@ class UserFacade(
         val superAdminUser = userService.getUser(username)
         userService.checkHasSuperAdminPermission(superAdminUser)
 
-        val user = getUser(id)
+        val user = userService.getUser(id)
         user.role = UserRole.SUPER_ADMIN
         return userService.saveUser(user)
     }
