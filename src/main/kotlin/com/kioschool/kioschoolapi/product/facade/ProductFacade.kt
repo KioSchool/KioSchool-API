@@ -17,12 +17,12 @@ class ProductFacade(
 ) {
     fun getProduct(username: String, productId: Long): Product {
         val product = productService.getProduct(productId)
-        productService.checkAccessible(username, product.workspace.id)
+        workspaceService.checkAccessible(username, product.workspace.id)
         return product
     }
 
     fun getProducts(username: String, workspaceId: Long): List<Product> {
-        productService.checkAccessible(username, workspaceId)
+        workspaceService.checkAccessible(username, workspaceId)
         return productService.getAllProductsByCondition(workspaceId)
     }
 
@@ -33,7 +33,7 @@ class ProductFacade(
         productService.getAllProductCategories(workspaceId)
 
     fun getProductCategories(username: String, workspaceId: Long): List<ProductCategory> {
-        productService.checkAccessible(username, workspaceId)
+        workspaceService.checkAccessible(username, workspaceId)
         return productService.getAllProductCategories(workspaceId)
     }
 
@@ -46,7 +46,7 @@ class ProductFacade(
         productCategoryId: Long?,
         file: MultipartFile?
     ): Product {
-        productService.checkAccessible(username, workspaceId)
+        workspaceService.checkAccessible(username, workspaceId)
         val workspace = workspaceService.getWorkspace(workspaceId)
 
         val product = productService.saveProduct(
@@ -72,7 +72,7 @@ class ProductFacade(
         file: MultipartFile?
     ): Product {
         val product = productService.getProduct(productId)
-        productService.checkAccessible(username, product.workspace.id)
+        workspaceService.checkAccessible(username, product.workspace.id)
 
         name?.let { product.name = it }
         description?.let { product.description = it }
@@ -102,7 +102,7 @@ class ProductFacade(
         isSellable: Boolean
     ): Product {
         val product = productService.getProduct(productId)
-        productService.checkAccessible(username, workspaceId)
+        workspaceService.checkAccessible(username, workspaceId)
 
         product.isSellable = isSellable
         return productService.saveProduct(product)
@@ -110,12 +110,12 @@ class ProductFacade(
 
     fun deleteProduct(username: String, productId: Long): Product {
         val product = productService.getProduct(productId)
-        productService.checkAccessible(username, product.workspace.id)
+        workspaceService.checkAccessible(username, product.workspace.id)
         return productService.deleteProduct(product)
     }
 
     fun createProductCategory(username: String, workspaceId: Long, name: String): ProductCategory {
-        productService.checkAccessible(username, workspaceId)
+        workspaceService.checkAccessible(username, workspaceId)
         val workspace = workspaceService.getWorkspace(workspaceId)
 
         return productService.saveProductCategory(
@@ -132,7 +132,7 @@ class ProductFacade(
         productCategoryId: Long
     ): ProductCategory {
         val productCategory = productService.getProductCategory(productCategoryId)
-        productService.checkAccessible(username, productCategory.workspace.id)
+        workspaceService.checkAccessible(username, productCategory.workspace.id)
         productService.checkProductCategoryDeletable(workspaceId, productCategoryId)
 
         return productService.deleteProductCategory(productCategory)
@@ -143,7 +143,7 @@ class ProductFacade(
         workspaceId: Long,
         productCategoryIds: List<Long>
     ): List<ProductCategory> {
-        productService.checkAccessible(username, workspaceId)
+        workspaceService.checkAccessible(username, workspaceId)
 
         val productCategories = productService.getProductCategories(productCategoryIds)
         val productCategoryMap = productCategories.associateBy { it.id }

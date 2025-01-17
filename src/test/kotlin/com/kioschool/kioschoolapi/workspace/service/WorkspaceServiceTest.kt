@@ -6,14 +6,12 @@ import com.kioschool.kioschoolapi.user.service.UserService
 import com.kioschool.kioschoolapi.workspace.exception.NoPermissionToCreateWorkspaceException
 import com.kioschool.kioschoolapi.workspace.exception.NoPermissionToInviteException
 import com.kioschool.kioschoolapi.workspace.exception.NoPermissionToJoinWorkspaceException
+import com.kioschool.kioschoolapi.workspace.exception.WorkspaceInaccessibleException
 import com.kioschool.kioschoolapi.workspace.repository.WorkspaceRepository
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
-import io.mockk.Called
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.verify
+import io.mockk.*
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
 import java.util.*
@@ -23,6 +21,15 @@ class WorkspaceServiceTest : DescribeSpec({
     val userService = mockk<UserService>()
 
     val sut = WorkspaceService(repository, userService)
+
+    beforeTest {
+        mockkObject(repository)
+        mockkObject(userService)
+    }
+
+    afterTest {
+        clearAllMocks()
+    }
 
     describe("getAllWorkspaces") {
         it("should call findByNameContains when name is not null") {
@@ -43,7 +50,7 @@ class WorkspaceServiceTest : DescribeSpec({
 
             // Assert
             verify { repository.findByNameContains(name, PageRequest.of(page, size)) }
-            verify { repository.findAll(PageRequest.of(page, size)) wasNot Called }
+            verify(exactly = 0) { repository.findAll(PageRequest.of(page, size)) }
         }
 
         it("should call findAll when name is null") {
@@ -61,14 +68,13 @@ class WorkspaceServiceTest : DescribeSpec({
 
             // Assert
             verify { repository.findAll(PageRequest.of(page, size)) }
-            verify { repository.findByNameContains(any(), any()) wasNot Called }
+            verify(exactly = 0) { repository.findByNameContains(any(), any()) }
         }
     }
 
     describe("checkCanCreateWorkspace") {
         it("should throw NoPermissionToCreateWorkspaceException when user accountUrl is null") {
-            val user = SampleEntity.user
-            user.accountUrl = null
+            val user = SampleEntity.user.apply { accountUrl = null }
 
             // Act & Assert
             shouldThrow<NoPermissionToCreateWorkspaceException> {
@@ -77,8 +83,7 @@ class WorkspaceServiceTest : DescribeSpec({
         }
 
         it("should not throw NoPermissionToCreateWorkspaceException when user accountUrl is not null") {
-            val user = SampleEntity.user
-            user.accountUrl = "accountUrl"
+            val user = SampleEntity.user.apply { accountUrl = "accountUrl" }
 
             // Act & Assert
             sut.checkCanCreateWorkspace(user)
@@ -234,15 +239,89 @@ class WorkspaceServiceTest : DescribeSpec({
         }
     }
 
+    describe("checkAccessible") {
+        it("should throw WorkspaceInaccessibleException when user is not a member of workspace and not a super admin") {
+            val username = "test"
+            val workspaceId = 1L
+            val workspace = SampleEntity.workspace.apply { members.clear() }
+            val user = SampleEntity.user.apply { role = UserRole.ADMIN }
+
+            // Mock
+            every {
+                repository.findById(workspaceId)
+            } returns Optional.of(workspace)
+
+            every {
+                userService.getUser(username)
+            } returns user
+
+            // Act & Assert
+            shouldThrow<WorkspaceInaccessibleException> {
+                sut.checkAccessible(username, workspaceId)
+            }
+
+            // Assert
+            verify { repository.findById(workspaceId) }
+            verify { userService.getUser(username) }
+        }
+
+        it("should not throw WorkspaceInaccessibleException when user is a member of workspace") {
+            val username = "test"
+            val workspaceId = 1L
+            val workspace = SampleEntity.workspace
+            val user = SampleEntity.user
+            workspace.members.add(SampleEntity.workspaceMember(user, workspace))
+
+            // Mock
+            every {
+                repository.findById(workspaceId)
+            } returns Optional.of(workspace)
+
+            every {
+                userService.getUser(username)
+            } returns user
+
+            // Act & Assert
+            sut.checkAccessible(username, workspaceId)
+
+            // Assert
+            verify { repository.findById(workspaceId) }
+            verify { userService.getUser(username) }
+        }
+
+        it("should not throw WorkspaceInaccessibleException when user is a super admin") {
+            val username = "test"
+            val workspaceId = 1L
+            val workspace = SampleEntity.workspace.apply { members.clear() }
+            val user = SampleEntity.user.apply { role = UserRole.SUPER_ADMIN }
+
+            // Mock
+            every {
+                repository.findById(workspaceId)
+            } returns Optional.of(workspace)
+
+            every {
+                userService.getUser(username)
+            } returns user
+
+            // Act & Assert
+            sut.checkAccessible(username, workspaceId)
+
+            // Assert
+            verify { repository.findById(workspaceId) }
+            verify { userService.getUser(username) }
+        }
+    }
+
     describe("checkCanInviteWorkspace") {
         it("should throw NoPermissionToInviteException when user is not owner of workspace") {
             val user = SampleEntity.user
             val otherUser = SampleEntity.otherUser
-            val workspace = SampleEntity.workspace(otherUser)
+            val inaccessibleWorkspace = SampleEntity.workspace(otherUser)
 
             // Act & Assert
             shouldThrow<NoPermissionToInviteException> {
-                sut.checkCanInviteWorkspace(user, workspace)
+                sut.checkCanInviteWorkspace(user, inaccessibleWorkspace)
             }
         }
 

@@ -2,6 +2,9 @@ package com.kioschool.kioschoolapi.factory
 
 import com.kioschool.kioschoolapi.common.entity.BaseEntity
 import com.kioschool.kioschoolapi.common.enums.UserRole
+import com.kioschool.kioschoolapi.email.entity.EmailCode
+import com.kioschool.kioschoolapi.email.entity.EmailDomain
+import com.kioschool.kioschoolapi.email.enum.EmailKind
 import com.kioschool.kioschoolapi.order.entity.Order
 import com.kioschool.kioschoolapi.order.entity.OrderProduct
 import com.kioschool.kioschoolapi.product.entity.Product
@@ -70,9 +73,21 @@ object SampleEntity {
     val productCategory = ProductCategory(
         name = "test",
         workspace = workspace
-    )
+    ).apply { setId(1) }
+
+    val productCategory2 = ProductCategory(
+        name = "test2",
+        workspace = workspace
+    ).apply { setId(2) }
+
+    val productCategory3 = ProductCategory(
+        name = "test3",
+        workspace = workspace
+    ).apply { setId(3) }
 
     fun productCategoryWithId(id: Long) = productCategory.apply { setId(id) }
+
+    val productCategories = listOf(productCategory, productCategory2, productCategory3)
 
     val product = Product(
         name = "test",
@@ -97,6 +112,17 @@ object SampleEntity {
         productName = product.name,
         productPrice = product.price,
         quantity = 1
+    )
+
+    val emailDomain = EmailDomain(
+        name = "test",
+        domain = "test.com"
+    )
+
+    val emailCode = EmailCode(
+        email = "test@test.com",
+        code = "123456789",
+        kind = EmailKind.REGISTER
     )
 
     private fun BaseEntity.setId(id: Long) {

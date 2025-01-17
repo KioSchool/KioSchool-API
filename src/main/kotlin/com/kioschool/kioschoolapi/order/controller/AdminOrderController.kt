@@ -1,6 +1,7 @@
 package com.kioschool.kioschoolapi.order.controller
 
 import com.kioschool.kioschoolapi.common.annotation.AdminUsername
+import com.kioschool.kioschoolapi.order.dto.ChangeOrderProductServedCount
 import com.kioschool.kioschoolapi.order.dto.ChangeOrderStatusRequestBody
 import com.kioschool.kioschoolapi.order.dto.ServeOrderProductRequestBody
 import com.kioschool.kioschoolapi.order.entity.Order
@@ -92,4 +93,19 @@ class AdminOrderController(
             body.isServed
         )
     }
+
+    @Operation(summary = "주문 별 상품 서빙 개수 변경", description = "주문 별 상품의 서빙 개수를 변경합니다.")
+    @PutMapping("/order/product")
+    fun changeOrderProductServedCount(
+        @AdminUsername username: String,
+        @RequestBody body: ChangeOrderProductServedCount
+    ): OrderProduct {
+        return orderFacade.changeOrderProductServedCount(
+            username,
+            body.workspaceId,
+            body.orderProductId,
+            body.servedCount
+        )
+    }
+
 }

@@ -16,6 +16,7 @@ class OrderProduct(
     val productName: String,
     val productPrice: Int,
     var quantity: Int,
+    var servedCount: Int = 0,
     var isServed: Boolean = false,
     var totalPrice: Int = 0
 ) : BaseEntity()

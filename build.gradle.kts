@@ -71,4 +71,8 @@ tasks.withType<KotlinCompile> {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+
+    afterTest(KotlinClosure2<TestDescriptor, TestResult, Unit>({ desc, result ->
+        logger.quiet("[${desc.name}] with result: ${result.resultType}")
+    }))
 }

@@ -12,9 +12,7 @@ import com.kioschool.kioschoolapi.user.repository.UserRepository
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.verify
+import io.mockk.*
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.Pageable
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -29,6 +27,16 @@ class UserServiceTest : DescribeSpec({
         passwordEncoder,
         emailService
     )
+
+    beforeTest {
+        mockkObject(repository)
+        mockkObject(passwordEncoder)
+        mockkObject(emailService)
+    }
+
+    afterTest {
+        clearAllMocks()
+    }
 
     describe("checkPassword") {
         it("should throw LoginFailedException when password is not matched") {
@@ -143,6 +151,9 @@ class UserServiceTest : DescribeSpec({
             shouldThrow<RegisterException> {
                 sut.validateEmail(email)
             }
+
+            verify { emailService.isRegisterEmailVerified(email) }
+            verify(exactly = 0) { repository.findByEmail(email) }
         }
 
         it("should throw RegisterException when email is duplicated") {
@@ -156,6 +167,9 @@ class UserServiceTest : DescribeSpec({
             shouldThrow<RegisterException> {
                 sut.validateEmail(email)
             }
+
+            verify { emailService.isRegisterEmailVerified(email) }
+            verify { repository.findByEmail(email) }
         }
 
         it("should not throw RegisterException when email is verified and not duplicated") {
@@ -167,6 +181,9 @@ class UserServiceTest : DescribeSpec({
 
             // Act & Assert
             sut.validateEmail(email)
+
+            verify { emailService.isRegisterEmailVerified(email) }
+            verify { repository.findByEmail(email) }
         }
     }
 
@@ -226,6 +243,7 @@ class UserServiceTest : DescribeSpec({
             // Act & Assert
             sut.getUserByEmail(email) shouldBe SampleEntity.user
 
+            verify { repository.findByEmail(email) }
         }
 
         it("should throw UserNotFoundException when user does not exist") {
@@ -257,6 +275,7 @@ class UserServiceTest : DescribeSpec({
 
             // Assert
             verify { repository.findByNameContains(name, Pageable.ofSize(size)) }
+            verify(exactly = 0) { repository.findAll(Pageable.ofSize(size)) }
         }
 
         it("should call findAll if name is null") {
@@ -272,6 +291,7 @@ class UserServiceTest : DescribeSpec({
 
             // Assert
             verify { repository.findAll(Pageable.ofSize(size)) }
+            verify(exactly = 0) { repository.findByNameContains(any(), Pageable.ofSize(size)) }
         }
     }
 
@@ -362,6 +382,8 @@ class UserServiceTest : DescribeSpec({
 
             // Act & Assert
             sut.deleteUser(user) shouldBe user
+
+            verify { repository.delete(user) }
         }
     }
 
@@ -377,6 +399,8 @@ class UserServiceTest : DescribeSpec({
 
             // Act & Assert
             sut.savePassword(user, password).loginPassword shouldBe encodedPassword
+
+            verify { repository.save(user) }
         }
     }
 })
