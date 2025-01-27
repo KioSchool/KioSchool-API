@@ -42,5 +42,5 @@ class Workspace(
     )
     val invitations: MutableList<WorkspaceInvitation> = mutableListOf(),
     var description: String = "",
-    var tableCount: Int = 0
+    var tableCount: Int = 1
 ) : BaseEntity()

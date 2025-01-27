@@ -75,6 +75,8 @@ websocket:
   allowed-origins: "https://kio-school.com"
 discord:
   webhook-url: "${DISCORD_WEBHOOK_URL}"
+kioschool:
+  base-url: "https://kio-school.com"
 
 ---
 
@@ -98,3 +100,5 @@ websocket:
   allowed-origins: "http://localhost:3000"
 discord:
   webhook-url: "${DISCORD_WEBHOOK_URL}"
+kioschool:
+  base-url: "http://localhost:3000"
