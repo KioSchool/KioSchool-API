@@ -1,5 +1,6 @@
 package com.kioschool.kioschoolapi.workspace.service
 
+import com.kioschool.kioschoolapi.aws.S3Service
 import com.kioschool.kioschoolapi.common.enums.UserRole
 import com.kioschool.kioschoolapi.factory.SampleEntity
 import com.kioschool.kioschoolapi.user.service.UserService
@@ -14,13 +15,15 @@ import io.kotest.matchers.shouldBe
 import io.mockk.*
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
+import org.springframework.web.multipart.MultipartFile
 import java.util.*
 
 class WorkspaceServiceTest : DescribeSpec({
     val repository = mockk<WorkspaceRepository>()
     val userService = mockk<UserService>()
+    val s3Service = mockk<S3Service>()
 
-    val sut = WorkspaceService(repository, userService)
+    val sut = WorkspaceService("test", repository, userService, s3Service)
 
     beforeTest {
         mockkObject(repository)
@@ -431,6 +434,48 @@ class WorkspaceServiceTest : DescribeSpec({
             workspace.tableCount shouldBe tableCount
 
             // Assert
+            verify { repository.save(workspace) }
+        }
+    }
+
+    describe("getImageUrl") {
+        it("should call uploadFileToS3 when file is not null") {
+            val workspaceId = 1L
+            val file = mockk<MultipartFile>()
+
+            every { s3Service.uploadFile(file, any<String>()) } returns "url"
+
+            val result = sut.getImageUrl(workspaceId, file)
+
+            assert(result == "url")
+
+            verify { s3Service.uploadFile(file, any<String>()) }
+        }
+
+        it("should return null when file is null") {
+            val workspaceId = 1L
+            val file = null
+
+            val result = sut.getImageUrl(workspaceId, file)
+
+            assert(result == null)
+
+            verify(exactly = 0) { s3Service.uploadFile(any(), any<String>()) }
+        }
+    }
+
+    describe("saveWorkspace") {
+        it("should save workspace") {
+            val workspace = SampleEntity.workspace
+
+            every {
+                repository.save(workspace)
+            } returns workspace
+
+            val result = sut.saveWorkspace(workspace)
+
+            assert(result == workspace)
+
             verify { repository.save(workspace) }
         }
     }
