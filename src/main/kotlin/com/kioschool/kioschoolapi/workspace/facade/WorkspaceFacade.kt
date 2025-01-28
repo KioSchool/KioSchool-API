@@ -5,6 +5,7 @@ import com.kioschool.kioschoolapi.user.service.UserService
 import com.kioschool.kioschoolapi.workspace.entity.Workspace
 import com.kioschool.kioschoolapi.workspace.service.WorkspaceService
 import org.springframework.stereotype.Component
+import org.springframework.web.multipart.MultipartFile
 
 @Component
 class WorkspaceFacade(
@@ -76,5 +77,44 @@ class WorkspaceFacade(
         workspaceService.updateTableCount(workspace, tableCount)
 
         return workspace
+    }
+
+    fun updateWorkspace(
+        username: String,
+        workspaceId: Long,
+        name: String,
+        description: String,
+        notice: String,
+        imageUrl1: String?,
+        imageUrl2: String?,
+        imageUrl3: String?,
+        imageFile1: MultipartFile?,
+        imageFile2: MultipartFile?,
+        imageFile3: MultipartFile?
+    ): Workspace {
+        val user = userService.getUser(username)
+        val workspace = workspaceService.getWorkspace(workspaceId)
+
+        workspaceService.checkCanAccessWorkspace(user, workspace)
+        workspace.name = name
+        workspace.description = description
+        workspace.notice = notice
+
+        if (workspace.imageUrl1 != imageUrl1) {
+            workspace.imageUrl1 =
+                workspaceService.getImageUrl(workspaceId, workspace.id, imageFile1)
+        }
+
+        if (workspace.imageUrl2 != imageUrl2) {
+            workspace.imageUrl2 =
+                workspaceService.getImageUrl(workspaceId, workspace.id, imageFile2)
+        }
+
+        if (workspace.imageUrl3 != imageUrl3) {
+            workspace.imageUrl3 =
+                workspaceService.getImageUrl(workspaceId, workspace.id, imageFile3)
+        }
+
+        return workspaceService.saveWorkspace(workspace)
     }
 }

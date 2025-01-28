@@ -7,6 +7,7 @@ import com.kioschool.kioschoolapi.workspace.facade.WorkspaceFacade
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.web.bind.annotation.*
+import org.springframework.web.multipart.MultipartFile
 
 @Tag(name = "Admin Workspace Controller")
 @RestController
@@ -36,6 +37,30 @@ class AdminWorkspaceController(
         @RequestBody body: CreateWorkspaceRequestBody
     ): Workspace {
         return workspaceFacade.createWorkspace(username, body.name, body.description)
+    }
+
+    @Operation(summary = "워크스페이스 수정", description = "워크스페이스를 수정합니다.")
+    @PutMapping("/workspace")
+    fun updateWorkspace(
+        @AdminUsername username: String,
+        @RequestPart body: UpdateWorkspaceRequestBody,
+        @RequestPart imageFile1: MultipartFile?,
+        @RequestPart imageFile2: MultipartFile?,
+        @RequestPart imageFile3: MultipartFile?,
+    ): Workspace {
+        return workspaceFacade.updateWorkspace(
+            username,
+            body.workspaceId,
+            body.name,
+            body.description,
+            body.notice,
+            body.imageUrl1,
+            body.imageUrl2,
+            body.imageUrl3,
+            imageFile1,
+            imageFile2,
+            imageFile3
+        )
     }
 
     @Operation(summary = "워크스페이스 초대", description = "워크스페이스에 사용자를 초대합니다.")
