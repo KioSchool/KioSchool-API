@@ -12,6 +12,7 @@ import com.kioschool.kioschoolapi.workspace.service.WorkspaceService
 import io.kotest.core.spec.style.DescribeSpec
 import io.mockk.*
 import org.junit.jupiter.api.assertThrows
+import org.springframework.web.multipart.MultipartFile
 
 class WorkspaceFacadeTest : DescribeSpec({
     val userService = mockk<UserService>()
@@ -386,6 +387,203 @@ class WorkspaceFacadeTest : DescribeSpec({
             verify { workspaceService.getWorkspace(workspaceId) }
             verify { workspaceService.checkCanAccessWorkspace(user, workspace) }
             verify(exactly = 0) { workspaceService.updateTableCount(any(), any()) }
+        }
+    }
+
+    describe("updateWorkspace") {
+        it("should call userService.getUser, workspaceService.getWorkspace and workspaceService.saveWorkspace") {
+            val username = "username"
+            val user = SampleEntity.user
+            val workspaceId = 1L
+            val workspace = SampleEntity.workspace
+            val name = "name"
+            val description = "description"
+            val notice = "notice"
+            val imageUrl1 = "imageUrl1"
+            val imageUrl2 = "imageUrl2"
+            val imageUrl3 = "imageUrl3"
+            val imageFile1 = mockk<MultipartFile>()
+            val imageFile2 = mockk<MultipartFile>()
+            val imageFile3 = mockk<MultipartFile>()
+
+            every { userService.getUser(username) } returns user
+            every { workspaceService.getWorkspace(workspaceId) } returns workspace
+            every { workspaceService.checkCanAccessWorkspace(user, workspace) } just Runs
+            every {
+                workspaceService.getImageUrl(
+                    workspaceId,
+                    workspace.id,
+                    imageFile1
+                )
+            } returns imageUrl1
+            every {
+                workspaceService.getImageUrl(
+                    workspaceId,
+                    workspace.id,
+                    imageFile2
+                )
+            } returns imageUrl2
+            every {
+                workspaceService.getImageUrl(
+                    workspaceId,
+                    workspace.id,
+                    imageFile3
+                )
+            } returns imageUrl3
+            every { workspaceService.saveWorkspace(workspace) } returns workspace
+
+            val result = sut.updateWorkspace(
+                username,
+                workspaceId,
+                name,
+                description,
+                notice,
+                imageUrl1,
+                imageUrl2,
+                imageUrl3,
+                imageFile1,
+                imageFile2,
+                imageFile3
+            )
+
+            assert(result == workspace)
+
+            verify { userService.getUser(username) }
+            verify { workspaceService.getWorkspace(workspaceId) }
+            verify { workspaceService.checkCanAccessWorkspace(user, workspace) }
+            verify { workspaceService.getImageUrl(workspaceId, workspace.id, imageFile1) }
+            verify { workspaceService.getImageUrl(workspaceId, workspace.id, imageFile2) }
+            verify { workspaceService.getImageUrl(workspaceId, workspace.id, imageFile3) }
+            verify { workspaceService.saveWorkspace(workspace) }
+        }
+
+        it("should not call workspaceService.getImageUrl if imageUrl is not changed") {
+            val username = "username"
+            val user = SampleEntity.user
+            val workspaceId = 1L
+            val name = "name"
+            val description = "description"
+            val notice = "notice"
+            val imageUrl1 = "imageUrl1"
+            val imageUrl2 = "imageUrl2"
+            val imageUrl3 = "imageUrl3"
+            val workspace = SampleEntity.workspace.apply {
+                this.imageUrl1 = imageUrl1
+                this.imageUrl2 = imageUrl2
+                this.imageUrl3 = imageUrl3
+            }
+
+            every { userService.getUser(username) } returns user
+            every { workspaceService.getWorkspace(workspaceId) } returns workspace
+            every { workspaceService.checkCanAccessWorkspace(user, workspace) } just Runs
+            every { workspaceService.saveWorkspace(workspace) } returns workspace
+
+            val result = sut.updateWorkspace(
+                username,
+                workspaceId,
+                name,
+                description,
+                notice,
+                imageUrl1,
+                imageUrl2,
+                imageUrl3,
+                null,
+                null,
+                null
+            )
+
+            assert(result == workspace)
+
+            verify { userService.getUser(username) }
+            verify { workspaceService.getWorkspace(workspaceId) }
+            verify { workspaceService.checkCanAccessWorkspace(user, workspace) }
+            verify(exactly = 0) { workspaceService.getImageUrl(any(), any(), any()) }
+            verify { workspaceService.saveWorkspace(workspace) }
+        }
+
+        it("should throw UserNotFoundException when user not found") {
+            val username = "username"
+            val workspaceId = 1L
+            val name = "name"
+            val description = "description"
+            val notice = "notice"
+            val imageUrl1 = "imageUrl1"
+            val imageUrl2 = "imageUrl2"
+            val imageUrl3 = "imageUrl3"
+            val imageFile1 = mockk<MultipartFile>()
+            val imageFile2 = mockk<MultipartFile>()
+            val imageFile3 = mockk<MultipartFile>()
+
+            every { userService.getUser(username) } throws UserNotFoundException()
+
+            assertThrows<UserNotFoundException> {
+                sut.updateWorkspace(
+                    username,
+                    workspaceId,
+                    name,
+                    description,
+                    notice,
+                    imageUrl1,
+                    imageUrl2,
+                    imageUrl3,
+                    imageFile1,
+                    imageFile2,
+                    imageFile3
+                )
+            }
+
+            verify { userService.getUser(username) }
+            verify(exactly = 0) { workspaceService.getWorkspace(any()) }
+            verify(exactly = 0) { workspaceService.checkCanAccessWorkspace(any(), any()) }
+            verify(exactly = 0) { workspaceService.getImageUrl(any(), any(), any()) }
+            verify(exactly = 0) { workspaceService.saveWorkspace(any()) }
+        }
+
+        it("should throw WorkspaceInaccessibleException when user has no permission to update workspace") {
+            val username = "username"
+            val user = SampleEntity.user
+            val workspaceId = 1L
+            val workspace = SampleEntity.workspace
+            val name = "name"
+            val description = "description"
+            val notice = "notice"
+            val imageUrl1 = "imageUrl1"
+            val imageUrl2 = "imageUrl2"
+            val imageUrl3 = "imageUrl3"
+            val imageFile1 = mockk<MultipartFile>()
+            val imageFile2 = mockk<MultipartFile>()
+            val imageFile3 = mockk<MultipartFile>()
+
+            every { userService.getUser(username) } returns user
+            every { workspaceService.getWorkspace(workspaceId) } returns workspace
+            every {
+                workspaceService.checkCanAccessWorkspace(
+                    user,
+                    workspace
+                )
+            } throws WorkspaceInaccessibleException()
+
+            assertThrows<WorkspaceInaccessibleException> {
+                sut.updateWorkspace(
+                    username,
+                    workspaceId,
+                    name,
+                    description,
+                    notice,
+                    imageUrl1,
+                    imageUrl2,
+                    imageUrl3,
+                    imageFile1,
+                    imageFile2,
+                    imageFile3
+                )
+            }
+
+            verify { userService.getUser(username) }
+            verify { workspaceService.getWorkspace(workspaceId) }
+            verify { workspaceService.checkCanAccessWorkspace(user, workspace) }
+            verify(exactly = 0) { workspaceService.getImageUrl(any(), any(), any()) }
+            verify(exactly = 0) { workspaceService.saveWorkspace(any()) }
         }
     }
 })
