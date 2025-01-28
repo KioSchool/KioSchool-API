@@ -11,6 +11,7 @@ import com.kioschool.kioschoolapi.user.exception.UserNotFoundException
 import jakarta.transaction.Transactional
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.mail.javamail.MimeMessageHelper
 import org.springframework.stereotype.Service
@@ -106,7 +107,15 @@ class EmailService(
                 PageRequest.of(page, size)
             )
 
-        return emailDomainRepository.findAll(PageRequest.of(page, size))
+        return emailDomainRepository.findAll(
+            PageRequest.of(
+                page,
+                size,
+                Sort.by(
+                    Sort.Order.asc("name")
+                )
+            )
+        )
     }
 
     fun validateEmailDomainDuplicate(domain: String) {
