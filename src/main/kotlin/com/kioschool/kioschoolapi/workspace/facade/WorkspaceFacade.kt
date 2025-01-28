@@ -102,17 +102,17 @@ class WorkspaceFacade(
 
         if (workspace.imageUrl1 != imageUrl1) {
             workspace.imageUrl1 =
-                workspaceService.getImageUrl(workspaceId, workspace.id, imageFile1)
+                workspaceService.getImageUrl(workspaceId, imageFile1)
         }
 
         if (workspace.imageUrl2 != imageUrl2) {
             workspace.imageUrl2 =
-                workspaceService.getImageUrl(workspaceId, workspace.id, imageFile2)
+                workspaceService.getImageUrl(workspaceId, imageFile2)
         }
 
         if (workspace.imageUrl3 != imageUrl3) {
             workspace.imageUrl3 =
-                workspaceService.getImageUrl(workspaceId, workspace.id, imageFile3)
+                workspaceService.getImageUrl(workspaceId, imageFile3)
         }
 
         return workspaceService.saveWorkspace(workspace)

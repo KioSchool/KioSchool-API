@@ -126,7 +126,7 @@ class WorkspaceService(
         workspaceRepository.save(workspace)
     }
 
-    fun getImageUrl(workspaceId: Long, id: Long, file: MultipartFile?): String? {
+    fun getImageUrl(workspaceId: Long, file: MultipartFile?): String? {
         if (file == null) return null
 
         val date = System.currentTimeMillis()

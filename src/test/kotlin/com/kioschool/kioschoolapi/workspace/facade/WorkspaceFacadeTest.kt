@@ -412,21 +412,18 @@ class WorkspaceFacadeTest : DescribeSpec({
             every {
                 workspaceService.getImageUrl(
                     workspaceId,
-                    workspace.id,
                     imageFile1
                 )
             } returns imageUrl1
             every {
                 workspaceService.getImageUrl(
                     workspaceId,
-                    workspace.id,
                     imageFile2
                 )
             } returns imageUrl2
             every {
                 workspaceService.getImageUrl(
                     workspaceId,
-                    workspace.id,
                     imageFile3
                 )
             } returns imageUrl3
@@ -451,9 +448,9 @@ class WorkspaceFacadeTest : DescribeSpec({
             verify { userService.getUser(username) }
             verify { workspaceService.getWorkspace(workspaceId) }
             verify { workspaceService.checkCanAccessWorkspace(user, workspace) }
-            verify { workspaceService.getImageUrl(workspaceId, workspace.id, imageFile1) }
-            verify { workspaceService.getImageUrl(workspaceId, workspace.id, imageFile2) }
-            verify { workspaceService.getImageUrl(workspaceId, workspace.id, imageFile3) }
+            verify { workspaceService.getImageUrl(workspaceId, imageFile1) }
+            verify { workspaceService.getImageUrl(workspaceId, imageFile2) }
+            verify { workspaceService.getImageUrl(workspaceId, imageFile3) }
             verify { workspaceService.saveWorkspace(workspace) }
         }
 
@@ -497,7 +494,7 @@ class WorkspaceFacadeTest : DescribeSpec({
             verify { userService.getUser(username) }
             verify { workspaceService.getWorkspace(workspaceId) }
             verify { workspaceService.checkCanAccessWorkspace(user, workspace) }
-            verify(exactly = 0) { workspaceService.getImageUrl(any(), any(), any()) }
+            verify(exactly = 0) { workspaceService.getImageUrl(any(), any()) }
             verify { workspaceService.saveWorkspace(workspace) }
         }
 
@@ -535,7 +532,7 @@ class WorkspaceFacadeTest : DescribeSpec({
             verify { userService.getUser(username) }
             verify(exactly = 0) { workspaceService.getWorkspace(any()) }
             verify(exactly = 0) { workspaceService.checkCanAccessWorkspace(any(), any()) }
-            verify(exactly = 0) { workspaceService.getImageUrl(any(), any(), any()) }
+            verify(exactly = 0) { workspaceService.getImageUrl(any(), any()) }
             verify(exactly = 0) { workspaceService.saveWorkspace(any()) }
         }
 
@@ -582,7 +579,7 @@ class WorkspaceFacadeTest : DescribeSpec({
             verify { userService.getUser(username) }
             verify { workspaceService.getWorkspace(workspaceId) }
             verify { workspaceService.checkCanAccessWorkspace(user, workspace) }
-            verify(exactly = 0) { workspaceService.getImageUrl(any(), any(), any()) }
+            verify(exactly = 0) { workspaceService.getImageUrl(any(), any()) }
             verify(exactly = 0) { workspaceService.saveWorkspace(any()) }
         }
     }
