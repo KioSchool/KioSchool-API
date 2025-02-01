@@ -5,13 +5,16 @@ import com.kioschool.kioschoolapi.common.enums.UserRole
 import com.kioschool.kioschoolapi.user.entity.User
 import com.kioschool.kioschoolapi.user.service.UserService
 import com.kioschool.kioschoolapi.workspace.entity.Workspace
+import com.kioschool.kioschoolapi.workspace.entity.WorkspaceImage
 import com.kioschool.kioschoolapi.workspace.entity.WorkspaceInvitation
 import com.kioschool.kioschoolapi.workspace.entity.WorkspaceMember
 import com.kioschool.kioschoolapi.workspace.exception.NoPermissionToCreateWorkspaceException
 import com.kioschool.kioschoolapi.workspace.exception.NoPermissionToInviteException
 import com.kioschool.kioschoolapi.workspace.exception.NoPermissionToJoinWorkspaceException
 import com.kioschool.kioschoolapi.workspace.exception.WorkspaceInaccessibleException
+import com.kioschool.kioschoolapi.workspace.repository.WorkspaceImageRepository
 import com.kioschool.kioschoolapi.workspace.repository.WorkspaceRepository
+import jakarta.transaction.Transactional
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
@@ -24,6 +27,7 @@ class WorkspaceService(
     @Value("\${cloud.aws.s3.default-path}")
     private val workspacePath: String,
     val workspaceRepository: WorkspaceRepository,
+    val workspaceImageRepository: WorkspaceImageRepository,
     val userService: UserService,
     val s3Service: S3Service
 ) {
@@ -126,15 +130,21 @@ class WorkspaceService(
         workspaceRepository.save(workspace)
     }
 
-    fun getImageUrl(workspaceId: Long, file: MultipartFile?): String? {
-        if (file == null) return null
-
-        val date = System.currentTimeMillis()
-        val path = "$workspacePath/workspace$workspaceId/${date.hashCode()}.jpg"
-        return s3Service.uploadFile(file, path)
+    fun saveWorkspace(workspace: Workspace): Workspace {
+        return workspaceRepository.save(workspace)
     }
 
-    fun saveWorkspace(workspace: Workspace): Workspace {
+    @Transactional
+    fun deleteWorkspaceImages(workspace: Workspace, deletedImageIds: List<Long>) {
+        workspaceImageRepository.deleteAllByIdIn(deletedImageIds)
+    }
+
+    fun saveWorkspaceImages(workspace: Workspace, newImageFiles: List<MultipartFile>): Workspace {
+        newImageFiles.forEach {
+            val path = "$workspacePath/workspace${workspace.id}/${System.currentTimeMillis()}.jpg"
+            val imageUrl = s3Service.uploadFile(it, path)
+            workspace.images.add(WorkspaceImage(workspace = workspace, url = imageUrl))
+        }
         return workspaceRepository.save(workspace)
     }
 }
