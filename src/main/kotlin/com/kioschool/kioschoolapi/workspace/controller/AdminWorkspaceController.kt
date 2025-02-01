@@ -7,7 +7,6 @@ import com.kioschool.kioschoolapi.workspace.facade.WorkspaceFacade
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.web.bind.annotation.*
-import org.springframework.web.multipart.MultipartFile
 
 @Tag(name = "Admin Workspace Controller")
 @RestController
@@ -44,22 +43,13 @@ class AdminWorkspaceController(
     fun updateWorkspace(
         @AdminUsername username: String,
         @RequestPart body: UpdateWorkspaceRequestBody,
-        @RequestPart imageFile1: MultipartFile?,
-        @RequestPart imageFile2: MultipartFile?,
-        @RequestPart imageFile3: MultipartFile?,
     ): Workspace {
         return workspaceFacade.updateWorkspace(
             username,
             body.workspaceId,
             body.name,
             body.description,
-            body.notice,
-            body.imageUrl1,
-            body.imageUrl2,
-            body.imageUrl3,
-            imageFile1,
-            imageFile2,
-            imageFile3
+            body.notice
         )
     }
 
