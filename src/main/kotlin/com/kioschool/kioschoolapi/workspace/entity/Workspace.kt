@@ -41,10 +41,13 @@ class Workspace(
         fetch = FetchType.EAGER
     )
     val invitations: MutableList<WorkspaceInvitation> = mutableListOf(),
+    @OneToMany(
+        mappedBy = "workspace",
+        orphanRemoval = true,
+        fetch = FetchType.EAGER
+    )
+    val images: MutableList<WorkspaceImage> = mutableListOf(),
     var description: String = "",
     var notice: String = "",
-    var imageUrl1: String? = null,
-    var imageUrl2: String? = null,
-    var imageUrl3: String? = null,
     var tableCount: Int = 1
 ) : BaseEntity()
