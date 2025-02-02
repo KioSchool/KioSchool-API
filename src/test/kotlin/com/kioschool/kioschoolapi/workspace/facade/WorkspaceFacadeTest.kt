@@ -390,7 +390,7 @@ class WorkspaceFacadeTest : DescribeSpec({
         }
     }
 
-    describe("updateWorkspace") {
+    describe("updateWorkspaceInfo") {
         it("should call userService.getUser, workspaceService.getWorkspace and workspaceService.saveWorkspace") {
             val username = "username"
             val user = SampleEntity.user
@@ -399,48 +399,18 @@ class WorkspaceFacadeTest : DescribeSpec({
             val name = "name"
             val description = "description"
             val notice = "notice"
-            val imageUrl1 = "imageUrl1"
-            val imageUrl2 = "imageUrl2"
-            val imageUrl3 = "imageUrl3"
-            val imageFile1 = mockk<MultipartFile>()
-            val imageFile2 = mockk<MultipartFile>()
-            val imageFile3 = mockk<MultipartFile>()
 
             every { userService.getUser(username) } returns user
             every { workspaceService.getWorkspace(workspaceId) } returns workspace
             every { workspaceService.checkCanAccessWorkspace(user, workspace) } just Runs
-            every {
-                workspaceService.getImageUrl(
-                    workspaceId,
-                    imageFile1
-                )
-            } returns imageUrl1
-            every {
-                workspaceService.getImageUrl(
-                    workspaceId,
-                    imageFile2
-                )
-            } returns imageUrl2
-            every {
-                workspaceService.getImageUrl(
-                    workspaceId,
-                    imageFile3
-                )
-            } returns imageUrl3
             every { workspaceService.saveWorkspace(workspace) } returns workspace
 
-            val result = sut.updateWorkspace(
+            val result = sut.updateWorkspaceInfo(
                 username,
                 workspaceId,
                 name,
                 description,
                 notice,
-                imageUrl1,
-                imageUrl2,
-                imageUrl3,
-                imageFile1,
-                imageFile2,
-                imageFile3
             )
 
             assert(result == workspace)
@@ -448,53 +418,6 @@ class WorkspaceFacadeTest : DescribeSpec({
             verify { userService.getUser(username) }
             verify { workspaceService.getWorkspace(workspaceId) }
             verify { workspaceService.checkCanAccessWorkspace(user, workspace) }
-            verify { workspaceService.getImageUrl(workspaceId, imageFile1) }
-            verify { workspaceService.getImageUrl(workspaceId, imageFile2) }
-            verify { workspaceService.getImageUrl(workspaceId, imageFile3) }
-            verify { workspaceService.saveWorkspace(workspace) }
-        }
-
-        it("should not call workspaceService.getImageUrl if imageUrl is not changed") {
-            val username = "username"
-            val user = SampleEntity.user
-            val workspaceId = 1L
-            val name = "name"
-            val description = "description"
-            val notice = "notice"
-            val imageUrl1 = "imageUrl1"
-            val imageUrl2 = "imageUrl2"
-            val imageUrl3 = "imageUrl3"
-            val workspace = SampleEntity.workspace.apply {
-                this.imageUrl1 = imageUrl1
-                this.imageUrl2 = imageUrl2
-                this.imageUrl3 = imageUrl3
-            }
-
-            every { userService.getUser(username) } returns user
-            every { workspaceService.getWorkspace(workspaceId) } returns workspace
-            every { workspaceService.checkCanAccessWorkspace(user, workspace) } just Runs
-            every { workspaceService.saveWorkspace(workspace) } returns workspace
-
-            val result = sut.updateWorkspace(
-                username,
-                workspaceId,
-                name,
-                description,
-                notice,
-                imageUrl1,
-                imageUrl2,
-                imageUrl3,
-                null,
-                null,
-                null
-            )
-
-            assert(result == workspace)
-
-            verify { userService.getUser(username) }
-            verify { workspaceService.getWorkspace(workspaceId) }
-            verify { workspaceService.checkCanAccessWorkspace(user, workspace) }
-            verify(exactly = 0) { workspaceService.getImageUrl(any(), any()) }
             verify { workspaceService.saveWorkspace(workspace) }
         }
 
@@ -504,35 +427,22 @@ class WorkspaceFacadeTest : DescribeSpec({
             val name = "name"
             val description = "description"
             val notice = "notice"
-            val imageUrl1 = "imageUrl1"
-            val imageUrl2 = "imageUrl2"
-            val imageUrl3 = "imageUrl3"
-            val imageFile1 = mockk<MultipartFile>()
-            val imageFile2 = mockk<MultipartFile>()
-            val imageFile3 = mockk<MultipartFile>()
 
             every { userService.getUser(username) } throws UserNotFoundException()
 
             assertThrows<UserNotFoundException> {
-                sut.updateWorkspace(
+                sut.updateWorkspaceInfo(
                     username,
                     workspaceId,
                     name,
                     description,
                     notice,
-                    imageUrl1,
-                    imageUrl2,
-                    imageUrl3,
-                    imageFile1,
-                    imageFile2,
-                    imageFile3
                 )
             }
 
             verify { userService.getUser(username) }
             verify(exactly = 0) { workspaceService.getWorkspace(any()) }
             verify(exactly = 0) { workspaceService.checkCanAccessWorkspace(any(), any()) }
-            verify(exactly = 0) { workspaceService.getImageUrl(any(), any()) }
             verify(exactly = 0) { workspaceService.saveWorkspace(any()) }
         }
 
@@ -544,12 +454,6 @@ class WorkspaceFacadeTest : DescribeSpec({
             val name = "name"
             val description = "description"
             val notice = "notice"
-            val imageUrl1 = "imageUrl1"
-            val imageUrl2 = "imageUrl2"
-            val imageUrl3 = "imageUrl3"
-            val imageFile1 = mockk<MultipartFile>()
-            val imageFile2 = mockk<MultipartFile>()
-            val imageFile3 = mockk<MultipartFile>()
 
             every { userService.getUser(username) } returns user
             every { workspaceService.getWorkspace(workspaceId) } returns workspace
@@ -561,26 +465,155 @@ class WorkspaceFacadeTest : DescribeSpec({
             } throws WorkspaceInaccessibleException()
 
             assertThrows<WorkspaceInaccessibleException> {
-                sut.updateWorkspace(
+                sut.updateWorkspaceInfo(
                     username,
                     workspaceId,
                     name,
                     description,
                     notice,
-                    imageUrl1,
-                    imageUrl2,
-                    imageUrl3,
-                    imageFile1,
-                    imageFile2,
-                    imageFile3
                 )
             }
 
             verify { userService.getUser(username) }
             verify { workspaceService.getWorkspace(workspaceId) }
             verify { workspaceService.checkCanAccessWorkspace(user, workspace) }
-            verify(exactly = 0) { workspaceService.getImageUrl(any(), any()) }
             verify(exactly = 0) { workspaceService.saveWorkspace(any()) }
+        }
+    }
+
+    describe("updateWorkspaceImage") {
+        it("should call userService.getUser, workspaceService.getWorkspace, workspaceService.deleteWorkspaceImages, workspaceService.saveWorkspaceImages and workspaceService.saveWorkspace") {
+            val username = "username"
+            val user = SampleEntity.user
+            val workspaceId = 1L
+            val workspace = SampleEntity.workspace
+            val imageIds = listOf(1L, 2L, 3L)
+            val imageFiles =
+                listOf(mockk<MultipartFile>(), mockk<MultipartFile>(), mockk<MultipartFile>())
+
+
+            every { userService.getUser(username) } returns user
+            every { workspaceService.getWorkspace(workspaceId) } returns workspace
+            every { workspaceService.checkCanAccessWorkspace(user, workspace) } just Runs
+            every { workspaceService.deleteWorkspaceImages(workspace, any<List<Long>>()) } just Runs
+            every {
+                workspaceService.saveWorkspaceImages(
+                    workspace,
+                    any<List<MultipartFile>>()
+                )
+            } returns workspace
+
+            val result = sut.updateWorkspaceImage(
+                username,
+                workspaceId,
+                imageIds,
+                imageFiles,
+            )
+
+            assert(result == workspace)
+
+            verify { userService.getUser(username) }
+            verify { workspaceService.getWorkspace(workspaceId) }
+            verify { workspaceService.checkCanAccessWorkspace(user, workspace) }
+            verify { workspaceService.deleteWorkspaceImages(workspace, any<List<Long>>()) }
+            verify { workspaceService.saveWorkspaceImages(workspace, any<List<MultipartFile>>()) }
+        }
+
+        it("should delete workspace images when imageIds is not exist and save workspace images") {
+            val username = "username"
+            val user = SampleEntity.user
+            val workspaceId = 1L
+            val workspace = SampleEntity.workspace.apply {
+                images.addAll(SampleEntity.workspaceImages)
+            }
+            val imageIds = listOf(3L, null, null)
+            val imageFiles =
+                listOf(mockk<MultipartFile>(), mockk<MultipartFile>(), null)
+
+            every { userService.getUser(username) } returns user
+            every { workspaceService.getWorkspace(workspaceId) } returns workspace
+            every { workspaceService.checkCanAccessWorkspace(user, workspace) } just Runs
+            every { workspaceService.deleteWorkspaceImages(workspace, listOf(1L, 2L)) } just Runs
+            every {
+                workspaceService.saveWorkspaceImages(
+                    workspace,
+                    listOf(imageFiles[1]!!)
+                )
+            } returns workspace
+
+            val result = sut.updateWorkspaceImage(
+                username,
+                workspaceId,
+                imageIds,
+                imageFiles
+            )
+
+            assert(result == workspace)
+
+            verify { userService.getUser(username) }
+            verify { workspaceService.getWorkspace(workspaceId) }
+            verify { workspaceService.checkCanAccessWorkspace(user, workspace) }
+            verify { workspaceService.deleteWorkspaceImages(workspace, listOf(1L, 2L)) }
+            verify { workspaceService.saveWorkspaceImages(workspace, listOf(imageFiles[1]!!)) }
+        }
+
+        it("should throw UserNotFoundException when user not found") {
+            val username = "username"
+            val workspaceId = 1L
+            val imageIds = listOf(1L, 2L, 3L)
+            val imageFiles =
+                listOf(mockk<MultipartFile>(), mockk<MultipartFile>(), mockk<MultipartFile>())
+
+            every { userService.getUser(username) } throws UserNotFoundException()
+
+            assertThrows<UserNotFoundException> {
+                sut.updateWorkspaceImage(
+                    username,
+                    workspaceId,
+                    imageIds,
+                    imageFiles
+                )
+            }
+
+            verify { userService.getUser(username) }
+            verify(exactly = 0) { workspaceService.getWorkspace(any()) }
+            verify(exactly = 0) { workspaceService.checkCanAccessWorkspace(any(), any()) }
+            verify(exactly = 0) { workspaceService.deleteWorkspaceImages(any(), any()) }
+            verify(exactly = 0) { workspaceService.saveWorkspaceImages(any(), any()) }
+        }
+
+        it("should throw WorkspaceInaccessibleException when user has no permission to update workspace") {
+            val username = "username"
+            val user = SampleEntity.user
+            val workspaceId = 1L
+            val workspace = SampleEntity.workspace
+            val imageIds = listOf(1L, 2L, 3L)
+            val imageFiles =
+                listOf(mockk<MultipartFile>(), mockk<MultipartFile>(), mockk<MultipartFile>())
+
+            every { userService.getUser(username) } returns user
+            every { workspaceService.getWorkspace(workspaceId) } returns workspace
+            every {
+                workspaceService.checkCanAccessWorkspace(
+                    user,
+                    workspace
+                )
+            } throws WorkspaceInaccessibleException()
+
+            assertThrows<WorkspaceInaccessibleException> {
+                sut.updateWorkspaceImage(
+                    username,
+                    workspaceId,
+                    imageIds,
+                    imageFiles
+                )
+            }
+
+            verify { userService.getUser(username) }
+            verify { workspaceService.getWorkspace(workspaceId) }
+            verify { workspaceService.checkCanAccessWorkspace(user, workspace) }
+            verify(exactly = 0) { workspaceService.deleteWorkspaceImages(any(), any()) }
+            verify(exactly = 0) { workspaceService.saveWorkspaceImages(any(), any()) }
         }
     }
 })

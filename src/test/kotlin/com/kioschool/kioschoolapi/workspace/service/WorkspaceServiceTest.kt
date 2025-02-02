@@ -8,6 +8,7 @@ import com.kioschool.kioschoolapi.workspace.exception.NoPermissionToCreateWorksp
 import com.kioschool.kioschoolapi.workspace.exception.NoPermissionToInviteException
 import com.kioschool.kioschoolapi.workspace.exception.NoPermissionToJoinWorkspaceException
 import com.kioschool.kioschoolapi.workspace.exception.WorkspaceInaccessibleException
+import com.kioschool.kioschoolapi.workspace.repository.WorkspaceImageRepository
 import com.kioschool.kioschoolapi.workspace.repository.WorkspaceRepository
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
@@ -20,10 +21,11 @@ import java.util.*
 
 class WorkspaceServiceTest : DescribeSpec({
     val repository = mockk<WorkspaceRepository>()
+    val workspaceImageRepository = mockk<WorkspaceImageRepository>()
     val userService = mockk<UserService>()
     val s3Service = mockk<S3Service>()
 
-    val sut = WorkspaceService("test", repository, userService, s3Service)
+    val sut = WorkspaceService("test", repository, workspaceImageRepository, userService, s3Service)
 
     beforeTest {
         mockkObject(repository)
@@ -438,32 +440,6 @@ class WorkspaceServiceTest : DescribeSpec({
         }
     }
 
-    describe("getImageUrl") {
-        it("should call uploadFileToS3 when file is not null") {
-            val workspaceId = 1L
-            val file = mockk<MultipartFile>()
-
-            every { s3Service.uploadFile(file, any<String>()) } returns "url"
-
-            val result = sut.getImageUrl(workspaceId, file)
-
-            assert(result == "url")
-
-            verify { s3Service.uploadFile(file, any<String>()) }
-        }
-
-        it("should return null when file is null") {
-            val workspaceId = 1L
-            val file = null
-
-            val result = sut.getImageUrl(workspaceId, file)
-
-            assert(result == null)
-
-            verify(exactly = 0) { s3Service.uploadFile(any(), any<String>()) }
-        }
-    }
-
     describe("saveWorkspace") {
         it("should save workspace") {
             val workspace = SampleEntity.workspace
@@ -476,6 +452,42 @@ class WorkspaceServiceTest : DescribeSpec({
 
             assert(result == workspace)
 
+            verify { repository.save(workspace) }
+        }
+    }
+
+    describe("deleteWorkspaceImages") {
+        it("should delete workspace images") {
+            val workspace = SampleEntity.workspace
+            val deletedImageIds = listOf(1L, 2L, 3L)
+
+            every {
+                workspaceImageRepository.deleteAllByIdIn(deletedImageIds)
+            } just Runs
+
+            sut.deleteWorkspaceImages(workspace, deletedImageIds)
+
+            verify { workspaceImageRepository.deleteAllByIdIn(deletedImageIds) }
+        }
+    }
+
+    describe("saveWorkspaceImages") {
+        it("should save workspace images") {
+            val workspace = SampleEntity.workspace
+            val newImageFiles = listOf(mockk<MultipartFile>(), mockk<MultipartFile>())
+
+            every {
+                s3Service.uploadFile(any<MultipartFile>(), any<String>())
+            } returns "imageUrl"
+            every {
+                repository.save(workspace)
+            } returns workspace
+
+            val result = sut.saveWorkspaceImages(workspace, newImageFiles)
+
+            assert(result == workspace)
+
+            verify(exactly = 2) { s3Service.uploadFile(any<MultipartFile>(), any<String>()) }
             verify { repository.save(workspace) }
         }
     }
