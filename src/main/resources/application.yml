@@ -56,6 +56,10 @@ server:
         same-site: none
   error:
     include-message: always
+springdoc:
+  swagger-ui:
+    tags-sorter: alpha
+    operations-sorter: method
 
 ---
 
