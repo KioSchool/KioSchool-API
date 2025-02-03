@@ -456,16 +456,19 @@ class WorkspaceServiceTest : DescribeSpec({
 
     describe("deleteWorkspaceImages") {
         it("should delete workspace images") {
-            val workspace = SampleEntity.workspace
-            val deletedImageIds = listOf(1L, 2L, 3L)
+            val workspace = SampleEntity.workspace.apply {
+                images.addAll(SampleEntity.workspaceImages)
+            }
+            val deletedImages = SampleEntity.workspaceImages
 
             every {
-                workspaceImageRepository.deleteAllByIdIn(deletedImageIds)
+                s3Service.deleteFile(any())
             } just Runs
 
-            sut.deleteWorkspaceImages(workspace, deletedImageIds)
+            sut.deleteWorkspaceImages(workspace, deletedImages)
+            assert(workspace.images.isEmpty())
 
-            verify { workspaceImageRepository.deleteAllByIdIn(deletedImageIds) }
+            verify(exactly = 3) { s3Service.deleteFile(any()) }
         }
     }
 

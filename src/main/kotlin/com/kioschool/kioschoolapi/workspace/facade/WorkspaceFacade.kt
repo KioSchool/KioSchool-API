@@ -108,13 +108,12 @@ class WorkspaceFacade(
 
         workspaceService.checkCanAccessWorkspace(user, workspace)
 
-        val deleteImageIds = (workspace.images.map { it.id } - imageIds.toSet()).filterNotNull()
-        workspaceService.deleteWorkspaceImages(workspace, deleteImageIds)
+        val deleteImages = workspace.images.filter { !imageIds.contains(it.id) }
+        workspaceService.deleteWorkspaceImages(workspace, deleteImages)
 
         val newImageFiles = imageIds.zip(imageFiles)
             .filter { it.first == null }
             .mapNotNull { it.second }
-
         return workspaceService.saveWorkspaceImages(workspace, newImageFiles)
     }
 }

@@ -131,6 +131,13 @@ class WorkspaceService(
         return workspaceRepository.save(workspace)
     }
 
+    fun deleteWorkspaceImages(workspace: Workspace, deletedImages: List<WorkspaceImage>) {
+        workspace.images.removeAll(deletedImages)
+        deletedImages.forEach {
+            s3Service.deleteFile(it.url)
+        }
+    }
+
     fun saveWorkspaceImages(workspace: Workspace, newImageFiles: List<MultipartFile>): Workspace {
         newImageFiles.forEach {
             val path =

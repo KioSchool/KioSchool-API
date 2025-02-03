@@ -482,11 +482,17 @@ class WorkspaceFacadeTest : DescribeSpec({
     }
 
     describe("updateWorkspaceImage") {
+        beforeTest {
+            SampleEntity.workspace.images.clear()
+        }
+
         it("should call userService.getUser, workspaceService.getWorkspace, workspaceService.deleteWorkspaceImages, workspaceService.saveWorkspaceImages and workspaceService.saveWorkspace") {
             val username = "username"
             val user = SampleEntity.user
             val workspaceId = 1L
-            val workspace = SampleEntity.workspace
+            val workspace = SampleEntity.workspace.apply {
+                images.addAll(SampleEntity.workspaceImages)
+            }
             val imageIds = listOf(1L, 2L, 3L)
             val imageFiles =
                 listOf(mockk<MultipartFile>(), mockk<MultipartFile>(), mockk<MultipartFile>())
@@ -495,7 +501,7 @@ class WorkspaceFacadeTest : DescribeSpec({
             every { userService.getUser(username) } returns user
             every { workspaceService.getWorkspace(workspaceId) } returns workspace
             every { workspaceService.checkCanAccessWorkspace(user, workspace) } just Runs
-            every { workspaceService.deleteWorkspaceImages(workspace, any<List<Long>>()) } just Runs
+            every { workspaceService.deleteWorkspaceImages(workspace, any()) } just Runs
             every {
                 workspaceService.saveWorkspaceImages(
                     workspace,
@@ -515,7 +521,7 @@ class WorkspaceFacadeTest : DescribeSpec({
             verify { userService.getUser(username) }
             verify { workspaceService.getWorkspace(workspaceId) }
             verify { workspaceService.checkCanAccessWorkspace(user, workspace) }
-            verify { workspaceService.deleteWorkspaceImages(workspace, any<List<Long>>()) }
+            verify { workspaceService.deleteWorkspaceImages(workspace, any()) }
             verify { workspaceService.saveWorkspaceImages(workspace, any<List<MultipartFile>>()) }
         }
 
@@ -526,14 +532,19 @@ class WorkspaceFacadeTest : DescribeSpec({
             val workspace = SampleEntity.workspace.apply {
                 images.addAll(SampleEntity.workspaceImages)
             }
-            val imageIds = listOf(3L, null, null)
+            val imageIds = listOf(workspace.images[2].id, null, null)
             val imageFiles =
                 listOf(mockk<MultipartFile>(), mockk<MultipartFile>(), null)
 
             every { userService.getUser(username) } returns user
             every { workspaceService.getWorkspace(workspaceId) } returns workspace
             every { workspaceService.checkCanAccessWorkspace(user, workspace) } just Runs
-            every { workspaceService.deleteWorkspaceImages(workspace, listOf(1L, 2L)) } just Runs
+            every {
+                workspaceService.deleteWorkspaceImages(
+                    workspace,
+                    arrayListOf(workspace.images[0], workspace.images[1])
+                )
+            } just Runs
             every {
                 workspaceService.saveWorkspaceImages(
                     workspace,
@@ -553,7 +564,12 @@ class WorkspaceFacadeTest : DescribeSpec({
             verify { userService.getUser(username) }
             verify { workspaceService.getWorkspace(workspaceId) }
             verify { workspaceService.checkCanAccessWorkspace(user, workspace) }
-            verify { workspaceService.deleteWorkspaceImages(workspace, listOf(1L, 2L)) }
+            verify {
+                workspaceService.deleteWorkspaceImages(
+                    workspace,
+                    arrayListOf(workspace.images[0], workspace.images[1])
+                )
+            }
             verify { workspaceService.saveWorkspaceImages(workspace, listOf(imageFiles[1]!!)) }
         }
 

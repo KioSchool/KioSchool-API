@@ -43,6 +43,7 @@ class Workspace(
     val invitations: MutableList<WorkspaceInvitation> = mutableListOf(),
     @OneToMany(
         mappedBy = "workspace",
+        cascade = [CascadeType.ALL],
         orphanRemoval = true,
         fetch = FetchType.EAGER
     )
