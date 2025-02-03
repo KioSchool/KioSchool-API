@@ -44,7 +44,7 @@ class AdminWorkspaceController(
     @PutMapping("/workspace/info")
     fun updateWorkspace(
         @AdminUsername username: String,
-        @RequestPart body: UpdateWorkspaceRequestBody,
+        @RequestBody body: UpdateWorkspaceRequestBody,
     ): Workspace {
         return workspaceFacade.updateWorkspaceInfo(
             username,
