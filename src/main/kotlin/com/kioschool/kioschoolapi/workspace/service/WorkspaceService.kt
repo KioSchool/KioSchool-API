@@ -14,7 +14,6 @@ import com.kioschool.kioschoolapi.workspace.exception.NoPermissionToJoinWorkspac
 import com.kioschool.kioschoolapi.workspace.exception.WorkspaceInaccessibleException
 import com.kioschool.kioschoolapi.workspace.repository.WorkspaceImageRepository
 import com.kioschool.kioschoolapi.workspace.repository.WorkspaceRepository
-import jakarta.transaction.Transactional
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
@@ -134,14 +133,10 @@ class WorkspaceService(
         return workspaceRepository.save(workspace)
     }
 
-    @Transactional
-    fun deleteWorkspaceImages(workspace: Workspace, deletedImageIds: List<Long>) {
-        workspaceImageRepository.deleteAllByIdIn(deletedImageIds)
-    }
-
     fun saveWorkspaceImages(workspace: Workspace, newImageFiles: List<MultipartFile>): Workspace {
         newImageFiles.forEach {
-            val path = "$workspacePath/workspace${workspace.id}/${System.currentTimeMillis()}.jpg"
+            val path =
+                "$workspacePath/workspace${workspace.id}/workspace/${System.currentTimeMillis()}.jpg"
             val imageUrl = s3Service.uploadFile(it, path)
             workspace.images.add(WorkspaceImage(workspace = workspace, url = imageUrl))
         }
