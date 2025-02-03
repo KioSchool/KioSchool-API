@@ -8,7 +8,6 @@ import com.kioschool.kioschoolapi.workspace.exception.NoPermissionToCreateWorksp
 import com.kioschool.kioschoolapi.workspace.exception.NoPermissionToInviteException
 import com.kioschool.kioschoolapi.workspace.exception.NoPermissionToJoinWorkspaceException
 import com.kioschool.kioschoolapi.workspace.exception.WorkspaceInaccessibleException
-import com.kioschool.kioschoolapi.workspace.repository.WorkspaceImageRepository
 import com.kioschool.kioschoolapi.workspace.repository.WorkspaceRepository
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
@@ -21,11 +20,10 @@ import java.util.*
 
 class WorkspaceServiceTest : DescribeSpec({
     val repository = mockk<WorkspaceRepository>()
-    val workspaceImageRepository = mockk<WorkspaceImageRepository>()
     val userService = mockk<UserService>()
     val s3Service = mockk<S3Service>()
 
-    val sut = WorkspaceService("test", repository, workspaceImageRepository, userService, s3Service)
+    val sut = WorkspaceService("test", repository, userService, s3Service)
 
     beforeTest {
         mockkObject(repository)

@@ -12,7 +12,6 @@ import com.kioschool.kioschoolapi.workspace.exception.NoPermissionToCreateWorksp
 import com.kioschool.kioschoolapi.workspace.exception.NoPermissionToInviteException
 import com.kioschool.kioschoolapi.workspace.exception.NoPermissionToJoinWorkspaceException
 import com.kioschool.kioschoolapi.workspace.exception.WorkspaceInaccessibleException
-import com.kioschool.kioschoolapi.workspace.repository.WorkspaceImageRepository
 import com.kioschool.kioschoolapi.workspace.repository.WorkspaceRepository
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.Page
@@ -26,7 +25,6 @@ class WorkspaceService(
     @Value("\${cloud.aws.s3.default-path}")
     private val workspacePath: String,
     val workspaceRepository: WorkspaceRepository,
-    val workspaceImageRepository: WorkspaceImageRepository,
     val userService: UserService,
     val s3Service: S3Service
 ) {
