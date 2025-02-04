@@ -101,7 +101,7 @@ class WorkspaceFacade(
         username: String,
         workspaceId: Long,
         imageIds: List<Long?>,
-        imageFiles: List<MultipartFile?>,
+        imageFiles: List<MultipartFile>,
     ): Workspace {
         val user = userService.getUser(username)
         val workspace = workspaceService.getWorkspace(workspaceId)
@@ -111,9 +111,6 @@ class WorkspaceFacade(
         val deleteImages = workspace.images.filter { !imageIds.contains(it.id) }
         workspaceService.deleteWorkspaceImages(workspace, deleteImages)
 
-        val newImageFiles = imageIds.zip(imageFiles)
-            .filter { it.first == null }
-            .mapNotNull { it.second }
-        return workspaceService.saveWorkspaceImages(workspace, newImageFiles)
+        return workspaceService.saveWorkspaceImages(workspace, imageFiles)
     }
 }

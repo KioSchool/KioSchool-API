@@ -6,7 +6,6 @@ import com.kioschool.kioschoolapi.workspace.entity.Workspace
 import com.kioschool.kioschoolapi.workspace.facade.WorkspaceFacade
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
-import jakarta.validation.constraints.Size
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
 
@@ -60,8 +59,7 @@ class AdminWorkspaceController(
     fun updateWorkspaceImage(
         @AdminUsername username: String,
         @RequestPart body: UpdateWorkspaceImageRequestBody,
-        @Size(min = 3, max = 3, message = "이미지 파일은 3개여야 합니다.")
-        @RequestPart imageFiles: List<MultipartFile?>,
+        @RequestPart imageFiles: List<MultipartFile>,
     ): Workspace {
         return workspaceFacade.updateWorkspaceImage(
             username,
