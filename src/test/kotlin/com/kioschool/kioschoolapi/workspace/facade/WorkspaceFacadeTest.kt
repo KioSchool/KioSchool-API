@@ -534,7 +534,7 @@ class WorkspaceFacadeTest : DescribeSpec({
             }
             val imageIds = listOf(workspace.images[2].id, null, null)
             val imageFiles =
-                listOf(mockk<MultipartFile>(), mockk<MultipartFile>(), null)
+                listOf(mockk<MultipartFile>(), mockk<MultipartFile>())
 
             every { userService.getUser(username) } returns user
             every { workspaceService.getWorkspace(workspaceId) } returns workspace
@@ -548,7 +548,7 @@ class WorkspaceFacadeTest : DescribeSpec({
             every {
                 workspaceService.saveWorkspaceImages(
                     workspace,
-                    listOf(imageFiles[1]!!)
+                    imageFiles
                 )
             } returns workspace
 
@@ -570,7 +570,7 @@ class WorkspaceFacadeTest : DescribeSpec({
                     arrayListOf(workspace.images[0], workspace.images[1])
                 )
             }
-            verify { workspaceService.saveWorkspaceImages(workspace, listOf(imageFiles[1]!!)) }
+            verify { workspaceService.saveWorkspaceImages(workspace, imageFiles) }
         }
 
         it("should throw UserNotFoundException when user not found") {
