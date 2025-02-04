@@ -59,13 +59,13 @@ class AdminWorkspaceController(
     fun updateWorkspaceImage(
         @AdminUsername username: String,
         @RequestPart body: UpdateWorkspaceImageRequestBody,
-        @RequestPart imageFiles: List<MultipartFile>,
+        @RequestPart(required = false) imageFiles: List<MultipartFile>?,
     ): Workspace {
         return workspaceFacade.updateWorkspaceImage(
             username,
             body.workspaceId,
             body.imageIds,
-            imageFiles
+            imageFiles ?: emptyList()
         )
     }
 
