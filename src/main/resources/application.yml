@@ -1,21 +1,8 @@
 spring:
-  profiles:
-    active: local
-    group:
-      local:
-        - common
-      prod:
-        - common
-
----
-spring:
   servlet:
     multipart:
       max-file-size: 20MB
       max-request-size: 20MB
-  config:
-    activate:
-      on-profile: common
   datasource:
     driver-class-name: org.postgresql.Driver
   flyway:
@@ -60,49 +47,3 @@ springdoc:
   swagger-ui:
     tags-sorter: alpha
     operations-sorter: method
-
----
-
-spring:
-  config:
-    activate:
-      on-profile: prod
-  datasource:
-    url: "${DATABASE_URL}"
-    username: "${DATABASE_USERNAME}"
-    password: "${DATABASE_PASSWORD}"
-cloud:
-  aws:
-    s3:
-      default-path: production
-websocket:
-  allowed-origins: "https://kio-school.com"
-discord:
-  webhook-url: "${DISCORD_WEBHOOK_URL}"
-kioschool:
-  base-url: "https://kio-school.com"
-
----
-
-spring:
-  config:
-    activate:
-      on-profile: local
-  jpa:
-    show-sql: true
-  datasource:
-    url: jdbc:postgresql://localhost:2345/kio-school-database
-    username: myuser
-    password: mypassword
-jwt:
-  secret-key: 512393ea8dee67633d7f1197c4938239f57c1a323a227e919977f0b478c5f5fd3a4dab07ba1a796297c5cd7c9519e6403ad2742e0c07024290aafa3d6f9f2424
-cloud:
-  aws:
-    s3:
-      default-path: local
-websocket:
-  allowed-origins: "http://localhost:3000"
-discord:
-  webhook-url: "${DISCORD_WEBHOOK_URL}"
-kioschool:
-  base-url: "http://localhost:3000"

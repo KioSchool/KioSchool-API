@@ -1,0 +1,15 @@
+spring:
+  datasource:
+    url: "${DATABASE_URL}"
+    username: "${DATABASE_USERNAME}"
+    password: "${DATABASE_PASSWORD}"
+cloud:
+  aws:
+    s3:
+      default-path: production
+websocket:
+  allowed-origins: "https://kio-school.com"
+discord:
+  webhook-url: "${DISCORD_WEBHOOK_URL}"
+kioschool:
+  base-url: "https://kio-school.com"
