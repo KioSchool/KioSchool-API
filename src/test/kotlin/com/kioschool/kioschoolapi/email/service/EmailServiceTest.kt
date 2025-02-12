@@ -174,11 +174,10 @@ class EmailServiceTest : DescribeSpec({
     }
 
     describe("generateResetPasswordCode") {
-        it("should return 50 length random string") {
+        it("should return UUID") {
             val result = sut.generateResetPasswordCode()
 
-            assert(result.length == 50)
-            assert(!result.contains(Regex("[^a-zA-Z0-9]")))
+            assert(result.length == 36)
         }
     }
 
