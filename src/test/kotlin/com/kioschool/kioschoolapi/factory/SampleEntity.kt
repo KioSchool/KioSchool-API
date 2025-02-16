@@ -11,6 +11,7 @@ import com.kioschool.kioschoolapi.product.entity.Product
 import com.kioschool.kioschoolapi.product.entity.ProductCategory
 import com.kioschool.kioschoolapi.user.entity.User
 import com.kioschool.kioschoolapi.workspace.entity.Workspace
+import com.kioschool.kioschoolapi.workspace.entity.WorkspaceImage
 import com.kioschool.kioschoolapi.workspace.entity.WorkspaceInvitation
 import com.kioschool.kioschoolapi.workspace.entity.WorkspaceMember
 import kotlin.reflect.full.superclasses
@@ -42,6 +43,23 @@ object SampleEntity {
         name = "test",
         owner = user
     )
+
+    val workspaceImage1 = WorkspaceImage(
+        workspace = workspace,
+        url = "test"
+    ).apply { setId(1) }
+
+    val workspaceImage2 = WorkspaceImage(
+        workspace = workspace,
+        url = "test2"
+    ).apply { setId(2) }
+
+    val workspaceImage3 = WorkspaceImage(
+        workspace = workspace,
+        url = "test3"
+    ).apply { setId(3) }
+
+    val workspaceImages = listOf(workspaceImage1, workspaceImage2, workspaceImage3)
 
     fun workspace(user: User) = Workspace(
         name = "test",

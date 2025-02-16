@@ -11,9 +11,11 @@ import com.kioschool.kioschoolapi.user.exception.UserNotFoundException
 import jakarta.transaction.Transactional
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.mail.javamail.MimeMessageHelper
 import org.springframework.stereotype.Service
+import java.util.*
 
 @Service
 class EmailService(
@@ -61,8 +63,7 @@ class EmailService(
     }
 
     fun generateResetPasswordCode(): String {
-        val charset = ('a'..'z') + ('A'..'Z') + ('0'..'9')
-        return (1..50).map { charset.random() }.joinToString("")
+        return UUID.randomUUID().toString()
     }
 
     fun verifyRegisterCode(email: String, code: String): Boolean {
@@ -106,7 +107,15 @@ class EmailService(
                 PageRequest.of(page, size)
             )
 
-        return emailDomainRepository.findAll(PageRequest.of(page, size))
+        return emailDomainRepository.findAll(
+            PageRequest.of(
+                page,
+                size,
+                Sort.by(
+                    Sort.Order.asc("name")
+                )
+            )
+        )
     }
 
     fun validateEmailDomainDuplicate(domain: String) {

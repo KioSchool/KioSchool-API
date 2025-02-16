@@ -10,7 +10,7 @@ import jakarta.persistence.*
 @Entity
 @Table(name = "workspace")
 class Workspace(
-    val name: String,
+    var name: String,
     @ManyToOne
     val owner: User,
     @JsonIgnore
@@ -41,6 +41,14 @@ class Workspace(
         fetch = FetchType.EAGER
     )
     val invitations: MutableList<WorkspaceInvitation> = mutableListOf(),
+    @OneToMany(
+        mappedBy = "workspace",
+        cascade = [CascadeType.ALL],
+        orphanRemoval = true,
+        fetch = FetchType.EAGER
+    )
+    val images: MutableList<WorkspaceImage> = mutableListOf(),
     var description: String = "",
+    var notice: String = "",
     var tableCount: Int = 1
 ) : BaseEntity()

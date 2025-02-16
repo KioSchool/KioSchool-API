@@ -1,9 +1,11 @@
 package com.kioschool.kioschoolapi.workspace.service
 
+import com.kioschool.kioschoolapi.aws.S3Service
 import com.kioschool.kioschoolapi.common.enums.UserRole
 import com.kioschool.kioschoolapi.user.entity.User
 import com.kioschool.kioschoolapi.user.service.UserService
 import com.kioschool.kioschoolapi.workspace.entity.Workspace
+import com.kioschool.kioschoolapi.workspace.entity.WorkspaceImage
 import com.kioschool.kioschoolapi.workspace.entity.WorkspaceInvitation
 import com.kioschool.kioschoolapi.workspace.entity.WorkspaceMember
 import com.kioschool.kioschoolapi.workspace.exception.NoPermissionToCreateWorkspaceException
@@ -11,15 +13,20 @@ import com.kioschool.kioschoolapi.workspace.exception.NoPermissionToInviteExcept
 import com.kioschool.kioschoolapi.workspace.exception.NoPermissionToJoinWorkspaceException
 import com.kioschool.kioschoolapi.workspace.exception.WorkspaceInaccessibleException
 import com.kioschool.kioschoolapi.workspace.repository.WorkspaceRepository
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
+import org.springframework.web.multipart.MultipartFile
 import java.net.URLDecoder
 
 @Service
 class WorkspaceService(
+    @Value("\${cloud.aws.s3.default-path}")
+    private val workspacePath: String,
     val workspaceRepository: WorkspaceRepository,
     val userService: UserService,
+    val s3Service: S3Service
 ) {
     fun getAllWorkspaces(name: String?, page: Int, size: Int): Page<Workspace> {
         if (!name.isNullOrBlank())
@@ -118,5 +125,26 @@ class WorkspaceService(
     fun updateTableCount(workspace: Workspace, tableCount: Int) {
         workspace.tableCount = tableCount
         workspaceRepository.save(workspace)
+    }
+
+    fun saveWorkspace(workspace: Workspace): Workspace {
+        return workspaceRepository.save(workspace)
+    }
+
+    fun deleteWorkspaceImages(workspace: Workspace, deletedImages: List<WorkspaceImage>) {
+        workspace.images.removeAll(deletedImages)
+        deletedImages.forEach {
+            s3Service.deleteFile(it.url)
+        }
+    }
+
+    fun saveWorkspaceImages(workspace: Workspace, newImageFiles: List<MultipartFile>): Workspace {
+        newImageFiles.forEach {
+            val path =
+                "$workspacePath/workspace${workspace.id}/workspace/${System.currentTimeMillis()}.jpg"
+            val imageUrl = s3Service.uploadFile(it, path)
+            workspace.images.add(WorkspaceImage(workspace = workspace, url = imageUrl))
+        }
+        return workspaceRepository.save(workspace)
     }
 }

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS"
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+  <changeSet author="ji-inpark" id="1738419749591-1">
+    <createTable tableName="workspace_image">
+      <column autoIncrement="true" name="id" type="BIGINT">
+        <constraints nullable="false" primaryKey="true" primaryKeyName="pk_workspace_image"/>
+      </column>
+      <column name="created_at" type="DATETIME"/>
+      <column name="updated_at" type="DATETIME"/>
+      <column name="workspace_id" type="BIGINT"/>
+      <column name="url" type="VARCHAR(255)"/>
+    </createTable>
+  </changeSet>
+  <changeSet author="ji-inpark" id="1738419749591-5">
+    <addForeignKeyConstraint baseColumnNames="workspace_id" baseTableName="workspace_image"
+      constraintName="FK_WORKSPACE_IMAGE_ON_WORKSPACE" referencedColumnNames="id"
+      referencedTableName="workspace"/>
+  </changeSet>
+  <changeSet author="ji-inpark" id="1738420132801-1">
+    <dropColumn columnName="image_url1" tableName="workspace"/>
+    <dropColumn columnName="image_url2" tableName="workspace"/>
+    <dropColumn columnName="image_url3" tableName="workspace"/>
+  </changeSet>
+
+</databaseChangeLog>

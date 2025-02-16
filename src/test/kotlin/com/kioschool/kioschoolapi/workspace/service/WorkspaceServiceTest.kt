@@ -1,5 +1,6 @@
 package com.kioschool.kioschoolapi.workspace.service
 
+import com.kioschool.kioschoolapi.aws.S3Service
 import com.kioschool.kioschoolapi.common.enums.UserRole
 import com.kioschool.kioschoolapi.factory.SampleEntity
 import com.kioschool.kioschoolapi.user.service.UserService
@@ -14,13 +15,15 @@ import io.kotest.matchers.shouldBe
 import io.mockk.*
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
+import org.springframework.web.multipart.MultipartFile
 import java.util.*
 
 class WorkspaceServiceTest : DescribeSpec({
     val repository = mockk<WorkspaceRepository>()
     val userService = mockk<UserService>()
+    val s3Service = mockk<S3Service>()
 
-    val sut = WorkspaceService(repository, userService)
+    val sut = WorkspaceService("test", repository, userService, s3Service)
 
     beforeTest {
         mockkObject(repository)
@@ -431,6 +434,61 @@ class WorkspaceServiceTest : DescribeSpec({
             workspace.tableCount shouldBe tableCount
 
             // Assert
+            verify { repository.save(workspace) }
+        }
+    }
+
+    describe("saveWorkspace") {
+        it("should save workspace") {
+            val workspace = SampleEntity.workspace
+
+            every {
+                repository.save(workspace)
+            } returns workspace
+
+            val result = sut.saveWorkspace(workspace)
+
+            assert(result == workspace)
+
+            verify { repository.save(workspace) }
+        }
+    }
+
+    describe("deleteWorkspaceImages") {
+        it("should delete workspace images") {
+            val workspace = SampleEntity.workspace.apply {
+                images.addAll(SampleEntity.workspaceImages)
+            }
+            val deletedImages = SampleEntity.workspaceImages
+
+            every {
+                s3Service.deleteFile(any())
+            } just Runs
+
+            sut.deleteWorkspaceImages(workspace, deletedImages)
+            assert(workspace.images.isEmpty())
+
+            verify(exactly = 3) { s3Service.deleteFile(any()) }
+        }
+    }
+
+    describe("saveWorkspaceImages") {
+        it("should save workspace images") {
+            val workspace = SampleEntity.workspace
+            val newImageFiles = listOf(mockk<MultipartFile>(), mockk<MultipartFile>())
+
+            every {
+                s3Service.uploadFile(any<MultipartFile>(), any<String>())
+            } returns "imageUrl"
+            every {
+                repository.save(workspace)
+            } returns workspace
+
+            val result = sut.saveWorkspaceImages(workspace, newImageFiles)
+
+            assert(result == workspace)
+
+            verify(exactly = 2) { s3Service.uploadFile(any<MultipartFile>(), any<String>()) }
             verify { repository.save(workspace) }
         }
     }
