@@ -1,10 +1,9 @@
-package com.kioschool.kioschoolapi.email.facade
+package com.kioschool.kioschoolapi.order.facade
 
 import com.kioschool.kioschoolapi.common.enums.OrderStatus
 import com.kioschool.kioschoolapi.factory.SampleEntity
 import com.kioschool.kioschoolapi.order.dto.OrderProductRequestBody
 import com.kioschool.kioschoolapi.order.entity.Order
-import com.kioschool.kioschoolapi.order.facade.OrderFacade
 import com.kioschool.kioschoolapi.order.service.OrderService
 import com.kioschool.kioschoolapi.product.service.ProductService
 import com.kioschool.kioschoolapi.workspace.exception.WorkspaceInaccessibleException

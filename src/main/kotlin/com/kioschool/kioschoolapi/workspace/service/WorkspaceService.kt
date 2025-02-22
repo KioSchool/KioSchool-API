@@ -132,7 +132,7 @@ class WorkspaceService(
     }
 
     fun deleteWorkspaceImages(workspace: Workspace, deletedImages: List<WorkspaceImage>) {
-        workspace.images.removeAll(deletedImages)
+        workspace.images.removeAll(deletedImages.toSet())
         deletedImages.forEach {
             s3Service.deleteFile(it.url)
         }

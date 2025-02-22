@@ -13,7 +13,7 @@ allOpen {
     annotations(
         "jakarta.persistence.Entity",
         "jakarta.persistence.MappedSuperclass",
-        "jakarta.persistence.Embedabble"
+        "jakarta.persistence.Embeddable"
     )
 }
 

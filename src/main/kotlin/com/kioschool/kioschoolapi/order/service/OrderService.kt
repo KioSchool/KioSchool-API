@@ -8,7 +8,6 @@ import com.kioschool.kioschoolapi.order.repository.OrderProductRepository
 import com.kioschool.kioschoolapi.order.repository.OrderRepository
 import com.kioschool.kioschoolapi.websocket.dto.Message
 import com.kioschool.kioschoolapi.websocket.service.CustomWebSocketService
-import com.kioschool.kioschoolapi.workspace.service.WorkspaceService
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
@@ -18,7 +17,6 @@ import java.time.LocalDateTime
 @Service
 class OrderService(
     private val orderRepository: OrderRepository,
-    private val workspaceService: WorkspaceService,
     private val websocketService: CustomWebSocketService,
     private val customOrderRepository: CustomOrderRepository,
     private val orderProductRepository: OrderProductRepository

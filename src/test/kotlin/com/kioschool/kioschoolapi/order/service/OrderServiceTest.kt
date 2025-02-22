@@ -20,7 +20,6 @@ class OrderServiceTest : DescribeSpec({
 
     val sut = OrderService(
         repository,
-        workspaceService,
         websocketService,
         customOrderRepository,
         orderProductRepository
