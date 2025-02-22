@@ -11,6 +11,7 @@ import com.kioschool.kioschoolapi.websocket.service.CustomWebSocketService
 import com.kioschool.kioschoolapi.workspace.service.WorkspaceService
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 
@@ -77,7 +78,13 @@ class OrderService(
         return orderRepository.findAllByWorkspaceIdAndTableNumber(
             workspaceId,
             tableNumber,
-            PageRequest.of(page, size)
+            PageRequest.of(
+                page,
+                size,
+                Sort.by(
+                    Sort.Order.desc("id")
+                )
+            )
         )
     }
 }
