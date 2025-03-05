@@ -10,6 +10,7 @@ import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.*
 import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 
 class OrderServiceTest : DescribeSpec({
     val repository = mockk<OrderRepository>()
@@ -178,7 +179,11 @@ class OrderServiceTest : DescribeSpec({
                 repository.findAllByWorkspaceIdAndTableNumber(
                     workspaceId,
                     tableNumber,
-                    PageRequest.of(page, size)
+                    PageRequest.of(
+                        page, size, Sort.by(
+                            Sort.Order.desc("id")
+                        )
+                    )
                 )
             } returns mockk()
 
@@ -195,7 +200,11 @@ class OrderServiceTest : DescribeSpec({
                 repository.findAllByWorkspaceIdAndTableNumber(
                     workspaceId,
                     tableNumber,
-                    PageRequest.of(page, size)
+                    PageRequest.of(
+                        page, size, Sort.by(
+                            Sort.Order.desc("id")
+                        )
+                    )
                 )
             }
         }
