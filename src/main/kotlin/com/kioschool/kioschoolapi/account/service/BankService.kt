@@ -1,6 +1,7 @@
 package com.kioschool.kioschoolapi.account.service
 
 import com.kioschool.kioschoolapi.account.entity.Bank
+import com.kioschool.kioschoolapi.account.exception.BankNotFoundException
 import com.kioschool.kioschoolapi.account.repository.BankRepository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
@@ -20,5 +21,13 @@ class BankService(
 
     fun deleteBank(id: Long) {
         bankRepository.deleteById(id)
+    }
+
+    fun getAllBanks(): List<Bank> {
+        return bankRepository.findAll()
+    }
+
+    fun getBank(bankId: Long): Bank {
+        return bankRepository.findById(bankId).orElseThrow { BankNotFoundException() }
     }
 }
