@@ -49,6 +49,8 @@ dependencies {
     implementation("io.github.openfeign.querydsl:querydsl-jpa:6.10.1")
     implementation("com.squareup.okhttp3:okhttp:4.10.0")
     implementation("com.google.code.gson:gson:2.10.1")
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-jackson:2.9.0")
     kapt("io.github.openfeign.querydsl:querydsl-apt:6.10.1:jakarta")
     kapt("jakarta.annotation:jakarta.annotation-api")
     kapt("jakarta.persistence:jakarta.persistence-api")

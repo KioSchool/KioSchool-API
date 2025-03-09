@@ -1,7 +1,7 @@
 package com.kioschool.kioschoolapi.user.facade
 
 import com.kioschool.kioschoolapi.common.enums.UserRole
-import com.kioschool.kioschoolapi.discord.DiscordService
+import com.kioschool.kioschoolapi.discord.service.DiscordService
 import com.kioschool.kioschoolapi.email.exception.NotVerifiedEmailDomainException
 import com.kioschool.kioschoolapi.email.service.EmailService
 import com.kioschool.kioschoolapi.factory.SampleEntity

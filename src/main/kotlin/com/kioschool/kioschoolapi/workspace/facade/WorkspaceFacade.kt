@@ -1,6 +1,6 @@
 package com.kioschool.kioschoolapi.workspace.facade
 
-import com.kioschool.kioschoolapi.discord.DiscordService
+import com.kioschool.kioschoolapi.discord.service.DiscordService
 import com.kioschool.kioschoolapi.user.service.UserService
 import com.kioschool.kioschoolapi.workspace.entity.Workspace
 import com.kioschool.kioschoolapi.workspace.service.WorkspaceService

@@ -1,6 +1,6 @@
-package com.kioschool.kioschoolapi.discord
+package com.kioschool.kioschoolapi.discord.service
 
-import com.kioschool.kioschoolapi.common.service.ApiService
+import com.kioschool.kioschoolapi.discord.api.DiscordApi
 import com.kioschool.kioschoolapi.user.entity.User
 import com.kioschool.kioschoolapi.workspace.entity.Workspace
 import okhttp3.FormBody
@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service
 class DiscordService(
     @Value("\${discord.webhook-url}")
     private val webhookUrl: String,
-    private val apiService: ApiService
+    private val discordApi: DiscordApi
 ) {
     fun sendUserRegister(user: User) {
         val message =
@@ -40,6 +40,6 @@ class DiscordService(
             .add("content", message)
             .build()
 
-        apiService.post(webhookUrl, body)
+        discordApi.executeWebhook(webhookUrl, body).execute()
     }
 }
