@@ -2,6 +2,7 @@ package com.kioschool.kioschoolapi
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.kioschool.kioschoolapi.discord.api.DiscordApi
+import com.kioschool.kioschoolapi.portone.api.PortoneApi
 import okhttp3.OkHttpClient
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -33,5 +34,18 @@ class RetrofitConfiguration {
             .addConverterFactory(JacksonConverterFactory.create(objectMapper))
             .build()
             .create(DiscordApi::class.java)
+    }
+
+    @Bean("portoneApi")
+    fun portoneApi(
+        okHttpClient: OkHttpClient,
+        objectMapper: ObjectMapper
+    ): PortoneApi {
+        return Retrofit.Builder()
+            .baseUrl("https://api.iamport.kr/")
+            .client(okHttpClient)
+            .addConverterFactory(JacksonConverterFactory.create(objectMapper))
+            .build()
+            .create(PortoneApi::class.java)
     }
 }

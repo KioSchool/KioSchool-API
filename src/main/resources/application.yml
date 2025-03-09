@@ -47,3 +47,6 @@ springdoc:
   swagger-ui:
     tags-sorter: alpha
     operations-sorter: method
+portone:
+  api-key: "${PORTONE_API_KEY}"
+  api-secret: "${PORTONE_API_SECRET}"

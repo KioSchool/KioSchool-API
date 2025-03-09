@@ -3,6 +3,7 @@ package com.kioschool.kioschoolapi.account.facade
 import com.kioschool.kioschoolapi.account.entity.Bank
 import com.kioschool.kioschoolapi.account.service.AccountService
 import com.kioschool.kioschoolapi.account.service.BankService
+import com.kioschool.kioschoolapi.portone.service.PortoneService
 import com.kioschool.kioschoolapi.user.entity.User
 import com.kioschool.kioschoolapi.user.service.UserService
 import org.springframework.data.domain.Page
@@ -12,7 +13,8 @@ import org.springframework.stereotype.Component
 class AccountFacade(
     private val bankService: BankService,
     private val accountService: AccountService,
-    private val userService: UserService
+    private val userService: UserService,
+    private val portoneService: PortoneService
 ) {
     fun getBanks(page: Int, size: Int): Page<Bank> {
         return bankService.getBanks(page, size)
@@ -36,8 +38,10 @@ class AccountFacade(
         accountNumber: String,
         accountHolder: String
     ): User {
-        val user = userService.getUser(username)
         val bank = bankService.getBank(bankId)
+        portoneService.validateAccountHolder(bank.code, accountNumber, accountHolder)
+
+        val user = userService.getUser(username)
         user.account = accountService.createAccount(bank, accountNumber, accountHolder)
         return userService.saveUser(user)
     }
