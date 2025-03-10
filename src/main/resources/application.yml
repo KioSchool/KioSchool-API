@@ -5,9 +5,6 @@ spring:
       max-request-size: 20MB
   datasource:
     driver-class-name: org.postgresql.Driver
-  flyway:
-    enabled: true
-    baseline-on-migrate: true
   liquibase:
     change-log: classpath:db/changelog-master.yaml
   thymeleaf:
