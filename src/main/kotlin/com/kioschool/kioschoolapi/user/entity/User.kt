@@ -19,7 +19,7 @@ class User(
     var email: String,
     var role: UserRole,
     var accountUrl: String? = null,
-    @OneToOne
+    @OneToOne(cascade = [CascadeType.ALL], orphanRemoval = true)
     var account: Account? = null,
     @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = [CascadeType.ALL], orphanRemoval = true)
