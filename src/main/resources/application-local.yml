@@ -1,6 +1,11 @@
 spring:
   jpa:
     show-sql: true
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: mypassword
   datasource:
     url: jdbc:postgresql://localhost:2345/kio-school-database
     username: myuser

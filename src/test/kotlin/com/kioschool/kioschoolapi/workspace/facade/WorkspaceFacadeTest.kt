@@ -1,6 +1,6 @@
 package com.kioschool.kioschoolapi.workspace.facade
 
-import com.kioschool.kioschoolapi.discord.DiscordService
+import com.kioschool.kioschoolapi.discord.service.DiscordService
 import com.kioschool.kioschoolapi.factory.SampleEntity
 import com.kioschool.kioschoolapi.user.exception.UserNotFoundException
 import com.kioschool.kioschoolapi.user.service.UserService
@@ -74,23 +74,17 @@ class WorkspaceFacadeTest : DescribeSpec({
     describe("getWorkspaceAccount") {
         it("should call workspaceService.getWorkspace and return decodedBank and accountNo") {
             val workspaceId = 1L
-            val accountUrl = "accountUrl"
             val workspace = SampleEntity.workspace.apply {
-                owner.accountUrl = accountUrl
+                owner.account = SampleEntity.account
             }
-            val decodedBank = "decodedBank"
-            val accountNo = "accountNo"
+            
             every { workspaceService.getWorkspace(workspaceId) } returns workspace
-            every { workspaceService.extractDecodedBank(accountUrl) } returns decodedBank
-            every { workspaceService.extractAccountNo(accountUrl) } returns accountNo
 
             val result = sut.getWorkspaceAccount(workspaceId)
 
-            assert(result == "$decodedBank $accountNo")
+            assert(result == SampleEntity.account)
 
             verify { workspaceService.getWorkspace(workspaceId) }
-            verify { workspaceService.extractDecodedBank(accountUrl) }
-            verify { workspaceService.extractAccountNo(accountUrl) }
         }
     }
 

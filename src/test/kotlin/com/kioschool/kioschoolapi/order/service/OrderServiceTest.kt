@@ -3,6 +3,7 @@ package com.kioschool.kioschoolapi.order.service
 import com.kioschool.kioschoolapi.factory.SampleEntity
 import com.kioschool.kioschoolapi.order.repository.CustomOrderRepository
 import com.kioschool.kioschoolapi.order.repository.OrderProductRepository
+import com.kioschool.kioschoolapi.order.repository.OrderRedisRepository
 import com.kioschool.kioschoolapi.order.repository.OrderRepository
 import com.kioschool.kioschoolapi.websocket.service.CustomWebSocketService
 import com.kioschool.kioschoolapi.workspace.service.WorkspaceService
@@ -10,19 +11,21 @@ import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.*
 import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 
 class OrderServiceTest : DescribeSpec({
     val repository = mockk<OrderRepository>()
     val workspaceService = mockk<WorkspaceService>()
     val websocketService = mockk<CustomWebSocketService>()
     val customOrderRepository = mockk<CustomOrderRepository>()
+    val orderRedisRepository = mockk<OrderRedisRepository>()
     val orderProductRepository = mockk<OrderProductRepository>()
 
     val sut = OrderService(
         repository,
-        workspaceService,
         websocketService,
         customOrderRepository,
+        orderRedisRepository,
         orderProductRepository
     )
 
@@ -31,6 +34,7 @@ class OrderServiceTest : DescribeSpec({
         mockkObject(workspaceService)
         mockkObject(websocketService)
         mockkObject(customOrderRepository)
+        mockkObject(orderRedisRepository)
         mockkObject(orderProductRepository)
     }
 
@@ -166,6 +170,42 @@ class OrderServiceTest : DescribeSpec({
         }
     }
 
+    describe("getOrderProduct") {
+        it("should return order product") {
+            // Arrange
+            val orderProductId = 1L
+            val orderProduct = SampleEntity.orderProduct
+
+            // Mock
+            every { orderProductRepository.findById(orderProductId) } returns mockk {
+                every { get() } returns orderProduct
+            }
+
+            // Act
+            sut.getOrderProduct(orderProductId) shouldBe orderProduct
+
+            // Assert
+            verify { orderProductRepository.findById(orderProductId) }
+        }
+    }
+
+    describe("getOrderNumber") {
+        it("should return order number") {
+            // Arrange
+            val workspaceId = 1L
+            val orderNumber = 1L
+
+            // Mock
+            every { orderRedisRepository.incrementOrderNumber(workspaceId) } returns orderNumber
+
+            // Act
+            sut.getOrderNumber(workspaceId) shouldBe orderNumber
+
+            // Assert
+            verify { orderRedisRepository.incrementOrderNumber(workspaceId) }
+        }
+    }
+
     describe("getAllOrdersByTable") {
         it("should call orderRepository.findAllByTableNumber") {
             // Arrange
@@ -179,7 +219,11 @@ class OrderServiceTest : DescribeSpec({
                 repository.findAllByWorkspaceIdAndTableNumber(
                     workspaceId,
                     tableNumber,
-                    PageRequest.of(page, size)
+                    PageRequest.of(
+                        page, size, Sort.by(
+                            Sort.Order.desc("id")
+                        )
+                    )
                 )
             } returns mockk()
 
@@ -196,7 +240,11 @@ class OrderServiceTest : DescribeSpec({
                 repository.findAllByWorkspaceIdAndTableNumber(
                     workspaceId,
                     tableNumber,
-                    PageRequest.of(page, size)
+                    PageRequest.of(
+                        page, size, Sort.by(
+                            Sort.Order.desc("id")
+                        )
+                    )
                 )
             }
         }

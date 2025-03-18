@@ -18,7 +18,6 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
-import java.net.URLDecoder
 
 @Service
 class WorkspaceService(
@@ -109,19 +108,6 @@ class WorkspaceService(
         return workspaceRepository.save(workspace)
     }
 
-    fun extractDecodedBank(accountUrl: String): String {
-        val bankRegex = "bank=([^&]+)"
-        val bankMatcher = Regex(bankRegex).find(accountUrl)
-        val bank = bankMatcher?.groupValues?.get(1) ?: ""
-        return URLDecoder.decode(bank, "UTF-8")
-    }
-
-    fun extractAccountNo(accountUrl: String): String {
-        val accountNoRegex = "accountNo=([^&]+)"
-        val accountNoMatcher = Regex(accountNoRegex).find(accountUrl)
-        return accountNoMatcher?.groupValues?.get(1) ?: ""
-    }
-
     fun updateTableCount(workspace: Workspace, tableCount: Int) {
         workspace.tableCount = tableCount
         workspaceRepository.save(workspace)
@@ -132,7 +118,7 @@ class WorkspaceService(
     }
 
     fun deleteWorkspaceImages(workspace: Workspace, deletedImages: List<WorkspaceImage>) {
-        workspace.images.removeAll(deletedImages)
+        workspace.images.removeAll(deletedImages.toSet())
         deletedImages.forEach {
             s3Service.deleteFile(it.url)
         }

@@ -393,31 +393,7 @@ class WorkspaceServiceTest : DescribeSpec({
             verify { repository.save(workspace) }
         }
     }
-
-    describe("extractDecodedBank") {
-        it("should extract decoded bank") {
-            val accountUrl = "https://test.com?bank=bank"
-
-            // Act
-            val result = sut.extractDecodedBank(accountUrl)
-
-            // Assert
-            result shouldBe "bank"
-        }
-    }
-
-    describe("extractAccountNo") {
-        it("should extract account no") {
-            val accountUrl = "https://test.com?accountNo=accountNo"
-
-            // Act
-            val result = sut.extractAccountNo(accountUrl)
-
-            // Assert
-            result shouldBe "accountNo"
-        }
-    }
-
+    
     describe("updateTableCount") {
         it("should update table count") {
             val workspace = SampleEntity.workspace

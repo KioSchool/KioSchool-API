@@ -27,11 +27,13 @@ class OrderFacade(
         rawOrderProducts: List<OrderProductRequestBody>
     ): Order {
         val workspace = workspaceService.getWorkspace(workspaceId)
+        val orderNumber = orderService.getOrderNumber(workspaceId)
         val order = orderService.saveOrder(
             Order(
                 workspace = workspace,
                 tableNumber = tableNumber,
-                customerName = customerName
+                customerName = customerName,
+                orderNumber = orderNumber
             )
         )
 

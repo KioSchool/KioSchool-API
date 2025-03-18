@@ -5,21 +5,22 @@ import com.kioschool.kioschoolapi.order.entity.Order
 import com.kioschool.kioschoolapi.order.entity.OrderProduct
 import com.kioschool.kioschoolapi.order.repository.CustomOrderRepository
 import com.kioschool.kioschoolapi.order.repository.OrderProductRepository
+import com.kioschool.kioschoolapi.order.repository.OrderRedisRepository
 import com.kioschool.kioschoolapi.order.repository.OrderRepository
 import com.kioschool.kioschoolapi.websocket.dto.Message
 import com.kioschool.kioschoolapi.websocket.service.CustomWebSocketService
-import com.kioschool.kioschoolapi.workspace.service.WorkspaceService
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 
 @Service
 class OrderService(
     private val orderRepository: OrderRepository,
-    private val workspaceService: WorkspaceService,
     private val websocketService: CustomWebSocketService,
     private val customOrderRepository: CustomOrderRepository,
+    private val orderRedisRepository: OrderRedisRepository,
     private val orderProductRepository: OrderProductRepository
 ) {
     fun saveOrder(order: Order): Order {
@@ -68,6 +69,10 @@ class OrderService(
         return orderProductRepository.findById(orderProductId).get()
     }
 
+    fun getOrderNumber(workspaceId: Long): Long {
+        return orderRedisRepository.incrementOrderNumber(workspaceId)
+    }
+
     fun getAllOrdersByTable(
         workspaceId: Long,
         tableNumber: Int,
@@ -77,7 +82,13 @@ class OrderService(
         return orderRepository.findAllByWorkspaceIdAndTableNumber(
             workspaceId,
             tableNumber,
-            PageRequest.of(page, size)
+            PageRequest.of(
+                page,
+                size,
+                Sort.by(
+                    Sort.Order.desc("id")
+                )
+            )
         )
     }
 }

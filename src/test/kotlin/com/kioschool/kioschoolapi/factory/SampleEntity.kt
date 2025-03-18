@@ -1,5 +1,7 @@
 package com.kioschool.kioschoolapi.factory
 
+import com.kioschool.kioschoolapi.account.entity.Account
+import com.kioschool.kioschoolapi.account.entity.Bank
 import com.kioschool.kioschoolapi.common.entity.BaseEntity
 import com.kioschool.kioschoolapi.common.enums.UserRole
 import com.kioschool.kioschoolapi.email.entity.EmailCode
@@ -121,7 +123,8 @@ object SampleEntity {
     val order = Order(
         workspace,
         0,
-        "test"
+        "test",
+        orderNumber = 1
     )
 
     val orderProduct = OrderProduct(
@@ -141,6 +144,17 @@ object SampleEntity {
         email = "test@test.com",
         code = "123456789",
         kind = EmailKind.REGISTER
+    )
+
+    val bank = Bank(
+        name = "test",
+        code = "123"
+    )
+
+    val account = Account(
+        bank = bank,
+        accountNumber = "123456789",
+        accountHolder = "test"
     )
 
     private fun BaseEntity.setId(id: Long) {

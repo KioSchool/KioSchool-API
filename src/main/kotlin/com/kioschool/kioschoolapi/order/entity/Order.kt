@@ -19,5 +19,6 @@ class Order(
     val orderProducts: MutableList<OrderProduct> = mutableListOf(),
     var totalPrice: Int = 0,
     var status: OrderStatus = OrderStatus.NOT_PAID,
-    var cancelReason: String? = null
+    var cancelReason: String? = null,
+    val orderNumber: Long
 ) : BaseEntity()

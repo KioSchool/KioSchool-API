@@ -1,6 +1,7 @@
 package com.kioschool.kioschoolapi.workspace.facade
 
-import com.kioschool.kioschoolapi.discord.DiscordService
+import com.kioschool.kioschoolapi.account.entity.Account
+import com.kioschool.kioschoolapi.discord.service.DiscordService
 import com.kioschool.kioschoolapi.user.service.UserService
 import com.kioschool.kioschoolapi.workspace.entity.Workspace
 import com.kioschool.kioschoolapi.workspace.service.WorkspaceService
@@ -22,15 +23,11 @@ class WorkspaceFacade(
         return user.getWorkspaces()
     }
 
-    fun getWorkspaceAccount(workspaceId: Long): String {
+    fun getWorkspaceAccount(workspaceId: Long): Account? {
         val workspace = workspaceService.getWorkspace(workspaceId)
         val workspaceOwner = workspace.owner
-        val accountUrl = workspaceOwner.accountUrl ?: ""
 
-        val decodedBank = workspaceService.extractDecodedBank(accountUrl)
-        val accountNo = workspaceService.extractAccountNo(accountUrl)
-
-        return "$decodedBank $accountNo"
+        return workspaceOwner.account
     }
 
     fun createWorkspace(username: String, name: String, description: String): Workspace {

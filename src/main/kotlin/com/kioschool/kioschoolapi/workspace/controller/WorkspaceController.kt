@@ -1,5 +1,6 @@
 package com.kioschool.kioschoolapi.workspace.controller
 
+import com.kioschool.kioschoolapi.account.entity.Account
 import com.kioschool.kioschoolapi.workspace.entity.Workspace
 import com.kioschool.kioschoolapi.workspace.facade.WorkspaceFacade
 import io.swagger.v3.oas.annotations.Operation
@@ -25,7 +26,7 @@ class WorkspaceController(
     @GetMapping("/workspace/account")
     fun getWorkspaceAccount(
         @RequestParam workspaceId: Long
-    ): String {
+    ): Account? {
         return workspaceFacade.getWorkspaceAccount(workspaceId)
     }
 }
