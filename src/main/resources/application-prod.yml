@@ -3,6 +3,11 @@ spring:
     url: "${DATABASE_URL}"
     username: "${DATABASE_USERNAME}"
     password: "${DATABASE_PASSWORD}"
+  data:
+    redis:
+      host: "${REDIS_HOST}"
+      port: 6379
+      password: ${REDIS_PASSWORD}
 cloud:
   aws:
     s3:
