@@ -48,6 +48,7 @@ class OrderFacadeTest : DescribeSpec({
             )
 
             every { workspaceService.getWorkspace(workspaceId) } returns SampleEntity.workspace
+            every { orderService.getOrderNumber(workspaceId) } returns 1
             every { orderService.saveOrder(any<Order>()) } returns SampleEntity.order
 
             every { productService.getAllProductsByCondition(workspaceId) } returns listOf(
@@ -62,6 +63,7 @@ class OrderFacadeTest : DescribeSpec({
             assert(result.totalPrice == 1000)
 
             verify { workspaceService.getWorkspace(workspaceId) }
+            verify { orderService.getOrderNumber(workspaceId) }
             verify { orderService.saveOrder(any<Order>()) }
             verify { productService.getAllProductsByCondition(workspaceId) }
             verify { orderService.saveOrderAndSendWebsocketMessage(any<Order>()) }
@@ -77,6 +79,7 @@ class OrderFacadeTest : DescribeSpec({
             )
 
             every { workspaceService.getWorkspace(workspaceId) } returns SampleEntity.workspace
+            every { orderService.getOrderNumber(workspaceId) } returns 1
             every { orderService.saveOrder(any<Order>()) } returns SampleEntity.order
 
             every { productService.getAllProductsByCondition(workspaceId) } returns listOf(
@@ -92,6 +95,7 @@ class OrderFacadeTest : DescribeSpec({
             assert(result.totalPrice == 1000)
 
             verify { workspaceService.getWorkspace(workspaceId) }
+            verify { orderService.getOrderNumber(workspaceId) }
             verify { orderService.saveOrder(any<Order>()) }
             verify { productService.getAllProductsByCondition(workspaceId) }
             verify { orderService.saveOrderAndSendWebsocketMessage(any<Order>()) }

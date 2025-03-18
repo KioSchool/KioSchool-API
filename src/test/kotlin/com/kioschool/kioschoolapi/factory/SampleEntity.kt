@@ -123,7 +123,8 @@ object SampleEntity {
     val order = Order(
         workspace,
         0,
-        "test"
+        "test",
+        orderNumber = 1
     )
 
     val orderProduct = OrderProduct(

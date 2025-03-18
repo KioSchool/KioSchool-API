@@ -3,6 +3,7 @@ package com.kioschool.kioschoolapi.order.service
 import com.kioschool.kioschoolapi.factory.SampleEntity
 import com.kioschool.kioschoolapi.order.repository.CustomOrderRepository
 import com.kioschool.kioschoolapi.order.repository.OrderProductRepository
+import com.kioschool.kioschoolapi.order.repository.OrderRedisRepository
 import com.kioschool.kioschoolapi.order.repository.OrderRepository
 import com.kioschool.kioschoolapi.websocket.service.CustomWebSocketService
 import com.kioschool.kioschoolapi.workspace.service.WorkspaceService
@@ -17,12 +18,14 @@ class OrderServiceTest : DescribeSpec({
     val workspaceService = mockk<WorkspaceService>()
     val websocketService = mockk<CustomWebSocketService>()
     val customOrderRepository = mockk<CustomOrderRepository>()
+    val orderRedisRepository = mockk<OrderRedisRepository>()
     val orderProductRepository = mockk<OrderProductRepository>()
 
     val sut = OrderService(
         repository,
         websocketService,
         customOrderRepository,
+        orderRedisRepository,
         orderProductRepository
     )
 
@@ -31,6 +34,7 @@ class OrderServiceTest : DescribeSpec({
         mockkObject(workspaceService)
         mockkObject(websocketService)
         mockkObject(customOrderRepository)
+        mockkObject(orderRedisRepository)
         mockkObject(orderProductRepository)
     }
 
@@ -163,6 +167,42 @@ class OrderServiceTest : DescribeSpec({
 
             // Assert
             verify { repository.findById(orderId) }
+        }
+    }
+
+    describe("getOrderProduct") {
+        it("should return order product") {
+            // Arrange
+            val orderProductId = 1L
+            val orderProduct = SampleEntity.orderProduct
+
+            // Mock
+            every { orderProductRepository.findById(orderProductId) } returns mockk {
+                every { get() } returns orderProduct
+            }
+
+            // Act
+            sut.getOrderProduct(orderProductId) shouldBe orderProduct
+
+            // Assert
+            verify { orderProductRepository.findById(orderProductId) }
+        }
+    }
+
+    describe("getOrderNumber") {
+        it("should return order number") {
+            // Arrange
+            val workspaceId = 1L
+            val orderNumber = 1L
+
+            // Mock
+            every { orderRedisRepository.incrementOrderNumber(workspaceId) } returns orderNumber
+
+            // Act
+            sut.getOrderNumber(workspaceId) shouldBe orderNumber
+
+            // Assert
+            verify { orderRedisRepository.incrementOrderNumber(workspaceId) }
         }
     }
 
