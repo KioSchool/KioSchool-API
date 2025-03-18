@@ -38,6 +38,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
     implementation("org.springframework.boot:spring-boot-starter-websocket")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
+    implementation("org.springframework.boot:spring-boot-starter-data-redis")
     implementation("io.awspring.cloud:spring-cloud-starter-aws:2.4.2")
     implementation("com.amazonaws:aws-java-sdk-s3:1.12.595")
     implementation("io.jsonwebtoken:jjwt-api:0.11.5")
