@@ -5,6 +5,7 @@ import com.kioschool.kioschoolapi.order.entity.Order
 import com.kioschool.kioschoolapi.order.entity.OrderProduct
 import com.kioschool.kioschoolapi.order.repository.CustomOrderRepository
 import com.kioschool.kioschoolapi.order.repository.OrderProductRepository
+import com.kioschool.kioschoolapi.order.repository.OrderRedisRepository
 import com.kioschool.kioschoolapi.order.repository.OrderRepository
 import com.kioschool.kioschoolapi.websocket.dto.Message
 import com.kioschool.kioschoolapi.websocket.service.CustomWebSocketService
@@ -19,6 +20,7 @@ class OrderService(
     private val orderRepository: OrderRepository,
     private val websocketService: CustomWebSocketService,
     private val customOrderRepository: CustomOrderRepository,
+    private val orderRedisRepository: OrderRedisRepository,
     private val orderProductRepository: OrderProductRepository
 ) {
     fun saveOrder(order: Order): Order {
@@ -65,6 +67,10 @@ class OrderService(
 
     fun getOrderProduct(orderProductId: Long): OrderProduct {
         return orderProductRepository.findById(orderProductId).get()
+    }
+
+    fun getOrderNumber(workspaceId: Long): Long {
+        return orderRedisRepository.incrementOrderNumber(workspaceId)
     }
 
     fun getAllOrdersByTable(
