@@ -206,6 +206,22 @@ class OrderServiceTest : DescribeSpec({
         }
     }
 
+    describe("resetOrderNumber") {
+        it("should call orderRedisRepository.resetOrderNumber") {
+            // Arrange
+            val workspaceId = 1L
+
+            // Mock
+            every { orderRedisRepository.resetOrderNumber(workspaceId) } returns Unit
+
+            // Act
+            sut.resetOrderNumber(workspaceId)
+
+            // Assert
+            verify { orderRedisRepository.resetOrderNumber(workspaceId) }
+        }
+    }
+
     describe("getAllOrdersByTable") {
         it("should call orderRepository.findAllByTableNumber") {
             // Arrange

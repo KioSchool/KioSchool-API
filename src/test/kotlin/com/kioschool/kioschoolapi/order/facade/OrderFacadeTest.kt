@@ -496,4 +496,32 @@ class OrderFacadeTest : DescribeSpec({
             verify(exactly = 0) { orderService.saveOrderProductAndSendWebsocketMessage(any()) }
         }
     }
+
+    describe("resetOrderNumber") {
+        it("should call orderService.resetOrderNumber") {
+            every { workspaceService.checkAccessible("test", 1L) } just Runs
+            every { orderService.resetOrderNumber(1L) } just Runs
+
+            sut.resetOrderNumber("test", 1L)
+
+            verify { workspaceService.checkAccessible("test", 1L) }
+            verify { orderService.resetOrderNumber(1L) }
+        }
+
+        it("should throw WorkspaceInaccessibleException when workspace is not accessible") {
+            every {
+                workspaceService.checkAccessible(
+                    "test",
+                    1L
+                )
+            } throws WorkspaceInaccessibleException()
+
+            assertThrows<WorkspaceInaccessibleException> {
+                sut.resetOrderNumber("test", 1L)
+            }
+
+            verify { workspaceService.checkAccessible("test", 1L) }
+            verify(exactly = 0) { orderService.resetOrderNumber(1L) }
+        }
+    }
 })
