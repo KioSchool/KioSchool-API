@@ -144,4 +144,10 @@ class OrderFacade(
         orderProduct.isServed = orderProduct.servedCount == orderProduct.quantity
         return orderService.saveOrderProductAndSendWebsocketMessage(orderProduct)
     }
+
+    fun resetOrderNumber(username: String, workspaceId: Long) {
+        workspaceService.checkAccessible(username, workspaceId)
+        
+        orderService.resetOrderNumber(workspaceId)
+    }
 }

@@ -14,4 +14,9 @@ class OrderRedisRepository(
 
         return orderNumber ?: 1
     }
+
+    fun resetOrderNumber(workspaceId: Long) {
+        val key = OrderUtil.getOrderNumberKey(workspaceId)
+        valueOperations.set(key, 1)
+    }
 }
