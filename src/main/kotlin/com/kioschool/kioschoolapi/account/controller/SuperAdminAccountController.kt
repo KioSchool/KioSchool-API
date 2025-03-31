@@ -18,10 +18,11 @@ class SuperAdminAccountController(
     @GetMapping("/banks")
     fun getBanks(
         @SuperAdminUsername username: String,
+        @RequestParam(required = false) name: String?,
         @RequestParam page: Int,
         @RequestParam size: Int
     ): Page<Bank> {
-        return accountFacade.getBanks(page, size)
+        return accountFacade.getBanks(name, page, size)
     }
 
     @Operation(summary = "은행 추가", description = "키오스쿨에서 등록 가능한 은행을 추가합니다.")
@@ -38,7 +39,7 @@ class SuperAdminAccountController(
     fun deleteBank(
         @SuperAdminUsername username: String,
         @RequestBody body: DeleteBankRequestBody
-    ) {
-        accountFacade.deleteBank(body.id)
+    ): Bank {
+        return accountFacade.deleteBank(body.id)
     }
 }
