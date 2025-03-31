@@ -73,6 +73,10 @@ class OrderService(
         return orderRedisRepository.incrementOrderNumber(workspaceId)
     }
 
+    fun resetOrderNumber(workspaceId: Long) {
+        orderRedisRepository.resetOrderNumber(workspaceId)
+    }
+
     fun getAllOrdersByTable(
         workspaceId: Long,
         tableNumber: Int,

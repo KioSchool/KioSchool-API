@@ -3,6 +3,7 @@ package com.kioschool.kioschoolapi.order.controller
 import com.kioschool.kioschoolapi.common.annotation.AdminUsername
 import com.kioschool.kioschoolapi.order.dto.ChangeOrderProductServedCount
 import com.kioschool.kioschoolapi.order.dto.ChangeOrderStatusRequestBody
+import com.kioschool.kioschoolapi.order.dto.ResetOrderNumberRequestBody
 import com.kioschool.kioschoolapi.order.dto.ServeOrderProductRequestBody
 import com.kioschool.kioschoolapi.order.entity.Order
 import com.kioschool.kioschoolapi.order.entity.OrderProduct
@@ -106,6 +107,15 @@ class AdminOrderController(
             body.orderProductId,
             body.servedCount
         )
+    }
+
+    @Operation(summary = "주문 번호 초기화", description = "주문 번호를 초기화합니다.")
+    @PostMapping("/order/number/reset")
+    fun resetOrderNumber(
+        @AdminUsername username: String,
+        @RequestBody body: ResetOrderNumberRequestBody
+    ) {
+        orderFacade.resetOrderNumber(username, body.workspaceId)
     }
 
 }

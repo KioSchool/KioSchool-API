@@ -18,8 +18,8 @@ class AccountFacade(
     private val portoneService: PortoneService,
     private val tossService: TossService
 ) {
-    fun getBanks(page: Int, size: Int): Page<Bank> {
-        return bankService.getBanks(page, size)
+    fun getBanks(name: String?, page: Int, size: Int): Page<Bank> {
+        return bankService.getBanks(name, page, size)
     }
 
     fun getAllBanks(): List<Bank> {
@@ -30,8 +30,8 @@ class AccountFacade(
         return bankService.addBank(name, code)
     }
 
-    fun deleteBank(id: Long) {
-        bankService.deleteBank(id)
+    fun deleteBank(id: Long): Bank {
+        return bankService.deleteBank(id)
     }
 
     fun registerAccount(
