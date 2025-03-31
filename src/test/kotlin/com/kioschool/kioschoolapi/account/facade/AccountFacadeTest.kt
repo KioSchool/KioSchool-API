@@ -36,19 +36,21 @@ class AccountFacadeTest : DescribeSpec({
 
     describe("getBanks") {
         it("should call bankService.getBanks") {
+            val name = "name"
             val page = 1
             val size = 10
 
             every {
                 bankService.getBanks(
+                    name,
                     page,
                     size
                 )
             } returns PageImpl(emptyList())
 
-            sut.getBanks(page, size)
+            sut.getBanks(name, page, size)
 
-            verify { bankService.getBanks(page, size) }
+            verify { bankService.getBanks(name, page, size) }
         }
     }
 
@@ -88,7 +90,7 @@ class AccountFacadeTest : DescribeSpec({
         it("should call bankService.deleteBank") {
             val id = 1L
 
-            every { bankService.deleteBank(id) } just Runs
+            every { bankService.deleteBank(id) } returns SampleEntity.bank
 
             sut.deleteBank(id)
 

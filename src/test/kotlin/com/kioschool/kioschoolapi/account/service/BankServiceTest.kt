@@ -25,7 +25,8 @@ class BankServiceTest : DescribeSpec({
     }
 
     describe("getBanks") {
-        it("should call bankRepository.findAll") {
+        it("should call bankRepository.findAll when name is null") {
+            val name = null
             val page = 1
             val size = 10
 
@@ -36,9 +37,32 @@ class BankServiceTest : DescribeSpec({
                         )
                     )
 
-            sut.getBanks(page, size)
+            sut.getBanks(name, page, size)
 
             verify { bankRepository.findAll(PageRequest.of(page, size)) }
+            verify(exactly = 0) {
+                bankRepository.findAllByNameContains(name, PageRequest.of(page, size))
+            }
+        }
+
+        it("should call bankRepository.findAllByNameContains when name is not null") {
+            val name = "Bank Name"
+            val page = 1
+            val size = 10
+
+            every { bankRepository.findAllByNameContains(name, PageRequest.of(page, size)) } returns
+                    PageImpl(
+                        listOf(
+                            SampleEntity.bank
+                        )
+                    )
+
+            sut.getBanks(name, page, size)
+
+            verify { bankRepository.findAllByNameContains(name, PageRequest.of(page, size)) }
+            verify(exactly = 0) {
+                bankRepository.findAll(PageRequest.of(page, size))
+            }
         }
     }
 
@@ -59,11 +83,13 @@ class BankServiceTest : DescribeSpec({
         it("should call bankRepository.deleteById") {
             val id = 1L
 
-            every { bankRepository.deleteById(id) } just Runs
+            every { bankRepository.findById(id) } returns Optional.of(SampleEntity.bank)
+            every { bankRepository.delete(any<Bank>()) } just Runs
 
             sut.deleteBank(id)
 
-            verify { bankRepository.deleteById(id) }
+            verify { bankRepository.findById(id) }
+            verify { bankRepository.delete(any<Bank>()) }
         }
     }
 
