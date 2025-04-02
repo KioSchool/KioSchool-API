@@ -1,6 +1,7 @@
 package com.kioschool.kioschoolapi.order.facade
 
 import com.kioschool.kioschoolapi.common.enums.OrderStatus
+import com.kioschool.kioschoolapi.common.enums.WebsocketType
 import com.kioschool.kioschoolapi.order.dto.OrderProductRequestBody
 import com.kioschool.kioschoolapi.order.entity.Order
 import com.kioschool.kioschoolapi.order.entity.OrderProduct
@@ -53,7 +54,7 @@ class OrderFacade(
 
         order.orderProducts.addAll(orderProducts)
         order.totalPrice = orderProducts.sumOf { it.totalPrice }
-        return orderService.saveOrderAndSendWebsocketMessage(order)
+        return orderService.saveOrderAndSendWebsocketMessage(order, WebsocketType.CREATED)
     }
 
     fun getOrder(orderId: Long): Order {
@@ -104,7 +105,7 @@ class OrderFacade(
         val order = orderService.getOrder(orderId)
         order.status = OrderStatus.valueOf(status)
 
-        return orderService.saveOrderAndSendWebsocketMessage(order)
+        return orderService.saveOrderAndSendWebsocketMessage(order, WebsocketType.UPDATED)
     }
 
     fun serveOrderProduct(
@@ -147,7 +148,7 @@ class OrderFacade(
 
     fun resetOrderNumber(username: String, workspaceId: Long) {
         workspaceService.checkAccessible(username, workspaceId)
-        
+
         orderService.resetOrderNumber(workspaceId)
     }
 }

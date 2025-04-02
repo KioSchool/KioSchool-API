@@ -1,6 +1,7 @@
 package com.kioschool.kioschoolapi.order.service
 
 import com.kioschool.kioschoolapi.common.enums.OrderStatus
+import com.kioschool.kioschoolapi.common.enums.WebsocketType
 import com.kioschool.kioschoolapi.order.entity.Order
 import com.kioschool.kioschoolapi.order.entity.OrderProduct
 import com.kioschool.kioschoolapi.order.repository.CustomOrderRepository
@@ -27,11 +28,11 @@ class OrderService(
         return orderRepository.save(order)
     }
 
-    fun saveOrderAndSendWebsocketMessage(order: Order): Order {
+    fun saveOrderAndSendWebsocketMessage(order: Order, type: WebsocketType): Order {
         val savedOrder = orderRepository.save(order)
         websocketService.sendMessage(
             "/sub/order/${order.workspace.id}",
-            Message("CREATE", savedOrder)
+            Message(type, savedOrder)
         )
         return savedOrder
     }
@@ -40,7 +41,7 @@ class OrderService(
         val savedOrderProduct = orderProductRepository.save(orderProduct)
         websocketService.sendMessage(
             "/sub/order/${orderProduct.order.workspace.id}",
-            Message("CREATE", savedOrderProduct)
+            Message(WebsocketType.UPDATED, savedOrderProduct)
         )
         return savedOrderProduct
     }
