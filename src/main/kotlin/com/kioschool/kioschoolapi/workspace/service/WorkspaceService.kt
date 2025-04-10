@@ -38,7 +38,7 @@ class WorkspaceService(
     }
 
     fun checkCanCreateWorkspace(user: User) {
-        if (user.accountUrl.isNullOrBlank()) throw NoPermissionToCreateWorkspaceException()
+        if (user.account == null) throw NoPermissionToCreateWorkspaceException()
     }
 
     fun saveNewWorkspace(user: User, name: String, description: String): Workspace {
