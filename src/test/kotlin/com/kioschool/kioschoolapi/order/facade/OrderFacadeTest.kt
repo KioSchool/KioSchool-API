@@ -1,6 +1,7 @@
 package com.kioschool.kioschoolapi.order.facade
 
 import com.kioschool.kioschoolapi.common.enums.OrderStatus
+import com.kioschool.kioschoolapi.common.enums.WebsocketType
 import com.kioschool.kioschoolapi.factory.SampleEntity
 import com.kioschool.kioschoolapi.order.dto.OrderProductRequestBody
 import com.kioschool.kioschoolapi.order.entity.Order
@@ -54,7 +55,12 @@ class OrderFacadeTest : DescribeSpec({
             every { productService.getAllProductsByCondition(workspaceId) } returns listOf(
                 SampleEntity.productWithId(1L)
             )
-            every { orderService.saveOrderAndSendWebsocketMessage(any<Order>()) } returns SampleEntity.order
+            every {
+                orderService.saveOrderAndSendWebsocketMessage(
+                    any<Order>(),
+                    WebsocketType.CREATED
+                )
+            } returns SampleEntity.order
 
             val result = sut.createOrder(workspaceId, tableNumber, customerName, rawOrderProducts)
 
@@ -66,7 +72,12 @@ class OrderFacadeTest : DescribeSpec({
             verify { orderService.getOrderNumber(workspaceId) }
             verify { orderService.saveOrder(any<Order>()) }
             verify { productService.getAllProductsByCondition(workspaceId) }
-            verify { orderService.saveOrderAndSendWebsocketMessage(any<Order>()) }
+            verify {
+                orderService.saveOrderAndSendWebsocketMessage(
+                    any<Order>(),
+                    WebsocketType.CREATED
+                )
+            }
         }
 
         it("should add only exists products to order products") {
@@ -85,7 +96,12 @@ class OrderFacadeTest : DescribeSpec({
             every { productService.getAllProductsByCondition(workspaceId) } returns listOf(
                 SampleEntity.productWithId(1L)
             )
-            every { orderService.saveOrderAndSendWebsocketMessage(any<Order>()) } returns SampleEntity.order
+            every {
+                orderService.saveOrderAndSendWebsocketMessage(
+                    any<Order>(),
+                    WebsocketType.CREATED
+                )
+            } returns SampleEntity.order
 
             val result = sut.createOrder(workspaceId, tableNumber, customerName, rawOrderProducts)
 
@@ -98,7 +114,12 @@ class OrderFacadeTest : DescribeSpec({
             verify { orderService.getOrderNumber(workspaceId) }
             verify { orderService.saveOrder(any<Order>()) }
             verify { productService.getAllProductsByCondition(workspaceId) }
-            verify { orderService.saveOrderAndSendWebsocketMessage(any<Order>()) }
+            verify {
+                orderService.saveOrderAndSendWebsocketMessage(
+                    any<Order>(),
+                    WebsocketType.CREATED
+                )
+            }
         }
     }
 
@@ -308,7 +329,12 @@ class OrderFacadeTest : DescribeSpec({
 
             every { workspaceService.checkAccessible("test", 1L) } just Runs
             every { orderService.getOrder(orderId) } returns SampleEntity.order
-            every { orderService.saveOrderAndSendWebsocketMessage(any<Order>()) } returns SampleEntity.order
+            every {
+                orderService.saveOrderAndSendWebsocketMessage(
+                    any<Order>(),
+                    WebsocketType.UPDATED
+                )
+            } returns SampleEntity.order
 
             val result = sut.changeOrderStatus("test", 1L, orderId, status)
 
@@ -316,7 +342,12 @@ class OrderFacadeTest : DescribeSpec({
 
             verify { workspaceService.checkAccessible("test", 1L) }
             verify { orderService.getOrder(orderId) }
-            verify { orderService.saveOrderAndSendWebsocketMessage(any<Order>()) }
+            verify {
+                orderService.saveOrderAndSendWebsocketMessage(
+                    any<Order>(),
+                    WebsocketType.UPDATED
+                )
+            }
         }
 
         it("should throw WorkspaceInaccessibleException when workspace is not accessible") {
@@ -336,7 +367,12 @@ class OrderFacadeTest : DescribeSpec({
 
             verify { workspaceService.checkAccessible("test", 1L) }
             verify(exactly = 0) { orderService.getOrder(orderId) }
-            verify(exactly = 0) { orderService.saveOrderAndSendWebsocketMessage(any<Order>()) }
+            verify(exactly = 0) {
+                orderService.saveOrderAndSendWebsocketMessage(
+                    any<Order>(),
+                    WebsocketType.UPDATED
+                )
+            }
         }
     }
 

@@ -1,5 +1,6 @@
 package com.kioschool.kioschoolapi.order.service
 
+import com.kioschool.kioschoolapi.common.enums.WebsocketType
 import com.kioschool.kioschoolapi.factory.SampleEntity
 import com.kioschool.kioschoolapi.order.repository.CustomOrderRepository
 import com.kioschool.kioschoolapi.order.repository.OrderProductRepository
@@ -62,6 +63,7 @@ class OrderServiceTest : DescribeSpec({
         it("should save order and send websocket message") {
             // Arrange
             val order = SampleEntity.order
+            val type = WebsocketType.CREATED
 
             // Mock
             every { repository.save(order) } returns order
@@ -73,7 +75,7 @@ class OrderServiceTest : DescribeSpec({
             } returns Unit
 
             // Act
-            sut.saveOrderAndSendWebsocketMessage(order) shouldBe order
+            sut.saveOrderAndSendWebsocketMessage(order, type) shouldBe order
 
             // Assert
             verify { repository.save(order) }

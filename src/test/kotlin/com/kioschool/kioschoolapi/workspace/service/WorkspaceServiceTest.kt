@@ -77,7 +77,7 @@ class WorkspaceServiceTest : DescribeSpec({
 
     describe("checkCanCreateWorkspace") {
         it("should throw NoPermissionToCreateWorkspaceException when user accountUrl is null") {
-            val user = SampleEntity.user.apply { accountUrl = null }
+            val user = SampleEntity.user.apply { account = null }
 
             // Act & Assert
             shouldThrow<NoPermissionToCreateWorkspaceException> {
@@ -86,7 +86,7 @@ class WorkspaceServiceTest : DescribeSpec({
         }
 
         it("should not throw NoPermissionToCreateWorkspaceException when user accountUrl is not null") {
-            val user = SampleEntity.user.apply { accountUrl = "accountUrl" }
+            val user = SampleEntity.user.apply { account = SampleEntity.account }
 
             // Act & Assert
             sut.checkCanCreateWorkspace(user)
@@ -393,7 +393,7 @@ class WorkspaceServiceTest : DescribeSpec({
             verify { repository.save(workspace) }
         }
     }
-    
+
     describe("updateTableCount") {
         it("should update table count") {
             val workspace = SampleEntity.workspace
