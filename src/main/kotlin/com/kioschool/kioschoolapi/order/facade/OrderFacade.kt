@@ -10,6 +10,7 @@ import com.kioschool.kioschoolapi.product.service.ProductService
 import com.kioschool.kioschoolapi.workspace.service.WorkspaceService
 import org.springframework.data.domain.Page
 import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -21,6 +22,7 @@ class OrderFacade(
     private val workspaceService: WorkspaceService,
     private val productService: ProductService
 ) {
+    @Transactional
     fun createOrder(
         workspaceId: Long,
         tableNumber: Int,
@@ -28,6 +30,9 @@ class OrderFacade(
         rawOrderProducts: List<OrderProductRequestBody>
     ): Order {
         val workspace = workspaceService.getWorkspace(workspaceId)
+        val productIds = rawOrderProducts.map { it.productId }
+        productService.validateProducts(workspaceId, productIds)
+
         val orderNumber = orderService.getOrderNumber(workspaceId)
         val order = orderService.saveOrder(
             Order(

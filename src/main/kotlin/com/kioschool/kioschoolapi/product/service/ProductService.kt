@@ -4,12 +4,13 @@ import com.kioschool.kioschoolapi.aws.S3Service
 import com.kioschool.kioschoolapi.product.entity.Product
 import com.kioschool.kioschoolapi.product.entity.ProductCategory
 import com.kioschool.kioschoolapi.product.exception.CanNotDeleteUsingProductCategoryException
+import com.kioschool.kioschoolapi.product.exception.NotFoundProductException
+import com.kioschool.kioschoolapi.product.exception.NotSellableProductException
 import com.kioschool.kioschoolapi.product.repository.CustomProductRepository
 import com.kioschool.kioschoolapi.product.repository.ProductCategoryRepository
 import com.kioschool.kioschoolapi.product.repository.ProductRepository
 import com.kioschool.kioschoolapi.workspace.entity.Workspace
 import com.kioschool.kioschoolapi.workspace.exception.WorkspaceInaccessibleException
-import com.kioschool.kioschoolapi.workspace.service.WorkspaceService
 import jakarta.transaction.Transactional
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
@@ -22,7 +23,6 @@ class ProductService(
     private val productRepository: ProductRepository,
     private val customProductRepository: CustomProductRepository,
     private val productCategoryRepository: ProductCategoryRepository,
-    private val workspaceService: WorkspaceService,
     private val s3Service: S3Service
 ) {
     fun getAllProductsByCondition(
@@ -118,5 +118,18 @@ class ProductService(
     fun deleteProduct(product: Product): Product {
         productRepository.delete(product)
         return product
+    }
+
+    fun validateProducts(
+        workspaceId: Long,
+        productIds: List<Long>,
+    ) {
+        val products = productRepository.findAllByIdInAndWorkspaceId(productIds, workspaceId)
+        if (products.size != productIds.size) {
+            throw NotFoundProductException()
+        }
+        if (products.any { it.isSellable != true }) {
+            throw NotSellableProductException()
+        }
     }
 }

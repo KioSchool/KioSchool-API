@@ -51,6 +51,7 @@ class OrderFacadeTest : DescribeSpec({
             every { workspaceService.getWorkspace(workspaceId) } returns SampleEntity.workspace
             every { orderService.getOrderNumber(workspaceId) } returns 1
             every { orderService.saveOrder(any<Order>()) } returns SampleEntity.order
+            every { productService.validateProducts(workspaceId, any()) } just Runs
 
             every { productService.getAllProductsByCondition(workspaceId) } returns listOf(
                 SampleEntity.productWithId(1L)
@@ -71,6 +72,7 @@ class OrderFacadeTest : DescribeSpec({
             verify { workspaceService.getWorkspace(workspaceId) }
             verify { orderService.getOrderNumber(workspaceId) }
             verify { orderService.saveOrder(any<Order>()) }
+            verify { productService.validateProducts(workspaceId, any()) }
             verify { productService.getAllProductsByCondition(workspaceId) }
             verify {
                 orderService.saveOrderAndSendWebsocketMessage(
@@ -92,6 +94,7 @@ class OrderFacadeTest : DescribeSpec({
             every { workspaceService.getWorkspace(workspaceId) } returns SampleEntity.workspace
             every { orderService.getOrderNumber(workspaceId) } returns 1
             every { orderService.saveOrder(any<Order>()) } returns SampleEntity.order
+            every { productService.validateProducts(workspaceId, any()) } just Runs
 
             every { productService.getAllProductsByCondition(workspaceId) } returns listOf(
                 SampleEntity.productWithId(1L)
@@ -113,6 +116,7 @@ class OrderFacadeTest : DescribeSpec({
             verify { workspaceService.getWorkspace(workspaceId) }
             verify { orderService.getOrderNumber(workspaceId) }
             verify { orderService.saveOrder(any<Order>()) }
+            verify { productService.validateProducts(workspaceId, any()) }
             verify { productService.getAllProductsByCondition(workspaceId) }
             verify {
                 orderService.saveOrderAndSendWebsocketMessage(
