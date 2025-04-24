@@ -1,6 +1,5 @@
 package com.kioschool.kioschoolapi.user.controller
 
-import com.kioschool.kioschoolapi.common.annotation.SuperAdminUsername
 import com.kioschool.kioschoolapi.user.entity.User
 import com.kioschool.kioschoolapi.user.facade.UserFacade
 import io.swagger.v3.oas.annotations.Operation
@@ -20,7 +19,6 @@ class SuperAdminUserController(
     @Operation(summary = "모든 유저 조회", description = "현재 키오스쿨에 가입한 모든 사용자를 조회합니다.")
     @GetMapping("/users")
     fun getUser(
-        @SuperAdminUsername username: String,
         @RequestParam page: Int,
         @RequestParam size: Int,
         @RequestParam name: String?

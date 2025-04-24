@@ -25,6 +25,10 @@ class SecurityConfiguration(
         httpSecurity
             .csrf { it.disable() }
             .authorizeHttpRequests {
+                it.requestMatchers("/super-admin/**")
+                    .hasAuthority(UserRole.SUPER_ADMIN.name)
+            }
+            .authorizeHttpRequests {
                 it.requestMatchers("/admin/**")
                     .hasAnyAuthority(UserRole.SUPER_ADMIN.name, UserRole.ADMIN.name)
             }

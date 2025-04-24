@@ -1,6 +1,5 @@
 package com.kioschool.kioschoolapi.email.controller
 
-import com.kioschool.kioschoolapi.common.annotation.SuperAdminUsername
 import com.kioschool.kioschoolapi.email.dto.RegisterEmailDomainRequestBody
 import com.kioschool.kioschoolapi.email.dto.RemoveEmailDomainRequestBody
 import com.kioschool.kioschoolapi.email.entity.EmailDomain
@@ -19,7 +18,6 @@ class SuperAdminEmailController(
     @Operation(summary = "이메일 도메인 조회", description = "키오스쿨에서 사용 가능한 모든 이메일 도메인을 조회합니다.")
     @GetMapping("/email-domains")
     fun getWorkspaces(
-        @SuperAdminUsername username: String,
         @RequestParam(required = false) name: String?,
         @RequestParam page: Int,
         @RequestParam size: Int
@@ -30,7 +28,6 @@ class SuperAdminEmailController(
     @Operation(summary = "이메일 도메인 등록", description = "키오스쿨에서 사용 가능하게끔 이메일 도메인을 등록합니다.")
     @PostMapping("/email-domain")
     fun registerEmailDomain(
-        @SuperAdminUsername username: String,
         @RequestBody body: RegisterEmailDomainRequestBody
     ): EmailDomain {
         return emailFacade.registerEmailDomain(body.name, body.domain)
@@ -39,7 +36,6 @@ class SuperAdminEmailController(
     @Operation(summary = "이메일 도메인 삭제", description = "키오스쿨에 등록된 이메일 도메인을 삭제합니다.")
     @DeleteMapping("/email-domain")
     fun deleteEmailDomain(
-        @SuperAdminUsername username: String,
         @RequestBody body: RemoveEmailDomainRequestBody
     ): EmailDomain {
         return emailFacade.deleteEmailDomain(body.domainId)
