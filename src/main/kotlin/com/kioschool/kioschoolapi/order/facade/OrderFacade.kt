@@ -11,9 +11,7 @@ import com.kioschool.kioschoolapi.workspace.service.WorkspaceService
 import org.springframework.data.domain.Page
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
-import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
 @Component
@@ -69,22 +67,20 @@ class OrderFacade(
     fun getOrdersByCondition(
         username: String,
         workspaceId: Long,
-        startDate: String?,
-        endDate: String?,
+        startDate: LocalDateTime?,
+        endDate: LocalDateTime?,
         status: String?,
         tableNumber: Int?
     ): List<Order> {
         workspaceService.checkAccessible(username, workspaceId)
 
-        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-        val parsedStartDate = startDate?.let { LocalDate.parse(it, formatter).atStartOfDay() }
-        val parsedEndDate = endDate?.let { LocalDate.parse(it, formatter).atTime(LocalTime.MAX) }
+        DateTimeFormatter.ofPattern("yyyy-MM-dd")
         val parsedStatus = status?.let { OrderStatus.valueOf(it) }
 
         return orderService.getAllOrdersByCondition(
             workspaceId,
-            parsedStartDate,
-            parsedEndDate,
+            startDate,
+            endDate,
             parsedStatus,
             tableNumber
         )
