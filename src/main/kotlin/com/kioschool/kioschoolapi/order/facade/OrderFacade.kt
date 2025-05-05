@@ -10,9 +10,8 @@ import com.kioschool.kioschoolapi.product.service.ProductService
 import com.kioschool.kioschoolapi.workspace.service.WorkspaceService
 import org.springframework.data.domain.Page
 import org.springframework.stereotype.Component
-import java.time.LocalDate
+import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
-import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
 @Component
@@ -21,6 +20,7 @@ class OrderFacade(
     private val workspaceService: WorkspaceService,
     private val productService: ProductService
 ) {
+    @Transactional
     fun createOrder(
         workspaceId: Long,
         tableNumber: Int,
@@ -28,6 +28,9 @@ class OrderFacade(
         rawOrderProducts: List<OrderProductRequestBody>
     ): Order {
         val workspace = workspaceService.getWorkspace(workspaceId)
+        val productIds = rawOrderProducts.map { it.productId }
+        productService.validateProducts(workspaceId, productIds)
+
         val orderNumber = orderService.getOrderNumber(workspaceId)
         val order = orderService.saveOrder(
             Order(
@@ -64,22 +67,20 @@ class OrderFacade(
     fun getOrdersByCondition(
         username: String,
         workspaceId: Long,
-        startDate: String?,
-        endDate: String?,
+        startDate: LocalDateTime?,
+        endDate: LocalDateTime?,
         status: String?,
         tableNumber: Int?
     ): List<Order> {
         workspaceService.checkAccessible(username, workspaceId)
 
-        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-        val parsedStartDate = startDate?.let { LocalDate.parse(it, formatter).atStartOfDay() }
-        val parsedEndDate = endDate?.let { LocalDate.parse(it, formatter).atTime(LocalTime.MAX) }
+        DateTimeFormatter.ofPattern("yyyy-MM-dd")
         val parsedStatus = status?.let { OrderStatus.valueOf(it) }
 
         return orderService.getAllOrdersByCondition(
             workspaceId,
-            parsedStartDate,
-            parsedEndDate,
+            startDate,
+            endDate,
             parsedStatus,
             tableNumber
         )

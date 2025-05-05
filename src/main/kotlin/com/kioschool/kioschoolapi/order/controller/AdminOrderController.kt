@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.data.domain.Page
 import org.springframework.web.bind.annotation.*
+import java.time.LocalDateTime
 
 @Tag(name = "Admin Order Controller")
 @RestController
@@ -25,8 +26,8 @@ class AdminOrderController(
     fun getOrdersByCondition(
         @AdminUsername username: String,
         @RequestParam("workspaceId") workspaceId: Long,
-        @RequestParam("startDate") startDate: String? = null,
-        @RequestParam("endDate") endDate: String? = null,
+        @RequestParam("startDate") startDate: LocalDateTime? = null,
+        @RequestParam("endDate") endDate: LocalDateTime? = null,
         @RequestParam("status") status: String? = null,
         @RequestParam("tableNumber") tableNumber: Int? = null
     ): List<Order> {

@@ -4,10 +4,11 @@ import com.kioschool.kioschoolapi.aws.S3Service
 import com.kioschool.kioschoolapi.factory.SampleEntity
 import com.kioschool.kioschoolapi.product.entity.Product
 import com.kioschool.kioschoolapi.product.exception.CanNotDeleteUsingProductCategoryException
+import com.kioschool.kioschoolapi.product.exception.NotFoundProductException
+import com.kioschool.kioschoolapi.product.exception.NotSellableProductException
 import com.kioschool.kioschoolapi.product.repository.CustomProductRepository
 import com.kioschool.kioschoolapi.product.repository.ProductCategoryRepository
 import com.kioschool.kioschoolapi.product.repository.ProductRepository
-import com.kioschool.kioschoolapi.workspace.service.WorkspaceService
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
@@ -19,14 +20,12 @@ class ProductServiceTest : DescribeSpec({
     val repository = mockk<ProductRepository>()
     val customRepository = mockk<CustomProductRepository>()
     val categoryRepository = mockk<ProductCategoryRepository>()
-    val workspaceService = mockk<WorkspaceService>()
     val s3Service = mockk<S3Service>()
     val sut = ProductService(
         "test",
         repository,
         customRepository,
         categoryRepository,
-        workspaceService,
         s3Service
     )
 
@@ -34,7 +33,6 @@ class ProductServiceTest : DescribeSpec({
         mockkObject(repository)
         mockkObject(customRepository)
         mockkObject(categoryRepository)
-        mockkObject(workspaceService)
         mockkObject(s3Service)
     }
 
@@ -275,6 +273,87 @@ class ProductServiceTest : DescribeSpec({
             sut.deleteProduct(product) shouldBe product
 
             verify { repository.delete(product) }
+        }
+    }
+
+    describe("validateProducts") {
+        it("should run") {
+            val workspaceId = 1L
+            val productIds = listOf(1L, 2L)
+
+            //Mock
+            every {
+                repository.findAllByIdInAndWorkspaceId(
+                    productIds,
+                    workspaceId
+                )
+            } returns listOf(
+                SampleEntity.productWithId(1L),
+                SampleEntity.productWithId(2L)
+            )
+
+            // Act and Assert
+            sut.validateProducts(workspaceId, productIds)
+
+            verify {
+                repository.findAllByIdInAndWorkspaceId(
+                    productIds,
+                    workspaceId
+                )
+            }
+        }
+
+        it("should throw NotFoundProductException if product is not found") {
+            val workspaceId = 1L
+            val productIds = listOf(1L, 2L)
+
+            //Mock
+            every {
+                repository.findAllByIdInAndWorkspaceId(
+                    productIds,
+                    workspaceId
+                )
+            } returns emptyList()
+
+            // Act and Assert
+            shouldThrow<NotFoundProductException> {
+                sut.validateProducts(workspaceId, productIds)
+            }
+
+            verify {
+                repository.findAllByIdInAndWorkspaceId(
+                    productIds,
+                    workspaceId
+                )
+            }
+        }
+
+        it("should throw NotSellableProductException if product is not sellable") {
+            val workspaceId = 1L
+            val productIds = listOf(1L, 2L)
+
+            //Mock
+            every {
+                repository.findAllByIdInAndWorkspaceId(
+                    productIds,
+                    workspaceId
+                )
+            } returns listOf(
+                SampleEntity.productWithId(1L),
+                SampleEntity.productWithId(2L).apply { isSellable = false }
+            )
+
+            // Act and Assert
+            shouldThrow<NotSellableProductException> {
+                sut.validateProducts(workspaceId, productIds)
+            }
+
+            verify {
+                repository.findAllByIdInAndWorkspaceId(
+                    productIds,
+                    workspaceId
+                )
+            }
         }
     }
 })
