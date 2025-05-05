@@ -13,10 +13,7 @@ import io.kotest.core.spec.style.DescribeSpec
 import io.mockk.*
 import org.junit.jupiter.api.assertThrows
 import org.springframework.data.domain.PageImpl
-import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
 
 class OrderFacadeTest : DescribeSpec({
     val orderService = mockk<OrderService>()
@@ -146,13 +143,9 @@ class OrderFacadeTest : DescribeSpec({
             val username = "test"
             val workspaceId = 1L
             val tableNumber = 1
-            val startDateStr = "2021-01-01"
-            val endDateStr = "2021-01-02"
+            val startDate = LocalDateTime.of(2021, 1, 1, 0, 0)
+            val endDate = LocalDateTime.of(2021, 1, 2, 0, 0)
             val statusStr = OrderStatus.PAID.name
-
-            val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-            val startDate = LocalDate.parse(startDateStr, formatter).atStartOfDay()
-            val endDate = LocalDate.parse(endDateStr, formatter).atTime(LocalTime.MAX)
             val status = OrderStatus.PAID
 
             every { workspaceService.checkAccessible(username, workspaceId) } just Runs
@@ -169,8 +162,8 @@ class OrderFacadeTest : DescribeSpec({
             val result = sut.getOrdersByCondition(
                 username,
                 workspaceId,
-                startDateStr,
-                endDateStr,
+                startDate,
+                endDate,
                 statusStr,
                 tableNumber
             )
