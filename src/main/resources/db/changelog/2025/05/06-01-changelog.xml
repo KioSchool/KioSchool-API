@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+  <changeSet author="ji-inpark (generated)" id="1746538858264-1">
+    <dropUniqueConstraint constraintName="uc_email_code_email"
+      tableName="email_code"/>
+  </changeSet>
+
+</databaseChangeLog>
