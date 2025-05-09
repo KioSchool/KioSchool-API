@@ -35,6 +35,10 @@ class DiscordService(
         send(message)
     }
 
+    fun sendConfirmResult(result: String) {
+        return send(result)
+    }
+
     private fun send(message: String) {
         val body = FormBody.Builder()
             .add("content", message)
