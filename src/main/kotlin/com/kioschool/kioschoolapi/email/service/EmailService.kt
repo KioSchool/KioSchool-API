@@ -4,6 +4,7 @@ import com.kioschool.kioschoolapi.email.entity.EmailCode
 import com.kioschool.kioschoolapi.email.entity.EmailDomain
 import com.kioschool.kioschoolapi.email.enum.EmailKind
 import com.kioschool.kioschoolapi.email.exception.DuplicatedEmailDomainException
+import com.kioschool.kioschoolapi.email.exception.EmailSendFailureException
 import com.kioschool.kioschoolapi.email.exception.NotVerifiedEmailDomainException
 import com.kioschool.kioschoolapi.email.repository.EmailCodeRepository
 import com.kioschool.kioschoolapi.email.repository.EmailDomainRepository
@@ -44,7 +45,12 @@ class EmailService(
         helper.setTo(address)
         helper.setSubject(subject)
         helper.setText(text, true)
-        javaMailSender.send(message)
+
+        try {
+            javaMailSender.send(message)
+        } catch (_: Exception) {
+            throw EmailSendFailureException()
+        }
     }
 
     fun isRegisterEmailVerified(address: String): Boolean {
