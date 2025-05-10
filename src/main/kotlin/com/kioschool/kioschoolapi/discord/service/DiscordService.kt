@@ -35,7 +35,7 @@ class DiscordService(
         send(message)
     }
 
-    fun sendConfirmResult(result: String) {
+    fun sendPopupResult(result: String) {
         return send(result)
     }
 

@@ -1,5 +1,5 @@
 package com.kioschool.kioschoolapi.discord.dto
 
-class SendConfirmResultRequestBody(
+class SendPopupResultRequestBody(
     val result: String,
 )
