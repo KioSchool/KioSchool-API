@@ -35,8 +35,13 @@ class DiscordService(
         send(message)
     }
 
-    fun sendPopupResult(result: String) {
-        return send(result)
+    fun sendPopupResult(username: String, result: String) {
+        val message = """## [팝업 결과]
+        |아이디: $username
+        $result
+        """.trimMargin()
+
+        send(message)
     }
 
     private fun send(message: String) {
