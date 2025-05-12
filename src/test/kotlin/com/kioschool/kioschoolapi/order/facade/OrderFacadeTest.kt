@@ -34,7 +34,7 @@ class OrderFacadeTest : DescribeSpec({
 
     describe("createOrder") {
         beforeTest {
-            SampleEntity.order.orderProducts.clear()
+            SampleEntity.order1.orderProducts.clear()
         }
 
         it("should create order with order products") {
@@ -47,7 +47,7 @@ class OrderFacadeTest : DescribeSpec({
 
             every { workspaceService.getWorkspace(workspaceId) } returns SampleEntity.workspace
             every { orderService.getOrderNumber(workspaceId) } returns 1
-            every { orderService.saveOrder(any<Order>()) } returns SampleEntity.order
+            every { orderService.saveOrder(any<Order>()) } returns SampleEntity.order1
             every { productService.validateProducts(workspaceId, any()) } just Runs
 
             every { productService.getAllProductsByCondition(workspaceId) } returns listOf(
@@ -58,11 +58,11 @@ class OrderFacadeTest : DescribeSpec({
                     any<Order>(),
                     WebsocketType.CREATED
                 )
-            } returns SampleEntity.order
+            } returns SampleEntity.order1
 
             val result = sut.createOrder(workspaceId, tableNumber, customerName, rawOrderProducts)
 
-            assert(result == SampleEntity.order)
+            assert(result == SampleEntity.order1)
             assert(result.orderProducts.size == 1)
             assert(result.totalPrice == 1000)
 
@@ -90,7 +90,7 @@ class OrderFacadeTest : DescribeSpec({
 
             every { workspaceService.getWorkspace(workspaceId) } returns SampleEntity.workspace
             every { orderService.getOrderNumber(workspaceId) } returns 1
-            every { orderService.saveOrder(any<Order>()) } returns SampleEntity.order
+            every { orderService.saveOrder(any<Order>()) } returns SampleEntity.order1
             every { productService.validateProducts(workspaceId, any()) } just Runs
 
             every { productService.getAllProductsByCondition(workspaceId) } returns listOf(
@@ -101,11 +101,11 @@ class OrderFacadeTest : DescribeSpec({
                     any<Order>(),
                     WebsocketType.CREATED
                 )
-            } returns SampleEntity.order
+            } returns SampleEntity.order1
 
             val result = sut.createOrder(workspaceId, tableNumber, customerName, rawOrderProducts)
 
-            assert(result == SampleEntity.order)
+            assert(result == SampleEntity.order1)
             assert(result.orderProducts.size == 1)
             assert(result.orderProducts.first().productId == 1L)
             assert(result.totalPrice == 1000)
@@ -128,11 +128,11 @@ class OrderFacadeTest : DescribeSpec({
         it("should call orderService.getOrder") {
             val orderId = 1L
 
-            every { orderService.getOrder(orderId) } returns SampleEntity.order
+            every { orderService.getOrder(orderId) } returns SampleEntity.order1
 
             val result = sut.getOrder(orderId)
 
-            assert(result == SampleEntity.order)
+            assert(result == SampleEntity.order1)
 
             verify { orderService.getOrder(orderId) }
         }
@@ -157,7 +157,7 @@ class OrderFacadeTest : DescribeSpec({
                     status,
                     tableNumber
                 )
-            } returns listOf(SampleEntity.order)
+            } returns listOf(SampleEntity.order1)
 
             val result = sut.getOrdersByCondition(
                 username,
@@ -168,7 +168,7 @@ class OrderFacadeTest : DescribeSpec({
                 tableNumber
             )
 
-            assert(result == listOf(SampleEntity.order))
+            assert(result == listOf(SampleEntity.order1))
 
             verify { workspaceService.checkAccessible(username, workspaceId) }
             verify {
@@ -196,7 +196,7 @@ class OrderFacadeTest : DescribeSpec({
                     null,
                     tableNumber
                 )
-            } returns listOf(SampleEntity.order)
+            } returns listOf(SampleEntity.order1)
 
             val result = sut.getOrdersByCondition(
                 username,
@@ -207,7 +207,7 @@ class OrderFacadeTest : DescribeSpec({
                 tableNumber
             )
 
-            assert(result == listOf(SampleEntity.order))
+            assert(result == listOf(SampleEntity.order1))
 
             verify { workspaceService.checkAccessible(username, workspaceId) }
             verify {
@@ -274,11 +274,11 @@ class OrderFacadeTest : DescribeSpec({
                     null,
                     null
                 )
-            } returns listOf(SampleEntity.order)
+            } returns listOf(SampleEntity.order1)
 
             val result = sut.getRealtimeOrders("test", workspaceId)
 
-            assert(result == listOf(SampleEntity.order))
+            assert(result == listOf(SampleEntity.order1))
 
             verify { workspaceService.checkAccessible("test", workspaceId) }
             verify {
@@ -325,17 +325,17 @@ class OrderFacadeTest : DescribeSpec({
             val status = OrderStatus.PAID.name
 
             every { workspaceService.checkAccessible("test", 1L) } just Runs
-            every { orderService.getOrder(orderId) } returns SampleEntity.order
+            every { orderService.getOrder(orderId) } returns SampleEntity.order1
             every {
                 orderService.saveOrderAndSendWebsocketMessage(
                     any<Order>(),
                     WebsocketType.UPDATED
                 )
-            } returns SampleEntity.order
+            } returns SampleEntity.order1
 
             val result = sut.changeOrderStatus("test", 1L, orderId, status)
 
-            assert(result == SampleEntity.order)
+            assert(result == SampleEntity.order1)
 
             verify { workspaceService.checkAccessible("test", 1L) }
             verify { orderService.getOrder(orderId) }
@@ -377,7 +377,7 @@ class OrderFacadeTest : DescribeSpec({
         it("should call orderService.getOrderProduct and orderService.saveOrderProductAndSendWebsocketMessage") {
             val orderProductId = 1L
             val isServed = true
-            val orderProduct = SampleEntity.orderProduct.apply { this.isServed = false }
+            val orderProduct = SampleEntity.orderProduct1.apply { this.isServed = false }
 
             every { workspaceService.checkAccessible("test", 1L) } just Runs
             every { orderService.getOrderProduct(orderProductId) } returns orderProduct
@@ -425,11 +425,11 @@ class OrderFacadeTest : DescribeSpec({
             every { workspaceService.checkAccessible(username, workspaceId) } just Runs
             every {
                 orderService.getAllOrdersByTable(workspaceId, tableNumber, page, size)
-            } returns PageImpl(listOf(SampleEntity.order))
+            } returns PageImpl(listOf(SampleEntity.order1))
 
             val result = sut.getOrdersByTable(username, workspaceId, tableNumber, page, size)
 
-            assert(result.content == listOf(SampleEntity.order))
+            assert(result.content == listOf(SampleEntity.order1))
 
             verify { workspaceService.checkAccessible(username, workspaceId) }
             verify {
@@ -466,7 +466,7 @@ class OrderFacadeTest : DescribeSpec({
         it("should update servedCount and update isServed to true when servedCount is equal to quantity") {
             val orderProductId = 1L
             val servedCount = 1
-            val orderProduct = SampleEntity.orderProduct.apply {
+            val orderProduct = SampleEntity.orderProduct1.apply {
                 this.servedCount = 0
                 this.quantity = 1
             }
@@ -489,7 +489,7 @@ class OrderFacadeTest : DescribeSpec({
         it("should update servedCount and update isServed to false when servedCount is less than quantity") {
             val orderProductId = 1L
             val servedCount = 1
-            val orderProduct = SampleEntity.orderProduct.apply {
+            val orderProduct = SampleEntity.orderProduct1.apply {
                 this.servedCount = 0
                 this.quantity = 2
             }
@@ -555,6 +555,50 @@ class OrderFacadeTest : DescribeSpec({
 
             verify { workspaceService.checkAccessible("test", 1L) }
             verify(exactly = 0) { orderService.resetOrderNumber(1L) }
+        }
+    }
+
+    describe("getOrderPricePrefixSum") {
+        it("should calculate the prefix sum of order prices") {
+            val workspaceId = 1L
+            val startDate = LocalDateTime.of(2021, 1, 1, 0, 0)
+            val endDate = LocalDateTime.of(2021, 1, 2, 0, 0)
+            val status = null
+
+            every { workspaceService.checkAccessible("test", workspaceId) } just Runs
+            every {
+                orderService.getAllOrdersByCondition(
+                    workspaceId,
+                    startDate,
+                    endDate,
+                    null,
+                    null
+                )
+            } returns listOf(SampleEntity.order1.apply {
+                createdAt = LocalDateTime.of(2021, 1, 1, 0, 0)
+            }, SampleEntity.order2.apply {
+                createdAt = LocalDateTime.of(2021, 1, 1, 1, 0)
+            }, SampleEntity.order3.apply {
+                createdAt = LocalDateTime.of(2021, 1, 1, 2, 0)
+            })
+
+            val result = sut.getOrderPricePrefixSum("test", workspaceId, startDate, endDate, status)
+
+            assert(result.size == 3)
+            assert(result[0].prefixSumPrice == 1000L)
+            assert(result[1].prefixSumPrice == 4000L)
+            assert(result[2].prefixSumPrice == 6000L)
+
+            verify { workspaceService.checkAccessible("test", workspaceId) }
+            verify {
+                orderService.getAllOrdersByCondition(
+                    workspaceId,
+                    startDate,
+                    endDate,
+                    null,
+                    null
+                )
+            }
         }
     }
 })
