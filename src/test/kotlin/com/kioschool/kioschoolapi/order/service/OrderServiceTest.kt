@@ -224,6 +224,19 @@ class OrderServiceTest : DescribeSpec({
         }
     }
 
+    describe("resetAllOrderNumber") {
+        it("should call orderRedisRepository.resetAllOrderNumber") {
+            // Mock
+            every { orderRedisRepository.resetAllOrderNumber() } returns Unit
+
+            // Act
+            sut.resetAllOrderNumber()
+
+            // Assert
+            verify { orderRedisRepository.resetAllOrderNumber() }
+        }
+    }
+
     describe("getAllOrdersByTable") {
         it("should call orderRepository.findAllByTableNumber") {
             // Arrange
