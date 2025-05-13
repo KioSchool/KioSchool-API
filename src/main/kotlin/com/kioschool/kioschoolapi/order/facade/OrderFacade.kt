@@ -2,6 +2,7 @@ package com.kioschool.kioschoolapi.order.facade
 
 import com.kioschool.kioschoolapi.common.enums.OrderStatus
 import com.kioschool.kioschoolapi.common.enums.WebsocketType
+import com.kioschool.kioschoolapi.order.dto.OrderPrefixSumPrice
 import com.kioschool.kioschoolapi.order.dto.OrderProductRequestBody
 import com.kioschool.kioschoolapi.order.entity.Order
 import com.kioschool.kioschoolapi.order.entity.OrderProduct
@@ -12,7 +13,7 @@ import org.springframework.data.domain.Page
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 
 @Component
 class OrderFacade(
@@ -74,7 +75,6 @@ class OrderFacade(
     ): List<Order> {
         workspaceService.checkAccessible(username, workspaceId)
 
-        DateTimeFormatter.ofPattern("yyyy-MM-dd")
         val parsedStatus = status?.let { OrderStatus.valueOf(it) }
 
         return orderService.getAllOrdersByCondition(
@@ -151,5 +151,35 @@ class OrderFacade(
         workspaceService.checkAccessible(username, workspaceId)
 
         orderService.resetOrderNumber(workspaceId)
+    }
+
+    fun getOrderPricePrefixSum(
+        username: String,
+        workspaceId: Long,
+        startDate: LocalDateTime?,
+        endDate: LocalDateTime?,
+        status: String?
+    ): List<OrderPrefixSumPrice> {
+        workspaceService.checkAccessible(username, workspaceId)
+
+        val parsedStatus = status?.let { OrderStatus.valueOf(it) }
+
+        val orders = orderService.getAllOrdersByCondition(
+            workspaceId,
+            startDate,
+            endDate,
+            parsedStatus,
+            null
+        )
+
+        val grouped = orders
+            .groupBy { it.createdAt!!.truncatedTo(ChronoUnit.HOURS) }
+            .toSortedMap()
+
+        var sum = 0L
+        return grouped.map { (time, ordersAtTime) ->
+            sum += ordersAtTime.sumOf { it.totalPrice }
+            OrderPrefixSumPrice(time, sum)
+        }
     }
 }

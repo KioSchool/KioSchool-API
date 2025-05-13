@@ -46,7 +46,7 @@ class OrderServiceTest : DescribeSpec({
     describe("saveOrder") {
         it("should save order") {
             // Arrange
-            val order = SampleEntity.order
+            val order = SampleEntity.order1
 
             // Mock
             every { repository.save(order) } returns order
@@ -62,7 +62,7 @@ class OrderServiceTest : DescribeSpec({
     describe("saveOrderAndSendWebsocketMessage") {
         it("should save order and send websocket message") {
             // Arrange
-            val order = SampleEntity.order
+            val order = SampleEntity.order1
             val type = WebsocketType.CREATED
 
             // Mock
@@ -86,7 +86,7 @@ class OrderServiceTest : DescribeSpec({
     describe("saveOrderProductAndSendWebsocketMessage") {
         it("should save order product and send websocket message") {
             // Arrange
-            val orderProduct = SampleEntity.orderProduct
+            val orderProduct = SampleEntity.orderProduct1
 
             // Mock
             every { orderProductRepository.save(orderProduct) } returns orderProduct
@@ -157,7 +157,7 @@ class OrderServiceTest : DescribeSpec({
         it("should return order") {
             // Arrange
             val orderId = 1L
-            val order = SampleEntity.order
+            val order = SampleEntity.order1
 
             // Mock
             every { repository.findById(orderId) } returns mockk {
@@ -176,7 +176,7 @@ class OrderServiceTest : DescribeSpec({
         it("should return order product") {
             // Arrange
             val orderProductId = 1L
-            val orderProduct = SampleEntity.orderProduct
+            val orderProduct = SampleEntity.orderProduct1
 
             // Mock
             every { orderProductRepository.findById(orderProductId) } returns mockk {
@@ -221,6 +221,19 @@ class OrderServiceTest : DescribeSpec({
 
             // Assert
             verify { orderRedisRepository.resetOrderNumber(workspaceId) }
+        }
+    }
+
+    describe("resetAllOrderNumber") {
+        it("should call orderRedisRepository.resetAllOrderNumber") {
+            // Mock
+            every { orderRedisRepository.resetAllOrderNumber() } returns Unit
+
+            // Act
+            sut.resetAllOrderNumber()
+
+            // Assert
+            verify { orderRedisRepository.resetAllOrderNumber() }
         }
     }
 

@@ -1,10 +1,7 @@
 package com.kioschool.kioschoolapi.order.controller
 
 import com.kioschool.kioschoolapi.common.annotation.AdminUsername
-import com.kioschool.kioschoolapi.order.dto.ChangeOrderProductServedCount
-import com.kioschool.kioschoolapi.order.dto.ChangeOrderStatusRequestBody
-import com.kioschool.kioschoolapi.order.dto.ResetOrderNumberRequestBody
-import com.kioschool.kioschoolapi.order.dto.ServeOrderProductRequestBody
+import com.kioschool.kioschoolapi.order.dto.*
 import com.kioschool.kioschoolapi.order.entity.Order
 import com.kioschool.kioschoolapi.order.entity.OrderProduct
 import com.kioschool.kioschoolapi.order.facade.OrderFacade
@@ -38,6 +35,24 @@ class AdminOrderController(
             endDate,
             status,
             tableNumber
+        )
+    }
+
+    @Operation(summary = "주문 누적 총액 조회", description = "주문 누적 총액을 조회합니다.")
+    @GetMapping("/orders/prefix-sum/price")
+    fun getOrderPricePrefixSum(
+        @AdminUsername username: String,
+        @RequestParam("workspaceId") workspaceId: Long,
+        @RequestParam("startDate") startDate: LocalDateTime,
+        @RequestParam("endDate") endDate: LocalDateTime,
+        @RequestParam("status") status: String? = null,
+    ): List<OrderPrefixSumPrice> {
+        return orderFacade.getOrderPricePrefixSum(
+            username,
+            workspaceId,
+            startDate,
+            endDate,
+            status
         )
     }
 

@@ -120,19 +120,52 @@ object SampleEntity {
 
     fun productWithId(id: Long) = product.apply { setId(id) }
 
-    val order = Order(
+    val order1 = Order(
         workspace,
         0,
         "test",
-        orderNumber = 1
+        orderNumber = 1,
+        totalPrice = 1000
     )
 
-    val orderProduct = OrderProduct(
-        order = order,
+    val orderProduct1 = OrderProduct(
+        order = order1,
         productId = product.id,
         productName = product.name,
         productPrice = product.price,
         quantity = 1
+    )
+
+    val order2 = Order(
+        workspace,
+        0,
+        "test",
+        orderNumber = 2,
+        totalPrice = 3000
+    )
+
+    val orderProduct2 = OrderProduct(
+        order = order2,
+        productId = product.id,
+        productName = product.name,
+        productPrice = product.price,
+        quantity = 3
+    )
+
+    val order3 = Order(
+        workspace,
+        0,
+        "test",
+        orderNumber = 3,
+        totalPrice = 2000
+    )
+
+    val orderProduct3 = OrderProduct(
+        order = order3,
+        productId = product.id,
+        productName = product.name,
+        productPrice = product.price,
+        quantity = 2
     )
 
     val emailDomain = EmailDomain(
