@@ -3,22 +3,40 @@
 <head>
   <meta charset="UTF-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
-  <title></title>
+  <title>키오스쿨 이메일 인증</title>
+  <style>
+    /* Custom font stack, prioritizing Korean fonts, then Inter, then generic sans-serif */
+    body {
+      font-family: 'Apple SD Gothic Neo', 'NanumGothic', 'Malgun Gothic', 'Inter', sans-serif;
+    }
+  </style>
 </head>
 <body
-    style="font-family: 'Apple SD Gothic Neo', NanumGothic, 'Malgun Gothic', serif; background-color: #f4f4f4; margin: 0; padding: 0; display: flex; align-items: center; justify-content: center; height: 100vh;">
+    style="background-color: #f3f4f6; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 1rem;">
 <div
-    style="text-align: center; background-color: #ffffff; padding: 20px; margin: 10% 35%; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); width: 30%">
-  <h1>키오스쿨</h1>
+    style="background-color: #ffffff; padding: 2rem; border-radius: 0.75rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); text-align: center; max-width: 28rem; width: 100%;">
+  <!-- Application Title -->
+  <h1 style="font-size: 2.25rem; font-weight: 800; color: #1f2937; margin-bottom: 1rem; letter-spacing: -0.025em;">
+    키오스쿨</h1>
+
+  <!-- Section Title -->
   <div
-      style="font-family: 'Apple SD Gothic Neo', NanumGothic, 'Malgun Gothic', serif; font-size: 20px; font-weight: bold; letter-spacing: -0.5px; color: #424244;">
+      style="font-size: 1.25rem; font-weight: 700; color: #374151; margin-bottom: 1.5rem; line-height: 1.625;">
     <p>이메일 인증코드 발송</p>
   </div>
+
+  <!-- Verification Code Display -->
   <div
-      style="background-color: #4caf50; color: #ffffff; font-size: 24px; font-weight: bold; text-align: center; padding: 10px; border-radius: 4px; margin-bottom: 20px;">
-    <span th:text="${code}"></span>
+      style="background-color: #22c55e; color: #ffffff; font-size: 2.25rem; font-weight: 800; padding-top: 1rem; padding-bottom: 1rem; padding-left: 1.5rem; padding-right: 1.5rem; border-radius: 0.5rem; margin-bottom: 1rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); display: flex; align-items: center; justify-content: center;">
+    <span id="verificationCode"
+          style="-webkit-user-select: all; -moz-user-select: all; -ms-user-select: all; user-select: all;"
+          th:text="${code}"></span>
   </div>
-  <p>인증코드를 회원가입 페이지에 입력해 주세요.</p>
+
+  <!-- Instruction Message -->
+  <p style="color: #4b5563; font-size: 1rem; line-height: 1.625;">
+    인증코드를 회원가입 페이지에 입력해 주세요.
+  </p>
 </div>
 </body>
 </html>
