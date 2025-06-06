@@ -1,0 +1,9 @@
+FROM postgres:latest
+
+RUN apt-get update && apt-get install -y locales && rm -rf /var/lib/apt/lists/*
+
+RUN echo "ko_KR.UTF-8 UTF-8" >> /etc/locale.gen && \
+    locale-gen ko_KR.UTF-8
+
+ENV LANG ko_KR.UTF8
+ENV LC_ALL ko_KR.UTF8
