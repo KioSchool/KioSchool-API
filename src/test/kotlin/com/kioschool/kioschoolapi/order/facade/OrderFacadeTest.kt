@@ -601,4 +601,51 @@ class OrderFacadeTest : DescribeSpec({
             }
         }
     }
+
+    describe("getOrderHourlyPrice") {
+        it("should calculate the hourly price of orders") {
+            val workspaceId = 1L
+            val startDate = LocalDateTime.of(2021, 1, 1, 0, 0)
+            val endDate = LocalDateTime.of(2021, 1, 2, 0, 0)
+            val status = null
+
+            every { workspaceService.checkAccessible("test", workspaceId) } just Runs
+            every {
+                orderService.getAllOrdersByCondition(
+                    workspaceId,
+                    startDate,
+                    endDate,
+                    null,
+                    null
+                )
+            } returns listOf(SampleEntity.order1.apply {
+                createdAt = LocalDateTime.of(2021, 1, 1, 0, 0)
+                totalPrice = 1000
+            }, SampleEntity.order2.apply {
+                createdAt = LocalDateTime.of(2021, 1, 1, 1, 0)
+                totalPrice = 3000
+            }, SampleEntity.order3.apply {
+                createdAt = LocalDateTime.of(2021, 1, 1, 2, 0)
+                totalPrice = 2000
+            })
+
+            val result = sut.getOrderHourlyPrice("test", workspaceId, startDate, endDate, status)
+
+            assert(result.size == 3)
+            assert(result[0].price == 1000L)
+            assert(result[1].price == 3000L)
+            assert(result[2].price == 2000L)
+
+            verify { workspaceService.checkAccessible("test", workspaceId) }
+            verify {
+                orderService.getAllOrdersByCondition(
+                    workspaceId,
+                    startDate,
+                    endDate,
+                    null,
+                    null
+                )
+            }
+        }
+    }
 })
