@@ -2,6 +2,7 @@ package com.kioschool.kioschoolapi.order.facade
 
 import com.kioschool.kioschoolapi.common.enums.OrderStatus
 import com.kioschool.kioschoolapi.common.enums.WebsocketType
+import com.kioschool.kioschoolapi.order.dto.OrderHourlyPrice
 import com.kioschool.kioschoolapi.order.dto.OrderPrefixSumPrice
 import com.kioschool.kioschoolapi.order.dto.OrderProductRequestBody
 import com.kioschool.kioschoolapi.order.entity.Order
@@ -180,6 +181,34 @@ class OrderFacade(
         return grouped.map { (time, ordersAtTime) ->
             sum += ordersAtTime.sumOf { it.totalPrice }
             OrderPrefixSumPrice(time, sum)
+        }
+    }
+
+    fun getOrderHourlyPrice(
+        username: String,
+        workspaceId: Long,
+        startDate: LocalDateTime,
+        endDate: LocalDateTime,
+        status: String?
+    ): List<OrderHourlyPrice> {
+        workspaceService.checkAccessible(username, workspaceId)
+
+        val parsedStatus = status?.let { OrderStatus.valueOf(it) }
+
+        val orders = orderService.getAllOrdersByCondition(
+            workspaceId,
+            startDate,
+            endDate,
+            parsedStatus,
+            null
+        )
+
+        val grouped = orders
+            .groupBy { it.createdAt!!.truncatedTo(ChronoUnit.HOURS) }
+            .toSortedMap()
+
+        return grouped.map { (time, ordersAtTime) ->
+            OrderHourlyPrice(time, ordersAtTime.sumOf { it.totalPrice }.toLong())
         }
     }
 }

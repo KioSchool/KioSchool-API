@@ -56,6 +56,24 @@ class AdminOrderController(
         )
     }
 
+    @Operation(summary = "주문 시간대별 매출 조회", description = "주문 시간대별 매출을 조회합니다.")
+    @GetMapping("/orders/hourly/price")
+    fun getOrderHourlyPrice(
+        @AdminUsername username: String,
+        @RequestParam("workspaceId") workspaceId: Long,
+        @RequestParam("startDate") startDate: LocalDateTime,
+        @RequestParam("endDate") endDate: LocalDateTime,
+        @RequestParam("status") status: String? = null
+    ): List<OrderHourlyPrice> {
+        return orderFacade.getOrderHourlyPrice(
+            username,
+            workspaceId,
+            startDate,
+            endDate,
+            status
+        )
+    }
+
     @Operation(summary = "테이블별 주문 조회", description = "테이블별 주문을 조회합니다.")
     @GetMapping("/orders/table")
     fun getOrdersByTable(
