@@ -1,14 +1,15 @@
 package com.kioschool.kioschoolapi.workspace.facade
 
-import com.kioschool.kioschoolapi.discord.service.DiscordService
+import com.kioschool.kioschoolapi.domain.user.exception.UserNotFoundException
+import com.kioschool.kioschoolapi.domain.user.service.UserService
+import com.kioschool.kioschoolapi.domain.workspace.exception.NoPermissionToCreateWorkspaceException
+import com.kioschool.kioschoolapi.domain.workspace.exception.NoPermissionToInviteException
+import com.kioschool.kioschoolapi.domain.workspace.exception.NoPermissionToJoinWorkspaceException
+import com.kioschool.kioschoolapi.domain.workspace.exception.WorkspaceInaccessibleException
+import com.kioschool.kioschoolapi.domain.workspace.facade.WorkspaceFacade
+import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.factory.SampleEntity
-import com.kioschool.kioschoolapi.user.exception.UserNotFoundException
-import com.kioschool.kioschoolapi.user.service.UserService
-import com.kioschool.kioschoolapi.workspace.exception.NoPermissionToCreateWorkspaceException
-import com.kioschool.kioschoolapi.workspace.exception.NoPermissionToInviteException
-import com.kioschool.kioschoolapi.workspace.exception.NoPermissionToJoinWorkspaceException
-import com.kioschool.kioschoolapi.workspace.exception.WorkspaceInaccessibleException
-import com.kioschool.kioschoolapi.workspace.service.WorkspaceService
+import com.kioschool.kioschoolapi.global.discord.service.DiscordService
 import io.kotest.core.spec.style.DescribeSpec
 import io.mockk.*
 import org.junit.jupiter.api.assertThrows
@@ -77,7 +78,7 @@ class WorkspaceFacadeTest : DescribeSpec({
             val workspace = SampleEntity.workspace.apply {
                 owner.account = SampleEntity.account
             }
-            
+
             every { workspaceService.getWorkspace(workspaceId) } returns workspace
 
             val result = sut.getWorkspaceAccount(workspaceId)

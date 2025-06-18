@@ -1,14 +1,15 @@
 package com.kioschool.kioschoolapi.workspace.service
 
-import com.kioschool.kioschoolapi.aws.S3Service
-import com.kioschool.kioschoolapi.common.enums.UserRole
+import com.kioschool.kioschoolapi.domain.user.service.UserService
+import com.kioschool.kioschoolapi.domain.workspace.exception.NoPermissionToCreateWorkspaceException
+import com.kioschool.kioschoolapi.domain.workspace.exception.NoPermissionToInviteException
+import com.kioschool.kioschoolapi.domain.workspace.exception.NoPermissionToJoinWorkspaceException
+import com.kioschool.kioschoolapi.domain.workspace.exception.WorkspaceInaccessibleException
+import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepository
+import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.factory.SampleEntity
-import com.kioschool.kioschoolapi.user.service.UserService
-import com.kioschool.kioschoolapi.workspace.exception.NoPermissionToCreateWorkspaceException
-import com.kioschool.kioschoolapi.workspace.exception.NoPermissionToInviteException
-import com.kioschool.kioschoolapi.workspace.exception.NoPermissionToJoinWorkspaceException
-import com.kioschool.kioschoolapi.workspace.exception.WorkspaceInaccessibleException
-import com.kioschool.kioschoolapi.workspace.repository.WorkspaceRepository
+import com.kioschool.kioschoolapi.global.aws.S3Service
+import com.kioschool.kioschoolapi.global.common.enums.UserRole
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe

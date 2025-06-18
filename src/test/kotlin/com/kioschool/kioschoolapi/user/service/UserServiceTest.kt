@@ -1,14 +1,15 @@
 package com.kioschool.kioschoolapi.user.service
 
-import com.kioschool.kioschoolapi.common.enums.UserRole
-import com.kioschool.kioschoolapi.email.service.EmailService
+import com.kioschool.kioschoolapi.domain.email.service.EmailService
+import com.kioschool.kioschoolapi.domain.user.entity.User
+import com.kioschool.kioschoolapi.domain.user.exception.LoginFailedException
+import com.kioschool.kioschoolapi.domain.user.exception.NoPermissionException
+import com.kioschool.kioschoolapi.domain.user.exception.RegisterException
+import com.kioschool.kioschoolapi.domain.user.exception.UserNotFoundException
+import com.kioschool.kioschoolapi.domain.user.repository.UserRepository
+import com.kioschool.kioschoolapi.domain.user.service.UserService
 import com.kioschool.kioschoolapi.factory.SampleEntity
-import com.kioschool.kioschoolapi.user.entity.User
-import com.kioschool.kioschoolapi.user.exception.LoginFailedException
-import com.kioschool.kioschoolapi.user.exception.NoPermissionException
-import com.kioschool.kioschoolapi.user.exception.RegisterException
-import com.kioschool.kioschoolapi.user.exception.UserNotFoundException
-import com.kioschool.kioschoolapi.user.repository.UserRepository
+import com.kioschool.kioschoolapi.global.common.enums.UserRole
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe

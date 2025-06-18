@@ -1,12 +1,13 @@
 package com.kioschool.kioschoolapi.email.service
 
-import com.kioschool.kioschoolapi.email.enum.EmailKind
-import com.kioschool.kioschoolapi.email.exception.DuplicatedEmailDomainException
-import com.kioschool.kioschoolapi.email.exception.NotVerifiedEmailDomainException
-import com.kioschool.kioschoolapi.email.repository.EmailCodeRepository
-import com.kioschool.kioschoolapi.email.repository.EmailDomainRepository
+import com.kioschool.kioschoolapi.domain.email.enum.EmailKind
+import com.kioschool.kioschoolapi.domain.email.exception.DuplicatedEmailDomainException
+import com.kioschool.kioschoolapi.domain.email.exception.NotVerifiedEmailDomainException
+import com.kioschool.kioschoolapi.domain.email.repository.EmailCodeRepository
+import com.kioschool.kioschoolapi.domain.email.service.EmailService
+import com.kioschool.kioschoolapi.domain.email.repository.EmailDomainRepository
 import com.kioschool.kioschoolapi.factory.SampleEntity
-import com.kioschool.kioschoolapi.user.exception.UserNotFoundException
+import com.kioschool.kioschoolapi.domain.user.exception.UserNotFoundException
 import io.kotest.core.spec.style.DescribeSpec
 import io.mockk.*
 import org.junit.jupiter.api.assertThrows

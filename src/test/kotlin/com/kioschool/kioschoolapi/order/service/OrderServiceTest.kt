@@ -1,13 +1,14 @@
 package com.kioschool.kioschoolapi.order.service
 
-import com.kioschool.kioschoolapi.common.enums.WebsocketType
+import com.kioschool.kioschoolapi.domain.order.repository.CustomOrderRepository
+import com.kioschool.kioschoolapi.domain.order.repository.OrderProductRepository
+import com.kioschool.kioschoolapi.domain.order.repository.OrderRedisRepository
+import com.kioschool.kioschoolapi.domain.order.repository.OrderRepository
+import com.kioschool.kioschoolapi.domain.order.service.OrderService
+import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.factory.SampleEntity
-import com.kioschool.kioschoolapi.order.repository.CustomOrderRepository
-import com.kioschool.kioschoolapi.order.repository.OrderProductRepository
-import com.kioschool.kioschoolapi.order.repository.OrderRedisRepository
-import com.kioschool.kioschoolapi.order.repository.OrderRepository
-import com.kioschool.kioschoolapi.websocket.service.CustomWebSocketService
-import com.kioschool.kioschoolapi.workspace.service.WorkspaceService
+import com.kioschool.kioschoolapi.global.common.enums.WebsocketType
+import com.kioschool.kioschoolapi.global.websocket.service.CustomWebSocketService
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.*

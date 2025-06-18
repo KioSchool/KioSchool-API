@@ -1,7 +1,8 @@
 package com.kioschool.kioschoolapi.account.service
 
-import com.kioschool.kioschoolapi.account.entity.Account
-import com.kioschool.kioschoolapi.account.repository.AccountRepository
+import com.kioschool.kioschoolapi.domain.account.entity.Account
+import com.kioschool.kioschoolapi.domain.account.repository.AccountRepository
+import com.kioschool.kioschoolapi.domain.account.service.AccountService
 import com.kioschool.kioschoolapi.factory.SampleEntity
 import io.kotest.core.spec.style.DescribeSpec
 import io.mockk.*
