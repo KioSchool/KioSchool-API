@@ -3,6 +3,7 @@ package com.kioschool.kioschoolapi.domain.workspace.facade
 import com.kioschool.kioschoolapi.domain.account.entity.Account
 import com.kioschool.kioschoolapi.domain.user.service.UserService
 import com.kioschool.kioschoolapi.domain.workspace.entity.Workspace
+import com.kioschool.kioschoolapi.domain.workspace.entity.WorkspaceTable
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.global.discord.service.DiscordService
 import org.springframework.stereotype.Component
@@ -72,6 +73,7 @@ class WorkspaceFacade(
 
         workspaceService.checkCanAccessWorkspace(user, workspace)
         workspaceService.updateTableCount(workspace, tableCount)
+        workspaceService.updateWorkspaceTables(workspace)
 
         return workspace
     }
@@ -109,5 +111,31 @@ class WorkspaceFacade(
         workspaceService.deleteWorkspaceImages(workspace, deleteImages)
 
         return workspaceService.saveWorkspaceImages(workspace, imageFiles)
+    }
+
+    fun getAllWorkspaceTables(username: String, workspaceId: Long): List<WorkspaceTable> {
+        val user = userService.getUser(username)
+        val workspace = workspaceService.getWorkspace(workspaceId)
+
+        workspaceService.checkCanAccessWorkspace(user, workspace)
+
+        return workspaceService.getAllWorkspaceTables(workspace)
+    }
+
+    fun updateOrderSetting(
+        username: String,
+        workspaceId: Long,
+        useOrderSessionTimeLimit: Boolean,
+        orderSessionTimeLimitMinutes: Long
+    ): Workspace {
+        val user = userService.getUser(username)
+        val workspace = workspaceService.getWorkspace(workspaceId)
+
+        workspaceService.checkCanAccessWorkspace(user, workspace)
+
+        workspace.workspaceSetting.useOrderSessionTimeLimit = useOrderSessionTimeLimit
+        workspace.workspaceSetting.orderSessionTimeLimitMinutes = orderSessionTimeLimitMinutes
+
+        return workspaceService.saveWorkspace(workspace)
     }
 }

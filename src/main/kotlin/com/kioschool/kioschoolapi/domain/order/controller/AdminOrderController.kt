@@ -3,6 +3,7 @@ package com.kioschool.kioschoolapi.domain.order.controller
 import com.kioschool.kioschoolapi.domain.order.dto.*
 import com.kioschool.kioschoolapi.domain.order.entity.Order
 import com.kioschool.kioschoolapi.domain.order.entity.OrderProduct
+import com.kioschool.kioschoolapi.domain.order.entity.OrderSession
 import com.kioschool.kioschoolapi.domain.order.facade.OrderFacade
 import com.kioschool.kioschoolapi.global.common.annotation.AdminUsername
 import io.swagger.v3.oas.annotations.Operation
@@ -152,4 +153,50 @@ class AdminOrderController(
         orderFacade.resetOrderNumber(username, body.workspaceId)
     }
 
+    @Operation(summary = "주문 세션 주문 조회", description = "주문 세션에 저장된 주문을 조회합니다.")
+    @GetMapping("/order/session")
+    fun getOrdersByOrderSession(
+        @AdminUsername username: String,
+        @RequestParam("workspaceId") workspaceId: Long,
+        @RequestParam("orderSessionId") orderSessionId: Long
+    ): List<Order> {
+        return orderFacade.getOrdersByOrderSession(username, workspaceId, orderSessionId)
+    }
+
+    @Operation(summary = "주문 세션 시작", description = "주문 세션을 시작합니다.")
+    @PostMapping("/order/session/start")
+    fun startOrderSession(
+        @AdminUsername username: String,
+        @RequestBody body: StartOrderSessionRequestBody
+    ): OrderSession {
+        return orderFacade.startOrderSession(username, body.workspaceId, body.tableNumber)
+    }
+
+    @Operation(summary = "주문 세션 예상 종료 시간 변경", description = "주문 세션의 예상 종료 시간을 변경합니다.")
+    @PatchMapping("/order/session")
+    fun updateExpectedEndTime(
+        @AdminUsername username: String,
+        @RequestBody body: UpdateExpectedEndAtRequestBody
+    ): OrderSession {
+        return orderFacade.updateOrderSessionExpectedEndAt(
+            username,
+            body.workspaceId,
+            body.orderSessionId,
+            body.expectedEndAt
+        )
+    }
+
+    @Operation(summary = "주문 세션 종료", description = "주문 세션을 종료합니다.")
+    @PostMapping("/order/session/end")
+    fun endOrderSession(
+        @AdminUsername username: String,
+        @RequestBody body: EndOrderSessionRequestBody
+    ): OrderSession {
+        return orderFacade.endOrderSession(
+            username,
+            body.workspaceId,
+            body.tableNumber,
+            body.orderSessionId
+        )
+    }
 }

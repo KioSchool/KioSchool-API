@@ -1,9 +1,6 @@
 package com.kioschool.kioschoolapi.order.service
 
-import com.kioschool.kioschoolapi.domain.order.repository.CustomOrderRepository
-import com.kioschool.kioschoolapi.domain.order.repository.OrderProductRepository
-import com.kioschool.kioschoolapi.domain.order.repository.OrderRedisRepository
-import com.kioschool.kioschoolapi.domain.order.repository.OrderRepository
+import com.kioschool.kioschoolapi.domain.order.repository.*
 import com.kioschool.kioschoolapi.domain.order.service.OrderService
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.factory.SampleEntity
@@ -22,13 +19,15 @@ class OrderServiceTest : DescribeSpec({
     val customOrderRepository = mockk<CustomOrderRepository>()
     val orderRedisRepository = mockk<OrderRedisRepository>()
     val orderProductRepository = mockk<OrderProductRepository>()
+    val orderSessionRepository = mockk<OrderSessionRepository>()
 
     val sut = OrderService(
         repository,
         websocketService,
         customOrderRepository,
         orderRedisRepository,
-        orderProductRepository
+        orderProductRepository,
+        orderSessionRepository
     )
 
     beforeTest {
@@ -38,6 +37,7 @@ class OrderServiceTest : DescribeSpec({
         mockkObject(customOrderRepository)
         mockkObject(orderRedisRepository)
         mockkObject(orderProductRepository)
+        mockkObject(orderSessionRepository)
     }
 
     afterTest {

@@ -50,5 +50,11 @@ class Workspace(
     val images: MutableList<WorkspaceImage> = mutableListOf(),
     var description: String = "",
     var notice: String = "",
-    var tableCount: Int = 1
+    var tableCount: Int = 1,
+    @OneToOne(
+        cascade = [CascadeType.ALL],
+        orphanRemoval = true,
+        fetch = FetchType.EAGER
+    )
+    var workspaceSetting: WorkspaceSetting,
 ) : BaseEntity()
