@@ -1,12 +1,13 @@
 package com.kioschool.kioschoolapi.product.facade
 
-import com.kioschool.kioschoolapi.aws.S3Service
+import com.kioschool.kioschoolapi.domain.product.entity.ProductCategory
+import com.kioschool.kioschoolapi.domain.product.exception.CanNotDeleteUsingProductCategoryException
+import com.kioschool.kioschoolapi.domain.product.facade.ProductFacade
+import com.kioschool.kioschoolapi.domain.product.service.ProductService
+import com.kioschool.kioschoolapi.domain.workspace.exception.WorkspaceInaccessibleException
+import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.factory.SampleEntity
-import com.kioschool.kioschoolapi.product.entity.ProductCategory
-import com.kioschool.kioschoolapi.product.exception.CanNotDeleteUsingProductCategoryException
-import com.kioschool.kioschoolapi.product.service.ProductService
-import com.kioschool.kioschoolapi.workspace.exception.WorkspaceInaccessibleException
-import com.kioschool.kioschoolapi.workspace.service.WorkspaceService
+import com.kioschool.kioschoolapi.global.aws.S3Service
 import io.kotest.core.spec.style.DescribeSpec
 import io.mockk.*
 import org.junit.jupiter.api.assertThrows

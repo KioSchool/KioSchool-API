@@ -1,13 +1,14 @@
 package com.kioschool.kioschoolapi.account.facade
 
-import com.kioschool.kioschoolapi.account.exception.IncorrectAccountHolderException
-import com.kioschool.kioschoolapi.account.service.AccountService
-import com.kioschool.kioschoolapi.account.service.BankService
+import com.kioschool.kioschoolapi.domain.account.exception.IncorrectAccountHolderException
+import com.kioschool.kioschoolapi.domain.account.facade.AccountFacade
+import com.kioschool.kioschoolapi.domain.account.service.AccountService
+import com.kioschool.kioschoolapi.domain.account.service.BankService
+import com.kioschool.kioschoolapi.domain.user.service.UserService
 import com.kioschool.kioschoolapi.factory.SampleEntity
-import com.kioschool.kioschoolapi.portone.service.PortoneService
-import com.kioschool.kioschoolapi.toss.exception.DifferentAccountNumberException
-import com.kioschool.kioschoolapi.toss.service.TossService
-import com.kioschool.kioschoolapi.user.service.UserService
+import com.kioschool.kioschoolapi.global.portone.service.PortoneService
+import com.kioschool.kioschoolapi.global.toss.exception.DifferentAccountNumberException
+import com.kioschool.kioschoolapi.global.toss.service.TossService
 import io.kotest.core.spec.style.DescribeSpec
 import io.mockk.*
 import org.junit.jupiter.api.assertThrows

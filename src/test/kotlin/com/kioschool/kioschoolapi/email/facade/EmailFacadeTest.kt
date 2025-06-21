@@ -1,7 +1,8 @@
 package com.kioschool.kioschoolapi.email.facade
 
-import com.kioschool.kioschoolapi.email.exception.DuplicatedEmailDomainException
-import com.kioschool.kioschoolapi.email.service.EmailService
+import com.kioschool.kioschoolapi.domain.email.exception.DuplicatedEmailDomainException
+import com.kioschool.kioschoolapi.domain.email.facade.EmailFacade
+import com.kioschool.kioschoolapi.domain.email.service.EmailService
 import com.kioschool.kioschoolapi.factory.SampleEntity
 import io.kotest.core.spec.style.DescribeSpec
 import io.mockk.*

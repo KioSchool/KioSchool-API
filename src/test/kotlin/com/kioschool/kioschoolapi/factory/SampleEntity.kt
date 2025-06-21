@@ -1,21 +1,21 @@
 package com.kioschool.kioschoolapi.factory
 
-import com.kioschool.kioschoolapi.account.entity.Account
-import com.kioschool.kioschoolapi.account.entity.Bank
-import com.kioschool.kioschoolapi.common.entity.BaseEntity
-import com.kioschool.kioschoolapi.common.enums.UserRole
-import com.kioschool.kioschoolapi.email.entity.EmailCode
-import com.kioschool.kioschoolapi.email.entity.EmailDomain
-import com.kioschool.kioschoolapi.email.enum.EmailKind
-import com.kioschool.kioschoolapi.order.entity.Order
-import com.kioschool.kioschoolapi.order.entity.OrderProduct
-import com.kioschool.kioschoolapi.product.entity.Product
-import com.kioschool.kioschoolapi.product.entity.ProductCategory
-import com.kioschool.kioschoolapi.user.entity.User
-import com.kioschool.kioschoolapi.workspace.entity.Workspace
-import com.kioschool.kioschoolapi.workspace.entity.WorkspaceImage
-import com.kioschool.kioschoolapi.workspace.entity.WorkspaceInvitation
-import com.kioschool.kioschoolapi.workspace.entity.WorkspaceMember
+import com.kioschool.kioschoolapi.domain.account.entity.Account
+import com.kioschool.kioschoolapi.domain.account.entity.Bank
+import com.kioschool.kioschoolapi.domain.email.entity.EmailCode
+import com.kioschool.kioschoolapi.domain.email.entity.EmailDomain
+import com.kioschool.kioschoolapi.domain.email.enum.EmailKind
+import com.kioschool.kioschoolapi.domain.order.entity.Order
+import com.kioschool.kioschoolapi.domain.order.entity.OrderProduct
+import com.kioschool.kioschoolapi.domain.product.entity.Product
+import com.kioschool.kioschoolapi.domain.product.entity.ProductCategory
+import com.kioschool.kioschoolapi.domain.user.entity.User
+import com.kioschool.kioschoolapi.domain.workspace.entity.Workspace
+import com.kioschool.kioschoolapi.domain.workspace.entity.WorkspaceImage
+import com.kioschool.kioschoolapi.domain.workspace.entity.WorkspaceInvitation
+import com.kioschool.kioschoolapi.domain.workspace.entity.WorkspaceMember
+import com.kioschool.kioschoolapi.global.common.entity.BaseEntity
+import com.kioschool.kioschoolapi.global.common.enums.UserRole
 import kotlin.reflect.full.superclasses
 
 object SampleEntity {

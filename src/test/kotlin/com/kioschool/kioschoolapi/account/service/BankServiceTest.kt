@@ -1,8 +1,9 @@
 package com.kioschool.kioschoolapi.account.service
 
-import com.kioschool.kioschoolapi.account.entity.Bank
-import com.kioschool.kioschoolapi.account.exception.BankNotFoundException
-import com.kioschool.kioschoolapi.account.repository.BankRepository
+import com.kioschool.kioschoolapi.domain.account.entity.Bank
+import com.kioschool.kioschoolapi.domain.account.exception.BankNotFoundException
+import com.kioschool.kioschoolapi.domain.account.repository.BankRepository
+import com.kioschool.kioschoolapi.domain.account.service.BankService
 import com.kioschool.kioschoolapi.factory.SampleEntity
 import io.kotest.core.spec.style.DescribeSpec
 import io.mockk.*

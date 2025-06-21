@@ -1,14 +1,15 @@
 package com.kioschool.kioschoolapi.product.service
 
-import com.kioschool.kioschoolapi.aws.S3Service
+import com.kioschool.kioschoolapi.domain.product.entity.Product
+import com.kioschool.kioschoolapi.domain.product.exception.CanNotDeleteUsingProductCategoryException
+import com.kioschool.kioschoolapi.domain.product.exception.NotFoundProductException
+import com.kioschool.kioschoolapi.domain.product.exception.NotSellableProductException
+import com.kioschool.kioschoolapi.domain.product.repository.CustomProductRepository
+import com.kioschool.kioschoolapi.domain.product.repository.ProductCategoryRepository
+import com.kioschool.kioschoolapi.domain.product.repository.ProductRepository
+import com.kioschool.kioschoolapi.domain.product.service.ProductService
 import com.kioschool.kioschoolapi.factory.SampleEntity
-import com.kioschool.kioschoolapi.product.entity.Product
-import com.kioschool.kioschoolapi.product.exception.CanNotDeleteUsingProductCategoryException
-import com.kioschool.kioschoolapi.product.exception.NotFoundProductException
-import com.kioschool.kioschoolapi.product.exception.NotSellableProductException
-import com.kioschool.kioschoolapi.product.repository.CustomProductRepository
-import com.kioschool.kioschoolapi.product.repository.ProductCategoryRepository
-import com.kioschool.kioschoolapi.product.repository.ProductRepository
+import com.kioschool.kioschoolapi.global.aws.S3Service
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe

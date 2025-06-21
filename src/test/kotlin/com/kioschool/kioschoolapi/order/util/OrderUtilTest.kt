@@ -1,5 +1,6 @@
 package com.kioschool.kioschoolapi.order.util
 
+import com.kioschool.kioschoolapi.domain.order.util.OrderUtil
 import io.kotest.core.spec.style.DescribeSpec
 
 class OrderUtilTest : DescribeSpec({
