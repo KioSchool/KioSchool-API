@@ -41,7 +41,7 @@ class OrderService(
         val savedOrderProduct = orderProductRepository.save(orderProduct)
         websocketService.sendMessage(
             "/sub/order/${orderProduct.order.workspace.id}",
-            Message(WebsocketType.UPDATED, savedOrderProduct)
+            Message(WebsocketType.UPDATED, savedOrderProduct.order)
         )
         return savedOrderProduct
     }
