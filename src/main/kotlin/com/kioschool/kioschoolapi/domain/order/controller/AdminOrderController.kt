@@ -115,20 +115,6 @@ class AdminOrderController(
         )
     }
 
-    @Operation(summary = "주문 별 상품 서빙 완료", description = "주문 별 상품의 서빙 상태를 변경합니다.")
-    @PostMapping("/order/product")
-    fun serveOrderProduct(
-        @AdminUsername username: String,
-        @RequestBody body: ServeOrderProductRequestBody
-    ): OrderProduct {
-        return orderFacade.serveOrderProduct(
-            username,
-            body.workspaceId,
-            body.orderProductId,
-            body.isServed
-        )
-    }
-
     @Operation(summary = "주문 별 상품 서빙 개수 변경", description = "주문 별 상품의 서빙 개수를 변경합니다.")
     @PutMapping("/order/product")
     fun changeOrderProductServedCount(

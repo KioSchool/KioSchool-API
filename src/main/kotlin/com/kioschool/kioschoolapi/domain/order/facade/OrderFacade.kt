@@ -109,20 +109,7 @@ class OrderFacade(
 
         return orderService.saveOrderAndSendWebsocketMessage(order, WebsocketType.UPDATED)
     }
-
-    fun serveOrderProduct(
-        username: String,
-        workspaceId: Long,
-        orderProductId: Long,
-        isServed: Boolean
-    ): OrderProduct {
-        workspaceService.checkAccessible(username, workspaceId)
-
-        val orderProduct = orderService.getOrderProduct(orderProductId)
-        orderProduct.isServed = isServed
-        return orderService.saveOrderProductAndSendWebsocketMessage(orderProduct)
-    }
-
+    
     fun getOrdersByTable(
         username: String,
         workspaceId: Long,

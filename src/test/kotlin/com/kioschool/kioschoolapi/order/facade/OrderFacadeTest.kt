@@ -374,47 +374,6 @@ class OrderFacadeTest : DescribeSpec({
         }
     }
 
-    describe("serveOrderProduct") {
-        it("should call orderService.getOrderProduct and orderService.saveOrderProductAndSendWebsocketMessage") {
-            val orderProductId = 1L
-            val isServed = true
-            val orderProduct = SampleEntity.orderProduct1.apply { this.isServed = false }
-
-            every { workspaceService.checkAccessible("test", 1L) } just Runs
-            every { orderService.getOrderProduct(orderProductId) } returns orderProduct
-            every { orderService.saveOrderProductAndSendWebsocketMessage(orderProduct) } returns orderProduct
-
-            val result = sut.serveOrderProduct("test", 1L, orderProductId, isServed)
-
-            assert(result == orderProduct)
-            assert(result.isServed == isServed)
-
-            verify { workspaceService.checkAccessible("test", 1L) }
-            verify { orderService.getOrderProduct(orderProductId) }
-            verify { orderService.saveOrderProductAndSendWebsocketMessage(orderProduct) }
-        }
-
-        it("should throw WorkspaceInaccessibleException when workspace is not accessible") {
-            val orderProductId = 1L
-            val isServed = true
-
-            every {
-                workspaceService.checkAccessible(
-                    "test",
-                    1L
-                )
-            } throws WorkspaceInaccessibleException()
-
-            assertThrows<WorkspaceInaccessibleException> {
-                sut.serveOrderProduct("test", 1L, orderProductId, isServed)
-            }
-
-            verify { workspaceService.checkAccessible("test", 1L) }
-            verify(exactly = 0) { orderService.getOrderProduct(orderProductId) }
-            verify(exactly = 0) { orderService.saveOrderProductAndSendWebsocketMessage(any()) }
-        }
-    }
-
     describe("getOrdersByTable") {
         it("should call workspaceService.checkAccessible and orderService.getAllOrdersByTable") {
             val username = "test"
