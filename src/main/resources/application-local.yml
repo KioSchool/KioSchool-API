@@ -22,6 +22,5 @@ discord:
   webhook-url: "${DISCORD_WEBHOOK_URL}"
 kioschool:
   base-url: "http://localhost:3000"
-server:
-  ssl:
-    enabled: false
+  cookie:
+    secure: false

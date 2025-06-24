@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component
 
 @Component
 class UserFacade(
-    @Value("\${server.ssl.enabled}")
+    @Value("\${kioschool.cookie.secure}")
     private val isSecure: Boolean,
     private val userService: UserService,
     private val emailService: EmailService,
@@ -39,7 +39,7 @@ class UserFacade(
                 .httpOnly(true)
                 .secure(isSecure)
                 .path("/")
-                .sameSite(SameSite.NONE.name)
+                .sameSite(if (isSecure) SameSite.NONE.name else SameSite.LAX.name)
                 .build()
 
         response.addHeader(HttpHeaders.SET_COOKIE, authCookie.toString())
@@ -51,7 +51,7 @@ class UserFacade(
             .httpOnly(true)
             .secure(isSecure)
             .path("/")
-            .sameSite(SameSite.NONE.name)
+            .sameSite(if (isSecure) SameSite.NONE.name else SameSite.LAX.name)
             .build()
 
         response.addHeader(HttpHeaders.SET_COOKIE, authCookie.toString())
