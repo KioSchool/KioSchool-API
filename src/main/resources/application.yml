@@ -40,6 +40,8 @@ server:
         same-site: none
   error:
     include-message: always
+  ssl:
+    enabled: true
 springdoc:
   swagger-ui:
     tags-sorter: alpha

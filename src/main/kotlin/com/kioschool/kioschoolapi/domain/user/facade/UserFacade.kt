@@ -8,6 +8,7 @@ import com.kioschool.kioschoolapi.global.discord.service.DiscordService
 import com.kioschool.kioschoolapi.global.security.JwtProvider
 import com.kioschool.kioschoolapi.global.template.TemplateService
 import jakarta.servlet.http.HttpServletResponse
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.web.server.Cookie.SameSite
 import org.springframework.http.HttpHeaders
 import org.springframework.http.ResponseCookie
@@ -16,6 +17,8 @@ import org.springframework.stereotype.Component
 
 @Component
 class UserFacade(
+    @Value("\${server.ssl.enabled}")
+    private val isSecure: Boolean,
     private val userService: UserService,
     private val emailService: EmailService,
     private val templateService: TemplateService,
@@ -34,7 +37,7 @@ class UserFacade(
         val authCookie =
             ResponseCookie.from(HttpHeaders.AUTHORIZATION, token)
                 .httpOnly(true)
-                .secure(true)
+                .secure(isSecure)
                 .path("/")
                 .sameSite(SameSite.NONE.name)
                 .build()
@@ -46,7 +49,7 @@ class UserFacade(
     fun logout(response: HttpServletResponse): ResponseEntity<String> {
         val authCookie = ResponseCookie.from(HttpHeaders.AUTHORIZATION, "")
             .httpOnly(true)
-            .secure(true)
+            .secure(isSecure)
             .path("/")
             .sameSite(SameSite.NONE.name)
             .build()
