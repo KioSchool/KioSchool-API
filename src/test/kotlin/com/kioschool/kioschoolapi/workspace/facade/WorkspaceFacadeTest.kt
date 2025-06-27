@@ -330,6 +330,7 @@ class WorkspaceFacadeTest : DescribeSpec({
             every { workspaceService.getWorkspace(workspaceId) } returns workspace
             every { workspaceService.checkCanAccessWorkspace(user, workspace) } just Runs
             every { workspaceService.updateTableCount(workspace, tableCount) } just Runs
+            every { workspaceService.updateWorkspaceTables(workspace) } just Runs
 
             val result = sut.updateTableCount(username, workspaceId, tableCount)
 
@@ -339,6 +340,7 @@ class WorkspaceFacadeTest : DescribeSpec({
             verify { workspaceService.getWorkspace(workspaceId) }
             verify { workspaceService.checkCanAccessWorkspace(user, workspace) }
             verify { workspaceService.updateTableCount(workspace, tableCount) }
+            verify { workspaceService.updateWorkspaceTables(workspace) }
         }
 
         it("should throw UserNotFoundException when user not found") {

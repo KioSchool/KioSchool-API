@@ -201,6 +201,12 @@ object SampleEntity {
         accountHolder = "test"
     )
 
+    val workspaceTable = WorkspaceTable(
+        workspace = workspace,
+        tableNumber = 1,
+        tableHash = "testHash"
+    )
+
     private fun BaseEntity.setId(id: Long) {
         val f = this::class.superclasses.first().java.getDeclaredField("id")
         f.isAccessible = true
