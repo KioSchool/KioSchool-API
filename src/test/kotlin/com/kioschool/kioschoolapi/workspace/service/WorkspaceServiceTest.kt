@@ -6,6 +6,7 @@ import com.kioschool.kioschoolapi.domain.workspace.exception.NoPermissionToInvit
 import com.kioschool.kioschoolapi.domain.workspace.exception.NoPermissionToJoinWorkspaceException
 import com.kioschool.kioschoolapi.domain.workspace.exception.WorkspaceInaccessibleException
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepository
+import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceTableRepository
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.factory.SampleEntity
 import com.kioschool.kioschoolapi.global.aws.S3Service
@@ -21,13 +22,15 @@ import java.util.*
 
 class WorkspaceServiceTest : DescribeSpec({
     val repository = mockk<WorkspaceRepository>()
+    val workspaceTableRepository = mockk<WorkspaceTableRepository>()
     val userService = mockk<UserService>()
     val s3Service = mockk<S3Service>()
 
-    val sut = WorkspaceService("test", repository, userService, s3Service)
+    val sut = WorkspaceService("test", repository, workspaceTableRepository, userService, s3Service)
 
     beforeTest {
         mockkObject(repository)
+        mockkObject(workspaceTableRepository)
         mockkObject(userService)
     }
 

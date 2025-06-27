@@ -2,15 +2,13 @@ package com.kioschool.kioschoolapi.domain.workspace.service
 
 import com.kioschool.kioschoolapi.domain.user.entity.User
 import com.kioschool.kioschoolapi.domain.user.service.UserService
-import com.kioschool.kioschoolapi.domain.workspace.entity.Workspace
-import com.kioschool.kioschoolapi.domain.workspace.entity.WorkspaceImage
-import com.kioschool.kioschoolapi.domain.workspace.entity.WorkspaceInvitation
-import com.kioschool.kioschoolapi.domain.workspace.entity.WorkspaceMember
+import com.kioschool.kioschoolapi.domain.workspace.entity.*
 import com.kioschool.kioschoolapi.domain.workspace.exception.NoPermissionToCreateWorkspaceException
 import com.kioschool.kioschoolapi.domain.workspace.exception.NoPermissionToInviteException
 import com.kioschool.kioschoolapi.domain.workspace.exception.NoPermissionToJoinWorkspaceException
 import com.kioschool.kioschoolapi.domain.workspace.exception.WorkspaceInaccessibleException
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepository
+import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceTableRepository
 import com.kioschool.kioschoolapi.global.aws.S3Service
 import com.kioschool.kioschoolapi.global.common.enums.UserRole
 import org.springframework.beans.factory.annotation.Value
@@ -18,12 +16,14 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
+import java.util.*
 
 @Service
 class WorkspaceService(
     @Value("\${cloud.aws.s3.default-path}")
     private val workspacePath: String,
     val workspaceRepository: WorkspaceRepository,
+    val workspaceTableRepository: WorkspaceTableRepository,
     val userService: UserService,
     val s3Service: S3Service
 ) {
@@ -46,7 +46,8 @@ class WorkspaceService(
             Workspace(
                 name = name,
                 owner = user,
-                description = description
+                description = description,
+                workspaceSetting = WorkspaceSetting()
             )
         )
         val workspaceMember = WorkspaceMember(
@@ -132,5 +133,42 @@ class WorkspaceService(
             workspace.images.add(WorkspaceImage(workspace = workspace, url = imageUrl))
         }
         return workspaceRepository.save(workspace)
+    }
+
+    fun getWorkspaceTable(workspace: Workspace, tableNumber: Int): WorkspaceTable {
+        return workspaceTableRepository.findByTableNumberAndWorkspace(
+            tableNumber,
+            workspace
+        )
+    }
+
+    fun getAllWorkspaceTables(workspace: Workspace): List<WorkspaceTable> {
+        return workspaceTableRepository.findAllByWorkspace(workspace)
+    }
+
+    fun updateWorkspaceTables(workspace: Workspace) {
+        val currentTableCount = workspaceTableRepository.countAllByWorkspace(workspace)
+
+        if (currentTableCount < workspace.tableCount) {
+            val newTables = (currentTableCount until workspace.tableCount).map {
+                WorkspaceTable(
+                    workspace = workspace,
+                    tableNumber = (it + 1).toInt(),
+                    tableHash = UUID.randomUUID().toString()
+                )
+            }
+
+            workspaceTableRepository.saveAll(newTables)
+        } else if (currentTableCount > workspace.tableCount) {
+            val tablesToRemove = workspaceTableRepository.findAllByWorkspace(workspace)
+                .sortedByDescending { it.tableNumber }
+                .take((currentTableCount - workspace.tableCount).toInt())
+
+            workspaceTableRepository.deleteAll(tablesToRemove)
+        }
+    }
+
+    fun saveWorkspaceTable(table: WorkspaceTable): WorkspaceTable {
+        return workspaceTableRepository.save(table)
     }
 }

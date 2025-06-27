@@ -19,5 +19,7 @@ class Order(
     val orderProducts: MutableList<OrderProduct> = mutableListOf(),
     var totalPrice: Int = 0,
     var status: OrderStatus = OrderStatus.NOT_PAID,
-    val orderNumber: Long
+    val orderNumber: Long,
+    @ManyToOne
+    val orderSession: OrderSession?
 ) : BaseEntity()
