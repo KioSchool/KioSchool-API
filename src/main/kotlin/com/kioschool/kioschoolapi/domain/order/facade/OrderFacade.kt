@@ -118,7 +118,7 @@ class OrderFacade(
 
         return orderService.saveOrderAndSendWebsocketMessage(order, WebsocketType.UPDATED)
     }
-    
+
     fun getOrdersByTable(
         username: String,
         workspaceId: Long,
@@ -208,6 +208,7 @@ class OrderFacade(
         }
     }
 
+    @Transactional
     fun startOrderSession(
         username: String,
         workspaceId: Long,
@@ -228,6 +229,7 @@ class OrderFacade(
         return orderSession
     }
 
+    @Transactional
     fun updateOrderSessionExpectedEndAt(
         username: String,
         workspaceId: Long,
@@ -243,6 +245,7 @@ class OrderFacade(
         return orderService.saveOrderSession(orderSession)
     }
 
+    @Transactional
     fun endOrderSession(
         username: String,
         workspaceId: Long,

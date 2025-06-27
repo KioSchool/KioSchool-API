@@ -16,6 +16,6 @@ class WorkspaceTable(
     val workspace: Workspace,
     val tableNumber: Int,
     val tableHash: String,
-    @OneToOne(cascade = [jakarta.persistence.CascadeType.ALL], orphanRemoval = true)
+    @OneToOne
     var orderSession: OrderSession? = null,
 ) : BaseEntity()
