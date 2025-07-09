@@ -629,4 +629,57 @@ class WorkspaceFacadeTest : DescribeSpec({
             verify(exactly = 0) { workspaceService.saveWorkspaceImages(any(), any()) }
         }
     }
+
+    describe("getAllWorkspaceTables") {
+        it("should get all workspace tables") {
+            val username = "username"
+            val user = SampleEntity.user
+            val workspaceId = 1L
+            val workspace = SampleEntity.workspace
+
+            every { userService.getUser(username) } returns user
+            every { workspaceService.getWorkspace(workspaceId) } returns workspace
+            every { workspaceService.checkCanAccessWorkspace(user, workspace) } just Runs
+            every { workspaceService.getAllWorkspaceTables(workspace) } returns listOf(SampleEntity.workspaceTable)
+
+            val result = sut.getAllWorkspaceTables(username, workspaceId)
+
+            assert(result == listOf(SampleEntity.workspaceTable))
+
+            verify { userService.getUser(username) }
+            verify { workspaceService.getWorkspace(workspaceId) }
+            verify { workspaceService.checkCanAccessWorkspace(user, workspace) }
+            verify { workspaceService.getAllWorkspaceTables(workspace) }
+        }
+    }
+
+    describe("updateOrderSetting") {
+        it("should update order setting") {
+            val username = "username"
+            val user = SampleEntity.user
+            val workspaceId = 1L
+            val workspace = SampleEntity.workspace
+            val useOrderSessionTimeLimit = true
+            val orderSessionTimeLimitMinutes = 60L
+
+            every { userService.getUser(username) } returns user
+            every { workspaceService.getWorkspace(workspaceId) } returns workspace
+            every { workspaceService.checkCanAccessWorkspace(user, workspace) } just Runs
+            every { workspaceService.saveWorkspace(workspace) } returns workspace
+
+            val result = sut.updateOrderSetting(
+                username,
+                workspaceId,
+                useOrderSessionTimeLimit,
+                orderSessionTimeLimitMinutes
+            )
+
+            assert(result == workspace)
+
+            verify { userService.getUser(username) }
+            verify { workspaceService.getWorkspace(workspaceId) }
+            verify { workspaceService.checkCanAccessWorkspace(user, workspace) }
+            verify { workspaceService.saveWorkspace(workspace) }
+        }
+    }
 })

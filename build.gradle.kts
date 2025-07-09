@@ -7,6 +7,7 @@ plugins {
     kotlin("jvm") version "1.9.22"
     kotlin("plugin.spring") version "1.9.22"
     kotlin("kapt") version "1.7.20"
+    id("org.jetbrains.kotlinx.kover") version "0.7.6"
 }
 
 allOpen {
@@ -63,6 +64,7 @@ dependencies {
     testImplementation("org.springframework.security:spring-security-test")
     testImplementation("io.kotest:kotest-runner-junit5-jvm:5.8.0")
     testImplementation("io.kotest:kotest-assertions-core-jvm:5.8.0")
+    testImplementation("io.kotest:kotest-assertions-json-jvm:5.8.0")
     testImplementation("io.mockk:mockk:1.13.9")
 }
 

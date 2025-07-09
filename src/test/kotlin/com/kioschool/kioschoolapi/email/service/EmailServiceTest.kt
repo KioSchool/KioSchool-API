@@ -2,14 +2,16 @@ package com.kioschool.kioschoolapi.email.service
 
 import com.kioschool.kioschoolapi.domain.email.enum.EmailKind
 import com.kioschool.kioschoolapi.domain.email.exception.DuplicatedEmailDomainException
+import com.kioschool.kioschoolapi.domain.email.exception.EmailSendFailureException
 import com.kioschool.kioschoolapi.domain.email.exception.NotVerifiedEmailDomainException
 import com.kioschool.kioschoolapi.domain.email.repository.EmailCodeRepository
-import com.kioschool.kioschoolapi.domain.email.service.EmailService
 import com.kioschool.kioschoolapi.domain.email.repository.EmailDomainRepository
-import com.kioschool.kioschoolapi.factory.SampleEntity
+import com.kioschool.kioschoolapi.domain.email.service.EmailService
 import com.kioschool.kioschoolapi.domain.user.exception.UserNotFoundException
+import com.kioschool.kioschoolapi.factory.SampleEntity
 import io.kotest.core.spec.style.DescribeSpec
 import io.mockk.*
+import jakarta.mail.internet.MimeMessage
 import org.junit.jupiter.api.assertThrows
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
@@ -456,6 +458,34 @@ class EmailServiceTest : DescribeSpec({
 
             assertThrows<NoSuchElementException> {
                 sut.deleteEmailDomain(domainId)
+            }
+        }
+    }
+
+    describe("sendEmail") {
+        it("should call javaMailSender.send") {
+            val address = "test@test.com"
+            val subject = "subject"
+            val text = "text"
+
+            every { javaMailSender.createMimeMessage() } returns mockk(relaxed = true)
+            every { javaMailSender.send(any<MimeMessage>()) } returns Unit
+
+            sut.sendEmail(address, subject, text)
+
+            verify { javaMailSender.send(any<MimeMessage>()) }
+        }
+
+        it("should throw EmailSendFailureException when javaMailSender.send fails") {
+            val address = "test@test.com"
+            val subject = "subject"
+            val text = "text"
+
+            every { javaMailSender.createMimeMessage() } returns mockk(relaxed = true)
+            every { javaMailSender.send(any<MimeMessage>()) } throws Exception()
+
+            assertThrows<EmailSendFailureException> {
+                sut.sendEmail(address, subject, text)
             }
         }
     }

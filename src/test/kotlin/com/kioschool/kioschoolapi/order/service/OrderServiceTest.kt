@@ -281,4 +281,103 @@ class OrderServiceTest : DescribeSpec({
             }
         }
     }
+
+    describe("getOrderSession") {
+        it("should return order session") {
+            // Arrange
+            val orderSessionId = 1L
+            val orderSession = SampleEntity.orderSession
+
+            // Mock
+            every { orderSessionRepository.findById(orderSessionId) } returns mockk {
+                every { get() } returns orderSession
+            }
+
+            // Act
+            sut.getOrderSession(orderSessionId) shouldBe orderSession
+
+            // Assert
+            verify { orderSessionRepository.findById(orderSessionId) }
+        }
+    }
+
+    describe("getAllOrdersByOrderSession") {
+        it("should return orders by order session") {
+            // Arrange
+            val orderSession = SampleEntity.orderSession
+            val orders = listOf(SampleEntity.order1, SampleEntity.order2)
+
+            // Mock
+            every { repository.findAllByOrderSession(orderSession) } returns orders
+
+            // Act
+            sut.getAllOrdersByOrderSession(orderSession) shouldBe orders
+
+            // Assert
+            verify { repository.findAllByOrderSession(orderSession) }
+        }
+    }
+
+    describe("saveOrderSession") {
+        it("should save order session") {
+            // Arrange
+            val orderSession = SampleEntity.orderSession
+
+            // Mock
+            every { orderSessionRepository.save(orderSession) } returns orderSession
+
+            // Act
+            sut.saveOrderSession(orderSession) shouldBe orderSession
+
+            // Assert
+            verify { orderSessionRepository.save(orderSession) }
+        }
+    }
+
+    describe("createOrderSession") {
+        it("should create order session with time limit") {
+            // Arrange
+            val workspace = SampleEntity.workspace
+            val table = SampleEntity.workspaceTable
+            val workspaceSetting = SampleEntity.workspaceSetting.apply {
+                useOrderSessionTimeLimit = true
+                orderSessionTimeLimitMinutes = 60
+            }
+
+            // Mock
+            every { orderSessionRepository.save(any()) } answers { firstArg() }
+
+            // Act
+            val result = sut.createOrderSession(workspace, table, workspaceSetting)
+
+            // Assert
+            result.workspace shouldBe workspace
+            result.tableNumber shouldBe table.tableNumber
+            assert(result.expectedEndAt != null)
+
+            verify { orderSessionRepository.save(any()) }
+        }
+
+        it("should create order session without time limit") {
+            // Arrange
+            val workspace = SampleEntity.workspace
+            val table = SampleEntity.workspaceTable
+            val workspaceSetting = SampleEntity.workspaceSetting.apply {
+                useOrderSessionTimeLimit = false
+            }
+
+            // Mock
+            every { orderSessionRepository.save(any()) } answers { firstArg() }
+
+            // Act
+            val result = sut.createOrderSession(workspace, table, workspaceSetting)
+
+            // Assert
+            result.workspace shouldBe workspace
+            result.tableNumber shouldBe table.tableNumber
+            result.expectedEndAt shouldBe null
+
+            verify { orderSessionRepository.save(any()) }
+        }
+    }
 })

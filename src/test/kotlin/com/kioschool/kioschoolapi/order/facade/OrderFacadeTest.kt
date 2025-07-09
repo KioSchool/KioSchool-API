@@ -3,6 +3,7 @@ package com.kioschool.kioschoolapi.order.facade
 import com.kioschool.kioschoolapi.domain.order.dto.OrderProductRequestBody
 import com.kioschool.kioschoolapi.domain.order.entity.Order
 import com.kioschool.kioschoolapi.domain.order.exception.NoOrderSessionException
+import com.kioschool.kioschoolapi.domain.order.exception.OrderSessionAlreadyExistException
 import com.kioschool.kioschoolapi.domain.order.facade.OrderFacade
 import com.kioschool.kioschoolapi.domain.order.service.OrderService
 import com.kioschool.kioschoolapi.domain.product.service.ProductService
@@ -650,6 +651,212 @@ class OrderFacadeTest : DescribeSpec({
                     null
                 )
             }
+        }
+    }
+
+    describe("startOrderSession") {
+        it("should start order session") {
+            val username = "test"
+            val workspaceId = 1L
+            val tableNumber = 1
+
+            every { workspaceService.checkAccessible(username, workspaceId) } just Runs
+            every { workspaceService.getWorkspace(workspaceId) } returns SampleEntity.workspace
+            every {
+                workspaceService.getWorkspaceTable(
+                    SampleEntity.workspace,
+                    tableNumber
+                )
+            } returns SampleEntity.workspaceTable.apply { orderSession = null }
+            every {
+                orderService.createOrderSession(
+                    any(),
+                    any(),
+                    any()
+                )
+            } returns SampleEntity.orderSession
+            every { workspaceService.saveWorkspaceTable(any()) } returns SampleEntity.workspaceTable
+
+            val result = sut.startOrderSession(username, workspaceId, tableNumber)
+
+            assert(result == SampleEntity.orderSession)
+
+            verify { workspaceService.checkAccessible(username, workspaceId) }
+            verify { workspaceService.getWorkspace(workspaceId) }
+            verify { workspaceService.getWorkspaceTable(SampleEntity.workspace, tableNumber) }
+            verify { orderService.createOrderSession(any(), any(), any()) }
+            verify { workspaceService.saveWorkspaceTable(any()) }
+        }
+
+        it("should throw OrderSessionAlreadyExistException when order session already exists") {
+            val username = "test"
+            val workspaceId = 1L
+            val tableNumber = 1
+
+            every { workspaceService.checkAccessible(username, workspaceId) } just Runs
+            every { workspaceService.getWorkspace(workspaceId) } returns SampleEntity.workspace
+            every {
+                workspaceService.getWorkspaceTable(
+                    SampleEntity.workspace,
+                    tableNumber
+                )
+            } returns SampleEntity.workspaceTable.apply { orderSession = SampleEntity.orderSession }
+
+            assertThrows<OrderSessionAlreadyExistException> {
+                sut.startOrderSession(username, workspaceId, tableNumber)
+            }
+
+            verify { workspaceService.checkAccessible(username, workspaceId) }
+            verify { workspaceService.getWorkspace(workspaceId) }
+            verify { workspaceService.getWorkspaceTable(SampleEntity.workspace, tableNumber) }
+            verify(exactly = 0) { orderService.createOrderSession(any(), any(), any()) }
+            verify(exactly = 0) { workspaceService.saveWorkspaceTable(any()) }
+        }
+    }
+
+    describe("updateOrderSessionExpectedEndAt") {
+        it("should update order session expected end at") {
+            val username = "test"
+            val workspaceId = 1L
+            val orderSessionId = 1L
+            val expectedEndAt = LocalDateTime.now()
+
+            every { workspaceService.checkAccessible(username, workspaceId) } just Runs
+            every { orderService.getOrderSession(orderSessionId) } returns SampleEntity.orderSession
+            every {
+                workspaceService.checkAccessible(
+                    username,
+                    SampleEntity.orderSession.workspace.id
+                )
+            } just Runs
+            every { orderService.saveOrderSession(any()) } returns SampleEntity.orderSession
+
+            val result = sut.updateOrderSessionExpectedEndAt(
+                username,
+                workspaceId,
+                orderSessionId,
+                expectedEndAt
+            )
+
+            assert(result == SampleEntity.orderSession)
+
+            verify { workspaceService.checkAccessible(username, workspaceId) }
+            verify { orderService.getOrderSession(orderSessionId) }
+            verify {
+                workspaceService.checkAccessible(
+                    username,
+                    SampleEntity.orderSession.workspace.id
+                )
+            }
+            verify { orderService.saveOrderSession(any()) }
+        }
+    }
+
+    describe("endOrderSession") {
+        it("should end order session") {
+            val username = "test"
+            val workspaceId = 1L
+            val tableNumber = 1
+            val orderSessionId = 1L
+
+            every { workspaceService.checkAccessible(username, workspaceId) } just Runs
+            every { workspaceService.getWorkspace(workspaceId) } returns SampleEntity.workspace
+            every {
+                workspaceService.getWorkspaceTable(
+                    SampleEntity.workspace,
+                    tableNumber
+                )
+            } returns SampleEntity.workspaceTable
+            every { workspaceService.saveWorkspaceTable(any()) } returns SampleEntity.workspaceTable
+            every { orderService.getOrderSession(orderSessionId) } returns SampleEntity.orderSession
+            every { orderService.saveOrderSession(any()) } returns SampleEntity.orderSession
+
+            val result = sut.endOrderSession(username, workspaceId, tableNumber, orderSessionId)
+
+            assert(result == SampleEntity.orderSession)
+
+            verify { workspaceService.checkAccessible(username, workspaceId) }
+            verify { workspaceService.getWorkspace(workspaceId) }
+            verify { workspaceService.getWorkspaceTable(SampleEntity.workspace, tableNumber) }
+            verify { workspaceService.saveWorkspaceTable(any()) }
+            verify { orderService.getOrderSession(orderSessionId) }
+            verify { orderService.saveOrderSession(any()) }
+        }
+    }
+
+    describe("getOrdersByOrderSession") {
+        it("should get orders by order session") {
+            val username = "test"
+            val workspaceId = 1L
+            val orderSessionId = 1L
+
+            every { workspaceService.checkAccessible(username, workspaceId) } just Runs
+            every { orderService.getOrderSession(orderSessionId) } returns SampleEntity.orderSession
+            every {
+                workspaceService.checkAccessible(
+                    username,
+                    SampleEntity.orderSession.workspace.id
+                )
+            } just Runs
+            every { orderService.getAllOrdersByOrderSession(SampleEntity.orderSession) } returns listOf(
+                SampleEntity.order1
+            )
+
+            val result = sut.getOrdersByOrderSession(username, workspaceId, orderSessionId)
+
+            assert(result == listOf(SampleEntity.order1))
+
+            verify { workspaceService.checkAccessible(username, workspaceId) }
+            verify { orderService.getOrderSession(orderSessionId) }
+            verify {
+                workspaceService.checkAccessible(
+                    username,
+                    SampleEntity.orderSession.workspace.id
+                )
+            }
+            verify { orderService.getAllOrdersByOrderSession(SampleEntity.orderSession) }
+        }
+    }
+
+    describe("isOrderAvailable") {
+        it("should return true if order session is started") {
+            val workspaceId = 1L
+            val tableNumber = 1
+
+            every { workspaceService.getWorkspace(workspaceId) } returns SampleEntity.workspace
+            every {
+                workspaceService.getWorkspaceTable(
+                    SampleEntity.workspace,
+                    tableNumber
+                )
+            } returns SampleEntity.workspaceTable.apply { orderSession = SampleEntity.orderSession }
+
+            val result = sut.isOrderAvailable(workspaceId, tableNumber)
+
+            assert(result)
+
+            verify { workspaceService.getWorkspace(workspaceId) }
+            verify { workspaceService.getWorkspaceTable(SampleEntity.workspace, tableNumber) }
+        }
+
+        it("should return false if order session is not started") {
+            val workspaceId = 1L
+            val tableNumber = 1
+
+            every { workspaceService.getWorkspace(workspaceId) } returns SampleEntity.workspace
+            every {
+                workspaceService.getWorkspaceTable(
+                    SampleEntity.workspace,
+                    tableNumber
+                )
+            } returns SampleEntity.workspaceTable.apply { orderSession = null }
+
+            val result = sut.isOrderAvailable(workspaceId, tableNumber)
+
+            assert(!result)
+
+            verify { workspaceService.getWorkspace(workspaceId) }
+            verify { workspaceService.getWorkspaceTable(SampleEntity.workspace, tableNumber) }
         }
     }
 })
