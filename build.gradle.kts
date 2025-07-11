@@ -40,6 +40,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-websocket")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
+    implementation("org.springframework.boot:spring-boot-starter-aop")
+    implementation("net.logstash.logback:logstash-logback-encoder:7.4")
     implementation("io.awspring.cloud:spring-cloud-starter-aws:2.4.2")
     implementation("com.amazonaws:aws-java-sdk-s3:1.12.595")
     implementation("io.jsonwebtoken:jjwt-api:0.11.5")

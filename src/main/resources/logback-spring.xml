@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <springProperty scope="context" name="springAppName" source="spring.application.name"/>
+
+    <!-- 기본 Spring Boot 로그를 위한 콘솔 Appender (텍스트 형식) -->
+    <appender name="CONSOLE_DEFAULT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%clr(%d{${LOG_DATEFORMAT_PATTERN}}){faint} %clr(${LOG_LEVEL_PATTERN}) %clr(${PID}){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- LoggingAspect에서 발생하는 로그를 위한 콘솔 Appender (JSON 형식) -->
+    <appender name="CONSOLE_JSON" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <jsonGeneratorDecorator class="net.logstash.logback.decorate.PrettyPrintingJsonGeneratorDecorator"/>
+            <fieldNames>
+                <timestamp>timestamp</timestamp>
+                <version>[ignore]</version>
+                <level>level</level>
+                <thread>thread</thread>
+                <logger>logger</logger>
+                <message>message</message>
+                <stackTrace>stack_trace</stackTrace>
+            </fieldNames>
+            <customFields>{"app_name":"${springAppName:-}"}</customFields>
+        </encoder>
+    </appender>
+
+    <!-- Root Logger: 기본 Spring Boot 로그는 CONSOLE_DEFAULT Appender 사용 -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE_DEFAULT"/>
+    </root>
+
+    <!-- LoggingAspect 로거: JSON 형식으로 출력 -->
+    <logger name="com.kioschool.kioschoolapi.global.common.annotation.LoggingAspect" level="INFO" additivity="false">
+        <appender-ref ref="CONSOLE_JSON"/>
+    </logger>
+
+</configuration>
