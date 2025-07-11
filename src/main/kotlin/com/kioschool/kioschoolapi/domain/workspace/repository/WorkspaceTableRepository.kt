@@ -8,6 +8,6 @@ import org.springframework.stereotype.Repository
 @Repository
 interface WorkspaceTableRepository : JpaRepository<WorkspaceTable, Long> {
     fun findByTableNumberAndWorkspace(tableNumber: Int, workspace: Workspace): WorkspaceTable
-    fun findAllByWorkspace(workspace: Workspace): List<WorkspaceTable>
+    fun findAllByWorkspaceOrderByTableNumber(workspace: Workspace): List<WorkspaceTable>
     fun countAllByWorkspace(workspace: Workspace): Long
 }

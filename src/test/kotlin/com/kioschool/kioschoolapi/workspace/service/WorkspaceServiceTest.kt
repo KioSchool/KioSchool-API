@@ -1,11 +1,11 @@
 package com.kioschool.kioschoolapi.workspace.service
 
 import com.kioschool.kioschoolapi.domain.user.service.UserService
+import com.kioschool.kioschoolapi.domain.workspace.entity.WorkspaceTable
 import com.kioschool.kioschoolapi.domain.workspace.exception.NoPermissionToCreateWorkspaceException
 import com.kioschool.kioschoolapi.domain.workspace.exception.NoPermissionToInviteException
 import com.kioschool.kioschoolapi.domain.workspace.exception.NoPermissionToJoinWorkspaceException
 import com.kioschool.kioschoolapi.domain.workspace.exception.WorkspaceInaccessibleException
-import com.kioschool.kioschoolapi.domain.workspace.entity.WorkspaceTable
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepository
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceTableRepository
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
@@ -493,11 +493,21 @@ class WorkspaceServiceTest : DescribeSpec({
             val workspace = SampleEntity.workspace
             val tableNumber = 1
 
-            every { workspaceTableRepository.findByTableNumberAndWorkspace(tableNumber, workspace) } returns SampleEntity.workspaceTable
+            every {
+                workspaceTableRepository.findByTableNumberAndWorkspace(
+                    tableNumber,
+                    workspace
+                )
+            } returns SampleEntity.workspaceTable
 
             sut.getWorkspaceTable(workspace, tableNumber) shouldBe SampleEntity.workspaceTable
 
-            verify { workspaceTableRepository.findByTableNumberAndWorkspace(tableNumber, workspace) }
+            verify {
+                workspaceTableRepository.findByTableNumberAndWorkspace(
+                    tableNumber,
+                    workspace
+                )
+            }
         }
     }
 
@@ -505,11 +515,13 @@ class WorkspaceServiceTest : DescribeSpec({
         it("should get all workspace tables") {
             val workspace = SampleEntity.workspace
 
-            every { workspaceTableRepository.findAllByWorkspace(workspace) } returns listOf(SampleEntity.workspaceTable)
+            every { workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace) } returns listOf(
+                SampleEntity.workspaceTable
+            )
 
             sut.getAllWorkspaceTables(workspace) shouldBe listOf(SampleEntity.workspaceTable)
 
-            verify { workspaceTableRepository.findAllByWorkspace(workspace) }
+            verify { workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace) }
         }
     }
 
@@ -529,7 +541,11 @@ class WorkspaceServiceTest : DescribeSpec({
             val workspace = SampleEntity.workspace.apply { tableCount = 1 }
 
             every { workspaceTableRepository.countAllByWorkspace(workspace) } returns 3
-            every { workspaceTableRepository.findAllByWorkspace(workspace) } returns listOf(SampleEntity.workspaceTable, SampleEntity.workspaceTable, SampleEntity.workspaceTable)
+            every { workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace) } returns listOf(
+                SampleEntity.workspaceTable,
+                SampleEntity.workspaceTable,
+                SampleEntity.workspaceTable
+            )
             every { workspaceTableRepository.deleteAll(any<Iterable<WorkspaceTable>>()) } just Runs
 
             sut.updateWorkspaceTables(workspace)

@@ -143,7 +143,7 @@ class WorkspaceService(
     }
 
     fun getAllWorkspaceTables(workspace: Workspace): List<WorkspaceTable> {
-        return workspaceTableRepository.findAllByWorkspace(workspace)
+        return workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace)
     }
 
     fun updateWorkspaceTables(workspace: Workspace) {
@@ -160,9 +160,10 @@ class WorkspaceService(
 
             workspaceTableRepository.saveAll(newTables)
         } else if (currentTableCount > workspace.tableCount) {
-            val tablesToRemove = workspaceTableRepository.findAllByWorkspace(workspace)
-                .sortedByDescending { it.tableNumber }
-                .take((currentTableCount - workspace.tableCount).toInt())
+            val tablesToRemove =
+                workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace)
+                    .reversed()
+                    .take((currentTableCount - workspace.tableCount).toInt())
 
             workspaceTableRepository.deleteAll(tablesToRemove)
         }
