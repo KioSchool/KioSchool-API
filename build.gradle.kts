@@ -7,6 +7,7 @@ plugins {
     kotlin("jvm") version "1.9.22"
     kotlin("plugin.spring") version "1.9.22"
     kotlin("kapt") version "1.7.20"
+    id("org.jetbrains.kotlinx.kover") version "0.7.6"
 }
 
 allOpen {
@@ -39,6 +40,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-websocket")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
+    implementation("org.springframework.boot:spring-boot-starter-aop")
+    implementation("net.logstash.logback:logstash-logback-encoder:7.4")
     implementation("io.awspring.cloud:spring-cloud-starter-aws:2.4.2")
     implementation("com.amazonaws:aws-java-sdk-s3:1.12.595")
     implementation("io.jsonwebtoken:jjwt-api:0.11.5")
@@ -63,6 +66,7 @@ dependencies {
     testImplementation("org.springframework.security:spring-security-test")
     testImplementation("io.kotest:kotest-runner-junit5-jvm:5.8.0")
     testImplementation("io.kotest:kotest-assertions-core-jvm:5.8.0")
+    testImplementation("io.kotest:kotest-assertions-json-jvm:5.8.0")
     testImplementation("io.mockk:mockk:1.13.9")
 }
 

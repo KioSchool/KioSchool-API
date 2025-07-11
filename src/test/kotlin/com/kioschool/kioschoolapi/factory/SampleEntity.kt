@@ -7,13 +7,11 @@ import com.kioschool.kioschoolapi.domain.email.entity.EmailDomain
 import com.kioschool.kioschoolapi.domain.email.enum.EmailKind
 import com.kioschool.kioschoolapi.domain.order.entity.Order
 import com.kioschool.kioschoolapi.domain.order.entity.OrderProduct
+import com.kioschool.kioschoolapi.domain.order.entity.OrderSession
 import com.kioschool.kioschoolapi.domain.product.entity.Product
 import com.kioschool.kioschoolapi.domain.product.entity.ProductCategory
 import com.kioschool.kioschoolapi.domain.user.entity.User
-import com.kioschool.kioschoolapi.domain.workspace.entity.Workspace
-import com.kioschool.kioschoolapi.domain.workspace.entity.WorkspaceImage
-import com.kioschool.kioschoolapi.domain.workspace.entity.WorkspaceInvitation
-import com.kioschool.kioschoolapi.domain.workspace.entity.WorkspaceMember
+import com.kioschool.kioschoolapi.domain.workspace.entity.*
 import com.kioschool.kioschoolapi.global.common.entity.BaseEntity
 import com.kioschool.kioschoolapi.global.common.enums.UserRole
 import kotlin.reflect.full.superclasses
@@ -41,9 +39,12 @@ object SampleEntity {
 
     fun userWithId(id: Long) = user.apply { setId(id) }
 
+    val workspaceSetting = WorkspaceSetting()
+
     val workspace = Workspace(
         name = "test",
-        owner = user
+        owner = user,
+        workspaceSetting = workspaceSetting,
     )
 
     val workspaceImage1 = WorkspaceImage(
@@ -65,7 +66,8 @@ object SampleEntity {
 
     fun workspace(user: User) = Workspace(
         name = "test",
-        owner = user
+        owner = user,
+        workspaceSetting = workspaceSetting,
     )
 
     val workspaceInvitation = WorkspaceInvitation(
@@ -120,12 +122,19 @@ object SampleEntity {
 
     fun productWithId(id: Long) = product.apply { setId(id) }
 
+    val orderSession = OrderSession(
+        workspace = workspace,
+        tableNumber = 1,
+        expectedEndAt = null
+    )
+
     val order1 = Order(
         workspace,
         0,
         "test",
         orderNumber = 1,
-        totalPrice = 1000
+        totalPrice = 1000,
+        orderSession = orderSession
     )
 
     val orderProduct1 = OrderProduct(
@@ -141,7 +150,8 @@ object SampleEntity {
         0,
         "test",
         orderNumber = 2,
-        totalPrice = 3000
+        totalPrice = 3000,
+        orderSession = orderSession
     )
 
     val orderProduct2 = OrderProduct(
@@ -157,7 +167,8 @@ object SampleEntity {
         0,
         "test",
         orderNumber = 3,
-        totalPrice = 2000
+        totalPrice = 2000,
+        orderSession = orderSession
     )
 
     val orderProduct3 = OrderProduct(
@@ -188,6 +199,12 @@ object SampleEntity {
         bank = bank,
         accountNumber = "123456789",
         accountHolder = "test"
+    )
+
+    val workspaceTable = WorkspaceTable(
+        workspace = workspace,
+        tableNumber = 1,
+        tableHash = "testHash"
     )
 
     private fun BaseEntity.setId(id: Long) {

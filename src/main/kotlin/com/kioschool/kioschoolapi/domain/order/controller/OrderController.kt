@@ -33,4 +33,13 @@ class OrderController(
     ): Order {
         return orderFacade.getOrder(orderId)
     }
+
+    @Operation(summary = "주문 가능 여부 조회", description = "주문 가능 여부를 조회합니다.")
+    @GetMapping("/order/available")
+    fun isOrderAvailable(
+        @RequestParam("workspaceId") workspaceId: Long,
+        @RequestParam("tableNumber") tableNumber: Int
+    ): Boolean {
+        return orderFacade.isOrderAvailable(workspaceId, tableNumber)
+    }
 }

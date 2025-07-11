@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS"
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+  <changeSet author="ji-inpark" id="1751010041092-1">
+    <createTable tableName="order_session">
+      <column autoIncrement="true" name="id" type="BIGINT">
+        <constraints nullable="false" primaryKey="true" primaryKeyName="pk_order_session"/>
+      </column>
+      <column name="created_at" type="DATETIME"/>
+      <column name="updated_at" type="DATETIME"/>
+      <column name="workspace_id" type="BIGINT"/>
+      <column name="expected_end_at" type="DATETIME"/>
+      <column name="end_at" type="DATETIME"/>
+      <column name="table_number" type="INT">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+  </changeSet>
+  <changeSet author="ji-inpark" id="1751010041092-2">
+    <createTable tableName="workspace_setting">
+      <column autoIncrement="true" name="id" type="BIGINT">
+        <constraints nullable="false" primaryKey="true" primaryKeyName="pk_workspace_setting"/>
+      </column>
+      <column name="created_at" type="DATETIME"/>
+      <column name="updated_at" type="DATETIME"/>
+      <column name="use_order_session_time_limit" type="BOOLEAN">
+        <constraints nullable="false"/>
+      </column>
+      <column name="order_session_time_limit_minutes" type="BIGINT">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+  </changeSet>
+  <changeSet author="ji-inpark" id="1751010041092-3">
+    <createTable tableName="workspace_table">
+      <column autoIncrement="true" name="id" type="BIGINT">
+        <constraints nullable="false" primaryKey="true" primaryKeyName="pk_workspace_table"/>
+      </column>
+      <column name="created_at" type="DATETIME"/>
+      <column name="updated_at" type="DATETIME"/>
+      <column name="workspace_id" type="BIGINT"/>
+      <column name="table_number" type="INT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="table_hash" type="VARCHAR(255)"/>
+      <column name="order_session_id" type="BIGINT"/>
+    </createTable>
+  </changeSet>
+  <changeSet author="ji-inpark" id="1751010041092-4">
+    <addColumn tableName="workspace">
+      <column name="workspace_setting_id" type="BIGINT"/>
+    </addColumn>
+  </changeSet>
+  <changeSet author="ji-inpark" id="1751010041092-5">
+    <addColumn schemaName="public" tableName="order">
+      <column name="order_session_id" type="BIGINT"/>
+    </addColumn>
+  </changeSet>
+  <changeSet author="ji-inpark" id="1751010041092-6">
+    <addForeignKeyConstraint baseColumnNames="workspace_id" baseTableName="order_session"
+      constraintName="FK_ORDER_SESSION_ON_WORKSPACE" referencedColumnNames="id"
+      referencedTableName="workspace"/>
+  </changeSet>
+  <changeSet author="ji-inpark" id="1751010041092-7">
+    <addForeignKeyConstraint baseColumnNames="workspace_setting_id" baseTableName="workspace"
+      constraintName="FK_WORKSPACE_ON_WORKSPACESETTING" referencedColumnNames="id"
+      referencedTableName="workspace_setting"/>
+  </changeSet>
+  <changeSet author="ji-inpark" id="1751010041092-8">
+    <addForeignKeyConstraint baseColumnNames="order_session_id" baseTableName="workspace_table"
+      constraintName="FK_WORKSPACE_TABLE_ON_ORDERSESSION" referencedColumnNames="id"
+      referencedTableName="order_session"/>
+  </changeSet>
+  <changeSet author="ji-inpark" id="1751010041092-9">
+    <addForeignKeyConstraint baseColumnNames="workspace_id" baseTableName="workspace_table"
+      constraintName="FK_WORKSPACE_TABLE_ON_WORKSPACE" referencedColumnNames="id"
+      referencedTableName="workspace"/>
+  </changeSet>
+  <changeSet author="ji-inpark" id="1751010041092-10">
+    <addForeignKeyConstraint baseColumnNames="order_session_id" baseTableName="order"
+      baseTableSchemaName="public" constraintName="FK_ORDER_ON_ORDERSESSION"
+      referencedColumnNames="id" referencedTableName="order_session"/>
+  </changeSet>
+
+</databaseChangeLog>

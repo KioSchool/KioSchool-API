@@ -5,6 +5,9 @@ import com.kioschool.kioschoolapi.domain.order.dto.OrderPrefixSumPrice
 import com.kioschool.kioschoolapi.domain.order.dto.OrderProductRequestBody
 import com.kioschool.kioschoolapi.domain.order.entity.Order
 import com.kioschool.kioschoolapi.domain.order.entity.OrderProduct
+import com.kioschool.kioschoolapi.domain.order.entity.OrderSession
+import com.kioschool.kioschoolapi.domain.order.exception.NoOrderSessionException
+import com.kioschool.kioschoolapi.domain.order.exception.OrderSessionAlreadyExistException
 import com.kioschool.kioschoolapi.domain.order.service.OrderService
 import com.kioschool.kioschoolapi.domain.product.service.ProductService
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
@@ -31,6 +34,11 @@ class OrderFacade(
     ): Order {
         val workspace = workspaceService.getWorkspace(workspaceId)
         val productIds = rawOrderProducts.map { it.productId }
+        val table = workspaceService.getWorkspaceTable(workspace, tableNumber)
+        val currentOrderSession = table.orderSession
+
+        if (currentOrderSession == null) throw NoOrderSessionException()
+
         productService.validateProducts(workspaceId, productIds)
 
         val orderNumber = orderService.getOrderNumber(workspaceId)
@@ -39,7 +47,8 @@ class OrderFacade(
                 workspace = workspace,
                 tableNumber = tableNumber,
                 customerName = customerName,
-                orderNumber = orderNumber
+                orderNumber = orderNumber,
+                orderSession = currentOrderSession,
             )
         )
 
@@ -109,7 +118,7 @@ class OrderFacade(
 
         return orderService.saveOrderAndSendWebsocketMessage(order, WebsocketType.UPDATED)
     }
-    
+
     fun getOrdersByTable(
         username: String,
         workspaceId: Long,
@@ -197,5 +206,85 @@ class OrderFacade(
         return grouped.map { (time, ordersAtTime) ->
             OrderHourlyPrice(time, ordersAtTime.sumOf { it.totalPrice }.toLong())
         }
+    }
+
+    @Transactional
+    fun startOrderSession(
+        username: String,
+        workspaceId: Long,
+        tableNumber: Int
+    ): OrderSession {
+        workspaceService.checkAccessible(username, workspaceId)
+
+        val workspace = workspaceService.getWorkspace(workspaceId)
+        val setting = workspace.workspaceSetting
+        val table = workspaceService.getWorkspaceTable(workspace, tableNumber)
+
+        if (table.orderSession != null) throw OrderSessionAlreadyExistException()
+
+        val orderSession = orderService.createOrderSession(workspace, table, setting)
+        table.orderSession = orderSession
+        workspaceService.saveWorkspaceTable(table)
+
+        return orderSession
+    }
+
+    @Transactional
+    fun updateOrderSessionExpectedEndAt(
+        username: String,
+        workspaceId: Long,
+        orderSessionId: Long,
+        expectedEndAt: LocalDateTime,
+    ): OrderSession {
+        workspaceService.checkAccessible(username, workspaceId)
+
+        val orderSession = orderService.getOrderSession(orderSessionId)
+        workspaceService.checkAccessible(username, orderSession.workspace.id)
+        orderSession.expectedEndAt = expectedEndAt
+
+        return orderService.saveOrderSession(orderSession)
+    }
+
+    @Transactional
+    fun endOrderSession(
+        username: String,
+        workspaceId: Long,
+        tableNumber: Int,
+        orderSessionId: Long
+    ): OrderSession {
+        workspaceService.checkAccessible(username, workspaceId)
+
+        val table = workspaceService.getWorkspaceTable(
+            workspaceService.getWorkspace(workspaceId),
+            tableNumber
+        )
+        table.orderSession = null
+        workspaceService.saveWorkspaceTable(table)
+
+        val orderSession = orderService.getOrderSession(orderSessionId)
+        orderSession.endAt = LocalDateTime.now()
+        return orderService.saveOrderSession(orderSession)
+    }
+
+    fun getOrdersByOrderSession(
+        username: String,
+        workspaceId: Long,
+        orderSessionId: Long
+    ): List<Order> {
+        workspaceService.checkAccessible(username, workspaceId)
+
+        val orderSession = orderService.getOrderSession(orderSessionId)
+
+        workspaceService.checkAccessible(username, orderSession.workspace.id)
+
+        return orderService.getAllOrdersByOrderSession(orderSession)
+    }
+
+    fun isOrderAvailable(workspaceId: Long, tableNumber: Int): Boolean {
+        val workspace = workspaceService.getWorkspace(workspaceId)
+        val table = workspaceService.getWorkspaceTable(workspace, tableNumber)
+
+        val isOrderSessionStarted = table.orderSession != null
+        return isOrderSessionStarted
     }
 }

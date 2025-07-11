@@ -20,6 +20,7 @@ import org.springframework.data.domain.PageImpl
 import org.springframework.mock.web.MockHttpServletResponse
 
 class UserFacadeTest : DescribeSpec({
+    val isSecure = true
     val userService = mockk<UserService>()
     val emailService = mockk<EmailService>()
     val templateService = mockk<TemplateService>()
@@ -27,6 +28,7 @@ class UserFacadeTest : DescribeSpec({
     val jwtProvider = mockk<JwtProvider>()
 
     val sut = UserFacade(
+        isSecure,
         userService,
         emailService,
         templateService,

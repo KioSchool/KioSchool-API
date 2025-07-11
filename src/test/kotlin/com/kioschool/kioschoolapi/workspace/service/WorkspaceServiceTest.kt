@@ -1,11 +1,13 @@
 package com.kioschool.kioschoolapi.workspace.service
 
 import com.kioschool.kioschoolapi.domain.user.service.UserService
+import com.kioschool.kioschoolapi.domain.workspace.entity.WorkspaceTable
 import com.kioschool.kioschoolapi.domain.workspace.exception.NoPermissionToCreateWorkspaceException
 import com.kioschool.kioschoolapi.domain.workspace.exception.NoPermissionToInviteException
 import com.kioschool.kioschoolapi.domain.workspace.exception.NoPermissionToJoinWorkspaceException
 import com.kioschool.kioschoolapi.domain.workspace.exception.WorkspaceInaccessibleException
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepository
+import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceTableRepository
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.factory.SampleEntity
 import com.kioschool.kioschoolapi.global.aws.S3Service
@@ -21,13 +23,15 @@ import java.util.*
 
 class WorkspaceServiceTest : DescribeSpec({
     val repository = mockk<WorkspaceRepository>()
+    val workspaceTableRepository = mockk<WorkspaceTableRepository>()
     val userService = mockk<UserService>()
     val s3Service = mockk<S3Service>()
 
-    val sut = WorkspaceService("test", repository, userService, s3Service)
+    val sut = WorkspaceService("test", repository, workspaceTableRepository, userService, s3Service)
 
     beforeTest {
         mockkObject(repository)
+        mockkObject(workspaceTableRepository)
         mockkObject(userService)
     }
 
@@ -467,6 +471,98 @@ class WorkspaceServiceTest : DescribeSpec({
 
             verify(exactly = 2) { s3Service.uploadFile(any<MultipartFile>(), any<String>()) }
             verify { repository.save(workspace) }
+        }
+    }
+
+    describe("checkCanAccessWorkspace") {
+        it("should not throw exception when user can access workspace") {
+            val user = SampleEntity.user
+            val workspace = SampleEntity.workspace
+            workspace.members.clear()
+            workspace.members.add(SampleEntity.workspaceMember(user, workspace))
+
+            every { repository.findById(workspace.id) } returns Optional.of(workspace)
+            every { userService.getUser(user.loginId) } returns user
+
+            sut.checkCanAccessWorkspace(user, workspace)
+        }
+    }
+
+    describe("getWorkspaceTable") {
+        it("should get workspace table") {
+            val workspace = SampleEntity.workspace
+            val tableNumber = 1
+
+            every {
+                workspaceTableRepository.findByTableNumberAndWorkspace(
+                    tableNumber,
+                    workspace
+                )
+            } returns SampleEntity.workspaceTable
+
+            sut.getWorkspaceTable(workspace, tableNumber) shouldBe SampleEntity.workspaceTable
+
+            verify {
+                workspaceTableRepository.findByTableNumberAndWorkspace(
+                    tableNumber,
+                    workspace
+                )
+            }
+        }
+    }
+
+    describe("getAllWorkspaceTables") {
+        it("should get all workspace tables") {
+            val workspace = SampleEntity.workspace
+
+            every { workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace) } returns listOf(
+                SampleEntity.workspaceTable
+            )
+
+            sut.getAllWorkspaceTables(workspace) shouldBe listOf(SampleEntity.workspaceTable)
+
+            verify { workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace) }
+        }
+    }
+
+    describe("updateWorkspaceTables") {
+        it("should add tables when table count is increased") {
+            val workspace = SampleEntity.workspace.apply { tableCount = 5 }
+
+            every { workspaceTableRepository.countAllByWorkspace(workspace) } returns 3
+            every { workspaceTableRepository.saveAll(any<Iterable<WorkspaceTable>>()) } returns listOf()
+
+            sut.updateWorkspaceTables(workspace)
+
+            verify { workspaceTableRepository.saveAll(any<Iterable<WorkspaceTable>>()) }
+        }
+
+        it("should remove tables when table count is decreased") {
+            val workspace = SampleEntity.workspace.apply { tableCount = 1 }
+
+            every { workspaceTableRepository.countAllByWorkspace(workspace) } returns 3
+            every { workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace) } returns listOf(
+                SampleEntity.workspaceTable,
+                SampleEntity.workspaceTable,
+                SampleEntity.workspaceTable
+            )
+            every { workspaceTableRepository.deleteAll(any<Iterable<WorkspaceTable>>()) } just Runs
+
+            sut.updateWorkspaceTables(workspace)
+
+            verify { workspaceTableRepository.deleteAll(any<Iterable<WorkspaceTable>>()) }
+        }
+    }
+
+    describe("saveWorkspaceTable") {
+        it("should save workspace table") {
+            val table = SampleEntity.workspaceTable
+
+            every { workspaceTableRepository.save(table) } returns table
+
+            sut.saveWorkspaceTable(table) shouldBe table
+
+            verify { workspaceTableRepository.save(table) }
         }
     }
 })

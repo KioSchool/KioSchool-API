@@ -2,10 +2,11 @@ package com.kioschool.kioschoolapi.domain.order.service
 
 import com.kioschool.kioschoolapi.domain.order.entity.Order
 import com.kioschool.kioschoolapi.domain.order.entity.OrderProduct
-import com.kioschool.kioschoolapi.domain.order.repository.CustomOrderRepository
-import com.kioschool.kioschoolapi.domain.order.repository.OrderProductRepository
-import com.kioschool.kioschoolapi.domain.order.repository.OrderRedisRepository
-import com.kioschool.kioschoolapi.domain.order.repository.OrderRepository
+import com.kioschool.kioschoolapi.domain.order.entity.OrderSession
+import com.kioschool.kioschoolapi.domain.order.repository.*
+import com.kioschool.kioschoolapi.domain.workspace.entity.Workspace
+import com.kioschool.kioschoolapi.domain.workspace.entity.WorkspaceSetting
+import com.kioschool.kioschoolapi.domain.workspace.entity.WorkspaceTable
 import com.kioschool.kioschoolapi.global.common.enums.OrderStatus
 import com.kioschool.kioschoolapi.global.common.enums.WebsocketType
 import com.kioschool.kioschoolapi.global.websocket.dto.Message
@@ -22,7 +23,8 @@ class OrderService(
     private val websocketService: CustomWebSocketService,
     private val customOrderRepository: CustomOrderRepository,
     private val orderRedisRepository: OrderRedisRepository,
-    private val orderProductRepository: OrderProductRepository
+    private val orderProductRepository: OrderProductRepository,
+    private val orderSessionRepository: OrderSessionRepository
 ) {
     fun saveOrder(order: Order): Order {
         return orderRepository.save(order)
@@ -97,6 +99,37 @@ class OrderService(
                 Sort.by(
                     Sort.Order.desc("id")
                 )
+            )
+        )
+    }
+
+    fun getOrderSession(orderSessionId: Long): OrderSession {
+        return orderSessionRepository.findById(orderSessionId).get()
+    }
+
+    fun getAllOrdersByOrderSession(orderSession: OrderSession): List<Order> {
+        return orderRepository.findAllByOrderSession(orderSession)
+    }
+
+    fun saveOrderSession(orderSession: OrderSession): OrderSession {
+        return orderSessionRepository.save(orderSession)
+    }
+
+    fun createOrderSession(
+        workspace: Workspace,
+        table: WorkspaceTable,
+        workspaceSetting: WorkspaceSetting
+    ): OrderSession {
+        val expectedEndAt =
+            if (workspaceSetting.useOrderSessionTimeLimit) {
+                LocalDateTime.now().plusMinutes(workspaceSetting.orderSessionTimeLimitMinutes)
+            } else null
+
+        return orderSessionRepository.save(
+            OrderSession(
+                workspace = workspace,
+                expectedEndAt = expectedEndAt,
+                tableNumber = table.tableNumber
             )
         )
     }

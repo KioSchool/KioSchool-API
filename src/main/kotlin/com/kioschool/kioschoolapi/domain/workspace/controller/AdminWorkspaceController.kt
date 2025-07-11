@@ -2,6 +2,7 @@ package com.kioschool.kioschoolapi.domain.workspace.controller
 
 import com.kioschool.kioschoolapi.domain.workspace.dto.*
 import com.kioschool.kioschoolapi.domain.workspace.entity.Workspace
+import com.kioschool.kioschoolapi.domain.workspace.entity.WorkspaceTable
 import com.kioschool.kioschoolapi.domain.workspace.facade.WorkspaceFacade
 import com.kioschool.kioschoolapi.global.common.annotation.AdminUsername
 import io.swagger.v3.oas.annotations.Operation
@@ -103,5 +104,28 @@ class AdminWorkspaceController(
         @RequestBody body: UpdateTableCountRequestBody
     ): Workspace {
         return workspaceFacade.updateTableCount(username, body.workspaceId, body.tableCount)
+    }
+
+    @Operation(summary = "워크스페이스 테이블 전체 조회", description = "워크스페이스의 모든 테이블을 조회합니다.")
+    @GetMapping("/workspace/tables")
+    fun getWorkspaceTables(
+        @AdminUsername username: String,
+        @RequestParam workspaceId: Long
+    ): List<WorkspaceTable> {
+        return workspaceFacade.getAllWorkspaceTables(username, workspaceId)
+    }
+
+    @Operation(summary = "워크스페이스 주문 설정 변경", description = "워크스페이스의 설정 중 주문 관련한 설정을 변경합니다.")
+    @PutMapping("/workspace/setting/order")
+    fun updateOrderSetting(
+        @AdminUsername username: String,
+        @RequestBody body: UpdateOrderSettingRequestBody
+    ): Workspace {
+        return workspaceFacade.updateOrderSetting(
+            username,
+            body.workspaceId,
+            body.useOrderSessionTimeLimit,
+            body.orderSessionTimeLimitMinutes,
+        )
     }
 }
