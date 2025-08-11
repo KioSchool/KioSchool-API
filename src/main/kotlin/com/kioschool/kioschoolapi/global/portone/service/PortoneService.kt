@@ -1,18 +1,21 @@
 package com.kioschool.kioschoolapi.global.portone.service
 
 import com.kioschool.kioschoolapi.domain.account.exception.IncorrectAccountHolderException
-import com.kioschool.kioschoolapi.global.portone.PortoneProperties
 import com.kioschool.kioschoolapi.global.portone.api.PortoneApi
 import com.kioschool.kioschoolapi.global.portone.dto.GetTokenRequest
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 
 @Service
 class PortoneService(
-    private val portoneProperties: PortoneProperties,
+    @Value("\${portone.api-key}")
+    private val apiKey: String,
+    @Value("\${portone.api-secret}")
+    private val apiSecret: String,
     private val portoneApi: PortoneApi
 ) {
     private fun getAccessToken(): String {
-        val response = portoneApi.getToken(GetTokenRequest(portoneProperties.apiKey, portoneProperties.apiSecret)).execute()
+        val response = portoneApi.getToken(GetTokenRequest(apiKey, apiSecret)).execute()
         return "Bearer ${response.body()?.response?.access_token ?: ""}"
     }
 

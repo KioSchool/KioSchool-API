@@ -9,9 +9,9 @@ import com.kioschool.kioschoolapi.domain.workspace.exception.NoPermissionToJoinW
 import com.kioschool.kioschoolapi.domain.workspace.exception.WorkspaceInaccessibleException
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepository
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceTableRepository
-import com.kioschool.kioschoolapi.global.aws.AwsProperties
 import com.kioschool.kioschoolapi.global.aws.S3Service
 import com.kioschool.kioschoolapi.global.common.enums.UserRole
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
@@ -20,7 +20,8 @@ import java.util.*
 
 @Service
 class WorkspaceService(
-    private val awsProperties: AwsProperties,
+    @Value("\${cloud.aws.s3.default-path}")
+    private val workspacePath: String,
     val workspaceRepository: WorkspaceRepository,
     val workspaceTableRepository: WorkspaceTableRepository,
     val userService: UserService,
@@ -127,7 +128,7 @@ class WorkspaceService(
     fun saveWorkspaceImages(workspace: Workspace, newImageFiles: List<MultipartFile>): Workspace {
         newImageFiles.forEach {
             val path =
-                "${awsProperties.s3.defaultPath}/workspace${workspace.id}/workspace/${System.currentTimeMillis()}.jpg"
+                "$workspacePath/workspace${workspace.id}/workspace/${System.currentTimeMillis()}.jpg"
             val imageUrl = s3Service.uploadFile(it, path)
             workspace.images.add(WorkspaceImage(workspace = workspace, url = imageUrl))
         }
