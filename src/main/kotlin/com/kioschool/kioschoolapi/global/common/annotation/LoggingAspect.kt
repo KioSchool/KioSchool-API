@@ -1,4 +1,4 @@
-package com.kioschool.kioschoolapi.global.common.aspect
+package com.kioschool.kioschoolapi.global.common.annotation
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import jakarta.servlet.ServletRequest

@@ -6,6 +6,7 @@ import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.SignatureAlgorithm
 import io.jsonwebtoken.security.Keys
 import jakarta.servlet.http.HttpServletRequest
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpHeaders
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
@@ -15,10 +16,11 @@ import java.util.*
 
 @Component
 class JwtProvider(
-    jwtProperties: JwtProperties,
+    @Value("\${jwt.secret-key}")
+    private val salt: String,
     private val userDetailService: CustomUserDetailService
 ) {
-    private val secretKey = Keys.hmacShaKeyFor(jwtProperties.secretKey.toByteArray(StandardCharset.UTF_8))
+    private val secretKey = Keys.hmacShaKeyFor(salt.toByteArray(StandardCharset.UTF_8))
     private val expirationTime = 1000L * 60 * 60 * 24
 
     fun createToken(user: User): String {
