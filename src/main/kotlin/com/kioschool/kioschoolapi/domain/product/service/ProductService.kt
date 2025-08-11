@@ -10,16 +10,15 @@ import com.kioschool.kioschoolapi.domain.product.repository.ProductCategoryRepos
 import com.kioschool.kioschoolapi.domain.product.repository.ProductRepository
 import com.kioschool.kioschoolapi.domain.workspace.entity.Workspace
 import com.kioschool.kioschoolapi.domain.workspace.exception.WorkspaceInaccessibleException
+import com.kioschool.kioschoolapi.global.aws.AwsProperties
 import com.kioschool.kioschoolapi.global.aws.S3Service
 import jakarta.transaction.Transactional
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 
 @Service
 class ProductService(
-    @Value("\${cloud.aws.s3.default-path}")
-    private val productPath: String,
+    private val awsProperties: AwsProperties,
     private val productRepository: ProductRepository,
     private val customProductRepository: CustomProductRepository,
     private val productCategoryRepository: ProductCategoryRepository,
@@ -84,7 +83,7 @@ class ProductService(
     fun getImageUrl(workspaceId: Long, productId: Long, file: MultipartFile?): String? {
         val date = System.currentTimeMillis()
         val path =
-            "$productPath/workspace$workspaceId/product/product${productId}/${date.hashCode()}.jpg"
+            "${awsProperties.s3.defaultPath}/workspace$workspaceId/product/product${productId}/${date.hashCode()}.jpg"
         return if (file != null) s3Service.uploadFile(file, path) else null
     }
 

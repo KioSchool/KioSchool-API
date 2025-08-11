@@ -99,6 +99,7 @@ class WorkspaceFacadeTest : DescribeSpec({
             every { userService.getUser(username) } returns user
             every { workspaceService.checkCanCreateWorkspace(user) } just Runs
             every { workspaceService.saveNewWorkspace(user, name, description) } returns workspace
+            every { workspaceService.updateWorkspaceTables(workspace) } just Runs
             every { discordService.sendWorkspaceCreate(workspace) } just Runs
 
             val result = sut.createWorkspace(username, name, description)
@@ -108,6 +109,7 @@ class WorkspaceFacadeTest : DescribeSpec({
             verify { userService.getUser(username) }
             verify { workspaceService.checkCanCreateWorkspace(user) }
             verify { workspaceService.saveNewWorkspace(user, name, description) }
+            verify { workspaceService.updateWorkspaceTables(workspace) }
             verify { discordService.sendWorkspaceCreate(workspace) }
         }
 
@@ -125,6 +127,7 @@ class WorkspaceFacadeTest : DescribeSpec({
             verify { userService.getUser(username) }
             verify(exactly = 0) { workspaceService.checkCanCreateWorkspace(any()) }
             verify(exactly = 0) { workspaceService.saveNewWorkspace(any(), any(), any()) }
+            verify(exactly = 0) { workspaceService.updateWorkspaceTables(any()) }
             verify(exactly = 0) { discordService.sendWorkspaceCreate(any()) }
         }
 
@@ -144,6 +147,7 @@ class WorkspaceFacadeTest : DescribeSpec({
             verify { userService.getUser(username) }
             verify { workspaceService.checkCanCreateWorkspace(user) }
             verify(exactly = 0) { workspaceService.saveNewWorkspace(any(), any(), any()) }
+            verify(exactly = 0) { workspaceService.updateWorkspaceTables(any()) }
             verify(exactly = 0) { discordService.sendWorkspaceCreate(any()) }
         }
     }
