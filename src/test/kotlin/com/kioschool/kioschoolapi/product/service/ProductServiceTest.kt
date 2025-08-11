@@ -9,6 +9,7 @@ import com.kioschool.kioschoolapi.domain.product.repository.ProductCategoryRepos
 import com.kioschool.kioschoolapi.domain.product.repository.ProductRepository
 import com.kioschool.kioschoolapi.domain.product.service.ProductService
 import com.kioschool.kioschoolapi.factory.SampleEntity
+import com.kioschool.kioschoolapi.global.aws.AwsProperties
 import com.kioschool.kioschoolapi.global.aws.S3Service
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
@@ -22,8 +23,9 @@ class ProductServiceTest : DescribeSpec({
     val customRepository = mockk<CustomProductRepository>()
     val categoryRepository = mockk<ProductCategoryRepository>()
     val s3Service = mockk<S3Service>()
+    val awsProperties = mockk<AwsProperties>()
     val sut = ProductService(
-        "test",
+        awsProperties,
         repository,
         customRepository,
         categoryRepository,

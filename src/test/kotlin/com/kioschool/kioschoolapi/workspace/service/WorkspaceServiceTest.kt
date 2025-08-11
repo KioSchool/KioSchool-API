@@ -10,6 +10,7 @@ import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepositor
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceTableRepository
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.factory.SampleEntity
+import com.kioschool.kioschoolapi.global.aws.AwsProperties
 import com.kioschool.kioschoolapi.global.aws.S3Service
 import com.kioschool.kioschoolapi.global.common.enums.UserRole
 import io.kotest.assertions.throwables.shouldThrow
@@ -26,8 +27,15 @@ class WorkspaceServiceTest : DescribeSpec({
     val workspaceTableRepository = mockk<WorkspaceTableRepository>()
     val userService = mockk<UserService>()
     val s3Service = mockk<S3Service>()
+    val awsProperties = mockk<AwsProperties>()
 
-    val sut = WorkspaceService("test", repository, workspaceTableRepository, userService, s3Service)
+    val sut = WorkspaceService(
+        awsProperties,
+        repository,
+        workspaceTableRepository,
+        userService,
+        s3Service
+    )
 
     beforeTest {
         mockkObject(repository)
