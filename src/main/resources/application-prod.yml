@@ -20,3 +20,9 @@ kioschool:
   base-url: "https://kio-school.com"
   cookie:
     secure: true
+management:
+  endpoints:
+    web:
+      cors:
+        allowed-origins: "https://kio-school.com"
+        allowed-methods: "*"
