@@ -3,6 +3,7 @@ package com.kioschool.kioschoolapi.global.common.schedule
 import com.kioschool.kioschoolapi.domain.order.repository.OrderSessionRepository
 import com.kioschool.kioschoolapi.domain.order.service.OrderService
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceTableRepository
+import jakarta.transaction.Transactional
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime
@@ -18,6 +19,7 @@ class Scheduler(
         orderService.resetAllOrderNumber()
     }
 
+    @Transactional
     @Scheduled(cron = "0 0 9 * * *", zone = "Asia/Seoul")
     fun resetAllOrderSession() {
         val notEndedOrderSessions = orderSessionRepository.findAllByEndAtIsNull()
