@@ -23,7 +23,7 @@ class Scheduler(
     @Scheduled(cron = "0 0 9 * * *", zone = "Asia/Seoul")
     fun resetAllOrderSession() {
         val notEndedOrderSessions = orderSessionRepository.findAllByEndAtIsNull()
-        val workspaceTables = workspaceTableRepository.findAll()
+        val workspaceTables = workspaceTableRepository.findAllByOrderSessionIsNotNull()
 
         notEndedOrderSessions.forEach { orderSession ->
             orderSession.endAt = LocalDateTime.now()
