@@ -10,4 +10,5 @@ interface WorkspaceTableRepository : JpaRepository<WorkspaceTable, Long> {
     fun findByTableNumberAndWorkspace(tableNumber: Int, workspace: Workspace): WorkspaceTable
     fun findAllByWorkspaceOrderByTableNumber(workspace: Workspace): List<WorkspaceTable>
     fun countAllByWorkspace(workspace: Workspace): Long
+    fun findAllByOrderSessionIsNotNull(): List<WorkspaceTable>
 }
