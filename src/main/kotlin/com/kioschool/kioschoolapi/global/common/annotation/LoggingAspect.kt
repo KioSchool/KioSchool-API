@@ -3,6 +3,7 @@ package com.kioschool.kioschoolapi.global.common.annotation
 import com.fasterxml.jackson.databind.ObjectMapper
 import jakarta.servlet.ServletRequest
 import jakarta.servlet.ServletResponse
+import jakarta.servlet.http.HttpServletRequest
 import org.aspectj.lang.ProceedingJoinPoint
 import org.aspectj.lang.annotation.Around
 import org.aspectj.lang.annotation.Aspect
@@ -10,7 +11,10 @@ import org.aspectj.lang.annotation.Pointcut
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import org.springframework.util.StopWatch
+import org.springframework.web.context.request.RequestContextHolder
+import org.springframework.web.context.request.ServletRequestAttributes
 import org.springframework.web.multipart.MultipartFile
+import java.util.*
 
 @Aspect
 @Component
@@ -36,6 +40,14 @@ class LoggingAspect(private val objectMapper: ObjectMapper) {
 
         // Filter out web-related objects from arguments
         val filteredArgs = filterWebObjects(args)
+
+        try {
+            val request =
+                (RequestContextHolder.currentRequestAttributes() as ServletRequestAttributes).request
+            logRequestDetails(request)
+        } catch (e: Exception) {
+            log.warn("Could not log request details: {}", e.message)
+        }
 
         // 메서드 실행 전 로그
         log.info(
@@ -68,6 +80,21 @@ class LoggingAspect(private val objectMapper: ObjectMapper) {
                 executionTime
             )
         }
+    }
+
+    private fun logRequestDetails(request: HttpServletRequest) {
+        val requestDetails = StringBuilder()
+        requestDetails.append("\n--- [AOP] INCOMING REQUEST ---\n")
+        requestDetails.append("URI    : ${request.requestURI}\n")
+        requestDetails.append("Method : ${request.method}\n")
+        requestDetails.append("Headers:\n")
+
+        val headerNames = request.headerNames ?: Collections.emptyEnumeration()
+        headerNames.asSequence().forEach { headerName ->
+            requestDetails.append("  $headerName : ${request.getHeader(headerName)}\n")
+        }
+        requestDetails.append("----------------------------\n")
+        log.info(requestDetails.toString())
     }
 
     private fun filterWebObjects(obj: Any?): Any? {
