@@ -30,6 +30,7 @@ class WebSocketConfiguration(
         registry.addEndpoint("/ws")
             .setAllowedOrigins(allowedOrigins)
             .addInterceptors(stompHandshakeInterceptor())
+            .withSockJS()
     }
 
     override fun configureClientInboundChannel(registration: ChannelRegistration) {
