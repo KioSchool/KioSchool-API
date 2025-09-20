@@ -47,3 +47,7 @@ springdoc:
 portone:
   api-key: "${PORTONE_API_KEY}"
   api-secret: "${PORTONE_API_SECRET}"
+management:
+  health:
+    defaults:
+      enabled: false
