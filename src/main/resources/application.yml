@@ -37,7 +37,7 @@ server:
   tomcat:
     threads:
       min-spare: 10
-      max: 80
+      max: 120
     accept-count: 100
   servlet:
     session:
