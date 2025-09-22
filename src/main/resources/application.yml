@@ -34,6 +34,11 @@ cloud:
     stack:
       auto: false
 server:
+  tomcat:
+    threads:
+      min-spare: 10
+      max: 80
+    accept-count: 100
   servlet:
     session:
       cookie:
