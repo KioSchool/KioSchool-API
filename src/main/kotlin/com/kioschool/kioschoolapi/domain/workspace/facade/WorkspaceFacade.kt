@@ -36,6 +36,7 @@ class WorkspaceFacade(
         workspaceService.checkCanCreateWorkspace(user)
 
         val workspace = workspaceService.saveNewWorkspace(user, name, description)
+        workspaceService.updateWorkspaceTables(workspace)
         discordService.sendWorkspaceCreate(workspace)
 
         return workspace
