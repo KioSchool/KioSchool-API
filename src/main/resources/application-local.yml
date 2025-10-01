@@ -17,7 +17,7 @@ cloud:
     s3:
       default-path: local
 websocket:
-  allowed-origins: "*"
+  allowed-origins: "http://localhost:3000,http://192.168.*.*"
 discord:
   webhook-url: "${DISCORD_WEBHOOK_URL}"
 kioschool:
@@ -28,5 +28,8 @@ management:
   endpoints:
     web:
       cors:
-        allowed-origins: "*"
+        allowed-origins: "http://localhost:3000,http://192.168.*.*"
         allowed-methods: "*"
+server:
+  servlet:
+    context-path: /api
