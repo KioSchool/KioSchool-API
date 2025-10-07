@@ -22,8 +22,10 @@ class EmailServiceTest : DescribeSpec({
     val javaMailSender = mockk<JavaMailSender>()
     val emailCodeRepository = mockk<EmailCodeRepository>()
     val emailDomainRepository = mockk<EmailDomainRepository>()
+    val fromAddress = "test@test.com"
 
     val sut = EmailService(
+        fromAddress,
         javaMailSender,
         emailCodeRepository,
         emailDomainRepository
