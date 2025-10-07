@@ -10,15 +10,15 @@ spring:
   thymeleaf:
     enabled: false
   mail:
-    host: smtp.gmail.com
-    port: 587
+    host: smtp.migadu.com
+    port: 465
     username: "${MAIL_USERNAME}"
     password: "${MAIL_PASSWORD}"
     properties:
       mail:
         smtp:
           auth: true
-          starttls:
+          ssl:
             enable: true
 jwt:
   secret-key: "${JWT_SECRET_KEY}"

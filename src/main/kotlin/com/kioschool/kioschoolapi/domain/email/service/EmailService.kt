@@ -10,6 +10,7 @@ import com.kioschool.kioschoolapi.domain.email.repository.EmailCodeRepository
 import com.kioschool.kioschoolapi.domain.email.repository.EmailDomainRepository
 import com.kioschool.kioschoolapi.domain.user.exception.UserNotFoundException
 import jakarta.transaction.Transactional
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
@@ -20,10 +21,13 @@ import java.util.*
 
 @Service
 class EmailService(
+    @Value("\${spring.mail.username}")
+    private val fromAddress: String,
     private val javaMailSender: JavaMailSender,
     private val emailCodeRepository: EmailCodeRepository,
     private val emailDomainRepository: EmailDomainRepository
 ) {
+
     fun createOrUpdateRegisterEmailCode(emailAddress: String, code: String): EmailCode {
         val emailCode =
             emailCodeRepository.findByEmailAndKind(emailAddress, EmailKind.REGISTER) ?: EmailCode(
@@ -42,6 +46,9 @@ class EmailService(
     fun sendEmail(address: String, subject: String, text: String) {
         val message = javaMailSender.createMimeMessage()
         val helper = MimeMessageHelper(message, true, "UTF-8")
+
+        helper.setFrom(fromAddress)
+
         helper.setTo(address)
         helper.setSubject(subject)
         helper.setText(text, true)
