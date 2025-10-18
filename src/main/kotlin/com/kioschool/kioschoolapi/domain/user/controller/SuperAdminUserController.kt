@@ -1,6 +1,6 @@
 package com.kioschool.kioschoolapi.domain.user.controller
 
-import com.kioschool.kioschoolapi.domain.user.entity.User
+import com.kioschool.kioschoolapi.domain.user.dto.UserDto
 import com.kioschool.kioschoolapi.domain.user.facade.UserFacade
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -22,7 +22,7 @@ class SuperAdminUserController(
         @RequestParam page: Int,
         @RequestParam size: Int,
         @RequestParam name: String?
-    ): Page<User> {
-        return userFacade.getAllUsers(name, page, size)
+    ): Page<UserDto> {
+        return userFacade.getAllUsers(name, page, size).map { UserDto.of(it) }
     }
 }

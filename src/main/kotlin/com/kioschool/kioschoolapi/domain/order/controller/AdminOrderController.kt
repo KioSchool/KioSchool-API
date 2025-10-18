@@ -1,9 +1,6 @@
 package com.kioschool.kioschoolapi.domain.order.controller
 
 import com.kioschool.kioschoolapi.domain.order.dto.*
-import com.kioschool.kioschoolapi.domain.order.entity.Order
-import com.kioschool.kioschoolapi.domain.order.entity.OrderProduct
-import com.kioschool.kioschoolapi.domain.order.entity.OrderSession
 import com.kioschool.kioschoolapi.domain.order.facade.OrderFacade
 import com.kioschool.kioschoolapi.global.common.annotation.AdminUsername
 import io.swagger.v3.oas.annotations.Operation
@@ -28,7 +25,7 @@ class AdminOrderController(
         @RequestParam("endDate") endDate: LocalDateTime? = null,
         @RequestParam("status") status: String? = null,
         @RequestParam("tableNumber") tableNumber: Int? = null
-    ): List<Order> {
+    ): List<OrderDto> {
         return orderFacade.getOrdersByCondition(
             username,
             workspaceId,
@@ -36,7 +33,7 @@ class AdminOrderController(
             endDate,
             status,
             tableNumber
-        )
+        ).map { OrderDto.of(it) }
     }
 
     @Operation(summary = "주문 누적 총액 조회", description = "주문 누적 총액을 조회합니다.")
@@ -83,14 +80,14 @@ class AdminOrderController(
         @RequestParam("tableNumber") tableNumber: Int,
         @RequestParam("page") page: Int,
         @RequestParam("size") size: Int
-    ): Page<Order> {
+    ): Page<OrderDto> {
         return orderFacade.getOrdersByTable(
             username,
             workspaceId,
             tableNumber,
             page,
             size
-        )
+        ).map { OrderDto.of(it) }
     }
 
     @Operation(summary = "실시간 주문 조회", description = "실시간 주문을 조회합니다.")
@@ -98,8 +95,8 @@ class AdminOrderController(
     fun getRealtimeOrders(
         @AdminUsername username: String,
         @RequestParam("workspaceId") workspaceId: Long
-    ): List<Order> {
-        return orderFacade.getRealtimeOrders(username, workspaceId)
+    ): List<OrderDto> {
+        return orderFacade.getRealtimeOrders(username, workspaceId).map { OrderDto.of(it) }
     }
 
     @Operation(summary = "주문 상태 변경", description = "주문을 상태를 변경합니다.")
@@ -107,13 +104,13 @@ class AdminOrderController(
     fun changeOrderStatus(
         @AdminUsername username: String,
         @RequestBody body: ChangeOrderStatusRequestBody
-    ): Order {
-        return orderFacade.changeOrderStatus(
+    ): OrderDto {
+        return OrderDto.of(orderFacade.changeOrderStatus(
             username,
             body.workspaceId,
             body.orderId,
             body.status
-        )
+        ))
     }
 
     @Operation(summary = "주문 별 상품 서빙 개수 변경", description = "주문 별 상품의 서빙 개수를 변경합니다.")
@@ -121,13 +118,13 @@ class AdminOrderController(
     fun changeOrderProductServedCount(
         @AdminUsername username: String,
         @RequestBody body: ChangeOrderProductServedCount
-    ): OrderProduct {
-        return orderFacade.changeOrderProductServedCount(
+    ): OrderProductDto {
+        return OrderProductDto.of(orderFacade.changeOrderProductServedCount(
             username,
             body.workspaceId,
             body.orderProductId,
             body.servedCount
-        )
+        ))
     }
 
     @Operation(summary = "주문 번호 초기화", description = "주문 번호를 초기화합니다.")
@@ -145,8 +142,8 @@ class AdminOrderController(
         @AdminUsername username: String,
         @RequestParam("workspaceId") workspaceId: Long,
         @RequestParam("orderSessionId") orderSessionId: Long
-    ): List<Order> {
-        return orderFacade.getOrdersByOrderSession(username, workspaceId, orderSessionId)
+    ): List<OrderDto> {
+        return orderFacade.getOrdersByOrderSession(username, workspaceId, orderSessionId).map { OrderDto.of(it) }
     }
 
     @Operation(summary = "주문 세션 시작", description = "주문 세션을 시작합니다.")
@@ -154,8 +151,8 @@ class AdminOrderController(
     fun startOrderSession(
         @AdminUsername username: String,
         @RequestBody body: StartOrderSessionRequestBody
-    ): OrderSession {
-        return orderFacade.startOrderSession(username, body.workspaceId, body.tableNumber)
+    ): OrderSessionDto {
+        return OrderSessionDto.of(orderFacade.startOrderSession(username, body.workspaceId, body.tableNumber))
     }
 
     @Operation(summary = "주문 세션 예상 종료 시간 변경", description = "주문 세션의 예상 종료 시간을 변경합니다.")
@@ -163,13 +160,13 @@ class AdminOrderController(
     fun updateExpectedEndTime(
         @AdminUsername username: String,
         @RequestBody body: UpdateExpectedEndAtRequestBody
-    ): OrderSession {
-        return orderFacade.updateOrderSessionExpectedEndAt(
+    ): OrderSessionDto {
+        return OrderSessionDto.of(orderFacade.updateOrderSessionExpectedEndAt(
             username,
             body.workspaceId,
             body.orderSessionId,
             body.expectedEndAt
-        )
+        ))
     }
 
     @Operation(summary = "주문 세션 종료", description = "주문 세션을 종료합니다.")
@@ -177,12 +174,12 @@ class AdminOrderController(
     fun endOrderSession(
         @AdminUsername username: String,
         @RequestBody body: EndOrderSessionRequestBody
-    ): OrderSession {
-        return orderFacade.endOrderSession(
+    ): OrderSessionDto {
+        return OrderSessionDto.of(orderFacade.endOrderSession(
             username,
             body.workspaceId,
             body.tableNumber,
             body.orderSessionId
-        )
+        ))
     }
 }

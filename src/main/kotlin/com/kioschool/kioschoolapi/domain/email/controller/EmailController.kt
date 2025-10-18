@@ -1,6 +1,6 @@
 package com.kioschool.kioschoolapi.domain.email.controller
 
-import com.kioschool.kioschoolapi.domain.email.entity.EmailDomain
+import com.kioschool.kioschoolapi.domain.email.dto.EmailDomainDto
 import com.kioschool.kioschoolapi.domain.email.facade.EmailFacade
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -20,7 +20,7 @@ class EmailController(
         @RequestParam(required = false) name: String?,
         @RequestParam page: Int,
         @RequestParam size: Int
-    ): Page<EmailDomain> {
-        return emailFacade.getAllEmailDomains(name, page, size)
+    ): Page<EmailDomainDto> {
+        return emailFacade.getAllEmailDomains(name, page, size).map { EmailDomainDto.of(it) }
     }
 }

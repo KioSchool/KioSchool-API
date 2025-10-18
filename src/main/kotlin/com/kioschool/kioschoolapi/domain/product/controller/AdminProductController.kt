@@ -1,8 +1,6 @@
 package com.kioschool.kioschoolapi.domain.product.controller
 
 import com.kioschool.kioschoolapi.domain.product.dto.*
-import com.kioschool.kioschoolapi.domain.product.entity.Product
-import com.kioschool.kioschoolapi.domain.product.entity.ProductCategory
 import com.kioschool.kioschoolapi.domain.product.facade.ProductFacade
 import com.kioschool.kioschoolapi.global.common.annotation.AdminUsername
 import io.swagger.v3.oas.annotations.Operation
@@ -22,8 +20,8 @@ class AdminProductController(
     fun getProducts(
         @AdminUsername username: String,
         @RequestParam workspaceId: Long
-    ): List<Product> {
-        return productFacade.getProducts(username, workspaceId)
+    ): List<ProductDto> {
+        return productFacade.getProducts(username, workspaceId).map { ProductDto.of(it) }
     }
 
     @Operation(summary = "상품 조회", description = "상품 하나를 조회합니다.")
@@ -31,8 +29,8 @@ class AdminProductController(
     fun getProduct(
         @AdminUsername username: String,
         @RequestParam productId: Long
-    ): Product {
-        return productFacade.getProduct(username, productId)
+    ): ProductDto {
+        return ProductDto.of(productFacade.getProduct(username, productId))
     }
 
     @Operation(summary = "상품 카테고리 조회", description = "워크스페이스에 등록된 모든 상품 카테고리를 조회합니다.")
@@ -40,8 +38,8 @@ class AdminProductController(
     fun getProductCategories(
         @AdminUsername username: String,
         @RequestParam workspaceId: Long
-    ): List<ProductCategory> {
-        return productFacade.getProductCategories(username, workspaceId)
+    ): List<ProductCategoryDto> {
+        return productFacade.getProductCategories(username, workspaceId).map { ProductCategoryDto.of(it) }
     }
 
     @Operation(summary = "상품 생성", description = "상품을 생성합니다.")
@@ -50,8 +48,8 @@ class AdminProductController(
         @AdminUsername username: String,
         @RequestPart body: CreateProductRequestBody,
         @RequestPart file: MultipartFile?
-    ): Product {
-        return productFacade.createProduct(
+    ): ProductDto {
+        return ProductDto.of(productFacade.createProduct(
             username,
             body.workspaceId,
             body.name,
@@ -59,7 +57,7 @@ class AdminProductController(
             body.price,
             body.productCategoryId,
             file
-        )
+        ))
     }
 
     @Operation(summary = "상품 수정", description = "상품을 수정합니다.")
@@ -68,8 +66,8 @@ class AdminProductController(
         @AdminUsername username: String,
         @RequestPart body: UpdateProductRequestBody,
         @RequestPart file: MultipartFile?
-    ): Product {
-        return productFacade.updateProduct(
+    ): ProductDto {
+        return ProductDto.of(productFacade.updateProduct(
             username,
             body.workspaceId,
             body.productId,
@@ -78,7 +76,7 @@ class AdminProductController(
             body.price,
             body.productCategoryId,
             file
-        )
+        ))
     }
 
     @Operation(summary = "상품 판매 여부 수정", description = "상품의 판매 여부를 수정합니다.")
@@ -86,13 +84,13 @@ class AdminProductController(
     fun updateProductSellable(
         @AdminUsername username: String,
         @RequestBody body: UpdateProductSellableRequestBody,
-    ): Product {
-        return productFacade.updateProductSellable(
+    ): ProductDto {
+        return ProductDto.of(productFacade.updateProductSellable(
             username,
             body.workspaceId,
             body.productId,
             body.isSellable
-        )
+        ))
     }
 
     @Operation(summary = "상품 삭제", description = "상품을 삭제합니다.")
@@ -126,11 +124,11 @@ class AdminProductController(
     fun sortProductCategories(
         @AdminUsername username: String,
         @RequestBody body: SortProductCategoriesRequestBody
-    ): List<ProductCategory> {
+    ): List<ProductCategoryDto> {
         return productFacade.sortProductCategories(
             username,
             body.workspaceId,
             body.productCategoryIds
-        )
+        ).map { ProductCategoryDto.of(it) }
     }
 }

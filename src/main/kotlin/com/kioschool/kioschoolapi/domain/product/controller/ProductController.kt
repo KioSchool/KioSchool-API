@@ -1,5 +1,7 @@
 package com.kioschool.kioschoolapi.domain.product.controller
 
+import com.kioschool.kioschoolapi.domain.product.dto.ProductCategoryDto
+import com.kioschool.kioschoolapi.domain.product.dto.ProductDto
 import com.kioschool.kioschoolapi.domain.product.facade.ProductFacade
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -20,7 +22,9 @@ class ProductController(
     fun getProducts(
         @RequestParam workspaceId: Long,
         @RequestParam categoryId: Long? = null
-    ) = productFacade.getProducts(workspaceId, categoryId)
+    ): List<ProductDto> {
+        return productFacade.getProducts(workspaceId, categoryId).map { ProductDto.of(it) }
+    }
 
     @Operation(
         summary = "상품 카테고리 조회",
@@ -29,5 +33,7 @@ class ProductController(
     @GetMapping("/product-categories")
     fun getProductCategories(
         @RequestParam workspaceId: Long
-    ) = productFacade.getProductCategories(workspaceId)
+    ): List<ProductCategoryDto> {
+        return productFacade.getProductCategories(workspaceId).map { ProductCategoryDto.of(it) }
+    }
 }

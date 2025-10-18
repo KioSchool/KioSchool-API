@@ -1,7 +1,7 @@
 package com.kioschool.kioschoolapi.domain.workspace.controller
 
-import com.kioschool.kioschoolapi.domain.account.entity.Account
-import com.kioschool.kioschoolapi.domain.workspace.entity.Workspace
+import com.kioschool.kioschoolapi.domain.account.dto.AccountDto
+import com.kioschool.kioschoolapi.domain.workspace.dto.WorkspaceDto
 import com.kioschool.kioschoolapi.domain.workspace.facade.WorkspaceFacade
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -18,15 +18,15 @@ class WorkspaceController(
     @GetMapping("/workspace")
     fun getWorkspace(
         @RequestParam workspaceId: Long
-    ): Workspace {
-        return workspaceFacade.getWorkspace(workspaceId)
+    ): WorkspaceDto {
+        return WorkspaceDto.of(workspaceFacade.getWorkspace(workspaceId))
     }
 
     @Operation(summary = "워크스페이스 관리자 계좌 정보 조회", description = "워크스페이스 관리자의 계좌 정보를 조회합니다.")
     @GetMapping("/workspace/account")
     fun getWorkspaceAccount(
         @RequestParam workspaceId: Long
-    ): Account? {
-        return workspaceFacade.getWorkspaceAccount(workspaceId)
+    ): AccountDto? {
+        return workspaceFacade.getWorkspaceAccount(workspaceId)?.let { AccountDto.of(it) }
     }
 }

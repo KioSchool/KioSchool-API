@@ -1,8 +1,6 @@
 package com.kioschool.kioschoolapi.domain.workspace.controller
 
 import com.kioschool.kioschoolapi.domain.workspace.dto.*
-import com.kioschool.kioschoolapi.domain.workspace.entity.Workspace
-import com.kioschool.kioschoolapi.domain.workspace.entity.WorkspaceTable
 import com.kioschool.kioschoolapi.domain.workspace.facade.WorkspaceFacade
 import com.kioschool.kioschoolapi.global.common.annotation.AdminUsername
 import io.swagger.v3.oas.annotations.Operation
@@ -18,8 +16,8 @@ class AdminWorkspaceController(
 ) {
     @Operation(summary = "워크스페이스 조회", description = "가입한 모든 워크스페이스를 조회합니다.")
     @GetMapping("/workspaces")
-    fun getWorkspaces(@AdminUsername username: String): List<Workspace> {
-        return workspaceFacade.getWorkspaces(username)
+    fun getWorkspaces(@AdminUsername username: String): List<WorkspaceDto> {
+        return workspaceFacade.getWorkspaces(username).map { WorkspaceDto.of(it) }
     }
 
     @Operation(summary = "워크스페이스 조회", description = "워크스페이스를 조회합니다.")
@@ -27,8 +25,8 @@ class AdminWorkspaceController(
     fun getWorkspace(
         @AdminUsername username: String,
         @RequestParam workspaceId: Long
-    ): Workspace {
-        return workspaceFacade.getWorkspace(workspaceId)
+    ): WorkspaceDto {
+        return WorkspaceDto.of(workspaceFacade.getWorkspace(workspaceId))
     }
 
     @Operation(summary = "워크스페이스 생성", description = "워크스페이스를 생성합니다.")
@@ -36,8 +34,8 @@ class AdminWorkspaceController(
     fun createWorkspace(
         @AdminUsername username: String,
         @RequestBody body: CreateWorkspaceRequestBody
-    ): Workspace {
-        return workspaceFacade.createWorkspace(username, body.name, body.description)
+    ): WorkspaceDto {
+        return WorkspaceDto.of(workspaceFacade.createWorkspace(username, body.name, body.description))
     }
 
     @Operation(summary = "워크스페이스 정보 수정", description = "워크스페이스 정보를 수정합니다.")
@@ -45,14 +43,14 @@ class AdminWorkspaceController(
     fun updateWorkspace(
         @AdminUsername username: String,
         @RequestBody body: UpdateWorkspaceRequestBody,
-    ): Workspace {
-        return workspaceFacade.updateWorkspaceInfo(
+    ): WorkspaceDto {
+        return WorkspaceDto.of(workspaceFacade.updateWorkspaceInfo(
             username,
             body.workspaceId,
             body.name,
             body.description,
             body.notice
-        )
+        ))
     }
 
     @Operation(summary = "워크스페이스 이미지 수정", description = "워크스페이스 이미지를 수정합니다.")
@@ -61,13 +59,13 @@ class AdminWorkspaceController(
         @AdminUsername username: String,
         @RequestPart body: UpdateWorkspaceImageRequestBody,
         @RequestPart(required = false) imageFiles: List<MultipartFile>?,
-    ): Workspace {
-        return workspaceFacade.updateWorkspaceImage(
+    ): WorkspaceDto {
+        return WorkspaceDto.of(workspaceFacade.updateWorkspaceImage(
             username,
             body.workspaceId,
             body.imageIds,
             imageFiles ?: emptyList()
-        )
+        ))
     }
 
     @Operation(summary = "워크스페이스 초대", description = "워크스페이스에 사용자를 초대합니다.")
@@ -75,8 +73,8 @@ class AdminWorkspaceController(
     fun inviteWorkspace(
         @AdminUsername username: String,
         @RequestBody body: InviteWorkspaceRequestBody
-    ): Workspace {
-        return workspaceFacade.inviteWorkspace(username, body.workspaceId, body.userLoginId)
+    ): WorkspaceDto {
+        return WorkspaceDto.of(workspaceFacade.inviteWorkspace(username, body.workspaceId, body.userLoginId))
     }
 
     @Operation(summary = "워크스페이스 가입", description = "워크스페이스에 가입합니다.<br>초대를 받은 사용자만 가입할 수 있습니다.")
@@ -84,8 +82,8 @@ class AdminWorkspaceController(
     fun joinWorkspace(
         @AdminUsername username: String,
         @RequestBody body: JoinWorkspaceRequestBody
-    ): Workspace {
-        return workspaceFacade.joinWorkspace(username, body.workspaceId)
+    ): WorkspaceDto {
+        return WorkspaceDto.of(workspaceFacade.joinWorkspace(username, body.workspaceId))
     }
 
     @Operation(summary = "워크스페이스 탈퇴", description = "워크스페이스에서 탈퇴합니다.")
@@ -93,8 +91,8 @@ class AdminWorkspaceController(
     fun leaveWorkspace(
         @AdminUsername username: String,
         @RequestBody body: LeaveWorkspaceRequestBody
-    ): Workspace {
-        return workspaceFacade.leaveWorkspace(username, body.workspaceId)
+    ): WorkspaceDto {
+        return WorkspaceDto.of(workspaceFacade.leaveWorkspace(username, body.workspaceId))
     }
 
     @Operation(summary = "워크스페이스 테이블 개수 수정", description = "워크스페이스의 테이블 개수를 수정합니다.")
@@ -102,8 +100,8 @@ class AdminWorkspaceController(
     fun updateTableCount(
         @AdminUsername username: String,
         @RequestBody body: UpdateTableCountRequestBody
-    ): Workspace {
-        return workspaceFacade.updateTableCount(username, body.workspaceId, body.tableCount)
+    ): WorkspaceDto {
+        return WorkspaceDto.of(workspaceFacade.updateTableCount(username, body.workspaceId, body.tableCount))
     }
 
     @Operation(summary = "워크스페이스 테이블 전체 조회", description = "워크스페이스의 모든 테이블을 조회합니다.")
@@ -111,8 +109,8 @@ class AdminWorkspaceController(
     fun getWorkspaceTables(
         @AdminUsername username: String,
         @RequestParam workspaceId: Long
-    ): List<WorkspaceTable> {
-        return workspaceFacade.getAllWorkspaceTables(username, workspaceId)
+    ): List<WorkspaceTableDto> {
+        return workspaceFacade.getAllWorkspaceTables(username, workspaceId).map { WorkspaceTableDto.of(it) }
     }
 
     @Operation(summary = "워크스페이스 주문 설정 변경", description = "워크스페이스의 설정 중 주문 관련한 설정을 변경합니다.")
@@ -120,12 +118,12 @@ class AdminWorkspaceController(
     fun updateOrderSetting(
         @AdminUsername username: String,
         @RequestBody body: UpdateOrderSettingRequestBody
-    ): Workspace {
-        return workspaceFacade.updateOrderSetting(
+    ): WorkspaceDto {
+        return WorkspaceDto.of(workspaceFacade.updateOrderSetting(
             username,
             body.workspaceId,
             body.useOrderSessionTimeLimit,
             body.orderSessionTimeLimitMinutes,
-        )
+        ))
     }
 }
