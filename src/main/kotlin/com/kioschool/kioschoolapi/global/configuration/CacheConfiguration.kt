@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.KotlinModule
+import com.kioschool.kioschoolapi.global.cache.constant.CacheNames
 import org.springframework.cache.CacheManager
 import org.springframework.cache.annotation.EnableCaching
 import org.springframework.context.annotation.Bean
@@ -46,14 +47,11 @@ class CacheConfiguration {
             )
             .entryTtl(Duration.ofMinutes(30))
 
+        val cacheConfigurations = CacheNames.ALL.associateWith { redisCacheConfiguration }
+
         return RedisCacheManager.builder(redisConnectionFactory)
             .cacheDefaults(redisCacheConfiguration)
-            .withInitialCacheConfigurations(
-                mapOf(
-                    "workspaces" to redisCacheConfiguration,
-                    "product-categories" to redisCacheConfiguration
-                )
-            )
+            .withInitialCacheConfigurations(cacheConfigurations)
             .build()
     }
 }

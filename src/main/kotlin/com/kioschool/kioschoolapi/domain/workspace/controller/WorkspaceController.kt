@@ -3,6 +3,7 @@ package com.kioschool.kioschoolapi.domain.workspace.controller
 import com.kioschool.kioschoolapi.domain.account.dto.common.AccountDto
 import com.kioschool.kioschoolapi.domain.workspace.dto.common.WorkspaceDto
 import com.kioschool.kioschoolapi.domain.workspace.facade.WorkspaceFacade
+import com.kioschool.kioschoolapi.global.cache.constant.CacheNames
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.cache.annotation.Cacheable
@@ -17,7 +18,7 @@ class WorkspaceController(
 ) {
     @Operation(summary = "워크스페이스 조회", description = "워크스페이스를 조회합니다.")
     @GetMapping("/workspace")
-    @Cacheable(cacheNames = ["workspaces"], key = "#workspaceId")
+    @Cacheable(cacheNames = [CacheNames.WORKSPACES], key = "#workspaceId")
     fun getWorkspace(
         @RequestParam workspaceId: Long
     ): WorkspaceDto {

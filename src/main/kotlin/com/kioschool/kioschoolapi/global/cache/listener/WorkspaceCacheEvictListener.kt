@@ -1,8 +1,8 @@
 package com.kioschool.kioschoolapi.global.cache.listener
 
-import com.kioschool.kioschoolapi.domain.product.event.ProductCategoryUpdatedEvent
 import com.kioschool.kioschoolapi.domain.product.event.ProductUpdatedEvent
 import com.kioschool.kioschoolapi.domain.workspace.event.WorkspaceUpdatedEvent
+import com.kioschool.kioschoolapi.global.cache.constant.CacheNames
 import org.springframework.cache.CacheManager
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
@@ -14,16 +14,11 @@ class WorkspaceCacheEvictListener(
 
     @EventListener
     fun handleProductUpdate(event: ProductUpdatedEvent) {
-        cacheManager.getCache("workspaces")?.evict(event.workspaceId)
+        cacheManager.getCache(CacheNames.WORKSPACES)?.evict(event.workspaceId)
     }
 
     @EventListener
     fun handleWorkspaceUpdate(event: WorkspaceUpdatedEvent) {
-        cacheManager.getCache("workspaces")?.evict(event.workspaceId)
-    }
-
-    @EventListener
-    fun handleProductCategoryUpdate(event: ProductCategoryUpdatedEvent) {
-        cacheManager.getCache("product-categories")?.evict(event.workspaceId)
+        cacheManager.getCache(CacheNames.WORKSPACES)?.evict(event.workspaceId)
     }
 }

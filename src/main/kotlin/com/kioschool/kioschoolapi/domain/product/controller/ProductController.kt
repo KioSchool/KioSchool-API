@@ -3,6 +3,7 @@ package com.kioschool.kioschoolapi.domain.product.controller
 import com.kioschool.kioschoolapi.domain.product.dto.common.ProductCategoryDto
 import com.kioschool.kioschoolapi.domain.product.dto.common.ProductDto
 import com.kioschool.kioschoolapi.domain.product.facade.ProductFacade
+import com.kioschool.kioschoolapi.global.cache.constant.CacheNames
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.cache.annotation.Cacheable
@@ -32,7 +33,7 @@ class ProductController(
         description = "워크스페이스에 등록된 모든 상품 카테고리를 조회합니다."
     )
     @GetMapping("/product-categories")
-    @Cacheable(cacheNames = ["product-categories"], key = "#workspaceId")
+    @Cacheable(cacheNames = [CacheNames.PRODUCT_CATEGORIES], key = "#workspaceId")
     fun getProductCategories(
         @RequestParam workspaceId: Long
     ): List<ProductCategoryDto> {
