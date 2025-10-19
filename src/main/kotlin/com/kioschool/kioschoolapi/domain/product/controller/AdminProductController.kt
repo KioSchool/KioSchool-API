@@ -1,10 +1,10 @@
 package com.kioschool.kioschoolapi.domain.product.controller
 
-import com.kioschool.kioschoolapi.domain.product.dto.*
-import com.kioschool.kioschoolapi.domain.product.entity.Product
-import com.kioschool.kioschoolapi.domain.product.entity.ProductCategory
+import com.kioschool.kioschoolapi.domain.product.dto.common.ProductCategoryDto
+import com.kioschool.kioschoolapi.domain.product.dto.common.ProductDto
+import com.kioschool.kioschoolapi.domain.product.dto.request.*
 import com.kioschool.kioschoolapi.domain.product.facade.ProductFacade
-import com.kioschool.kioschoolapi.global.common.annotation.AdminUsername
+import com.kioschool.kioschoolapi.global.security.annotation.AdminUsername
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.MediaType
@@ -22,8 +22,8 @@ class AdminProductController(
     fun getProducts(
         @AdminUsername username: String,
         @RequestParam workspaceId: Long
-    ): List<Product> {
-        return productFacade.getProducts(username, workspaceId)
+    ): List<ProductDto> {
+        return productFacade.getProducts(username, workspaceId).map { ProductDto.of(it) }
     }
 
     @Operation(summary = "상품 조회", description = "상품 하나를 조회합니다.")
@@ -31,8 +31,8 @@ class AdminProductController(
     fun getProduct(
         @AdminUsername username: String,
         @RequestParam productId: Long
-    ): Product {
-        return productFacade.getProduct(username, productId)
+    ): ProductDto {
+        return ProductDto.of(productFacade.getProduct(username, productId))
     }
 
     @Operation(summary = "상품 카테고리 조회", description = "워크스페이스에 등록된 모든 상품 카테고리를 조회합니다.")
@@ -40,8 +40,9 @@ class AdminProductController(
     fun getProductCategories(
         @AdminUsername username: String,
         @RequestParam workspaceId: Long
-    ): List<ProductCategory> {
+    ): List<ProductCategoryDto> {
         return productFacade.getProductCategories(username, workspaceId)
+            .map { ProductCategoryDto.of(it) }
     }
 
     @Operation(summary = "상품 생성", description = "상품을 생성합니다.")
@@ -50,15 +51,17 @@ class AdminProductController(
         @AdminUsername username: String,
         @RequestPart body: CreateProductRequestBody,
         @RequestPart file: MultipartFile?
-    ): Product {
-        return productFacade.createProduct(
-            username,
-            body.workspaceId,
-            body.name,
-            body.description,
-            body.price,
-            body.productCategoryId,
-            file
+    ): ProductDto {
+        return ProductDto.of(
+            productFacade.createProduct(
+                username,
+                body.workspaceId,
+                body.name,
+                body.description,
+                body.price,
+                body.productCategoryId,
+                file
+            )
         )
     }
 
@@ -68,16 +71,18 @@ class AdminProductController(
         @AdminUsername username: String,
         @RequestPart body: UpdateProductRequestBody,
         @RequestPart file: MultipartFile?
-    ): Product {
-        return productFacade.updateProduct(
-            username,
-            body.workspaceId,
-            body.productId,
-            body.name,
-            body.description,
-            body.price,
-            body.productCategoryId,
-            file
+    ): ProductDto {
+        return ProductDto.of(
+            productFacade.updateProduct(
+                username,
+                body.workspaceId,
+                body.productId,
+                body.name,
+                body.description,
+                body.price,
+                body.productCategoryId,
+                file
+            )
         )
     }
 
@@ -86,12 +91,14 @@ class AdminProductController(
     fun updateProductSellable(
         @AdminUsername username: String,
         @RequestBody body: UpdateProductSellableRequestBody,
-    ): Product {
-        return productFacade.updateProductSellable(
-            username,
-            body.workspaceId,
-            body.productId,
-            body.isSellable
+    ): ProductDto {
+        return ProductDto.of(
+            productFacade.updateProductSellable(
+                username,
+                body.workspaceId,
+                body.productId,
+                body.isSellable
+            )
         )
     }
 
@@ -126,11 +133,11 @@ class AdminProductController(
     fun sortProductCategories(
         @AdminUsername username: String,
         @RequestBody body: SortProductCategoriesRequestBody
-    ): List<ProductCategory> {
+    ): List<ProductCategoryDto> {
         return productFacade.sortProductCategories(
             username,
             body.workspaceId,
             body.productCategoryIds
-        )
+        ).map { ProductCategoryDto.of(it) }
     }
 }

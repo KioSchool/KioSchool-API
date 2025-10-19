@@ -1,6 +1,6 @@
 package com.kioschool.kioschoolapi.domain.workspace.controller
 
-import com.kioschool.kioschoolapi.domain.workspace.entity.Workspace
+import com.kioschool.kioschoolapi.domain.workspace.dto.common.WorkspaceDto
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -22,7 +22,7 @@ class SuperAdminWorkspaceController(
         @RequestParam(required = false) name: String?,
         @RequestParam page: Int,
         @RequestParam size: Int
-    ): Page<Workspace> {
-        return workspaceService.getAllWorkspaces(name, page, size)
+    ): Page<WorkspaceDto> {
+        return workspaceService.getAllWorkspaces(name, page, size).map { WorkspaceDto.of(it) }
     }
 }

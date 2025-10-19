@@ -1,6 +1,6 @@
 package com.kioschool.kioschoolapi.global.configuration
 
-import com.kioschool.kioschoolapi.global.common.resolver.AuthenticationArgumentResolver
+import com.kioschool.kioschoolapi.global.security.resolver.AuthenticationArgumentResolver
 import org.springframework.context.annotation.Configuration
 import org.springframework.web.method.support.HandlerMethodArgumentResolver
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer

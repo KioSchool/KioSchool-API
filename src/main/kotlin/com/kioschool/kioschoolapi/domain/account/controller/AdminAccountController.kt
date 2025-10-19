@@ -1,11 +1,11 @@
 package com.kioschool.kioschoolapi.domain.account.controller
 
-import com.kioschool.kioschoolapi.domain.account.dto.RegisterAccountRequestBody
-import com.kioschool.kioschoolapi.domain.account.dto.RegisterTossAccountRequestBody
-import com.kioschool.kioschoolapi.domain.account.entity.Bank
+import com.kioschool.kioschoolapi.domain.account.dto.common.BankDto
+import com.kioschool.kioschoolapi.domain.account.dto.request.RegisterAccountRequestBody
+import com.kioschool.kioschoolapi.domain.account.dto.request.RegisterTossAccountRequestBody
 import com.kioschool.kioschoolapi.domain.account.facade.AccountFacade
-import com.kioschool.kioschoolapi.domain.user.entity.User
-import com.kioschool.kioschoolapi.global.common.annotation.AdminUsername
+import com.kioschool.kioschoolapi.domain.user.dto.common.UserDto
+import com.kioschool.kioschoolapi.global.security.annotation.AdminUsername
 import io.swagger.v3.oas.annotations.Operation
 import org.springframework.web.bind.annotation.*
 
@@ -18,8 +18,8 @@ class AdminAccountController(
     @GetMapping("/banks")
     fun getBanks(
         @AdminUsername username: String
-    ): List<Bank> {
-        return accountFacade.getAllBanks()
+    ): List<BankDto> {
+        return accountFacade.getAllBanks().map { BankDto.of(it) }
     }
 
     @Operation(summary = "계좌 등록", description = "계좌를 등록합니다.")
@@ -27,12 +27,14 @@ class AdminAccountController(
     fun registerAccount(
         @AdminUsername username: String,
         @RequestBody body: RegisterAccountRequestBody
-    ): User {
-        return accountFacade.registerAccount(
-            username,
-            body.bankId,
-            body.accountNumber,
-            body.accountHolder
+    ): UserDto {
+        return UserDto.of(
+            accountFacade.registerAccount(
+                username,
+                body.bankId,
+                body.accountNumber,
+                body.accountHolder
+            )
         )
     }
 
@@ -41,10 +43,12 @@ class AdminAccountController(
     fun registerTossAccount(
         @AdminUsername username: String,
         @RequestBody body: RegisterTossAccountRequestBody
-    ): User {
-        return accountFacade.registerTossAccount(
-            username,
-            body.accountUrl
+    ): UserDto {
+        return UserDto.of(
+            accountFacade.registerTossAccount(
+                username,
+                body.accountUrl
+            )
         )
     }
 
