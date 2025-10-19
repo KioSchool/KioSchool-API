@@ -48,6 +48,12 @@ class CacheConfiguration {
 
         return RedisCacheManager.builder(redisConnectionFactory)
             .cacheDefaults(redisCacheConfiguration)
+            .withInitialCacheConfigurations(
+                mapOf(
+                    "workspaces" to redisCacheConfiguration,
+                    "product-categories" to redisCacheConfiguration
+                )
+            )
             .build()
     }
 }
