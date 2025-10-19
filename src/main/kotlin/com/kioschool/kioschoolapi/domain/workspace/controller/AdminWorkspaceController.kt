@@ -4,9 +4,11 @@ import com.kioschool.kioschoolapi.domain.workspace.dto.common.WorkspaceDto
 import com.kioschool.kioschoolapi.domain.workspace.dto.common.WorkspaceTableDto
 import com.kioschool.kioschoolapi.domain.workspace.dto.request.*
 import com.kioschool.kioschoolapi.domain.workspace.facade.WorkspaceFacade
+import com.kioschool.kioschoolapi.global.cache.constant.CacheNames
 import com.kioschool.kioschoolapi.global.security.annotation.AdminUsername
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
 
@@ -24,6 +26,7 @@ class AdminWorkspaceController(
 
     @Operation(summary = "워크스페이스 조회", description = "워크스페이스를 조회합니다.")
     @GetMapping("/workspace")
+    @Cacheable(cacheNames = [CacheNames.WORKSPACES], key = "#workspaceId")
     fun getWorkspace(
         @AdminUsername username: String,
         @RequestParam workspaceId: Long
