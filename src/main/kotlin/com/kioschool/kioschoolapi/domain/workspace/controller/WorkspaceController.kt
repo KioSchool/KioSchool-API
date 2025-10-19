@@ -5,6 +5,7 @@ import com.kioschool.kioschoolapi.domain.workspace.dto.common.WorkspaceDto
 import com.kioschool.kioschoolapi.domain.workspace.facade.WorkspaceFacade
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
@@ -16,6 +17,7 @@ class WorkspaceController(
 ) {
     @Operation(summary = "워크스페이스 조회", description = "워크스페이스를 조회합니다.")
     @GetMapping("/workspace")
+    @Cacheable(cacheNames = ["workspaces"], key = "#workspaceId")
     fun getWorkspace(
         @RequestParam workspaceId: Long
     ): WorkspaceDto {

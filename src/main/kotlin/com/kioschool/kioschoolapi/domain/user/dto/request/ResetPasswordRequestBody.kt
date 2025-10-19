@@ -1,6 +1,6 @@
 package com.kioschool.kioschoolapi.domain.user.dto.request
 
-import com.kioschool.kioschoolapi.global.common.annotation.Masked
+import com.kioschool.kioschoolapi.global.logging.annotation.Masked
 import jakarta.validation.constraints.NotBlank
 import org.hibernate.validator.constraints.Length
 

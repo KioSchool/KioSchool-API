@@ -1,7 +1,7 @@
-package com.kioschool.kioschoolapi.global.common.schedule.script
+package com.kioschool.kioschoolapi.global.schedule.script
 
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
-import com.kioschool.kioschoolapi.global.common.schedule.Runnable
+import com.kioschool.kioschoolapi.global.schedule.Runnable
 import org.springframework.stereotype.Component
 
 @Component

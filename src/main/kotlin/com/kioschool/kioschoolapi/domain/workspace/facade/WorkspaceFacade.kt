@@ -5,6 +5,7 @@ import com.kioschool.kioschoolapi.domain.user.service.UserService
 import com.kioschool.kioschoolapi.domain.workspace.entity.Workspace
 import com.kioschool.kioschoolapi.domain.workspace.entity.WorkspaceTable
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
+import com.kioschool.kioschoolapi.global.cache.annotation.WorkspaceUpdateEvent
 import com.kioschool.kioschoolapi.global.discord.service.DiscordService
 import org.springframework.stereotype.Component
 import org.springframework.web.multipart.MultipartFile
@@ -42,6 +43,7 @@ class WorkspaceFacade(
         return workspace
     }
 
+    @WorkspaceUpdateEvent
     fun inviteWorkspace(hostUserName: String, workspaceId: Long, userLoginId: String): Workspace {
         val hostUser = userService.getUser(hostUserName)
         val workspace = workspaceService.getWorkspace(workspaceId)
@@ -51,6 +53,7 @@ class WorkspaceFacade(
         return workspaceService.inviteUserToWorkspace(workspace, user)
     }
 
+    @WorkspaceUpdateEvent
     fun joinWorkspace(username: String, workspaceId: Long): Workspace {
         val user = userService.getUser(username)
         val workspace = workspaceService.getWorkspace(workspaceId)
@@ -61,6 +64,7 @@ class WorkspaceFacade(
         return workspace
     }
 
+    @WorkspaceUpdateEvent
     fun leaveWorkspace(username: String, workspaceId: Long): Workspace {
         val user = userService.getUser(username)
         val workspace = workspaceService.getWorkspace(workspaceId)
@@ -68,6 +72,7 @@ class WorkspaceFacade(
         return workspaceService.removeUserFromWorkspace(workspace, user)
     }
 
+    @WorkspaceUpdateEvent
     fun updateTableCount(username: String, workspaceId: Long, tableCount: Int): Workspace {
         val user = userService.getUser(username)
         val workspace = workspaceService.getWorkspace(workspaceId)
@@ -79,6 +84,7 @@ class WorkspaceFacade(
         return workspace
     }
 
+    @WorkspaceUpdateEvent
     fun updateWorkspaceInfo(
         username: String,
         workspaceId: Long,
@@ -97,6 +103,7 @@ class WorkspaceFacade(
         return workspaceService.saveWorkspace(workspace)
     }
 
+    @WorkspaceUpdateEvent
     fun updateWorkspaceImage(
         username: String,
         workspaceId: Long,
@@ -123,6 +130,7 @@ class WorkspaceFacade(
         return workspaceService.getAllWorkspaceTables(workspace)
     }
 
+    @WorkspaceUpdateEvent
     fun updateOrderSetting(
         username: String,
         workspaceId: Long,

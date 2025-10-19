@@ -1,4 +1,4 @@
-package com.kioschool.kioschoolapi.global.common.util
+package com.kioschool.kioschoolapi.global.logging.util
 
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.JsonSerializer

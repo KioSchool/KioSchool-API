@@ -1,4 +1,4 @@
-package com.kioschool.kioschoolapi.global.common.exception
+package com.kioschool.kioschoolapi.global.security.exception
 
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.ResponseStatus

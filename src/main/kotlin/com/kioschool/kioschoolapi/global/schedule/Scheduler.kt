@@ -1,4 +1,4 @@
-package com.kioschool.kioschoolapi.global.common.schedule
+package com.kioschool.kioschoolapi.global.schedule
 
 import com.kioschool.kioschoolapi.domain.order.repository.OrderSessionRepository
 import com.kioschool.kioschoolapi.domain.order.service.OrderService

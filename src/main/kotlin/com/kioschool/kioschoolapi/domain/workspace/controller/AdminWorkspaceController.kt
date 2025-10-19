@@ -2,16 +2,9 @@ package com.kioschool.kioschoolapi.domain.workspace.controller
 
 import com.kioschool.kioschoolapi.domain.workspace.dto.common.WorkspaceDto
 import com.kioschool.kioschoolapi.domain.workspace.dto.common.WorkspaceTableDto
-import com.kioschool.kioschoolapi.domain.workspace.dto.request.CreateWorkspaceRequestBody
-import com.kioschool.kioschoolapi.domain.workspace.dto.request.InviteWorkspaceRequestBody
-import com.kioschool.kioschoolapi.domain.workspace.dto.request.JoinWorkspaceRequestBody
-import com.kioschool.kioschoolapi.domain.workspace.dto.request.LeaveWorkspaceRequestBody
-import com.kioschool.kioschoolapi.domain.workspace.dto.request.UpdateOrderSettingRequestBody
-import com.kioschool.kioschoolapi.domain.workspace.dto.request.UpdateTableCountRequestBody
-import com.kioschool.kioschoolapi.domain.workspace.dto.request.UpdateWorkspaceImageRequestBody
-import com.kioschool.kioschoolapi.domain.workspace.dto.request.UpdateWorkspaceRequestBody
+import com.kioschool.kioschoolapi.domain.workspace.dto.request.*
 import com.kioschool.kioschoolapi.domain.workspace.facade.WorkspaceFacade
-import com.kioschool.kioschoolapi.global.common.annotation.AdminUsername
+import com.kioschool.kioschoolapi.global.security.annotation.AdminUsername
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.web.bind.annotation.*
@@ -44,7 +37,13 @@ class AdminWorkspaceController(
         @AdminUsername username: String,
         @RequestBody body: CreateWorkspaceRequestBody
     ): WorkspaceDto {
-        return WorkspaceDto.of(workspaceFacade.createWorkspace(username, body.name, body.description))
+        return WorkspaceDto.of(
+            workspaceFacade.createWorkspace(
+                username,
+                body.name,
+                body.description
+            )
+        )
     }
 
     @Operation(summary = "워크스페이스 정보 수정", description = "워크스페이스 정보를 수정합니다.")
@@ -53,13 +52,15 @@ class AdminWorkspaceController(
         @AdminUsername username: String,
         @RequestBody body: UpdateWorkspaceRequestBody,
     ): WorkspaceDto {
-        return WorkspaceDto.of(workspaceFacade.updateWorkspaceInfo(
-            username,
-            body.workspaceId,
-            body.name,
-            body.description,
-            body.notice
-        ))
+        return WorkspaceDto.of(
+            workspaceFacade.updateWorkspaceInfo(
+                username,
+                body.workspaceId,
+                body.name,
+                body.description,
+                body.notice
+            )
+        )
     }
 
     @Operation(summary = "워크스페이스 이미지 수정", description = "워크스페이스 이미지를 수정합니다.")
@@ -69,12 +70,14 @@ class AdminWorkspaceController(
         @RequestPart body: UpdateWorkspaceImageRequestBody,
         @RequestPart(required = false) imageFiles: List<MultipartFile>?,
     ): WorkspaceDto {
-        return WorkspaceDto.of(workspaceFacade.updateWorkspaceImage(
-            username,
-            body.workspaceId,
-            body.imageIds,
-            imageFiles ?: emptyList()
-        ))
+        return WorkspaceDto.of(
+            workspaceFacade.updateWorkspaceImage(
+                username,
+                body.workspaceId,
+                body.imageIds,
+                imageFiles ?: emptyList()
+            )
+        )
     }
 
     @Operation(summary = "워크스페이스 초대", description = "워크스페이스에 사용자를 초대합니다.")
@@ -83,7 +86,13 @@ class AdminWorkspaceController(
         @AdminUsername username: String,
         @RequestBody body: InviteWorkspaceRequestBody
     ): WorkspaceDto {
-        return WorkspaceDto.of(workspaceFacade.inviteWorkspace(username, body.workspaceId, body.userLoginId))
+        return WorkspaceDto.of(
+            workspaceFacade.inviteWorkspace(
+                username,
+                body.workspaceId,
+                body.userLoginId
+            )
+        )
     }
 
     @Operation(summary = "워크스페이스 가입", description = "워크스페이스에 가입합니다.<br>초대를 받은 사용자만 가입할 수 있습니다.")
@@ -110,7 +119,13 @@ class AdminWorkspaceController(
         @AdminUsername username: String,
         @RequestBody body: UpdateTableCountRequestBody
     ): WorkspaceDto {
-        return WorkspaceDto.of(workspaceFacade.updateTableCount(username, body.workspaceId, body.tableCount))
+        return WorkspaceDto.of(
+            workspaceFacade.updateTableCount(
+                username,
+                body.workspaceId,
+                body.tableCount
+            )
+        )
     }
 
     @Operation(summary = "워크스페이스 테이블 전체 조회", description = "워크스페이스의 모든 테이블을 조회합니다.")
@@ -119,7 +134,8 @@ class AdminWorkspaceController(
         @AdminUsername username: String,
         @RequestParam workspaceId: Long
     ): List<WorkspaceTableDto> {
-        return workspaceFacade.getAllWorkspaceTables(username, workspaceId).map { WorkspaceTableDto.of(it) }
+        return workspaceFacade.getAllWorkspaceTables(username, workspaceId)
+            .map { WorkspaceTableDto.of(it) }
     }
 
     @Operation(summary = "워크스페이스 주문 설정 변경", description = "워크스페이스의 설정 중 주문 관련한 설정을 변경합니다.")
@@ -128,11 +144,13 @@ class AdminWorkspaceController(
         @AdminUsername username: String,
         @RequestBody body: UpdateOrderSettingRequestBody
     ): WorkspaceDto {
-        return WorkspaceDto.of(workspaceFacade.updateOrderSetting(
-            username,
-            body.workspaceId,
-            body.useOrderSessionTimeLimit,
-            body.orderSessionTimeLimitMinutes,
-        ))
+        return WorkspaceDto.of(
+            workspaceFacade.updateOrderSetting(
+                username,
+                body.workspaceId,
+                body.useOrderSessionTimeLimit,
+                body.orderSessionTimeLimitMinutes,
+            )
+        )
     }
 }

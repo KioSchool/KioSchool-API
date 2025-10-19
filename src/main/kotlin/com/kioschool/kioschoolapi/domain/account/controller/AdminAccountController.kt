@@ -5,7 +5,7 @@ import com.kioschool.kioschoolapi.domain.account.dto.request.RegisterAccountRequ
 import com.kioschool.kioschoolapi.domain.account.dto.request.RegisterTossAccountRequestBody
 import com.kioschool.kioschoolapi.domain.account.facade.AccountFacade
 import com.kioschool.kioschoolapi.domain.user.dto.common.UserDto
-import com.kioschool.kioschoolapi.global.common.annotation.AdminUsername
+import com.kioschool.kioschoolapi.global.security.annotation.AdminUsername
 import io.swagger.v3.oas.annotations.Operation
 import org.springframework.web.bind.annotation.*
 
@@ -28,12 +28,14 @@ class AdminAccountController(
         @AdminUsername username: String,
         @RequestBody body: RegisterAccountRequestBody
     ): UserDto {
-        return UserDto.of(accountFacade.registerAccount(
-            username,
-            body.bankId,
-            body.accountNumber,
-            body.accountHolder
-        ))
+        return UserDto.of(
+            accountFacade.registerAccount(
+                username,
+                body.bankId,
+                body.accountNumber,
+                body.accountHolder
+            )
+        )
     }
 
     @Operation(summary = "토스 계좌 URL 등록", description = "토스 계좌 URL을 등록합니다.")
@@ -42,10 +44,12 @@ class AdminAccountController(
         @AdminUsername username: String,
         @RequestBody body: RegisterTossAccountRequestBody
     ): UserDto {
-        return UserDto.of(accountFacade.registerTossAccount(
-            username,
-            body.accountUrl
-        ))
+        return UserDto.of(
+            accountFacade.registerTossAccount(
+                username,
+                body.accountUrl
+            )
+        )
     }
 
 }

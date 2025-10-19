@@ -1,4 +1,4 @@
-package com.kioschool.kioschoolapi.global.common.schedule.entity
+package com.kioschool.kioschoolapi.global.schedule.entity
 
 import com.kioschool.kioschoolapi.global.common.entity.BaseEntity
 import jakarta.persistence.Column

@@ -11,6 +11,7 @@ import com.kioschool.kioschoolapi.domain.product.repository.ProductRepository
 import com.kioschool.kioschoolapi.domain.workspace.entity.Workspace
 import com.kioschool.kioschoolapi.domain.workspace.exception.WorkspaceInaccessibleException
 import com.kioschool.kioschoolapi.global.aws.S3Service
+import com.kioschool.kioschoolapi.global.cache.annotation.ProductUpdateEvent
 import jakarta.transaction.Transactional
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
@@ -47,6 +48,7 @@ class ProductService(
         return productCategoryRepository.findAllById(productCategoryIds)
     }
 
+    @ProductUpdateEvent
     fun saveProduct(product: Product): Product {
         return productRepository.save(product)
     }
@@ -114,6 +116,7 @@ class ProductService(
         ) == 0L
     }
 
+    @ProductUpdateEvent
     @Transactional
     fun deleteProduct(product: Product): Product {
         productRepository.delete(product)

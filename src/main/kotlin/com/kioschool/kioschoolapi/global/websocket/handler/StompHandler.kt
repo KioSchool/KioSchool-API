@@ -2,8 +2,8 @@ package com.kioschool.kioschoolapi.global.websocket.handler
 
 import com.kioschool.kioschoolapi.domain.workspace.exception.WorkspaceInaccessibleException
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
-import com.kioschool.kioschoolapi.global.common.exception.InvalidJwtException
 import com.kioschool.kioschoolapi.global.security.JwtProvider
+import com.kioschool.kioschoolapi.global.security.exception.InvalidJwtException
 import org.springframework.messaging.Message
 import org.springframework.messaging.MessageChannel
 import org.springframework.messaging.simp.stomp.StompCommand

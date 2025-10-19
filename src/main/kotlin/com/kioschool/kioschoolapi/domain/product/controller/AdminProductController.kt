@@ -2,13 +2,9 @@ package com.kioschool.kioschoolapi.domain.product.controller
 
 import com.kioschool.kioschoolapi.domain.product.dto.common.ProductCategoryDto
 import com.kioschool.kioschoolapi.domain.product.dto.common.ProductDto
-import com.kioschool.kioschoolapi.domain.product.dto.request.CreateProductCategoryRequestBody
-import com.kioschool.kioschoolapi.domain.product.dto.request.CreateProductRequestBody
-import com.kioschool.kioschoolapi.domain.product.dto.request.SortProductCategoriesRequestBody
-import com.kioschool.kioschoolapi.domain.product.dto.request.UpdateProductRequestBody
-import com.kioschool.kioschoolapi.domain.product.dto.request.UpdateProductSellableRequestBody
+import com.kioschool.kioschoolapi.domain.product.dto.request.*
 import com.kioschool.kioschoolapi.domain.product.facade.ProductFacade
-import com.kioschool.kioschoolapi.global.common.annotation.AdminUsername
+import com.kioschool.kioschoolapi.global.security.annotation.AdminUsername
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.MediaType
@@ -45,7 +41,8 @@ class AdminProductController(
         @AdminUsername username: String,
         @RequestParam workspaceId: Long
     ): List<ProductCategoryDto> {
-        return productFacade.getProductCategories(username, workspaceId).map { ProductCategoryDto.of(it) }
+        return productFacade.getProductCategories(username, workspaceId)
+            .map { ProductCategoryDto.of(it) }
     }
 
     @Operation(summary = "상품 생성", description = "상품을 생성합니다.")
@@ -55,15 +52,17 @@ class AdminProductController(
         @RequestPart body: CreateProductRequestBody,
         @RequestPart file: MultipartFile?
     ): ProductDto {
-        return ProductDto.of(productFacade.createProduct(
-            username,
-            body.workspaceId,
-            body.name,
-            body.description,
-            body.price,
-            body.productCategoryId,
-            file
-        ))
+        return ProductDto.of(
+            productFacade.createProduct(
+                username,
+                body.workspaceId,
+                body.name,
+                body.description,
+                body.price,
+                body.productCategoryId,
+                file
+            )
+        )
     }
 
     @Operation(summary = "상품 수정", description = "상품을 수정합니다.")
@@ -73,16 +72,18 @@ class AdminProductController(
         @RequestPart body: UpdateProductRequestBody,
         @RequestPart file: MultipartFile?
     ): ProductDto {
-        return ProductDto.of(productFacade.updateProduct(
-            username,
-            body.workspaceId,
-            body.productId,
-            body.name,
-            body.description,
-            body.price,
-            body.productCategoryId,
-            file
-        ))
+        return ProductDto.of(
+            productFacade.updateProduct(
+                username,
+                body.workspaceId,
+                body.productId,
+                body.name,
+                body.description,
+                body.price,
+                body.productCategoryId,
+                file
+            )
+        )
     }
 
     @Operation(summary = "상품 판매 여부 수정", description = "상품의 판매 여부를 수정합니다.")
@@ -91,12 +92,14 @@ class AdminProductController(
         @AdminUsername username: String,
         @RequestBody body: UpdateProductSellableRequestBody,
     ): ProductDto {
-        return ProductDto.of(productFacade.updateProductSellable(
-            username,
-            body.workspaceId,
-            body.productId,
-            body.isSellable
-        ))
+        return ProductDto.of(
+            productFacade.updateProductSellable(
+                username,
+                body.workspaceId,
+                body.productId,
+                body.isSellable
+            )
+        )
     }
 
     @Operation(summary = "상품 삭제", description = "상품을 삭제합니다.")

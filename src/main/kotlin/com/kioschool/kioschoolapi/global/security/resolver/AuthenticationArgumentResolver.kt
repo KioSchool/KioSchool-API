@@ -1,6 +1,6 @@
-package com.kioschool.kioschoolapi.global.common.resolver
+package com.kioschool.kioschoolapi.global.security.resolver
 
-import com.kioschool.kioschoolapi.global.common.annotation.AdminUsername
+import com.kioschool.kioschoolapi.global.security.annotation.AdminUsername
 import org.springframework.core.MethodParameter
 import org.springframework.stereotype.Component
 import org.springframework.web.bind.support.WebDataBinderFactory

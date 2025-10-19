@@ -46,6 +46,7 @@ dependencies {
     implementation("com.amazonaws:aws-java-sdk-s3:1.12.595")
     implementation("io.jsonwebtoken:jjwt-api:0.11.5")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("org.liquibase:liquibase-core:4.24.0")

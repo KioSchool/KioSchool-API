@@ -1,7 +1,7 @@
-package com.kioschool.kioschoolapi.global.common.schedule
+package com.kioschool.kioschoolapi.global.schedule
 
-import com.kioschool.kioschoolapi.global.common.schedule.entity.ExecutedOneTimeScript
-import com.kioschool.kioschoolapi.global.common.schedule.repository.ExecutedOneTimeScriptRepository
+import com.kioschool.kioschoolapi.global.schedule.entity.ExecutedOneTimeScript
+import com.kioschool.kioschoolapi.global.schedule.repository.ExecutedOneTimeScriptRepository
 import jakarta.transaction.Transactional
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component

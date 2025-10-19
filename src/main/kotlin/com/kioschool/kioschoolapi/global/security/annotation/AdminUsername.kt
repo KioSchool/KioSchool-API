@@ -1,4 +1,4 @@
-package com.kioschool.kioschoolapi.global.common.annotation
+package com.kioschool.kioschoolapi.global.security.annotation
 
 import io.swagger.v3.oas.annotations.Parameter
 

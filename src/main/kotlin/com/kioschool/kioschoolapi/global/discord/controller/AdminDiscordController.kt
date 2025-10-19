@@ -1,8 +1,8 @@
 package com.kioschool.kioschoolapi.global.discord.controller
 
-import com.kioschool.kioschoolapi.global.common.annotation.AdminUsername
 import com.kioschool.kioschoolapi.global.discord.dto.SendPopupResultRequestBody
 import com.kioschool.kioschoolapi.global.discord.service.DiscordService
+import com.kioschool.kioschoolapi.global.security.annotation.AdminUsername
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.web.bind.annotation.PostMapping

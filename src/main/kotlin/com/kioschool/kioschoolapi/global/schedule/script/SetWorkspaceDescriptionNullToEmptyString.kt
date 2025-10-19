@@ -1,7 +1,7 @@
-package com.kioschool.kioschoolapi.global.common.schedule.script
+package com.kioschool.kioschoolapi.global.schedule.script
 
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepository
-import com.kioschool.kioschoolapi.global.common.schedule.Runnable
+import com.kioschool.kioschoolapi.global.schedule.Runnable
 import org.springframework.stereotype.Component
 
 // workspace description null 값을 빈 문자열로 변경
