@@ -1,6 +1,12 @@
 package com.kioschool.kioschoolapi.domain.product.controller
 
-import com.kioschool.kioschoolapi.domain.product.dto.*
+import com.kioschool.kioschoolapi.domain.product.dto.common.ProductCategoryDto
+import com.kioschool.kioschoolapi.domain.product.dto.common.ProductDto
+import com.kioschool.kioschoolapi.domain.product.dto.request.CreateProductCategoryRequestBody
+import com.kioschool.kioschoolapi.domain.product.dto.request.CreateProductRequestBody
+import com.kioschool.kioschoolapi.domain.product.dto.request.SortProductCategoriesRequestBody
+import com.kioschool.kioschoolapi.domain.product.dto.request.UpdateProductRequestBody
+import com.kioschool.kioschoolapi.domain.product.dto.request.UpdateProductSellableRequestBody
 import com.kioschool.kioschoolapi.domain.product.facade.ProductFacade
 import com.kioschool.kioschoolapi.global.common.annotation.AdminUsername
 import io.swagger.v3.oas.annotations.Operation

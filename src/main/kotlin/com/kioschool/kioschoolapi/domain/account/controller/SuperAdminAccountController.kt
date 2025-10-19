@@ -1,8 +1,8 @@
 package com.kioschool.kioschoolapi.domain.account.controller
 
-import com.kioschool.kioschoolapi.domain.account.dto.AddBankRequestBody
-import com.kioschool.kioschoolapi.domain.account.dto.BankDto
-import com.kioschool.kioschoolapi.domain.account.dto.DeleteBankRequestBody
+import com.kioschool.kioschoolapi.domain.account.dto.request.AddBankRequestBody
+import com.kioschool.kioschoolapi.domain.account.dto.common.BankDto
+import com.kioschool.kioschoolapi.domain.account.dto.request.DeleteBankRequestBody
 import com.kioschool.kioschoolapi.domain.account.facade.AccountFacade
 import io.swagger.v3.oas.annotations.Operation
 import org.springframework.data.domain.Page

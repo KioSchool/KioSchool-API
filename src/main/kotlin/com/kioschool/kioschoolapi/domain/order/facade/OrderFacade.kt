@@ -1,8 +1,8 @@
 package com.kioschool.kioschoolapi.domain.order.facade
 
-import com.kioschool.kioschoolapi.domain.order.dto.OrderHourlyPrice
-import com.kioschool.kioschoolapi.domain.order.dto.OrderPrefixSumPrice
-import com.kioschool.kioschoolapi.domain.order.dto.OrderProductRequestBody
+import com.kioschool.kioschoolapi.domain.order.dto.common.OrderHourlyPrice
+import com.kioschool.kioschoolapi.domain.order.dto.common.OrderPrefixSumPrice
+import com.kioschool.kioschoolapi.domain.order.dto.request.OrderProductRequestBody
 import com.kioschool.kioschoolapi.domain.order.entity.Order
 import com.kioschool.kioschoolapi.domain.order.entity.OrderProduct
 import com.kioschool.kioschoolapi.domain.order.entity.OrderSession

@@ -1,7 +1,7 @@
 package com.kioschool.kioschoolapi.domain.order.controller
 
-import com.kioschool.kioschoolapi.domain.order.dto.CreateOrderRequestBody
-import com.kioschool.kioschoolapi.domain.order.dto.OrderDto
+import com.kioschool.kioschoolapi.domain.order.dto.request.CreateOrderRequestBody
+import com.kioschool.kioschoolapi.domain.order.dto.common.OrderDto
 import com.kioschool.kioschoolapi.domain.order.facade.OrderFacade
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag

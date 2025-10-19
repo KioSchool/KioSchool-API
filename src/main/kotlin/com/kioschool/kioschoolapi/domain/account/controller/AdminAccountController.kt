@@ -1,10 +1,10 @@
 package com.kioschool.kioschoolapi.domain.account.controller
 
-import com.kioschool.kioschoolapi.domain.account.dto.BankDto
-import com.kioschool.kioschoolapi.domain.account.dto.RegisterAccountRequestBody
-import com.kioschool.kioschoolapi.domain.account.dto.RegisterTossAccountRequestBody
+import com.kioschool.kioschoolapi.domain.account.dto.common.BankDto
+import com.kioschool.kioschoolapi.domain.account.dto.request.RegisterAccountRequestBody
+import com.kioschool.kioschoolapi.domain.account.dto.request.RegisterTossAccountRequestBody
 import com.kioschool.kioschoolapi.domain.account.facade.AccountFacade
-import com.kioschool.kioschoolapi.domain.user.dto.UserDto
+import com.kioschool.kioschoolapi.domain.user.dto.common.UserDto
 import com.kioschool.kioschoolapi.global.common.annotation.AdminUsername
 import io.swagger.v3.oas.annotations.Operation
 import org.springframework.web.bind.annotation.*

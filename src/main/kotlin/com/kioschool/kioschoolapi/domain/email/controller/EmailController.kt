@@ -1,6 +1,6 @@
 package com.kioschool.kioschoolapi.domain.email.controller
 
-import com.kioschool.kioschoolapi.domain.email.dto.EmailDomainDto
+import com.kioschool.kioschoolapi.domain.email.dto.common.EmailDomainDto
 import com.kioschool.kioschoolapi.domain.email.facade.EmailFacade
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag

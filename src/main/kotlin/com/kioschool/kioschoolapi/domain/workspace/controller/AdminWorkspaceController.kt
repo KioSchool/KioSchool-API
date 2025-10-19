@@ -1,6 +1,15 @@
 package com.kioschool.kioschoolapi.domain.workspace.controller
 
-import com.kioschool.kioschoolapi.domain.workspace.dto.*
+import com.kioschool.kioschoolapi.domain.workspace.dto.common.WorkspaceDto
+import com.kioschool.kioschoolapi.domain.workspace.dto.common.WorkspaceTableDto
+import com.kioschool.kioschoolapi.domain.workspace.dto.request.CreateWorkspaceRequestBody
+import com.kioschool.kioschoolapi.domain.workspace.dto.request.InviteWorkspaceRequestBody
+import com.kioschool.kioschoolapi.domain.workspace.dto.request.JoinWorkspaceRequestBody
+import com.kioschool.kioschoolapi.domain.workspace.dto.request.LeaveWorkspaceRequestBody
+import com.kioschool.kioschoolapi.domain.workspace.dto.request.UpdateOrderSettingRequestBody
+import com.kioschool.kioschoolapi.domain.workspace.dto.request.UpdateTableCountRequestBody
+import com.kioschool.kioschoolapi.domain.workspace.dto.request.UpdateWorkspaceImageRequestBody
+import com.kioschool.kioschoolapi.domain.workspace.dto.request.UpdateWorkspaceRequestBody
 import com.kioschool.kioschoolapi.domain.workspace.facade.WorkspaceFacade
 import com.kioschool.kioschoolapi.global.common.annotation.AdminUsername
 import io.swagger.v3.oas.annotations.Operation

@@ -1,6 +1,6 @@
 package com.kioschool.kioschoolapi.domain.user.controller
 
-import com.kioschool.kioschoolapi.domain.user.dto.UserDto
+import com.kioschool.kioschoolapi.domain.user.dto.common.UserDto
 import com.kioschool.kioschoolapi.domain.user.facade.UserFacade
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag

@@ -1,12 +1,12 @@
 package com.kioschool.kioschoolapi.domain.user.controller
 
-import com.kioschool.kioschoolapi.domain.user.dto.IsDuplicateLoginIdRequestBody
-import com.kioschool.kioschoolapi.domain.user.dto.LoginRequestBody
-import com.kioschool.kioschoolapi.domain.user.dto.RegisterRequestBody
-import com.kioschool.kioschoolapi.domain.user.dto.ResetPasswordRequestBody
-import com.kioschool.kioschoolapi.domain.user.dto.SendEmailCodeRequestBody
-import com.kioschool.kioschoolapi.domain.user.dto.SendResetPasswordEmailRequestBody
-import com.kioschool.kioschoolapi.domain.user.dto.VerifyEmailCodeRequestBody
+import com.kioschool.kioschoolapi.domain.user.dto.request.IsDuplicateLoginIdRequestBody
+import com.kioschool.kioschoolapi.domain.user.dto.request.LoginRequestBody
+import com.kioschool.kioschoolapi.domain.user.dto.request.RegisterRequestBody
+import com.kioschool.kioschoolapi.domain.user.dto.request.ResetPasswordRequestBody
+import com.kioschool.kioschoolapi.domain.user.dto.request.SendEmailCodeRequestBody
+import com.kioschool.kioschoolapi.domain.user.dto.request.SendResetPasswordEmailRequestBody
+import com.kioschool.kioschoolapi.domain.user.dto.request.VerifyEmailCodeRequestBody
 import com.kioschool.kioschoolapi.domain.user.facade.UserFacade
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag

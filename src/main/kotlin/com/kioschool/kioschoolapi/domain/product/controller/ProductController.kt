@@ -1,7 +1,7 @@
 package com.kioschool.kioschoolapi.domain.product.controller
 
-import com.kioschool.kioschoolapi.domain.product.dto.ProductCategoryDto
-import com.kioschool.kioschoolapi.domain.product.dto.ProductDto
+import com.kioschool.kioschoolapi.domain.product.dto.common.ProductCategoryDto
+import com.kioschool.kioschoolapi.domain.product.dto.common.ProductDto
 import com.kioschool.kioschoolapi.domain.product.facade.ProductFacade
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag

@@ -1,6 +1,6 @@
 package com.kioschool.kioschoolapi.domain.workspace.controller
 
-import com.kioschool.kioschoolapi.domain.workspace.dto.WorkspaceDto
+import com.kioschool.kioschoolapi.domain.workspace.dto.common.WorkspaceDto
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag

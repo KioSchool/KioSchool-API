@@ -1,6 +1,6 @@
 package com.kioschool.kioschoolapi.order.facade
 
-import com.kioschool.kioschoolapi.domain.order.dto.OrderProductRequestBody
+import com.kioschool.kioschoolapi.domain.order.dto.request.OrderProductRequestBody
 import com.kioschool.kioschoolapi.domain.order.entity.Order
 import com.kioschool.kioschoolapi.domain.order.exception.NoOrderSessionException
 import com.kioschool.kioschoolapi.domain.order.exception.OrderSessionAlreadyExistException

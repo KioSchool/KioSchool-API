@@ -1,8 +1,8 @@
 package com.kioschool.kioschoolapi.domain.email.controller
 
-import com.kioschool.kioschoolapi.domain.email.dto.EmailDomainDto
-import com.kioschool.kioschoolapi.domain.email.dto.RegisterEmailDomainRequestBody
-import com.kioschool.kioschoolapi.domain.email.dto.RemoveEmailDomainRequestBody
+import com.kioschool.kioschoolapi.domain.email.dto.common.EmailDomainDto
+import com.kioschool.kioschoolapi.domain.email.dto.request.RegisterEmailDomainRequestBody
+import com.kioschool.kioschoolapi.domain.email.dto.request.RemoveEmailDomainRequestBody
 import com.kioschool.kioschoolapi.domain.email.facade.EmailFacade
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag

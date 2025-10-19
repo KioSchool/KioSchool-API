@@ -1,6 +1,6 @@
 package com.kioschool.kioschoolapi.domain.user.controller
 
-import com.kioschool.kioschoolapi.domain.user.dto.UserDto
+import com.kioschool.kioschoolapi.domain.user.dto.common.UserDto
 import com.kioschool.kioschoolapi.domain.user.dto.admin.CreateSuperUserRequestBody
 import com.kioschool.kioschoolapi.domain.user.dto.admin.RegisterAccountUrlRequestBody
 import com.kioschool.kioschoolapi.domain.user.facade.UserFacade
