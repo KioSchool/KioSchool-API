@@ -57,7 +57,7 @@ class EmailFacadeTest : DescribeSpec({
 
             val result = sut.registerEmailDomain(name, domain)
 
-            assert(result == SampleEntity.emailDomain)
+            assert(result.name == SampleEntity.emailDomain.name)
 
             verify { emailService.validateEmailDomainDuplicate(domain) }
             verify { emailService.registerEmailDomain(name, domain) }
@@ -90,7 +90,7 @@ class EmailFacadeTest : DescribeSpec({
 
             val result = sut.deleteEmailDomain(domainId)
 
-            assert(result == SampleEntity.emailDomain)
+            assert(result.name == SampleEntity.emailDomain.name)
 
             verify { emailService.deleteEmailDomain(domainId) }
         }

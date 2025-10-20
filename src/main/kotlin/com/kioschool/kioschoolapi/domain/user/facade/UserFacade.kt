@@ -1,7 +1,7 @@
 package com.kioschool.kioschoolapi.domain.user.facade
 
 import com.kioschool.kioschoolapi.domain.email.service.EmailService
-import com.kioschool.kioschoolapi.domain.user.entity.User
+import com.kioschool.kioschoolapi.domain.user.dto.common.UserDto
 import com.kioschool.kioschoolapi.domain.user.service.UserService
 import com.kioschool.kioschoolapi.global.common.enums.UserRole
 import com.kioschool.kioschoolapi.global.discord.service.DiscordService
@@ -127,28 +127,29 @@ class UserFacade(
         emailService.deleteResetPasswordCode(code)
     }
 
-    fun getUser(loginId: String) = userService.getUser(loginId)
+    fun getUser(loginId: String) = UserDto.of(userService.getUser(loginId))
 
-    fun deleteUser(loginId: String): User {
+    fun deleteUser(loginId: String): UserDto {
         val user = userService.getUser(loginId)
-        return userService.deleteUser(user)
+        return UserDto.of(userService.deleteUser(user))
     }
 
-    fun createSuperAdminUser(username: String, id: String): User {
+    fun createSuperAdminUser(username: String, id: String): UserDto {
         val superAdminUser = userService.getUser(username)
         userService.checkHasSuperAdminPermission(superAdminUser)
 
         val user = userService.getUser(id)
         user.role = UserRole.SUPER_ADMIN
-        return userService.saveUser(user)
+        return UserDto.of(userService.saveUser(user))
     }
 
-    fun registerAccountUrl(username: String, accountUrl: String): User {
+    fun registerAccountUrl(username: String, accountUrl: String): UserDto {
         val user = userService.getUser(username)
         user.accountUrl = userService.removeAmountQueryFromAccountUrl(accountUrl)
 
-        return userService.saveUser(user)
+        return UserDto.of(userService.saveUser(user))
     }
 
-    fun getAllUsers(name: String?, page: Int, size: Int) = userService.getAllUsers(name, page, size)
+    fun getAllUsers(name: String?, page: Int, size: Int) =
+        userService.getAllUsers(name, page, size).map { UserDto.of(it) }
 }

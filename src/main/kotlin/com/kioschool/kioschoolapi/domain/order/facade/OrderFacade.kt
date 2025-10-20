@@ -1,18 +1,18 @@
 package com.kioschool.kioschoolapi.domain.order.facade
 
-import com.kioschool.kioschoolapi.domain.order.dto.common.OrderHourlyPrice
-import com.kioschool.kioschoolapi.domain.order.dto.common.OrderPrefixSumPrice
+import com.kioschool.kioschoolapi.domain.order.dto.common.*
 import com.kioschool.kioschoolapi.domain.order.dto.request.OrderProductRequestBody
 import com.kioschool.kioschoolapi.domain.order.entity.Order
 import com.kioschool.kioschoolapi.domain.order.entity.OrderProduct
-import com.kioschool.kioschoolapi.domain.order.entity.OrderSession
 import com.kioschool.kioschoolapi.domain.order.exception.NoOrderSessionException
 import com.kioschool.kioschoolapi.domain.order.exception.OrderSessionAlreadyExistException
 import com.kioschool.kioschoolapi.domain.order.service.OrderService
 import com.kioschool.kioschoolapi.domain.product.service.ProductService
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
+import com.kioschool.kioschoolapi.global.cache.constant.CacheNames
 import com.kioschool.kioschoolapi.global.common.enums.OrderStatus
 import com.kioschool.kioschoolapi.global.common.enums.WebsocketType
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.data.domain.Page
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
@@ -31,13 +31,11 @@ class OrderFacade(
         tableNumber: Int,
         customerName: String,
         rawOrderProducts: List<OrderProductRequestBody>
-    ): Order {
+    ): OrderDto {
         val workspace = workspaceService.getWorkspace(workspaceId)
         val productIds = rawOrderProducts.map { it.productId }
         val table = workspaceService.getWorkspaceTable(workspace, tableNumber)
-        val currentOrderSession = table.orderSession
-
-        if (currentOrderSession == null) throw NoOrderSessionException()
+        val currentOrderSession = table.orderSession ?: throw NoOrderSessionException()
 
         productService.validateProducts(workspaceId, productIds)
 
@@ -68,11 +66,17 @@ class OrderFacade(
 
         order.orderProducts.addAll(orderProducts)
         order.totalPrice = orderProducts.sumOf { it.totalPrice }
-        return orderService.saveOrderAndSendWebsocketMessage(order, WebsocketType.CREATED)
+        return OrderDto.of(
+            orderService.saveOrderAndSendWebsocketMessage(
+                order,
+                WebsocketType.CREATED
+            )
+        )
     }
 
-    fun getOrder(orderId: Long): Order {
-        return orderService.getOrder(orderId)
+    @Cacheable(cacheNames = [CacheNames.ORDERS], key = "#orderId")
+    fun getOrder(orderId: Long): OrderDto {
+        return OrderDto.of(orderService.getOrder(orderId))
     }
 
     fun getOrdersByCondition(
@@ -82,7 +86,7 @@ class OrderFacade(
         endDate: LocalDateTime?,
         status: String?,
         tableNumber: Int?
-    ): List<Order> {
+    ): List<OrderDto> {
         workspaceService.checkAccessible(username, workspaceId)
 
         val parsedStatus = status?.let { OrderStatus.valueOf(it) }
@@ -93,16 +97,17 @@ class OrderFacade(
             endDate,
             parsedStatus,
             tableNumber
-        )
+        ).map { OrderDto.of(it) }
     }
 
-    fun getRealtimeOrders(username: String, workspaceId: Long): List<Order> {
+    fun getRealtimeOrders(username: String, workspaceId: Long): List<OrderDto> {
         workspaceService.checkAccessible(username, workspaceId)
 
         val startDate = LocalDateTime.now().minusHours(2)
         val endDate = LocalDateTime.now()
 
         return orderService.getAllOrdersByCondition(workspaceId, startDate, endDate, null, null)
+            .map { OrderDto.of(it) }
     }
 
     fun changeOrderStatus(
@@ -110,13 +115,18 @@ class OrderFacade(
         workspaceId: Long,
         orderId: Long,
         status: String
-    ): Order {
+    ): OrderDto {
         workspaceService.checkAccessible(username, workspaceId)
 
         val order = orderService.getOrder(orderId)
         order.status = OrderStatus.valueOf(status)
 
-        return orderService.saveOrderAndSendWebsocketMessage(order, WebsocketType.UPDATED)
+        return OrderDto.of(
+            orderService.saveOrderAndSendWebsocketMessage(
+                order,
+                WebsocketType.UPDATED
+            )
+        )
     }
 
     fun getOrdersByTable(
@@ -125,9 +135,10 @@ class OrderFacade(
         tableNumber: Int,
         page: Int,
         size: Int
-    ): Page<Order> {
+    ): Page<OrderDto> {
         workspaceService.checkAccessible(username, workspaceId)
         return orderService.getAllOrdersByTable(workspaceId, tableNumber, page, size)
+            .map { OrderDto.of(it) }
     }
 
     fun changeOrderProductServedCount(
@@ -135,13 +146,13 @@ class OrderFacade(
         workspaceId: Long,
         orderProductId: Long,
         servedCount: Int
-    ): OrderProduct {
+    ): OrderProductDto {
         workspaceService.checkAccessible(username, workspaceId)
 
         val orderProduct = orderService.getOrderProduct(orderProductId)
         orderProduct.servedCount = servedCount
         orderProduct.isServed = orderProduct.servedCount == orderProduct.quantity
-        return orderService.saveOrderProductAndSendWebsocketMessage(orderProduct)
+        return OrderProductDto.of(orderService.saveOrderProductAndSendWebsocketMessage(orderProduct))
     }
 
     fun resetOrderNumber(username: String, workspaceId: Long) {
@@ -213,7 +224,7 @@ class OrderFacade(
         username: String,
         workspaceId: Long,
         tableNumber: Int
-    ): OrderSession {
+    ): OrderSessionDto {
         workspaceService.checkAccessible(username, workspaceId)
 
         val workspace = workspaceService.getWorkspace(workspaceId)
@@ -226,7 +237,9 @@ class OrderFacade(
         table.orderSession = orderSession
         workspaceService.saveWorkspaceTable(table)
 
-        return orderSession
+        return OrderSessionDto.of(
+            orderSession
+        )
     }
 
     @Transactional
@@ -235,14 +248,14 @@ class OrderFacade(
         workspaceId: Long,
         orderSessionId: Long,
         expectedEndAt: LocalDateTime,
-    ): OrderSession {
+    ): OrderSessionDto {
         workspaceService.checkAccessible(username, workspaceId)
 
         val orderSession = orderService.getOrderSession(orderSessionId)
         workspaceService.checkAccessible(username, orderSession.workspace.id)
         orderSession.expectedEndAt = expectedEndAt
 
-        return orderService.saveOrderSession(orderSession)
+        return OrderSessionDto.of(orderService.saveOrderSession(orderSession))
     }
 
     @Transactional
@@ -251,7 +264,7 @@ class OrderFacade(
         workspaceId: Long,
         tableNumber: Int,
         orderSessionId: Long
-    ): OrderSession {
+    ): OrderSessionDto {
         workspaceService.checkAccessible(username, workspaceId)
 
         val table = workspaceService.getWorkspaceTable(
@@ -263,21 +276,21 @@ class OrderFacade(
 
         val orderSession = orderService.getOrderSession(orderSessionId)
         orderSession.endAt = LocalDateTime.now()
-        return orderService.saveOrderSession(orderSession)
+        return OrderSessionDto.of(orderService.saveOrderSession(orderSession))
     }
 
     fun getOrdersByOrderSession(
         username: String,
         workspaceId: Long,
         orderSessionId: Long
-    ): List<Order> {
+    ): List<OrderDto> {
         workspaceService.checkAccessible(username, workspaceId)
 
         val orderSession = orderService.getOrderSession(orderSessionId)
 
         workspaceService.checkAccessible(username, orderSession.workspace.id)
 
-        return orderService.getAllOrdersByOrderSession(orderSession)
+        return orderService.getAllOrdersByOrderSession(orderSession).map { OrderDto.of(it) }
     }
 
     fun isOrderAvailable(workspaceId: Long, tableNumber: Int): Boolean {

@@ -1,7 +1,7 @@
 package com.kioschool.kioschoolapi.domain.workspace.controller
 
 import com.kioschool.kioschoolapi.domain.workspace.dto.common.WorkspaceDto
-import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
+import com.kioschool.kioschoolapi.domain.workspace.facade.WorkspaceFacade
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.data.domain.Page
@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/super-admin")
 class SuperAdminWorkspaceController(
-    private val workspaceService: WorkspaceService,
+    private val workspaceFacade: WorkspaceFacade,
 ) {
     @Operation(summary = "워크스페이스 조회", description = "모든 워크스페이스를 조회합니다.")
     @GetMapping("/workspaces")
@@ -23,6 +23,6 @@ class SuperAdminWorkspaceController(
         @RequestParam page: Int,
         @RequestParam size: Int
     ): Page<WorkspaceDto> {
-        return workspaceService.getAllWorkspaces(name, page, size).map { WorkspaceDto.of(it) }
+        return workspaceFacade.getAllWorkspaces(name, page, size)
     }
 }

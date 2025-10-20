@@ -430,7 +430,7 @@ class UserFacadeTest : DescribeSpec({
 
             val result = sut.getUser(loginId)
 
-            assert(result == user)
+            assert(result.id == user.id)
 
             verify { userService.getUser(loginId) }
         }
@@ -458,7 +458,7 @@ class UserFacadeTest : DescribeSpec({
 
             val result = sut.deleteUser(loginId)
 
-            assert(result == user)
+            assert(result.id == user.id)
 
             verify { userService.getUser(loginId) }
             verify { userService.deleteUser(user) }
@@ -492,7 +492,7 @@ class UserFacadeTest : DescribeSpec({
 
             val result = sut.createSuperAdminUser(username, id)
 
-            assert(result == user)
+            assert(result.id == user.id)
             assert(result.role == UserRole.SUPER_ADMIN)
 
             verify { userService.getUser(username) }
@@ -502,8 +502,8 @@ class UserFacadeTest : DescribeSpec({
         }
 
         it("should throw NoPermissionException when user is not super admin") {
-            val username = "test"
-            val id = "test"
+            val username = "super admin username"
+            val id = "admin username"
             val user = SampleEntity.user
 
             every { userService.getUser(username) } returns user
@@ -513,8 +513,9 @@ class UserFacadeTest : DescribeSpec({
                 sut.createSuperAdminUser(username, id)
             }
 
+            verify { userService.getUser(username) }
             verify { userService.checkHasSuperAdminPermission(user) }
-            verify(exactly = 1) { userService.getUser(id) }
+            verify(exactly = 0) { userService.getUser(id) }
             verify(exactly = 0) { userService.saveUser(any()) }
         }
     }
@@ -531,7 +532,7 @@ class UserFacadeTest : DescribeSpec({
 
             val result = sut.registerAccountUrl(username, accountUrl)
 
-            assert(result == user)
+            assert(result.id == user.id)
             assert(result.accountUrl == accountUrl)
 
             verify { userService.getUser(username) }
@@ -551,7 +552,7 @@ class UserFacadeTest : DescribeSpec({
 
             val result = sut.getAllUsers(name, page, size)
 
-            assert(result == users)
+            assert(result.content.first().id == users.content.first().id)
 
             verify { userService.getAllUsers(name, page, size) }
         }

@@ -1,11 +1,14 @@
 package com.kioschool.kioschoolapi.domain.product.facade
 
-import com.kioschool.kioschoolapi.domain.product.entity.Product
+import com.kioschool.kioschoolapi.domain.product.dto.common.ProductCategoryDto
+import com.kioschool.kioschoolapi.domain.product.dto.common.ProductDto
 import com.kioschool.kioschoolapi.domain.product.entity.ProductCategory
 import com.kioschool.kioschoolapi.domain.product.service.ProductService
 import com.kioschool.kioschoolapi.domain.workspace.exception.WorkspaceInaccessibleException
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.global.aws.S3Service
+import com.kioschool.kioschoolapi.global.cache.constant.CacheNames
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Component
 import org.springframework.web.multipart.MultipartFile
 
@@ -15,26 +18,31 @@ class ProductFacade(
     private val workspaceService: WorkspaceService,
     private val s3Service: S3Service
 ) {
-    fun getProduct(username: String, productId: Long): Product {
+    fun getProduct(username: String, productId: Long): ProductDto {
         val product = productService.getProduct(productId)
         workspaceService.checkAccessible(username, product.workspace.id)
-        return product
+        return ProductDto.of(
+            product
+        )
     }
 
-    fun getProducts(username: String, workspaceId: Long): List<Product> {
+    @Cacheable(cacheNames = [CacheNames.PRODUCTS], key = "#workspaceId")
+    fun getProducts(username: String, workspaceId: Long): List<ProductDto> {
         workspaceService.checkAccessible(username, workspaceId)
-        return productService.getAllProductsByCondition(workspaceId)
+        return productService.getAllProductsByCondition(workspaceId).map { ProductDto.of(it) }
     }
 
     fun getProducts(workspaceId: Long, categoryId: Long?) =
-        productService.getAllProductsByCondition(workspaceId, categoryId)
+        productService.getAllProductsByCondition(workspaceId, categoryId).map { ProductDto.of(it) }
 
+    @Cacheable(cacheNames = [CacheNames.PRODUCT_CATEGORIES], key = "#workspaceId")
     fun getProductCategories(workspaceId: Long) =
-        productService.getAllProductCategories(workspaceId)
+        productService.getAllProductCategories(workspaceId).map { ProductCategoryDto.of(it) }
 
-    fun getProductCategories(username: String, workspaceId: Long): List<ProductCategory> {
+    @Cacheable(cacheNames = [CacheNames.PRODUCT_CATEGORIES], key = "#workspaceId")
+    fun getProductCategories(username: String, workspaceId: Long): List<ProductCategoryDto> {
         workspaceService.checkAccessible(username, workspaceId)
-        return productService.getAllProductCategories(workspaceId)
+        return productService.getAllProductCategories(workspaceId).map { ProductCategoryDto.of(it) }
     }
 
     fun createProduct(
@@ -45,7 +53,7 @@ class ProductFacade(
         price: Int,
         productCategoryId: Long?,
         file: MultipartFile?
-    ): Product {
+    ): ProductDto {
         workspaceService.checkAccessible(username, workspaceId)
         val workspace = workspaceService.getWorkspace(workspaceId)
 
@@ -58,7 +66,7 @@ class ProductFacade(
         )
         product.imageUrl = productService.getImageUrl(workspaceId, product.id, file)
 
-        return productService.saveProduct(product)
+        return ProductDto.of(productService.saveProduct(product))
     }
 
     fun updateProduct(
@@ -70,7 +78,7 @@ class ProductFacade(
         price: Int?,
         productCategoryId: Long?,
         file: MultipartFile?
-    ): Product {
+    ): ProductDto {
         val product = productService.getProduct(productId)
         workspaceService.checkAccessible(username, product.workspace.id)
 
@@ -92,7 +100,7 @@ class ProductFacade(
             product.productCategory = null
         }
 
-        return productService.saveProduct(product)
+        return ProductDto.of(productService.saveProduct(product))
     }
 
     fun updateProductSellable(
@@ -100,28 +108,34 @@ class ProductFacade(
         workspaceId: Long,
         productId: Long,
         isSellable: Boolean
-    ): Product {
+    ): ProductDto {
         val product = productService.getProduct(productId)
         workspaceService.checkAccessible(username, workspaceId)
 
         product.isSellable = isSellable
-        return productService.saveProduct(product)
+        return ProductDto.of(productService.saveProduct(product))
     }
 
-    fun deleteProduct(username: String, productId: Long): Product {
+    fun deleteProduct(username: String, productId: Long): ProductDto {
         val product = productService.getProduct(productId)
         workspaceService.checkAccessible(username, product.workspace.id)
-        return productService.deleteProduct(product)
+        return ProductDto.of(productService.deleteProduct(product))
     }
 
-    fun createProductCategory(username: String, workspaceId: Long, name: String): ProductCategory {
+    fun createProductCategory(
+        username: String,
+        workspaceId: Long,
+        name: String
+    ): ProductCategoryDto {
         workspaceService.checkAccessible(username, workspaceId)
         val workspace = workspaceService.getWorkspace(workspaceId)
 
-        return productService.saveProductCategory(
-            ProductCategory(
-                name = name,
-                workspace = workspace
+        return ProductCategoryDto.of(
+            productService.saveProductCategory(
+                ProductCategory(
+                    name = name,
+                    workspace = workspace
+                )
             )
         )
     }
@@ -130,19 +144,19 @@ class ProductFacade(
         username: String,
         workspaceId: Long,
         productCategoryId: Long
-    ): ProductCategory {
+    ): ProductCategoryDto {
         val productCategory = productService.getProductCategory(productCategoryId)
         workspaceService.checkAccessible(username, productCategory.workspace.id)
         productService.checkProductCategoryDeletable(workspaceId, productCategoryId)
 
-        return productService.deleteProductCategory(productCategory)
+        return ProductCategoryDto.of(productService.deleteProductCategory(productCategory))
     }
 
     fun sortProductCategories(
         username: String,
         workspaceId: Long,
         productCategoryIds: List<Long>
-    ): List<ProductCategory> {
+    ): List<ProductCategoryDto> {
         workspaceService.checkAccessible(username, workspaceId)
 
         val productCategories = productService.getProductCategories(productCategoryIds)
@@ -151,5 +165,6 @@ class ProductFacade(
             productCategoryMap[productCategoryId]!!.index = index
         }
         return productService.saveProductCategories(productCategories)
+            .map { ProductCategoryDto.of(it) }
     }
 }

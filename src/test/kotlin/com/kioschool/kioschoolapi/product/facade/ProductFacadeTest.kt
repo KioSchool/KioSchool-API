@@ -197,7 +197,7 @@ class ProductFacadeTest : DescribeSpec({
                 file
             )
 
-            assert(result == product)
+            assert(result.id == product.id)
             assert(result.imageUrl == imageUrl)
 
             verify { workspaceService.checkAccessible(username, workspaceId) }
@@ -297,13 +297,12 @@ class ProductFacadeTest : DescribeSpec({
                 file
             )
 
-            assert(result == product)
+            assert(result.id == product.id)
             assert(result.name == name)
             assert(result.description == description)
             assert(result.price == price)
             assert(result.imageUrl == imageUrl)
-            assert(result.workspace == workspace)
-            assert(result.productCategory == SampleEntity.productCategory)
+            assert(result.productCategory?.id == SampleEntity.productCategory.id)
 
             verify { productService.getProduct(productId) }
             verify { workspaceService.checkAccessible(username, workspace.id) }
@@ -339,12 +338,11 @@ class ProductFacadeTest : DescribeSpec({
                 null
             )
 
-            assert(result == product)
+            assert(result.id == product.id)
             assert(result.name == name)
             assert(result.description == description)
             assert(result.price == price)
             assert(result.imageUrl == imageUrl)
-            assert(result.workspace == workspace)
             assert(result.productCategory == null)
 
             verify { productService.getProduct(productId) }
@@ -447,7 +445,7 @@ class ProductFacadeTest : DescribeSpec({
 
             val result = sut.updateProductSellable(username, workspaceId, productId, isSellable)
 
-            assert(result == product)
+            assert(result.id == product.id)
             assert(result.isSellable == isSellable)
 
             verify { productService.getProduct(productId) }
@@ -529,7 +527,7 @@ class ProductFacadeTest : DescribeSpec({
 
             val result = sut.createProductCategory(username, workspaceId, name)
 
-            assert(result == productCategory)
+            assert(result.id == productCategory.id)
 
             verify { workspaceService.checkAccessible(username, workspaceId) }
             verify { workspaceService.getWorkspace(workspaceId) }
@@ -652,7 +650,7 @@ class ProductFacadeTest : DescribeSpec({
 
             val result = sut.sortProductCategories(username, workspaceId, productCategoryIds)
 
-            assert(result == productCategories)
+            assert(result.first().id == productCategories.first().id)
             assert(productCategories[0].index == 0)
             assert(productCategories[1].index == 1)
             assert(productCategories[2].index == 2)

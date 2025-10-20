@@ -1,12 +1,14 @@
 package com.kioschool.kioschoolapi.domain.workspace.facade
 
-import com.kioschool.kioschoolapi.domain.account.entity.Account
+import com.kioschool.kioschoolapi.domain.account.dto.common.AccountDto
 import com.kioschool.kioschoolapi.domain.user.service.UserService
-import com.kioschool.kioschoolapi.domain.workspace.entity.Workspace
-import com.kioschool.kioschoolapi.domain.workspace.entity.WorkspaceTable
+import com.kioschool.kioschoolapi.domain.workspace.dto.common.WorkspaceDto
+import com.kioschool.kioschoolapi.domain.workspace.dto.common.WorkspaceTableDto
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.global.cache.annotation.WorkspaceUpdateEvent
+import com.kioschool.kioschoolapi.global.cache.constant.CacheNames
 import com.kioschool.kioschoolapi.global.discord.service.DiscordService
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Component
 import org.springframework.web.multipart.MultipartFile
 
@@ -16,23 +18,27 @@ class WorkspaceFacade(
     val discordService: DiscordService,
     val workspaceService: WorkspaceService
 ) {
-    fun getWorkspace(workspaceId: Long): Workspace {
-        return workspaceService.getWorkspace(workspaceId)
+    fun getAllWorkspaces(name: String?, page: Int, size: Int) =
+        workspaceService.getAllWorkspaces(name, page, size).map { WorkspaceDto.of(it) }
+
+    @Cacheable(cacheNames = [CacheNames.WORKSPACES], key = "#workspaceId")
+    fun getWorkspace(workspaceId: Long): WorkspaceDto {
+        return WorkspaceDto.of(workspaceService.getWorkspace(workspaceId))
     }
 
-    fun getWorkspaces(username: String): List<Workspace> {
+    fun getWorkspaces(username: String): List<WorkspaceDto> {
         val user = userService.getUser(username)
-        return user.getWorkspaces()
+        return user.getWorkspaces().map { WorkspaceDto.of(it) }
     }
 
-    fun getWorkspaceAccount(workspaceId: Long): Account? {
+    fun getWorkspaceAccount(workspaceId: Long): AccountDto? {
         val workspace = workspaceService.getWorkspace(workspaceId)
         val workspaceOwner = workspace.owner
 
-        return workspaceOwner.account
+        return workspaceOwner.account?.let { AccountDto.of(it) }
     }
 
-    fun createWorkspace(username: String, name: String, description: String): Workspace {
+    fun createWorkspace(username: String, name: String, description: String): WorkspaceDto {
         val user = userService.getUser(username)
         workspaceService.checkCanCreateWorkspace(user)
 
@@ -40,40 +46,48 @@ class WorkspaceFacade(
         workspaceService.updateWorkspaceTables(workspace)
         discordService.sendWorkspaceCreate(workspace)
 
-        return workspace
+        return WorkspaceDto.of(
+            workspace
+        )
     }
 
     @WorkspaceUpdateEvent
-    fun inviteWorkspace(hostUserName: String, workspaceId: Long, userLoginId: String): Workspace {
+    fun inviteWorkspace(
+        hostUserName: String,
+        workspaceId: Long,
+        userLoginId: String
+    ): WorkspaceDto {
         val hostUser = userService.getUser(hostUserName)
         val workspace = workspaceService.getWorkspace(workspaceId)
         workspaceService.checkCanInviteWorkspace(hostUser, workspace)
 
         val user = userService.getUser(userLoginId)
-        return workspaceService.inviteUserToWorkspace(workspace, user)
+        return WorkspaceDto.of(workspaceService.inviteUserToWorkspace(workspace, user))
     }
 
     @WorkspaceUpdateEvent
-    fun joinWorkspace(username: String, workspaceId: Long): Workspace {
+    fun joinWorkspace(username: String, workspaceId: Long): WorkspaceDto {
         val user = userService.getUser(username)
         val workspace = workspaceService.getWorkspace(workspaceId)
 
         workspaceService.checkCanJoinWorkspace(user, workspace)
         workspaceService.addUserToWorkspace(workspace, user)
 
-        return workspace
+        return WorkspaceDto.of(
+            workspace
+        )
     }
 
     @WorkspaceUpdateEvent
-    fun leaveWorkspace(username: String, workspaceId: Long): Workspace {
+    fun leaveWorkspace(username: String, workspaceId: Long): WorkspaceDto {
         val user = userService.getUser(username)
         val workspace = workspaceService.getWorkspace(workspaceId)
 
-        return workspaceService.removeUserFromWorkspace(workspace, user)
+        return WorkspaceDto.of(workspaceService.removeUserFromWorkspace(workspace, user))
     }
 
     @WorkspaceUpdateEvent
-    fun updateTableCount(username: String, workspaceId: Long, tableCount: Int): Workspace {
+    fun updateTableCount(username: String, workspaceId: Long, tableCount: Int): WorkspaceDto {
         val user = userService.getUser(username)
         val workspace = workspaceService.getWorkspace(workspaceId)
 
@@ -81,7 +95,9 @@ class WorkspaceFacade(
         workspaceService.updateTableCount(workspace, tableCount)
         workspaceService.updateWorkspaceTables(workspace)
 
-        return workspace
+        return WorkspaceDto.of(
+            workspace
+        )
     }
 
     @WorkspaceUpdateEvent
@@ -91,7 +107,7 @@ class WorkspaceFacade(
         name: String,
         description: String,
         notice: String,
-    ): Workspace {
+    ): WorkspaceDto {
         val user = userService.getUser(username)
         val workspace = workspaceService.getWorkspace(workspaceId)
 
@@ -100,7 +116,7 @@ class WorkspaceFacade(
         workspace.description = description
         workspace.notice = notice
 
-        return workspaceService.saveWorkspace(workspace)
+        return WorkspaceDto.of(workspaceService.saveWorkspace(workspace))
     }
 
     @WorkspaceUpdateEvent
@@ -109,7 +125,7 @@ class WorkspaceFacade(
         workspaceId: Long,
         imageIds: List<Long?>,
         imageFiles: List<MultipartFile>,
-    ): Workspace {
+    ): WorkspaceDto {
         val user = userService.getUser(username)
         val workspace = workspaceService.getWorkspace(workspaceId)
 
@@ -118,16 +134,16 @@ class WorkspaceFacade(
         val deleteImages = workspace.images.filter { !imageIds.contains(it.id) }
         workspaceService.deleteWorkspaceImages(workspace, deleteImages)
 
-        return workspaceService.saveWorkspaceImages(workspace, imageFiles)
+        return WorkspaceDto.of(workspaceService.saveWorkspaceImages(workspace, imageFiles))
     }
 
-    fun getAllWorkspaceTables(username: String, workspaceId: Long): List<WorkspaceTable> {
+    fun getAllWorkspaceTables(username: String, workspaceId: Long): List<WorkspaceTableDto> {
         val user = userService.getUser(username)
         val workspace = workspaceService.getWorkspace(workspaceId)
 
         workspaceService.checkCanAccessWorkspace(user, workspace)
 
-        return workspaceService.getAllWorkspaceTables(workspace)
+        return workspaceService.getAllWorkspaceTables(workspace).map { WorkspaceTableDto.of(it) }
     }
 
     @WorkspaceUpdateEvent
@@ -136,7 +152,7 @@ class WorkspaceFacade(
         workspaceId: Long,
         useOrderSessionTimeLimit: Boolean,
         orderSessionTimeLimitMinutes: Long
-    ): Workspace {
+    ): WorkspaceDto {
         val user = userService.getUser(username)
         val workspace = workspaceService.getWorkspace(workspaceId)
 
@@ -145,6 +161,6 @@ class WorkspaceFacade(
         workspace.workspaceSetting.useOrderSessionTimeLimit = useOrderSessionTimeLimit
         workspace.workspaceSetting.orderSessionTimeLimitMinutes = orderSessionTimeLimitMinutes
 
-        return workspaceService.saveWorkspace(workspace)
+        return WorkspaceDto.of(workspaceService.saveWorkspace(workspace))
     }
 }

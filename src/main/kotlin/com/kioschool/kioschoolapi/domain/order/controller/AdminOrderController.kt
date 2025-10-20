@@ -34,7 +34,7 @@ class AdminOrderController(
             endDate,
             status,
             tableNumber
-        ).map { OrderDto.of(it) }
+        )
     }
 
     @Operation(summary = "주문 누적 총액 조회", description = "주문 누적 총액을 조회합니다.")
@@ -88,7 +88,7 @@ class AdminOrderController(
             tableNumber,
             page,
             size
-        ).map { OrderDto.of(it) }
+        )
     }
 
     @Operation(summary = "실시간 주문 조회", description = "실시간 주문을 조회합니다.")
@@ -97,7 +97,7 @@ class AdminOrderController(
         @AdminUsername username: String,
         @RequestParam("workspaceId") workspaceId: Long
     ): List<OrderDto> {
-        return orderFacade.getRealtimeOrders(username, workspaceId).map { OrderDto.of(it) }
+        return orderFacade.getRealtimeOrders(username, workspaceId)
     }
 
     @Operation(summary = "주문 상태 변경", description = "주문을 상태를 변경합니다.")
@@ -106,13 +106,11 @@ class AdminOrderController(
         @AdminUsername username: String,
         @RequestBody body: ChangeOrderStatusRequestBody
     ): OrderDto {
-        return OrderDto.of(
-            orderFacade.changeOrderStatus(
-                username,
-                body.workspaceId,
-                body.orderId,
-                body.status
-            )
+        return orderFacade.changeOrderStatus(
+            username,
+            body.workspaceId,
+            body.orderId,
+            body.status
         )
     }
 
@@ -122,13 +120,11 @@ class AdminOrderController(
         @AdminUsername username: String,
         @RequestBody body: ChangeOrderProductServedCount
     ): OrderProductDto {
-        return OrderProductDto.of(
-            orderFacade.changeOrderProductServedCount(
-                username,
-                body.workspaceId,
-                body.orderProductId,
-                body.servedCount
-            )
+        return orderFacade.changeOrderProductServedCount(
+            username,
+            body.workspaceId,
+            body.orderProductId,
+            body.servedCount
         )
     }
 
@@ -149,7 +145,6 @@ class AdminOrderController(
         @RequestParam("orderSessionId") orderSessionId: Long
     ): List<OrderDto> {
         return orderFacade.getOrdersByOrderSession(username, workspaceId, orderSessionId)
-            .map { OrderDto.of(it) }
     }
 
     @Operation(summary = "주문 세션 시작", description = "주문 세션을 시작합니다.")
@@ -158,12 +153,10 @@ class AdminOrderController(
         @AdminUsername username: String,
         @RequestBody body: StartOrderSessionRequestBody
     ): OrderSessionDto {
-        return OrderSessionDto.of(
-            orderFacade.startOrderSession(
-                username,
-                body.workspaceId,
-                body.tableNumber
-            )
+        return orderFacade.startOrderSession(
+            username,
+            body.workspaceId,
+            body.tableNumber
         )
     }
 
@@ -173,13 +166,11 @@ class AdminOrderController(
         @AdminUsername username: String,
         @RequestBody body: UpdateExpectedEndAtRequestBody
     ): OrderSessionDto {
-        return OrderSessionDto.of(
-            orderFacade.updateOrderSessionExpectedEndAt(
-                username,
-                body.workspaceId,
-                body.orderSessionId,
-                body.expectedEndAt
-            )
+        return orderFacade.updateOrderSessionExpectedEndAt(
+            username,
+            body.workspaceId,
+            body.orderSessionId,
+            body.expectedEndAt
         )
     }
 
@@ -189,13 +180,11 @@ class AdminOrderController(
         @AdminUsername username: String,
         @RequestBody body: EndOrderSessionRequestBody
     ): OrderSessionDto {
-        return OrderSessionDto.of(
-            orderFacade.endOrderSession(
-                username,
-                body.workspaceId,
-                body.tableNumber,
-                body.orderSessionId
-            )
+        return orderFacade.endOrderSession(
+            username,
+            body.workspaceId,
+            body.tableNumber,
+            body.orderSessionId
         )
     }
 }

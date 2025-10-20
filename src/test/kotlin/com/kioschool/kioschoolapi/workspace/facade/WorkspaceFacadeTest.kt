@@ -40,7 +40,7 @@ class WorkspaceFacadeTest : DescribeSpec({
 
             val result = sut.getWorkspace(workspaceId)
 
-            assert(result == workspace)
+            assert(result.id == workspace.id)
 
             verify { workspaceService.getWorkspace(workspaceId) }
         }
@@ -49,13 +49,15 @@ class WorkspaceFacadeTest : DescribeSpec({
     describe("getWorkspaces") {
         it("should call userService.getUser and return user.getWorkspaces") {
             val username = "username"
-            val user = SampleEntity.user
+            val user = SampleEntity.user.apply {
+                members.add(SampleEntity.workspaceMember)
+            }
             val workspaces = user.getWorkspaces()
             every { userService.getUser(username) } returns user
 
             val result = sut.getWorkspaces(username)
 
-            assert(result == workspaces)
+            assert(result.first().id == workspaces.first().id)
 
             verify { userService.getUser(username) }
         }
@@ -83,7 +85,7 @@ class WorkspaceFacadeTest : DescribeSpec({
 
             val result = sut.getWorkspaceAccount(workspaceId)
 
-            assert(result == SampleEntity.account)
+            assert(result?.id == SampleEntity.account.id)
 
             verify { workspaceService.getWorkspace(workspaceId) }
         }
@@ -104,7 +106,7 @@ class WorkspaceFacadeTest : DescribeSpec({
 
             val result = sut.createWorkspace(username, name, description)
 
-            assert(result == workspace)
+            assert(result.id == workspace.id)
 
             verify { userService.getUser(username) }
             verify { workspaceService.checkCanCreateWorkspace(user) }
@@ -169,7 +171,7 @@ class WorkspaceFacadeTest : DescribeSpec({
 
             val result = sut.inviteWorkspace(hostUserName, workspaceId, userLoginId)
 
-            assert(result == workspace)
+            assert(result.id == workspace.id)
 
             verify { userService.getUser(hostUserName) }
             verify { workspaceService.getWorkspace(workspaceId) }
@@ -236,7 +238,7 @@ class WorkspaceFacadeTest : DescribeSpec({
 
             val result = sut.joinWorkspace(username, workspaceId)
 
-            assert(result == workspace)
+            assert(result.id == workspace.id)
 
             verify { userService.getUser(username) }
             verify { workspaceService.getWorkspace(workspaceId) }
@@ -299,7 +301,7 @@ class WorkspaceFacadeTest : DescribeSpec({
 
             val result = sut.leaveWorkspace(username, workspaceId)
 
-            assert(result == workspace)
+            assert(result.id == workspace.id)
 
             verify { userService.getUser(username) }
             verify { workspaceService.getWorkspace(workspaceId) }
@@ -338,7 +340,7 @@ class WorkspaceFacadeTest : DescribeSpec({
 
             val result = sut.updateTableCount(username, workspaceId, tableCount)
 
-            assert(result == workspace)
+            assert(result.id == workspace.id)
 
             verify { userService.getUser(username) }
             verify { workspaceService.getWorkspace(workspaceId) }
@@ -414,7 +416,7 @@ class WorkspaceFacadeTest : DescribeSpec({
                 notice,
             )
 
-            assert(result == workspace)
+            assert(result.id == workspace.id)
 
             verify { userService.getUser(username) }
             verify { workspaceService.getWorkspace(workspaceId) }
@@ -506,7 +508,7 @@ class WorkspaceFacadeTest : DescribeSpec({
             every {
                 workspaceService.saveWorkspaceImages(
                     workspace,
-                    any<List<MultipartFile>>()
+                    any<List<MultipartFile>>(),
                 )
             } returns workspace
 
@@ -517,7 +519,7 @@ class WorkspaceFacadeTest : DescribeSpec({
                 imageFiles,
             )
 
-            assert(result == workspace)
+            assert(result.id == workspace.id)
 
             verify { userService.getUser(username) }
             verify { workspaceService.getWorkspace(workspaceId) }
@@ -560,7 +562,7 @@ class WorkspaceFacadeTest : DescribeSpec({
                 imageFiles
             )
 
-            assert(result == workspace)
+            assert(result.id == workspace.id)
 
             verify { userService.getUser(username) }
             verify { workspaceService.getWorkspace(workspaceId) }
@@ -648,7 +650,7 @@ class WorkspaceFacadeTest : DescribeSpec({
 
             val result = sut.getAllWorkspaceTables(username, workspaceId)
 
-            assert(result == listOf(SampleEntity.workspaceTable))
+            assert(result.first().id == SampleEntity.workspaceTable.id)
 
             verify { userService.getUser(username) }
             verify { workspaceService.getWorkspace(workspaceId) }
@@ -678,7 +680,7 @@ class WorkspaceFacadeTest : DescribeSpec({
                 orderSessionTimeLimitMinutes
             )
 
-            assert(result == workspace)
+            assert(result.id == workspace.id)
 
             verify { userService.getUser(username) }
             verify { workspaceService.getWorkspace(workspaceId) }
