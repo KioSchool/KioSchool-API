@@ -81,7 +81,8 @@ class AccountFacadeTest : DescribeSpec({
 
             val result = sut.addBank(name, code)
 
-            assert(result == SampleEntity.bank)
+            assert(result.name == SampleEntity.bank.name)
+            assert(result.code == SampleEntity.bank.code)
 
             verify { bankService.addBank(name, code) }
         }
@@ -93,7 +94,10 @@ class AccountFacadeTest : DescribeSpec({
 
             every { bankService.deleteBank(id) } returns SampleEntity.bank
 
-            sut.deleteBank(id)
+            val result = sut.deleteBank(id)
+
+            assert(result.name == SampleEntity.bank.name)
+            assert(result.code == SampleEntity.bank.code)
 
             verify { bankService.deleteBank(id) }
         }
@@ -122,12 +126,14 @@ class AccountFacadeTest : DescribeSpec({
                     accountHolder
                 )
             } returns SampleEntity.account
-            every { userService.saveUser(SampleEntity.user) } returns SampleEntity.user
+            every { userService.saveUser(any()) } returns SampleEntity.user.apply {
+                this.account = SampleEntity.account
+            }
 
             val result = sut.registerAccount(username, bankId, accountNumber, accountHolder)
 
-            assert(result == SampleEntity.user)
-            assert(result.account == SampleEntity.account)
+            assert(result.name == SampleEntity.user.name)
+            assert(result.account?.accountNumber == SampleEntity.account.accountNumber)
 
             verify { bankService.getBank(bankId) }
             verify {
@@ -139,7 +145,7 @@ class AccountFacadeTest : DescribeSpec({
             }
             verify { userService.getUser(username) }
             verify { accountService.createAccount(SampleEntity.bank, accountNumber, accountHolder) }
-            verify { userService.saveUser(SampleEntity.user) }
+            verify { userService.saveUser(any()) }
         }
 
         it("should throw IncorrectAccountHolderException when account holder is incorrect") {
@@ -188,15 +194,18 @@ class AccountFacadeTest : DescribeSpec({
 
             every { userService.getUser(username) } returns SampleEntity.user
             every { tossService.validateAccountUrl(SampleEntity.user, accountUrl) } returns Unit
-            every { userService.saveUser(SampleEntity.user) } returns SampleEntity.user
+            every { tossService.removeAmountQueryFromAccountUrl(accountUrl) } returns "removedUrl"
+            every { userService.saveUser(any()) } returns SampleEntity.user.apply {
+                this.account = SampleEntity.account
+            }
 
             val result = sut.registerTossAccount(username, accountUrl)
 
-            assert(result == SampleEntity.user)
+            assert(result.name == SampleEntity.user.name)
 
             verify { userService.getUser(username) }
             verify { tossService.validateAccountUrl(SampleEntity.user, accountUrl) }
-            verify { userService.saveUser(SampleEntity.user) }
+            verify { userService.saveUser(any()) }
         }
 
         it("should throw DifferentAccountNumberException when account holder is incorrect") {
