@@ -1,7 +1,7 @@
 package com.kioschool.kioschoolapi.domain.account.controller
 
-import com.kioschool.kioschoolapi.domain.account.dto.request.AddBankRequestBody
 import com.kioschool.kioschoolapi.domain.account.dto.common.BankDto
+import com.kioschool.kioschoolapi.domain.account.dto.request.AddBankRequestBody
 import com.kioschool.kioschoolapi.domain.account.dto.request.DeleteBankRequestBody
 import com.kioschool.kioschoolapi.domain.account.facade.AccountFacade
 import io.swagger.v3.oas.annotations.Operation
@@ -20,7 +20,7 @@ class SuperAdminAccountController(
         @RequestParam page: Int,
         @RequestParam size: Int
     ): Page<BankDto> {
-        return accountFacade.getBanks(name, page, size).map { BankDto.of(it) }
+        return accountFacade.getBanks(name, page, size)
     }
 
     @Operation(summary = "은행 추가", description = "키오스쿨에서 등록 가능한 은행을 추가합니다.")
@@ -28,7 +28,7 @@ class SuperAdminAccountController(
     fun addBank(
         @RequestBody body: AddBankRequestBody
     ): BankDto {
-        return BankDto.of(accountFacade.addBank(body.name, body.code))
+        return accountFacade.addBank(body.name, body.code)
     }
 
     @Operation(summary = "은행 삭제", description = "키오스쿨에서 등록 가능한 은행을 삭제합니다.")
@@ -36,6 +36,6 @@ class SuperAdminAccountController(
     fun deleteBank(
         @RequestBody body: DeleteBankRequestBody
     ): BankDto {
-        return BankDto.of(accountFacade.deleteBank(body.id))
+        return accountFacade.deleteBank(body.id)
     }
 }

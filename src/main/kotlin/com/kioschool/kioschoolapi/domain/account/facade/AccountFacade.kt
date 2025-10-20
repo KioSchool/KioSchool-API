@@ -1,9 +1,9 @@
 package com.kioschool.kioschoolapi.domain.account.facade
 
-import com.kioschool.kioschoolapi.domain.account.entity.Bank
+import com.kioschool.kioschoolapi.domain.account.dto.common.BankDto
 import com.kioschool.kioschoolapi.domain.account.service.AccountService
 import com.kioschool.kioschoolapi.domain.account.service.BankService
-import com.kioschool.kioschoolapi.domain.user.entity.User
+import com.kioschool.kioschoolapi.domain.user.dto.common.UserDto
 import com.kioschool.kioschoolapi.domain.user.service.UserService
 import com.kioschool.kioschoolapi.global.portone.service.PortoneService
 import com.kioschool.kioschoolapi.global.toss.service.TossService
@@ -18,20 +18,20 @@ class AccountFacade(
     private val portoneService: PortoneService,
     private val tossService: TossService
 ) {
-    fun getBanks(name: String?, page: Int, size: Int): Page<Bank> {
-        return bankService.getBanks(name, page, size)
+    fun getBanks(name: String?, page: Int, size: Int): Page<BankDto> {
+        return bankService.getBanks(name, page, size).map { BankDto.of(it) }
     }
 
-    fun getAllBanks(): List<Bank> {
-        return bankService.getAllBanks()
+    fun getAllBanks(): List<BankDto> {
+        return bankService.getAllBanks().map { BankDto.of(it) }
     }
 
-    fun addBank(name: String, code: String): Bank {
-        return bankService.addBank(name, code)
+    fun addBank(name: String, code: String): BankDto {
+        return BankDto.of(bankService.addBank(name, code))
     }
 
-    fun deleteBank(id: Long): Bank {
-        return bankService.deleteBank(id)
+    fun deleteBank(id: Long): BankDto {
+        return BankDto.of(bankService.deleteBank(id))
     }
 
     fun registerAccount(
@@ -39,19 +39,19 @@ class AccountFacade(
         bankId: Long,
         accountNumber: String,
         accountHolder: String
-    ): User {
+    ): UserDto {
         val bank = bankService.getBank(bankId)
         portoneService.validateAccountHolder(bank.code, accountNumber, accountHolder)
 
         val user = userService.getUser(username)
         user.account = accountService.createAccount(bank, accountNumber, accountHolder)
-        return userService.saveUser(user)
+        return UserDto.of(userService.saveUser(user))
     }
 
-    fun registerTossAccount(username: String, accountUrl: String): User {
+    fun registerTossAccount(username: String, accountUrl: String): UserDto {
         val user = userService.getUser(username)
         tossService.validateAccountUrl(user, accountUrl)
         user.account?.tossAccountUrl = tossService.removeAmountQueryFromAccountUrl(accountUrl)
-        return userService.saveUser(user)
+        return UserDto.of(userService.saveUser(user))
     }
 }

@@ -19,7 +19,7 @@ class AdminAccountController(
     fun getBanks(
         @AdminUsername username: String
     ): List<BankDto> {
-        return accountFacade.getAllBanks().map { BankDto.of(it) }
+        return accountFacade.getAllBanks()
     }
 
     @Operation(summary = "계좌 등록", description = "계좌를 등록합니다.")
@@ -28,14 +28,13 @@ class AdminAccountController(
         @AdminUsername username: String,
         @RequestBody body: RegisterAccountRequestBody
     ): UserDto {
-        return UserDto.of(
-            accountFacade.registerAccount(
-                username,
-                body.bankId,
-                body.accountNumber,
-                body.accountHolder
-            )
+        return accountFacade.registerAccount(
+            username,
+            body.bankId,
+            body.accountNumber,
+            body.accountHolder
         )
+
     }
 
     @Operation(summary = "토스 계좌 URL 등록", description = "토스 계좌 URL을 등록합니다.")
@@ -44,11 +43,9 @@ class AdminAccountController(
         @AdminUsername username: String,
         @RequestBody body: RegisterTossAccountRequestBody
     ): UserDto {
-        return UserDto.of(
-            accountFacade.registerTossAccount(
-                username,
-                body.accountUrl
-            )
+        return accountFacade.registerTossAccount(
+            username,
+            body.accountUrl
         )
     }
 
