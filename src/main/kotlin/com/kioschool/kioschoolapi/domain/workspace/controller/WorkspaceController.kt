@@ -3,10 +3,8 @@ package com.kioschool.kioschoolapi.domain.workspace.controller
 import com.kioschool.kioschoolapi.domain.account.dto.common.AccountDto
 import com.kioschool.kioschoolapi.domain.workspace.dto.common.WorkspaceDto
 import com.kioschool.kioschoolapi.domain.workspace.facade.WorkspaceFacade
-import com.kioschool.kioschoolapi.global.cache.constant.CacheNames
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
-import org.springframework.cache.annotation.Cacheable
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
@@ -18,11 +16,10 @@ class WorkspaceController(
 ) {
     @Operation(summary = "워크스페이스 조회", description = "워크스페이스를 조회합니다.")
     @GetMapping("/workspace")
-    @Cacheable(cacheNames = [CacheNames.WORKSPACES], key = "#workspaceId")
     fun getWorkspace(
         @RequestParam workspaceId: Long
     ): WorkspaceDto {
-        return WorkspaceDto.of(workspaceFacade.getWorkspace(workspaceId))
+        return workspaceFacade.getWorkspace(workspaceId)
     }
 
     @Operation(summary = "워크스페이스 관리자 계좌 정보 조회", description = "워크스페이스 관리자의 계좌 정보를 조회합니다.")
@@ -30,6 +27,6 @@ class WorkspaceController(
     fun getWorkspaceAccount(
         @RequestParam workspaceId: Long
     ): AccountDto? {
-        return workspaceFacade.getWorkspaceAccount(workspaceId)?.let { AccountDto.of(it) }
+        return workspaceFacade.getWorkspaceAccount(workspaceId)
     }
 }

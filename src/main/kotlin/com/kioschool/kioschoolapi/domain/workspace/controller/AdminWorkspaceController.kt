@@ -4,11 +4,9 @@ import com.kioschool.kioschoolapi.domain.workspace.dto.common.WorkspaceDto
 import com.kioschool.kioschoolapi.domain.workspace.dto.common.WorkspaceTableDto
 import com.kioschool.kioschoolapi.domain.workspace.dto.request.*
 import com.kioschool.kioschoolapi.domain.workspace.facade.WorkspaceFacade
-import com.kioschool.kioschoolapi.global.cache.constant.CacheNames
 import com.kioschool.kioschoolapi.global.security.annotation.AdminUsername
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
-import org.springframework.cache.annotation.Cacheable
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
 
@@ -21,17 +19,16 @@ class AdminWorkspaceController(
     @Operation(summary = "워크스페이스 조회", description = "가입한 모든 워크스페이스를 조회합니다.")
     @GetMapping("/workspaces")
     fun getWorkspaces(@AdminUsername username: String): List<WorkspaceDto> {
-        return workspaceFacade.getWorkspaces(username).map { WorkspaceDto.of(it) }
+        return workspaceFacade.getWorkspaces(username)
     }
 
     @Operation(summary = "워크스페이스 조회", description = "워크스페이스를 조회합니다.")
     @GetMapping("/workspace")
-    @Cacheable(cacheNames = [CacheNames.WORKSPACES], key = "#workspaceId")
     fun getWorkspace(
         @AdminUsername username: String,
         @RequestParam workspaceId: Long
     ): WorkspaceDto {
-        return WorkspaceDto.of(workspaceFacade.getWorkspace(workspaceId))
+        return workspaceFacade.getWorkspace(workspaceId)
     }
 
     @Operation(summary = "워크스페이스 생성", description = "워크스페이스를 생성합니다.")
@@ -40,12 +37,10 @@ class AdminWorkspaceController(
         @AdminUsername username: String,
         @RequestBody body: CreateWorkspaceRequestBody
     ): WorkspaceDto {
-        return WorkspaceDto.of(
-            workspaceFacade.createWorkspace(
-                username,
-                body.name,
-                body.description
-            )
+        return workspaceFacade.createWorkspace(
+            username,
+            body.name,
+            body.description
         )
     }
 
@@ -55,14 +50,12 @@ class AdminWorkspaceController(
         @AdminUsername username: String,
         @RequestBody body: UpdateWorkspaceRequestBody,
     ): WorkspaceDto {
-        return WorkspaceDto.of(
-            workspaceFacade.updateWorkspaceInfo(
-                username,
-                body.workspaceId,
-                body.name,
-                body.description,
-                body.notice
-            )
+        return workspaceFacade.updateWorkspaceInfo(
+            username,
+            body.workspaceId,
+            body.name,
+            body.description,
+            body.notice
         )
     }
 
@@ -73,13 +66,11 @@ class AdminWorkspaceController(
         @RequestPart body: UpdateWorkspaceImageRequestBody,
         @RequestPart(required = false) imageFiles: List<MultipartFile>?,
     ): WorkspaceDto {
-        return WorkspaceDto.of(
-            workspaceFacade.updateWorkspaceImage(
-                username,
-                body.workspaceId,
-                body.imageIds,
-                imageFiles ?: emptyList()
-            )
+        return workspaceFacade.updateWorkspaceImage(
+            username,
+            body.workspaceId,
+            body.imageIds,
+            imageFiles ?: emptyList()
         )
     }
 
@@ -89,12 +80,10 @@ class AdminWorkspaceController(
         @AdminUsername username: String,
         @RequestBody body: InviteWorkspaceRequestBody
     ): WorkspaceDto {
-        return WorkspaceDto.of(
-            workspaceFacade.inviteWorkspace(
-                username,
-                body.workspaceId,
-                body.userLoginId
-            )
+        return workspaceFacade.inviteWorkspace(
+            username,
+            body.workspaceId,
+            body.userLoginId
         )
     }
 
@@ -104,7 +93,7 @@ class AdminWorkspaceController(
         @AdminUsername username: String,
         @RequestBody body: JoinWorkspaceRequestBody
     ): WorkspaceDto {
-        return WorkspaceDto.of(workspaceFacade.joinWorkspace(username, body.workspaceId))
+        return workspaceFacade.joinWorkspace(username, body.workspaceId)
     }
 
     @Operation(summary = "워크스페이스 탈퇴", description = "워크스페이스에서 탈퇴합니다.")
@@ -113,7 +102,7 @@ class AdminWorkspaceController(
         @AdminUsername username: String,
         @RequestBody body: LeaveWorkspaceRequestBody
     ): WorkspaceDto {
-        return WorkspaceDto.of(workspaceFacade.leaveWorkspace(username, body.workspaceId))
+        return workspaceFacade.leaveWorkspace(username, body.workspaceId)
     }
 
     @Operation(summary = "워크스페이스 테이블 개수 수정", description = "워크스페이스의 테이블 개수를 수정합니다.")
@@ -122,12 +111,10 @@ class AdminWorkspaceController(
         @AdminUsername username: String,
         @RequestBody body: UpdateTableCountRequestBody
     ): WorkspaceDto {
-        return WorkspaceDto.of(
-            workspaceFacade.updateTableCount(
-                username,
-                body.workspaceId,
-                body.tableCount
-            )
+        return workspaceFacade.updateTableCount(
+            username,
+            body.workspaceId,
+            body.tableCount
         )
     }
 
@@ -138,7 +125,6 @@ class AdminWorkspaceController(
         @RequestParam workspaceId: Long
     ): List<WorkspaceTableDto> {
         return workspaceFacade.getAllWorkspaceTables(username, workspaceId)
-            .map { WorkspaceTableDto.of(it) }
     }
 
     @Operation(summary = "워크스페이스 주문 설정 변경", description = "워크스페이스의 설정 중 주문 관련한 설정을 변경합니다.")
@@ -147,13 +133,11 @@ class AdminWorkspaceController(
         @AdminUsername username: String,
         @RequestBody body: UpdateOrderSettingRequestBody
     ): WorkspaceDto {
-        return WorkspaceDto.of(
-            workspaceFacade.updateOrderSetting(
-                username,
-                body.workspaceId,
-                body.useOrderSessionTimeLimit,
-                body.orderSessionTimeLimitMinutes,
-            )
+        return workspaceFacade.updateOrderSetting(
+            username,
+            body.workspaceId,
+            body.useOrderSessionTimeLimit,
+            body.orderSessionTimeLimitMinutes,
         )
     }
 }
