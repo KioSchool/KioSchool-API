@@ -18,13 +18,13 @@ class AdminUserController(
     @Operation(summary = "로그인 유저 정보 조회", description = "현재 로그인한 유저의 정보를 조회합니다.")
     @GetMapping("/user")
     fun getUser(@AdminUsername username: String): UserDto {
-        return UserDto.of(userFacade.getUser(username))
+        return userFacade.getUser(username)
     }
 
     @Operation(summary = "유저 탈퇴")
     @DeleteMapping("/user")
     fun deleteUser(@AdminUsername username: String): UserDto {
-        return UserDto.of(userFacade.deleteUser(username))
+        return userFacade.deleteUser(username)
     }
 
     @Operation(summary = "슈퍼 유저 생성", description = "슈퍼 유저를 생성합니다.<br>슈퍼 유저는 슈퍼 유저만 지정할 수 있습니다.")
@@ -33,7 +33,7 @@ class AdminUserController(
         @AdminUsername username: String,
         @RequestBody body: CreateSuperUserRequestBody
     ): UserDto {
-        return UserDto.of(userFacade.createSuperAdminUser(username, body.id))
+        return userFacade.createSuperAdminUser(username, body.id)
     }
 
     @Operation(summary = "토스 계좌 URL 등록", description = "토스 계좌 URL을 등록합니다.")
@@ -42,6 +42,6 @@ class AdminUserController(
         @AdminUsername username: String,
         @RequestBody body: RegisterAccountUrlRequestBody
     ): UserDto {
-        return UserDto.of(userFacade.registerAccountUrl(username, body.accountUrl))
+        return userFacade.registerAccountUrl(username, body.accountUrl)
     }
 }

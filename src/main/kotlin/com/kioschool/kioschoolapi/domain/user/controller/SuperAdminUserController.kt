@@ -23,6 +23,6 @@ class SuperAdminUserController(
         @RequestParam size: Int,
         @RequestParam name: String?
     ): Page<UserDto> {
-        return userFacade.getAllUsers(name, page, size).map { UserDto.of(it) }
+        return userFacade.getAllUsers(name, page, size)
     }
 }
