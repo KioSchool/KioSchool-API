@@ -21,6 +21,6 @@ class EmailController(
         @RequestParam page: Int,
         @RequestParam size: Int
     ): Page<EmailDomainDto> {
-        return emailFacade.getAllEmailDomains(name, page, size).map { EmailDomainDto.of(it) }
+        return emailFacade.getAllEmailDomains(name, page, size)
     }
 }
