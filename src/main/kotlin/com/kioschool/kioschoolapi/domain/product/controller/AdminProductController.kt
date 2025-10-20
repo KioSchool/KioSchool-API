@@ -23,7 +23,7 @@ class AdminProductController(
         @AdminUsername username: String,
         @RequestParam workspaceId: Long
     ): List<ProductDto> {
-        return productFacade.getProducts(username, workspaceId).map { ProductDto.of(it) }
+        return productFacade.getProducts(username, workspaceId)
     }
 
     @Operation(summary = "상품 조회", description = "상품 하나를 조회합니다.")
@@ -32,7 +32,7 @@ class AdminProductController(
         @AdminUsername username: String,
         @RequestParam productId: Long
     ): ProductDto {
-        return ProductDto.of(productFacade.getProduct(username, productId))
+        return productFacade.getProduct(username, productId)
     }
 
     @Operation(summary = "상품 카테고리 조회", description = "워크스페이스에 등록된 모든 상품 카테고리를 조회합니다.")
@@ -42,7 +42,6 @@ class AdminProductController(
         @RequestParam workspaceId: Long
     ): List<ProductCategoryDto> {
         return productFacade.getProductCategories(username, workspaceId)
-            .map { ProductCategoryDto.of(it) }
     }
 
     @Operation(summary = "상품 생성", description = "상품을 생성합니다.")
@@ -52,17 +51,16 @@ class AdminProductController(
         @RequestPart body: CreateProductRequestBody,
         @RequestPart file: MultipartFile?
     ): ProductDto {
-        return ProductDto.of(
-            productFacade.createProduct(
-                username,
-                body.workspaceId,
-                body.name,
-                body.description,
-                body.price,
-                body.productCategoryId,
-                file
-            )
+        return productFacade.createProduct(
+            username,
+            body.workspaceId,
+            body.name,
+            body.description,
+            body.price,
+            body.productCategoryId,
+            file
         )
+
     }
 
     @Operation(summary = "상품 수정", description = "상품을 수정합니다.")
@@ -72,17 +70,15 @@ class AdminProductController(
         @RequestPart body: UpdateProductRequestBody,
         @RequestPart file: MultipartFile?
     ): ProductDto {
-        return ProductDto.of(
-            productFacade.updateProduct(
-                username,
-                body.workspaceId,
-                body.productId,
-                body.name,
-                body.description,
-                body.price,
-                body.productCategoryId,
-                file
-            )
+        return productFacade.updateProduct(
+            username,
+            body.workspaceId,
+            body.productId,
+            body.name,
+            body.description,
+            body.price,
+            body.productCategoryId,
+            file
         )
     }
 
@@ -92,13 +88,11 @@ class AdminProductController(
         @AdminUsername username: String,
         @RequestBody body: UpdateProductSellableRequestBody,
     ): ProductDto {
-        return ProductDto.of(
-            productFacade.updateProductSellable(
-                username,
-                body.workspaceId,
-                body.productId,
-                body.isSellable
-            )
+        return productFacade.updateProductSellable(
+            username,
+            body.workspaceId,
+            body.productId,
+            body.isSellable
         )
     }
 
@@ -138,6 +132,6 @@ class AdminProductController(
             username,
             body.workspaceId,
             body.productCategoryIds
-        ).map { ProductCategoryDto.of(it) }
+        )
     }
 }
