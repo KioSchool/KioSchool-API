@@ -7,6 +7,7 @@ import com.kioschool.kioschoolapi.domain.order.repository.*
 import com.kioschool.kioschoolapi.domain.workspace.entity.Workspace
 import com.kioschool.kioschoolapi.domain.workspace.entity.WorkspaceSetting
 import com.kioschool.kioschoolapi.domain.workspace.entity.WorkspaceTable
+import com.kioschool.kioschoolapi.global.cache.annotation.OrderProductUpdateEvent
 import com.kioschool.kioschoolapi.global.cache.annotation.OrderUpdateEvent
 import com.kioschool.kioschoolapi.global.common.enums.OrderStatus
 import com.kioschool.kioschoolapi.global.common.enums.WebsocketType
@@ -42,7 +43,7 @@ class OrderService(
         return savedOrder
     }
 
-    @OrderUpdateEvent
+    @OrderProductUpdateEvent
     fun saveOrderProductAndSendWebsocketMessage(orderProduct: OrderProduct): OrderProduct {
         val savedOrderProduct = orderProductRepository.save(orderProduct)
         val order = savedOrderProduct.order
