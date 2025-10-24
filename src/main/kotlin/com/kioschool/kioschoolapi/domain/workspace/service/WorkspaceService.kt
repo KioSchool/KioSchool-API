@@ -10,6 +10,7 @@ import com.kioschool.kioschoolapi.domain.workspace.exception.WorkspaceInaccessib
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepository
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceTableRepository
 import com.kioschool.kioschoolapi.global.aws.S3Service
+import com.kioschool.kioschoolapi.global.cache.annotation.WorkspaceUpdateEvent
 import com.kioschool.kioschoolapi.global.common.enums.UserRole
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.Page
@@ -95,6 +96,7 @@ class WorkspaceService(
         if (workspace.owner != user) throw NoPermissionToInviteException()
     }
 
+    @WorkspaceUpdateEvent
     fun inviteUserToWorkspace(workspace: Workspace, user: User): Workspace {
         val workspaceInvitation = WorkspaceInvitation(
             workspace = workspace,
@@ -104,16 +106,19 @@ class WorkspaceService(
         return workspaceRepository.save(workspace)
     }
 
+    @WorkspaceUpdateEvent
     fun removeUserFromWorkspace(workspace: Workspace, user: User): Workspace {
         workspace.members.removeIf { it.user == user }
         return workspaceRepository.save(workspace)
     }
 
+    @WorkspaceUpdateEvent
     fun updateTableCount(workspace: Workspace, tableCount: Int) {
         workspace.tableCount = tableCount
         workspaceRepository.save(workspace)
     }
 
+    @WorkspaceUpdateEvent
     fun saveWorkspace(workspace: Workspace): Workspace {
         return workspaceRepository.save(workspace)
     }
@@ -125,6 +130,7 @@ class WorkspaceService(
         }
     }
 
+    @WorkspaceUpdateEvent
     fun saveWorkspaceImages(workspace: Workspace, newImageFiles: List<MultipartFile>): Workspace {
         newImageFiles.forEach {
             val path =
