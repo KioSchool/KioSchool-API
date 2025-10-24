@@ -15,7 +15,6 @@ import com.kioschool.kioschoolapi.global.cache.annotation.ProductCategoryUpdateE
 import com.kioschool.kioschoolapi.global.cache.annotation.ProductUpdateEvent
 import jakarta.transaction.Transactional
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 
@@ -77,6 +76,7 @@ class ProductService(
         )
     }
 
+    @ProductCategoryUpdateEvent
     fun saveProductCategories(productCategories: List<ProductCategory>): List<ProductCategory> {
         return productCategoryRepository.saveAll(productCategories)
     }
