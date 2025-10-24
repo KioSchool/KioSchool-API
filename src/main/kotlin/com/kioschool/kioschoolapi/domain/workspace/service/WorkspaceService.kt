@@ -113,9 +113,9 @@ class WorkspaceService(
     }
 
     @WorkspaceUpdateEvent
-    fun updateTableCount(workspace: Workspace, tableCount: Int) {
+    fun updateTableCount(workspace: Workspace, tableCount: Int): Workspace {
         workspace.tableCount = tableCount
-        workspaceRepository.save(workspace)
+        return workspaceRepository.save(workspace)
     }
 
     @WorkspaceUpdateEvent
