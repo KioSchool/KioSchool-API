@@ -16,6 +16,7 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.mail.javamail.MimeMessageHelper
+import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 import java.util.*
 
@@ -43,6 +44,7 @@ class EmailService(
         if (!isEmailDomainVerified(emailAddress)) throw NotVerifiedEmailDomainException()
     }
 
+    @Async
     fun sendEmail(address: String, subject: String, text: String) {
         val message = javaMailSender.createMimeMessage()
         val helper = MimeMessageHelper(message, true, "UTF-8")

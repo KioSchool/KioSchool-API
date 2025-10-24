@@ -5,6 +5,7 @@ import com.kioschool.kioschoolapi.domain.workspace.entity.Workspace
 import com.kioschool.kioschoolapi.global.discord.api.DiscordApi
 import okhttp3.FormBody
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 
 @Service
@@ -13,6 +14,7 @@ class DiscordService(
     private val webhookUrl: String,
     private val discordApi: DiscordApi
 ) {
+    @Async
     fun sendUserRegister(user: User) {
         val message =
             """## [회원가입]
@@ -24,6 +26,7 @@ class DiscordService(
         send(message)
     }
 
+    @Async
     fun sendWorkspaceCreate(workspace: Workspace) {
         val message =
             """## [워크스페이스 생성]
@@ -35,6 +38,7 @@ class DiscordService(
         send(message)
     }
 
+    @Async
     fun sendPopupResult(username: String, result: String) {
         val message = """## [팝업 결과]
         |아이디: $username

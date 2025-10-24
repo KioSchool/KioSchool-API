@@ -4,6 +4,7 @@ import com.kioschool.kioschoolapi.domain.product.event.ProductCategoryUpdatedEve
 import com.kioschool.kioschoolapi.global.cache.constant.CacheNames
 import org.springframework.cache.CacheManager
 import org.springframework.context.event.EventListener
+import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
 
 @Component
@@ -11,6 +12,7 @@ class ProductCategoryCacheEvictListener(
     private val cacheManager: CacheManager
 ) {
 
+    @Async
     @EventListener
     fun handleProductCategoryUpdate(event: ProductCategoryUpdatedEvent) {
         cacheManager.getCache(CacheNames.PRODUCT_CATEGORIES)?.evict(event.workspaceId)
