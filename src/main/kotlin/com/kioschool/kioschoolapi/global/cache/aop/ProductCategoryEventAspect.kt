@@ -13,8 +13,22 @@ class ProductCategoryEventAspect(
     private val eventPublisher: ApplicationEventPublisher
 ) {
 
-    @AfterReturning(pointcut = "@annotation(com.kioschool.kioschoolapi.global.cache.annotation.ProductCategoryUpdateEvent)", returning = "productCategory")
+    @AfterReturning(
+        pointcut = "@annotation(com.kioschool.kioschoolapi.global.cache.annotation.ProductCategoryUpdateEvent)",
+        returning = "productCategory"
+    )
     fun handleProductCategoryUpdate(productCategory: ProductCategory) {
         eventPublisher.publishEvent(ProductCategoryUpdatedEvent(productCategory.workspace.id))
+    }
+
+    @AfterReturning(
+        pointcut = "@annotation(com.kioschool.kioschoolapi.global.cache.annotation.ProductCategoriesUpdateEvent)",
+        returning = "productCategories"
+    )
+    fun handleProductCategoryUpdateList(productCategories: List<ProductCategory>) {
+        if (productCategories.isNotEmpty()) {
+            val workspaceId = productCategories.first().workspace.id
+            eventPublisher.publishEvent(ProductCategoryUpdatedEvent(workspaceId))
+        }
     }
 }
