@@ -11,6 +11,7 @@ import com.kioschool.kioschoolapi.domain.product.repository.ProductRepository
 import com.kioschool.kioschoolapi.domain.workspace.entity.Workspace
 import com.kioschool.kioschoolapi.domain.workspace.exception.WorkspaceInaccessibleException
 import com.kioschool.kioschoolapi.global.aws.S3Service
+import com.kioschool.kioschoolapi.global.cache.annotation.ProductCategoriesUpdateEvent
 import com.kioschool.kioschoolapi.global.cache.annotation.ProductCategoryUpdateEvent
 import com.kioschool.kioschoolapi.global.cache.annotation.ProductUpdateEvent
 import jakarta.transaction.Transactional
@@ -76,7 +77,7 @@ class ProductService(
         )
     }
 
-    @ProductCategoryUpdateEvent
+    @ProductCategoriesUpdateEvent
     fun saveProductCategories(productCategories: List<ProductCategory>): List<ProductCategory> {
         return productCategoryRepository.saveAll(productCategories)
     }
