@@ -37,6 +37,16 @@ class AdminAccountController(
 
     }
 
+    @Operation(summary = "계좌 삭제", description = "등록된 계좌를 삭제합니다.")
+    @DeleteMapping("/account")
+    fun deleteAccount(
+        @AdminUsername username: String
+    ): UserDto {
+        return accountFacade.deleteAccount(
+            username
+        )
+    }
+
     @Operation(summary = "토스 계좌 URL 등록", description = "토스 계좌 URL을 등록합니다.")
     @PostMapping("/toss-account")
     fun registerTossAccount(
@@ -46,6 +56,16 @@ class AdminAccountController(
         return accountFacade.registerTossAccount(
             username,
             body.accountUrl
+        )
+    }
+
+    @Operation(summary = "토스 계좌 URL 삭제", description = "등록된 토스 계좌 URL을 삭제합니다.")
+    @DeleteMapping("/toss-account")
+    fun deleteTossAccount(
+        @AdminUsername username: String
+    ): UserDto {
+        return accountFacade.deleteTossAccount(
+            username
         )
     }
 
