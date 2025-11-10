@@ -229,4 +229,48 @@ class AccountFacadeTest : DescribeSpec({
             verify(exactly = 0) { userService.saveUser(SampleEntity.user) }
         }
     }
+
+    describe("deleteAccount") {
+        it("should call userService.getUser, accountService.deleteAccount, and userService.saveUser and account should be null") {
+            val username = "username"
+            val user = SampleEntity.user.apply {
+                this.account = SampleEntity.account
+            }
+
+            every { userService.getUser(username) } returns user
+            every { accountService.deleteAccount(user) } returns Unit
+            every { userService.saveUser(any()) } returns user.apply {
+                this.account = null
+            }
+
+            val result = sut.deleteAccount(username)
+
+            assert(result.account == null)
+
+            verify { userService.getUser(username) }
+            verify { accountService.deleteAccount(user) }
+            verify { userService.saveUser(any()) }
+        }
+    }
+
+    describe("deleteTossAccount") {
+        it("should call userService.getUser, and userService.saveUser and tossAccountUrl should be null") {
+            val username = "username"
+            val user = SampleEntity.user.apply {
+                this.account = SampleEntity.account.apply {
+                    this.tossAccountUrl = "some-url"
+                }
+            }
+
+            every { userService.getUser(username) } returns user
+            every { userService.saveUser(any()) } returns user
+
+            val result = sut.deleteTossAccount(username)
+
+            assert(result.account?.tossAccountUrl == null)
+
+            verify { userService.getUser(username) }
+            verify { userService.saveUser(any()) }
+        }
+    }
 })

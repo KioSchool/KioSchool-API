@@ -33,4 +33,28 @@ class AccountServiceTest : DescribeSpec({
             verify { accountRepository.save(any()) }
         }
     }
+
+    describe("deleteAccount") {
+        it("should call accountRepository.delete when user has an account") {
+            val user = SampleEntity.user.apply { account = SampleEntity.account }
+
+            every { accountRepository.delete(any<Account>()) } just Runs
+
+            sut.deleteAccount(user)
+
+            assert(user.account == null)
+
+            verify { accountRepository.delete(SampleEntity.account) }
+        }
+
+        it("should not call accountRepository.delete when user has no account") {
+            val user = SampleEntity.user.apply { account = null }
+
+            sut.deleteAccount(user)
+
+            assert(user.account == null)
+
+            verify(exactly = 0) { accountRepository.delete(any<Account>()) }
+        }
+    }
 })
