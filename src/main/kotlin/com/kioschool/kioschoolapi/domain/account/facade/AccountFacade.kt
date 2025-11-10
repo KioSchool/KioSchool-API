@@ -60,4 +60,10 @@ class AccountFacade(
         accountService.deleteAccount(user)
         return UserDto.of(userService.saveUser(user))
     }
+
+    fun deleteTossAccount(username: String): UserDto {
+        val user = userService.getUser(username)
+        user.account?.tossAccountUrl = null
+        return UserDto.of(userService.saveUser(user))
+    }
 }

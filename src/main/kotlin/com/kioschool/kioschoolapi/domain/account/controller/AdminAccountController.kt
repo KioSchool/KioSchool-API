@@ -59,4 +59,14 @@ class AdminAccountController(
         )
     }
 
+    @Operation(summary = "토스 계좌 URL 삭제", description = "등록된 토스 계좌 URL을 삭제합니다.")
+    @DeleteMapping("/toss-account")
+    fun deleteTossAccount(
+        @AdminUsername username: String
+    ): UserDto {
+        return accountFacade.deleteTossAccount(
+            username
+        )
+    }
+
 }
