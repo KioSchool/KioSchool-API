@@ -197,8 +197,8 @@ class OrderFacadeTest : DescribeSpec({
             val tableNumber = 1
             val startDate = LocalDateTime.of(2021, 1, 1, 0, 0)
             val endDate = LocalDateTime.of(2021, 1, 2, 0, 0)
-            val statusStr = OrderStatus.PAID.name
-            val status = OrderStatus.PAID
+            val statusStrs = listOf(OrderStatus.PAID.name)
+            val statuses = listOf(OrderStatus.PAID)
 
             every { workspaceService.checkAccessible(username, workspaceId) } just Runs
             every {
@@ -206,7 +206,7 @@ class OrderFacadeTest : DescribeSpec({
                     workspaceId,
                     startDate,
                     endDate,
-                    status,
+                    statuses,
                     tableNumber
                 )
             } returns listOf(SampleEntity.order1)
@@ -216,7 +216,7 @@ class OrderFacadeTest : DescribeSpec({
                 workspaceId,
                 startDate,
                 endDate,
-                statusStr,
+                statusStrs,
                 tableNumber
             )
 
@@ -228,7 +228,7 @@ class OrderFacadeTest : DescribeSpec({
                     workspaceId,
                     startDate,
                     endDate,
-                    status,
+                    statuses,
                     tableNumber
                 )
             }
