@@ -24,7 +24,7 @@ class AdminOrderController(
         @RequestParam("workspaceId") workspaceId: Long,
         @RequestParam("startDate") startDate: LocalDateTime? = null,
         @RequestParam("endDate") endDate: LocalDateTime? = null,
-        @RequestParam("status") status: String? = null,
+        @RequestParam("statuses") statuses: List<String>? = null,
         @RequestParam("tableNumber") tableNumber: Int? = null
     ): List<OrderDto> {
         return orderFacade.getOrdersByCondition(
@@ -32,7 +32,7 @@ class AdminOrderController(
             workspaceId,
             startDate,
             endDate,
-            status,
+            statuses,
             tableNumber
         )
     }
