@@ -1,6 +1,11 @@
 package com.kioschool.kioschoolapi.order.service
 
-import com.kioschool.kioschoolapi.domain.order.repository.*
+import com.kioschool.kioschoolapi.domain.order.repository.CustomOrderRepository
+import com.kioschool.kioschoolapi.domain.order.repository.CustomOrderSessionRepository
+import com.kioschool.kioschoolapi.domain.order.repository.OrderProductRepository
+import com.kioschool.kioschoolapi.domain.order.repository.OrderRedisRepository
+import com.kioschool.kioschoolapi.domain.order.repository.OrderRepository
+import com.kioschool.kioschoolapi.domain.order.repository.OrderSessionRepository
 import com.kioschool.kioschoolapi.domain.order.service.OrderService
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.factory.SampleEntity
@@ -20,6 +25,7 @@ class OrderServiceTest : DescribeSpec({
     val orderRedisRepository = mockk<OrderRedisRepository>()
     val orderProductRepository = mockk<OrderProductRepository>()
     val orderSessionRepository = mockk<OrderSessionRepository>()
+    val customOrderSessionRepository = mockk<CustomOrderSessionRepository>()
 
     val sut = OrderService(
         repository,
@@ -27,7 +33,8 @@ class OrderServiceTest : DescribeSpec({
         customOrderRepository,
         orderRedisRepository,
         orderProductRepository,
-        orderSessionRepository
+        orderSessionRepository,
+        customOrderSessionRepository
     )
 
     beforeTest {
@@ -38,6 +45,7 @@ class OrderServiceTest : DescribeSpec({
         mockkObject(orderRedisRepository)
         mockkObject(orderProductRepository)
         mockkObject(orderSessionRepository)
+        mockkObject(customOrderSessionRepository)
     }
 
     afterTest {
@@ -238,45 +246,39 @@ class OrderServiceTest : DescribeSpec({
         }
     }
 
-    describe("getAllOrdersByTable") {
-        it("should call orderRepository.findAllByTableNumber") {
+    describe("getAllOrderSessionsByCondition") {
+        it("should call customOrderSessionRepository.findAllByCondition") {
             // Arrange
             val workspaceId = 1L
             val tableNumber = 1
-            val page = 1
-            val size = 10
+            val start = java.time.LocalDateTime.now()
+            val end = java.time.LocalDateTime.now()
 
             // Mock
             every {
-                repository.findAllByWorkspaceIdAndTableNumber(
+                customOrderSessionRepository.findAllByCondition(
                     workspaceId,
                     tableNumber,
-                    PageRequest.of(
-                        page, size, Sort.by(
-                            Sort.Order.desc("id")
-                        )
-                    )
+                    start,
+                    end
                 )
-            } returns mockk()
+            } returns emptyList()
 
             // Act
-            sut.getAllOrdersByTable(
+            sut.getAllOrderSessionsByCondition(
                 workspaceId,
                 tableNumber,
-                page,
-                size
-            )
+                start,
+                end
+            ) shouldBe emptyList()
 
             // Assert
             verify {
-                repository.findAllByWorkspaceIdAndTableNumber(
+                customOrderSessionRepository.findAllByCondition(
                     workspaceId,
                     tableNumber,
-                    PageRequest.of(
-                        page, size, Sort.by(
-                            Sort.Order.desc("id")
-                        )
-                    )
+                    start,
+                    end
                 )
             }
         }

@@ -1,12 +1,15 @@
 package com.kioschool.kioschoolapi.domain.order.controller
 
-import com.kioschool.kioschoolapi.domain.order.dto.common.*
+import com.kioschool.kioschoolapi.domain.order.dto.common.OrderDto
+import com.kioschool.kioschoolapi.domain.order.dto.common.OrderHourlyPrice
+import com.kioschool.kioschoolapi.domain.order.dto.common.OrderPrefixSumPrice
+import com.kioschool.kioschoolapi.domain.order.dto.common.OrderProductDto
+import com.kioschool.kioschoolapi.domain.order.dto.common.OrderSessionDto
 import com.kioschool.kioschoolapi.domain.order.dto.request.*
 import com.kioschool.kioschoolapi.domain.order.facade.OrderFacade
 import com.kioschool.kioschoolapi.global.security.annotation.AdminUsername
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
-import org.springframework.data.domain.Page
 import org.springframework.web.bind.annotation.*
 import java.time.LocalDateTime
 
@@ -78,16 +81,16 @@ class AdminOrderController(
     fun getOrdersByTable(
         @AdminUsername username: String,
         @RequestParam("workspaceId") workspaceId: Long,
-        @RequestParam("tableNumber") tableNumber: Int,
-        @RequestParam("page") page: Int,
-        @RequestParam("size") size: Int
-    ): Page<OrderDto> {
+        @RequestParam("tableNumber") tableNumber: Int? = null,
+        @RequestParam("startDate") startDate: LocalDateTime,
+        @RequestParam("endDate") endDate: LocalDateTime
+    ): List<OrderSessionDto> {
         return orderFacade.getOrdersByTable(
             username,
             workspaceId,
             tableNumber,
-            page,
-            size
+            startDate,
+            endDate
         )
     }
 

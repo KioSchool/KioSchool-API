@@ -3,7 +3,12 @@ package com.kioschool.kioschoolapi.domain.order.service
 import com.kioschool.kioschoolapi.domain.order.entity.Order
 import com.kioschool.kioschoolapi.domain.order.entity.OrderProduct
 import com.kioschool.kioschoolapi.domain.order.entity.OrderSession
-import com.kioschool.kioschoolapi.domain.order.repository.*
+import com.kioschool.kioschoolapi.domain.order.repository.CustomOrderRepository
+import com.kioschool.kioschoolapi.domain.order.repository.CustomOrderSessionRepository
+import com.kioschool.kioschoolapi.domain.order.repository.OrderProductRepository
+import com.kioschool.kioschoolapi.domain.order.repository.OrderRedisRepository
+import com.kioschool.kioschoolapi.domain.order.repository.OrderRepository
+import com.kioschool.kioschoolapi.domain.order.repository.OrderSessionRepository
 import com.kioschool.kioschoolapi.domain.workspace.entity.Workspace
 import com.kioschool.kioschoolapi.domain.workspace.entity.WorkspaceSetting
 import com.kioschool.kioschoolapi.domain.workspace.entity.WorkspaceTable
@@ -13,9 +18,6 @@ import com.kioschool.kioschoolapi.global.common.enums.OrderStatus
 import com.kioschool.kioschoolapi.global.common.enums.WebsocketType
 import com.kioschool.kioschoolapi.global.websocket.dto.Message
 import com.kioschool.kioschoolapi.global.websocket.service.CustomWebSocketService
-import org.springframework.data.domain.Page
-import org.springframework.data.domain.PageRequest
-import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 
@@ -26,7 +28,8 @@ class OrderService(
     private val customOrderRepository: CustomOrderRepository,
     private val orderRedisRepository: OrderRedisRepository,
     private val orderProductRepository: OrderProductRepository,
-    private val orderSessionRepository: OrderSessionRepository
+    private val orderSessionRepository: OrderSessionRepository,
+    private val customOrderSessionRepository: CustomOrderSessionRepository
 ) {
     @OrderUpdateEvent
     fun saveOrder(order: Order): Order {
@@ -90,22 +93,17 @@ class OrderService(
         orderRedisRepository.resetAllOrderNumber()
     }
 
-    fun getAllOrdersByTable(
+    fun getAllOrderSessionsByCondition(
         workspaceId: Long,
-        tableNumber: Int,
-        page: Int,
-        size: Int
-    ): Page<Order> {
-        return orderRepository.findAllByWorkspaceIdAndTableNumber(
+        tableNumber: Int?,
+        start: LocalDateTime,
+        end: LocalDateTime
+    ): List<OrderSession> {
+        return customOrderSessionRepository.findAllByCondition(
             workspaceId,
             tableNumber,
-            PageRequest.of(
-                page,
-                size,
-                Sort.by(
-                    Sort.Order.desc("id")
-                )
-            )
+            start,
+            end
         )
     }
 
