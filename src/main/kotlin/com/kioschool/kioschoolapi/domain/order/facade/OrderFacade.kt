@@ -13,7 +13,6 @@ import com.kioschool.kioschoolapi.global.cache.constant.CacheNames
 import com.kioschool.kioschoolapi.global.common.enums.OrderStatus
 import com.kioschool.kioschoolapi.global.common.enums.WebsocketType
 import org.springframework.cache.annotation.Cacheable
-import org.springframework.data.domain.Page
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
@@ -132,13 +131,18 @@ class OrderFacade(
     fun getOrdersByTable(
         username: String,
         workspaceId: Long,
-        tableNumber: Int,
-        page: Int,
-        size: Int
-    ): Page<OrderDto> {
+        tableNumber: Int?,
+        startDate: LocalDateTime,
+        endDate: LocalDateTime
+    ): List<OrderSessionDto> {
         workspaceService.checkAccessible(username, workspaceId)
-        return orderService.getAllOrdersByTable(workspaceId, tableNumber, page, size)
-            .map { OrderDto.of(it) }
+        return orderService.getAllOrderSessionsByCondition(
+            workspaceId,
+            tableNumber,
+            startDate,
+            endDate
+        )
+            .map { OrderSessionDto.of(it) }
     }
 
     fun changeOrderProductServedCount(

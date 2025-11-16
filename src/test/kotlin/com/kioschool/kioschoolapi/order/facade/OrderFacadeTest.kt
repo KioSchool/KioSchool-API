@@ -426,25 +426,25 @@ class OrderFacadeTest : DescribeSpec({
     }
 
     describe("getOrdersByTable") {
-        it("should call workspaceService.checkAccessible and orderService.getAllOrdersByTable") {
+        it("should call workspaceService.checkAccessible and orderService.getAllOrderSessionsByCondition") {
             val username = "test"
             val workspaceId = 1L
             val tableNumber = 1
-            val page = 0
-            val size = 10
+            val startDate = LocalDateTime.now()
+            val endDate = LocalDateTime.now()
 
             every { workspaceService.checkAccessible(username, workspaceId) } just Runs
             every {
-                orderService.getAllOrdersByTable(workspaceId, tableNumber, page, size)
-            } returns PageImpl(listOf(SampleEntity.order1))
+                orderService.getAllOrderSessionsByCondition(workspaceId, tableNumber, startDate, endDate)
+            } returns listOf(SampleEntity.orderSession)
 
-            val result = sut.getOrdersByTable(username, workspaceId, tableNumber, page, size)
+            val result = sut.getOrdersByTable(username, workspaceId, tableNumber, startDate, endDate)
 
-            assert(result.content.first().id == SampleEntity.order1.id)
+            assert(result.first().id == SampleEntity.orderSession.id)
 
             verify { workspaceService.checkAccessible(username, workspaceId) }
             verify {
-                orderService.getAllOrdersByTable(workspaceId, tableNumber, page, size)
+                orderService.getAllOrderSessionsByCondition(workspaceId, tableNumber, startDate, endDate)
             }
         }
 
@@ -452,8 +452,8 @@ class OrderFacadeTest : DescribeSpec({
             val username = "test"
             val workspaceId = 1L
             val tableNumber = 1
-            val page = 0
-            val size = 10
+            val startDate = LocalDateTime.now()
+            val endDate = LocalDateTime.now()
 
             every {
                 workspaceService.checkAccessible(
@@ -463,12 +463,12 @@ class OrderFacadeTest : DescribeSpec({
             } throws WorkspaceInaccessibleException()
 
             assertThrows<WorkspaceInaccessibleException> {
-                sut.getOrdersByTable(username, workspaceId, tableNumber, page, size)
+                sut.getOrdersByTable(username, workspaceId, tableNumber, startDate, endDate)
             }
 
             verify { workspaceService.checkAccessible(username, workspaceId) }
             verify(exactly = 0) {
-                orderService.getAllOrdersByTable(workspaceId, tableNumber, page, size)
+                orderService.getAllOrderSessionsByCondition(any(), any(), any(), any())
             }
         }
     }
