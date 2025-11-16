@@ -84,18 +84,18 @@ class OrderFacade(
         workspaceId: Long,
         startDate: LocalDateTime?,
         endDate: LocalDateTime?,
-        status: String?,
+        statuses: List<String>?,
         tableNumber: Int?
     ): List<OrderDto> {
         workspaceService.checkAccessible(username, workspaceId)
 
-        val parsedStatus = status?.let { OrderStatus.valueOf(it) }
+        val parsedStatuses = statuses?.map { OrderStatus.valueOf(it) }
 
         return orderService.getAllOrdersByCondition(
             workspaceId,
             startDate,
             endDate,
-            parsedStatus,
+            parsedStatuses,
             tableNumber
         ).map { OrderDto.of(it) }
     }
@@ -170,13 +170,13 @@ class OrderFacade(
     ): List<OrderPrefixSumPrice> {
         workspaceService.checkAccessible(username, workspaceId)
 
-        val parsedStatus = status?.let { OrderStatus.valueOf(it) }
+        val parsedStatuses = status?.let { listOf(OrderStatus.valueOf(it)) }
 
         val orders = orderService.getAllOrdersByCondition(
             workspaceId,
             startDate,
             endDate,
-            parsedStatus,
+            parsedStatuses,
             null
         )
 
@@ -200,13 +200,13 @@ class OrderFacade(
     ): List<OrderHourlyPrice> {
         workspaceService.checkAccessible(username, workspaceId)
 
-        val parsedStatus = status?.let { OrderStatus.valueOf(it) }
+        val parsedStatuses = status?.let { listOf(OrderStatus.valueOf(it)) }
 
         val orders = orderService.getAllOrdersByCondition(
             workspaceId,
             startDate,
             endDate,
-            parsedStatus,
+            parsedStatuses,
             null
         )
 

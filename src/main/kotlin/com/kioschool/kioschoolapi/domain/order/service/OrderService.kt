@@ -58,14 +58,14 @@ class OrderService(
         workspaceId: Long,
         startDate: LocalDateTime?,
         endDate: LocalDateTime?,
-        status: OrderStatus?,
+        statuses: List<OrderStatus>?,
         tableNumber: Int?
     ): List<Order> {
         return customOrderRepository.findAllByCondition(
             workspaceId,
             startDate,
             endDate,
-            status,
+            statuses,
             tableNumber
         )
     }
