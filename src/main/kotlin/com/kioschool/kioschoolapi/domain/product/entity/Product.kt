@@ -3,6 +3,7 @@ package com.kioschool.kioschoolapi.domain.product.entity
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.kioschool.kioschoolapi.domain.workspace.entity.Workspace
 import com.kioschool.kioschoolapi.global.common.entity.BaseEntity
+import com.kioschool.kioschoolapi.global.common.enums.ProductStatus
 import jakarta.persistence.Entity
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
@@ -15,6 +16,7 @@ class Product(
     var price: Int,
     var imageUrl: String? = null,
     var isSellable: Boolean? = true,
+    var status: ProductStatus = ProductStatus.SELLING,
     @ManyToOne
     @JsonIgnore
     val workspace: Workspace,

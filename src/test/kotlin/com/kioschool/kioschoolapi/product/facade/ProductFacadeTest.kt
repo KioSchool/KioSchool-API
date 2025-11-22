@@ -8,6 +8,7 @@ import com.kioschool.kioschoolapi.domain.workspace.exception.WorkspaceInaccessib
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.factory.SampleEntity
 import com.kioschool.kioschoolapi.global.aws.S3Service
+import com.kioschool.kioschoolapi.global.common.enums.ProductStatus
 import io.kotest.core.spec.style.DescribeSpec
 import io.mockk.*
 import org.junit.jupiter.api.assertThrows
@@ -678,6 +679,51 @@ class ProductFacadeTest : DescribeSpec({
             verify { workspaceService.checkAccessible(username, workspaceId) }
             verify(exactly = 0) { productService.getProductCategories(any()) }
             verify(exactly = 0) { productService.saveProductCategories(any()) }
+        }
+    }
+
+    describe("updateProductStatus") {
+        it("should update product status") {
+            val username = "username"
+            val workspaceId = 1L
+            val productId = 1L
+            val status = ProductStatus.SOLD_OUT
+            val product = SampleEntity.product
+            every { productService.getProduct(productId) } returns product
+            every { workspaceService.checkAccessible(username, workspaceId) } just Runs
+            every { productService.saveProduct(product) } returns product
+
+            val result = sut.updateProductStatus(username, workspaceId, productId, status)
+
+            assert(result.id == product.id)
+            assert(result.status == status)
+
+            verify { productService.getProduct(productId) }
+            verify { workspaceService.checkAccessible(username, workspaceId) }
+            verify { productService.saveProduct(product) }
+        }
+
+        it("should throw WorkspaceInaccessibleException") {
+            val username = "username"
+            val workspaceId = 1L
+            val productId = 1L
+            val status = ProductStatus.SOLD_OUT
+            val product = SampleEntity.product
+            every { productService.getProduct(productId) } returns product
+            every {
+                workspaceService.checkAccessible(
+                    username,
+                    workspaceId
+                )
+            } throws WorkspaceInaccessibleException()
+
+            assertThrows<WorkspaceInaccessibleException> {
+                sut.updateProductStatus(username, workspaceId, productId, status)
+            }
+
+            verify { productService.getProduct(productId) }
+            verify { workspaceService.checkAccessible(username, workspaceId) }
+            verify(exactly = 0) { productService.saveProduct(any()) }
         }
     }
 })
