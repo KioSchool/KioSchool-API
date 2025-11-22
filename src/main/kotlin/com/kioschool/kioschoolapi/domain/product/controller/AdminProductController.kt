@@ -82,7 +82,11 @@ class AdminProductController(
         )
     }
 
-    @Operation(summary = "상품 판매 여부 수정", description = "상품의 판매 여부를 수정합니다.")
+    @Operation(
+        summary = "상품 판매 여부 수정",
+        description = "상품의 판매 여부를 수정합니다. deprecated: 상품 상태 수정 API로 대체됩니다.",
+        deprecated = true
+    )
     @PutMapping("/product/sellable")
     fun updateProductSellable(
         @AdminUsername username: String,
@@ -93,6 +97,20 @@ class AdminProductController(
             body.workspaceId,
             body.productId,
             body.isSellable
+        )
+    }
+
+    @Operation(summary = "상품 상태 수정", description = "상품의 상태를 수정합니다.")
+    @PutMapping("/product/status")
+    fun updateProductStatus(
+        @AdminUsername username: String,
+        @RequestBody body: UpdateProductStatusRequestBody,
+    ): ProductDto {
+        return productFacade.updateProductStatus(
+            username,
+            body.workspaceId,
+            body.productId,
+            body.status
         )
     }
 

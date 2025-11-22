@@ -8,6 +8,7 @@ import com.kioschool.kioschoolapi.domain.workspace.exception.WorkspaceInaccessib
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.global.aws.S3Service
 import com.kioschool.kioschoolapi.global.cache.constant.CacheNames
+import com.kioschool.kioschoolapi.global.common.enums.ProductStatus
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Component
 import org.springframework.web.multipart.MultipartFile
@@ -166,5 +167,18 @@ class ProductFacade(
         }
         return productService.saveProductCategories(productCategories)
             .map { ProductCategoryDto.of(it) }
+    }
+
+    fun updateProductStatus(
+        username: String,
+        workspaceId: Long,
+        productId: Long,
+        status: ProductStatus
+    ): ProductDto {
+        val product = productService.getProduct(productId)
+        workspaceService.checkAccessible(username, workspaceId)
+
+        product.status = status
+        return ProductDto.of(productService.saveProduct(product))
     }
 }
