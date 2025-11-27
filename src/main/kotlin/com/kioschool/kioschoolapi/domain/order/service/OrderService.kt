@@ -115,6 +115,10 @@ class OrderService(
         return orderRepository.findAllByOrderSession(orderSession)
     }
 
+    fun getAllOrdersByOrderSessionIds(sessionIds: List<Long>): List<Order> {
+        return customOrderRepository.findAllByOrderSessionIds(sessionIds)
+    }
+
     fun saveOrderSession(orderSession: OrderSession): OrderSession {
         return orderSessionRepository.save(orderSession)
     }

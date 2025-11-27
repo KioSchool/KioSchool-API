@@ -207,6 +207,45 @@ object SampleEntity {
         tableHash = "testHash"
     )
 
+    val testSession1 = OrderSession(
+        workspace = workspace,
+        tableNumber = 1,
+        expectedEndAt = null
+    ).apply { setId(1L) }
+
+    val testSession2 = OrderSession(
+        workspace = workspace,
+        tableNumber = 1,
+        expectedEndAt = null
+    ).apply { setId(2L) }
+
+    val order1s1 = Order(
+        workspace = workspace,
+        tableNumber = 1,
+        customerName = "c1",
+        orderNumber = 1,
+        totalPrice = 1000,
+        orderSession = testSession1
+    ).apply { setId(10L) }
+
+    val order2s1 = Order(
+        workspace = workspace,
+        tableNumber = 1,
+        customerName = "c2",
+        orderNumber = 2,
+        totalPrice = 2000,
+        orderSession = testSession1
+    ).apply { setId(11L) }
+
+    val order1s2 = Order(
+        workspace = workspace,
+        tableNumber = 1,
+        customerName = "c3",
+        orderNumber = 3,
+        totalPrice = 3000,
+        orderSession = testSession2
+    ).apply { setId(20L) }
+
     private fun BaseEntity.setId(id: Long) {
         val f = this::class.superclasses.first().java.getDeclaredField("id")
         f.isAccessible = true

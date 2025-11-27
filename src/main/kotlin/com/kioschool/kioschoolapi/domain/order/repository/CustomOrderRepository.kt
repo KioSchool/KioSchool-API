@@ -31,4 +31,11 @@ class CustomOrderRepository(
 
         return query.fetch()
     }
+
+    fun findAllByOrderSessionIds(sessionIds: List<Long>): List<Order> {
+        val order = QOrder.order
+        return queryFactory.selectFrom(order)
+            .where(order.orderSession.id.`in`(sessionIds))
+            .fetch()
+    }
 }

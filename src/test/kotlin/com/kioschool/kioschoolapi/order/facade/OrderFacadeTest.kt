@@ -426,7 +426,48 @@ class OrderFacadeTest : DescribeSpec({
     }
 
     describe("getOrdersByTable") {
-        it("should call workspaceService.checkAccessible and orderService.getAllOrderSessionsByCondition") {
+        it("should return orders grouped by session") {
+            // 1. Arrange
+            val username = "test"
+            val workspaceId = 1L
+            val tableNumber = 1
+            val startDate = LocalDateTime.now()
+            val endDate = LocalDateTime.now()
+
+            val mockSessions = listOf(SampleEntity.testSession1, SampleEntity.testSession2)
+            val mockSessionIds = mockSessions.map { it.id }
+            val mockOrders = listOf(SampleEntity.order1s1, SampleEntity.order2s1, SampleEntity.order1s2)
+
+            every { workspaceService.checkAccessible(username, workspaceId) } just Runs
+            every {
+                orderService.getAllOrderSessionsByCondition(workspaceId, tableNumber, startDate, endDate)
+            } returns mockSessions
+            every { orderService.getAllOrdersByOrderSessionIds(mockSessionIds) } returns mockOrders
+
+            // 2. Act
+            val result = sut.getOrdersByTable(username, workspaceId, tableNumber, startDate, endDate)
+
+            // 3. Assert
+            assert(result.size == 2)
+
+            val resultSession1 = result.find { it.id == 1L }
+            assert(resultSession1 != null)
+            assert(resultSession1!!.orders.size == 2)
+            assert(resultSession1.orders.any { it.id == 10L })
+            assert(resultSession1.orders.any { it.id == 11L })
+
+            val resultSession2 = result.find { it.id == 2L }
+            assert(resultSession2 != null)
+            assert(resultSession2!!.orders.size == 1)
+            assert(resultSession2.orders.any { it.id == 20L })
+
+            verify { workspaceService.checkAccessible(username, workspaceId) }
+            verify { orderService.getAllOrderSessionsByCondition(workspaceId, tableNumber, startDate, endDate) }
+            verify { orderService.getAllOrdersByOrderSessionIds(mockSessionIds) }
+        }
+
+        it("should return empty list when no sessions are found") {
+            // 1. Arrange
             val username = "test"
             val workspaceId = 1L
             val tableNumber = 1
@@ -436,16 +477,16 @@ class OrderFacadeTest : DescribeSpec({
             every { workspaceService.checkAccessible(username, workspaceId) } just Runs
             every {
                 orderService.getAllOrderSessionsByCondition(workspaceId, tableNumber, startDate, endDate)
-            } returns listOf(SampleEntity.orderSession)
+            } returns emptyList()
 
+            // 2. Act
             val result = sut.getOrdersByTable(username, workspaceId, tableNumber, startDate, endDate)
 
-            assert(result.first().id == SampleEntity.orderSession.id)
+            // 3. Assert
+            assert(result.isEmpty())
 
-            verify { workspaceService.checkAccessible(username, workspaceId) }
-            verify {
-                orderService.getAllOrderSessionsByCondition(workspaceId, tableNumber, startDate, endDate)
-            }
+            verify { orderService.getAllOrderSessionsByCondition(workspaceId, tableNumber, startDate, endDate) }
+            verify(exactly = 0) { orderService.getAllOrdersByOrderSessionIds(any()) }
         }
 
         it("should throw WorkspaceInaccessibleException when workspace is not accessible") {
@@ -467,9 +508,7 @@ class OrderFacadeTest : DescribeSpec({
             }
 
             verify { workspaceService.checkAccessible(username, workspaceId) }
-            verify(exactly = 0) {
-                orderService.getAllOrderSessionsByCondition(any(), any(), any(), any())
-            }
+            verify(exactly = 0) { orderService.getAllOrderSessionsByCondition(any(), any(), any(), any()) }
         }
     }
 

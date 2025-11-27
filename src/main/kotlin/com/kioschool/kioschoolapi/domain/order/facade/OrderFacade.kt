@@ -134,15 +134,32 @@ class OrderFacade(
         tableNumber: Int?,
         startDate: LocalDateTime,
         endDate: LocalDateTime
-    ): List<OrderSessionDto> {
+    ): List<OrderSessionWithOrderDto> {
         workspaceService.checkAccessible(username, workspaceId)
-        return orderService.getAllOrderSessionsByCondition(
+
+        val sessions = orderService.getAllOrderSessionsByCondition(
             workspaceId,
             tableNumber,
             startDate,
             endDate
         )
-            .map { OrderSessionDto.of(it) }
+
+        if (sessions.isEmpty()) {
+            return emptyList()
+        }
+
+        val sessionIds = sessions.map { it.id }
+
+        val orders = orderService.getAllOrdersByOrderSessionIds(sessionIds)
+
+        val ordersBySessionId = orders
+            .mapNotNull { order -> order.orderSession?.let { it.id to order } }
+            .groupBy({ it.first }, { it.second })
+
+        return sessions.map { session ->
+            val sessionOrders = ordersBySessionId[session.id] ?: emptyList()
+            OrderSessionWithOrderDto.of(session, sessionOrders)
+        }
     }
 
     fun changeOrderProductServedCount(

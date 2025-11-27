@@ -1,10 +1,6 @@
 package com.kioschool.kioschoolapi.domain.order.controller
 
-import com.kioschool.kioschoolapi.domain.order.dto.common.OrderDto
-import com.kioschool.kioschoolapi.domain.order.dto.common.OrderHourlyPrice
-import com.kioschool.kioschoolapi.domain.order.dto.common.OrderPrefixSumPrice
-import com.kioschool.kioschoolapi.domain.order.dto.common.OrderProductDto
-import com.kioschool.kioschoolapi.domain.order.dto.common.OrderSessionDto
+import com.kioschool.kioschoolapi.domain.order.dto.common.*
 import com.kioschool.kioschoolapi.domain.order.dto.request.*
 import com.kioschool.kioschoolapi.domain.order.facade.OrderFacade
 import com.kioschool.kioschoolapi.global.security.annotation.AdminUsername
@@ -84,7 +80,7 @@ class AdminOrderController(
         @RequestParam("tableNumber") tableNumber: Int? = null,
         @RequestParam("startDate") startDate: LocalDateTime,
         @RequestParam("endDate") endDate: LocalDateTime
-    ): List<OrderSessionDto> {
+    ): List<OrderSessionWithOrderDto> {
         return orderFacade.getOrdersByTable(
             username,
             workspaceId,

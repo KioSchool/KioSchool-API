@@ -320,6 +320,22 @@ class OrderServiceTest : DescribeSpec({
         }
     }
 
+    describe("getAllOrdersByOrderSessionIds") {
+        it("should call customOrderRepository.findAllByOrderSessionIds") {
+            // Arrange
+            val sessionIds = listOf(1L, 2L)
+            val mockOrders = listOf(SampleEntity.order1s1, SampleEntity.order1s2)
+            every { customOrderRepository.findAllByOrderSessionIds(sessionIds) } returns mockOrders
+
+            // Act
+            val result = sut.getAllOrdersByOrderSessionIds(sessionIds)
+
+            // Assert
+            result shouldBe mockOrders
+            verify { customOrderRepository.findAllByOrderSessionIds(sessionIds) }
+        }
+    }
+
     describe("saveOrderSession") {
         it("should save order session") {
             // Arrange
