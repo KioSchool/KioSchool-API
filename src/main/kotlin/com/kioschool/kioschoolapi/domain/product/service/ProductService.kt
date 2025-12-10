@@ -14,6 +14,7 @@ import com.kioschool.kioschoolapi.global.aws.S3Service
 import com.kioschool.kioschoolapi.global.cache.annotation.ProductCategoriesUpdateEvent
 import com.kioschool.kioschoolapi.global.cache.annotation.ProductCategoryUpdateEvent
 import com.kioschool.kioschoolapi.global.cache.annotation.ProductUpdateEvent
+import com.kioschool.kioschoolapi.global.common.enums.ProductStatus
 import jakarta.transaction.Transactional
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
@@ -136,7 +137,7 @@ class ProductService(
         if (products.size != productIds.size) {
             throw NotFoundProductException()
         }
-        if (products.any { it.isSellable != true }) {
+        if (products.any { it.status != ProductStatus.SELLING }) {
             throw NotSellableProductException()
         }
     }
