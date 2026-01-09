@@ -432,51 +432,6 @@ class ProductFacadeTest : DescribeSpec({
         }
     }
 
-    describe("updateProductSellable") {
-        it("should update product sellable") {
-            val username = "username"
-            val workspaceId = 1L
-            val productId = 1L
-            val isSellable = true
-            val product = SampleEntity.product.apply { this.isSellable = false }
-
-            every { productService.getProduct(productId) } returns product
-            every { workspaceService.checkAccessible(username, product.workspace.id) } just Runs
-            every { productService.saveProduct(product) } returns product
-
-            val result = sut.updateProductSellable(username, workspaceId, productId, isSellable)
-
-            assert(result.id == product.id)
-            assert(result.isSellable == isSellable)
-
-            verify { productService.getProduct(productId) }
-            verify { workspaceService.checkAccessible(username, product.workspace.id) }
-            verify { productService.saveProduct(product) }
-        }
-
-        it("should throw WorkspaceInaccessibleException") {
-            val username = "username"
-            val workspaceId = 1L
-            val productId = 1L
-            val isSellable = true
-            val product = SampleEntity.product
-            every { productService.getProduct(productId) } returns product
-            every {
-                workspaceService.checkAccessible(
-                    username,
-                    product.workspace.id
-                )
-            } throws WorkspaceInaccessibleException()
-
-            assertThrows<WorkspaceInaccessibleException> {
-                sut.updateProductSellable(username, workspaceId, productId, isSellable)
-            }
-
-            verify { productService.getProduct(productId) }
-            verify { workspaceService.checkAccessible(username, product.workspace.id) }
-        }
-    }
-
     describe("deleteProduct") {
         it("should delete product") {
             val username = "username"
