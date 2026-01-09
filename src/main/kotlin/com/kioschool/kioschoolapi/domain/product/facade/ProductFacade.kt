@@ -104,19 +104,6 @@ class ProductFacade(
         return ProductDto.of(productService.saveProduct(product))
     }
 
-    fun updateProductSellable(
-        username: String,
-        workspaceId: Long,
-        productId: Long,
-        isSellable: Boolean
-    ): ProductDto {
-        val product = productService.getProduct(productId)
-        workspaceService.checkAccessible(username, workspaceId)
-
-        product.isSellable = isSellable
-        return ProductDto.of(productService.saveProduct(product))
-    }
-
     fun deleteProduct(username: String, productId: Long): ProductDto {
         val product = productService.getProduct(productId)
         workspaceService.checkAccessible(username, product.workspace.id)

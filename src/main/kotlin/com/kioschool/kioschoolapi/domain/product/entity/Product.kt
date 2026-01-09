@@ -15,7 +15,6 @@ class Product(
     var description: String,
     var price: Int,
     var imageUrl: String? = null,
-    var isSellable: Boolean? = true,
     var status: ProductStatus = ProductStatus.SELLING,
     @ManyToOne
     @JsonIgnore

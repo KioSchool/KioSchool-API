@@ -11,14 +11,8 @@ class InitProductStatus(
 ) : Runnable {
     override fun run() {
         val products = productRepository.findAll()
-        products.filter {
-            it.status == null
-        }.forEach {
-            it.status = if (it.isSellable == true) {
-                ProductStatus.SELLING
-            } else {
-                ProductStatus.HIDDEN
-            }
+        products.forEach {
+            it.status = ProductStatus.SELLING
         }
         productRepository.saveAll(products)
     }
