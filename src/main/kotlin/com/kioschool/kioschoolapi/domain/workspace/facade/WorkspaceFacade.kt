@@ -155,4 +155,14 @@ class WorkspaceFacade(
 
         return WorkspaceDto.of(workspaceService.saveWorkspace(workspace))
     }
+
+    fun updateWorkspaceMemo(username: String, workspaceId: Long, memo: String): WorkspaceDto {
+        val user = userService.getUser(username)
+        val workspace = workspaceService.getWorkspace(workspaceId)
+
+        workspaceService.checkCanAccessWorkspace(user, workspace)
+        workspace.memo = memo
+
+        return WorkspaceDto.of(workspaceService.saveWorkspace(workspace))
+    }
 }

@@ -59,6 +59,19 @@ class AdminWorkspaceController(
         )
     }
 
+    @Operation(summary = "워크스페이스 메모 수정", description = "워크스페이스 메모를 수정합니다.")
+    @PutMapping("/workspace/memo")
+    fun updateWorkspaceMemo(
+        @AdminUsername username: String,
+        @RequestBody body: UpdateWorkspaceMemoRequestBody,
+    ): WorkspaceDto {
+        return workspaceFacade.updateWorkspaceMemo(
+            username,
+            body.workspaceId,
+            body.memo
+        )
+    }
+
     @Operation(summary = "워크스페이스 이미지 수정", description = "워크스페이스 이미지를 수정합니다.")
     @PutMapping("/workspace/image")
     fun updateWorkspaceImage(

@@ -50,6 +50,7 @@ class Workspace(
     val images: MutableList<WorkspaceImage> = mutableListOf(),
     var description: String = "",
     var notice: String = "",
+    var memo: String = "",
     var tableCount: Int = 1,
     @OneToOne(
         cascade = [CascadeType.ALL],

@@ -6,9 +6,6 @@ import com.kioschool.kioschoolapi.domain.user.dto.common.UserDto
 import com.kioschool.kioschoolapi.domain.workspace.entity.Workspace
 import java.time.LocalDateTime
 
-import com.kioschool.kioschoolapi.domain.workspace.dto.common.WorkspaceImageDto
-import com.kioschool.kioschoolapi.domain.workspace.dto.common.WorkspaceSettingDto
-
 data class WorkspaceDto(
     val id: Long,
     val name: String,
@@ -18,6 +15,7 @@ data class WorkspaceDto(
     val images: List<WorkspaceImageDto>,
     val description: String,
     val notice: String,
+    val memo: String,
     val tableCount: Int,
     val workspaceSetting: WorkspaceSettingDto,
     val createdAt: LocalDateTime?,
@@ -34,6 +32,7 @@ data class WorkspaceDto(
                 images = workspace.images.map { WorkspaceImageDto.of(it) },
                 description = workspace.description,
                 notice = workspace.notice,
+                memo = workspace.memo,
                 tableCount = workspace.tableCount,
                 workspaceSetting = WorkspaceSettingDto.of(workspace.workspaceSetting),
                 createdAt = workspace.createdAt,
