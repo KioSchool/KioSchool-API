@@ -43,6 +43,10 @@ class ProductService(
         return productRepository.findById(productId).orElseThrow()
     }
 
+    fun getProducts(productIds: List<Long>): List<Product> {
+        return productRepository.findAllById(productIds)
+    }
+
     fun getProductCategory(productCategoryId: Long): ProductCategory {
         return productCategoryRepository.findById(productCategoryId).orElseThrow()
     }
