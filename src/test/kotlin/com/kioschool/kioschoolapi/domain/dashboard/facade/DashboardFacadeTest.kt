@@ -1,10 +1,8 @@
 package com.kioschool.kioschoolapi.domain.dashboard.facade
 
 import com.kioschool.kioschoolapi.domain.dashboard.dto.ProductIdQuantityDto
-import com.kioschool.kioschoolapi.domain.order.dto.common.OrderDto
 import com.kioschool.kioschoolapi.domain.order.entity.Order
 import com.kioschool.kioschoolapi.domain.order.service.OrderService
-import com.kioschool.kioschoolapi.domain.product.dto.common.ProductDto
 import com.kioschool.kioschoolapi.domain.product.entity.Product
 import com.kioschool.kioschoolapi.domain.product.service.ProductService
 import com.kioschool.kioschoolapi.domain.workspace.entity.Workspace
@@ -35,14 +33,14 @@ class DashboardFacadeTest {
         // Given
         val username = "admin"
         val workspaceId = 1L
-        
+
         // Mock Workspace Entity
         val mockWorkspace = mockk<Workspace>(relaxed = true) {
             every { name } returns "Test Workspace"
             every { notice } returns "Notice"
             every { memo } returns "Memo"
         }
-        
+
         // Mock Workspace Tables
         val table1 = mockk<WorkspaceTable>(relaxed = true) {
             every { orderSession } returns mockk() // Occupied
@@ -52,23 +50,28 @@ class DashboardFacadeTest {
         }
 
         every { workspaceService.getWorkspace(workspaceId) } returns mockWorkspace
-        every { workspaceService.getAllWorkspaceTables(mockWorkspace) } returns listOf(table1, table2)
+        every { workspaceService.getAllWorkspaceTables(mockWorkspace) } returns listOf(
+            table1,
+            table2
+        )
 
         // Mock OrderService (Stats)
         every { orderService.getSalesSum(workspaceId, any(), any()) } returns 10000L
         every { orderService.getOrderCount(workspaceId, any(), any()) } returns 2L
-        
+
         // Mock Top Selling
         every { orderService.getTopSellingProducts(workspaceId, any(), any(), 5) } returns listOf(
             ProductIdQuantityDto(10L, "Pizza", 10)
         )
-        // Mock ProductService.getProduct for Top Selling
-        val pizzaProduct = mockk<Product>(relaxed = true) {
-            every { id } returns 10L
-            every { name } returns "Pizza"
-            // other fields relaxed
-        }
-        every { productService.getProduct(10L) } returns pizzaProduct
+
+        val pizzaProducts = listOf(
+            mockk<Product>(relaxed = true) {
+                every { id } returns 10L
+                every { name } returns "Pizza"
+            }
+        )
+
+        every { productService.getProducts(listOf(10L)) } returns pizzaProducts
 
         // Mock Recent Orders (Returns Entities)
         val mockOrder = mockk<Order>(relaxed = true) {
@@ -81,7 +84,15 @@ class DashboardFacadeTest {
             every { orderNumber } returns 1L
             // Relaxed mock handles collections/other fields if accessed by OrderDto.of
         }
-        every { orderService.getAllOrdersByCondition(workspaceId, any(), any(), any(), any()) } returns listOf(mockOrder)
+        every {
+            orderService.getAllOrdersByCondition(
+                workspaceId,
+                any(),
+                any(),
+                any(),
+                any()
+            )
+        } returns listOf(mockOrder)
 
         // Mock Out of Stock Products (Returns Entities)
         val soldOutProduct = mockk<Product>(relaxed = true) {
@@ -91,7 +102,9 @@ class DashboardFacadeTest {
         }
         // ProductService usually returns all products, Facade filters. 
         // Logic: productService.getAllProductsByCondition(workspaceId).filter { SOLD_OUT }
-        every { productService.getAllProductsByCondition(workspaceId) } returns listOf(soldOutProduct)
+        every { productService.getAllProductsByCondition(workspaceId) } returns listOf(
+            soldOutProduct
+        )
 
         // When
         val result = dashboardFacade.getDashboard(username, workspaceId)
