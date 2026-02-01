@@ -1,14 +1,10 @@
 package com.kioschool.kioschoolapi.domain.order.service
 
+import com.kioschool.kioschoolapi.domain.dashboard.dto.ProductIdQuantityDto
 import com.kioschool.kioschoolapi.domain.order.entity.Order
 import com.kioschool.kioschoolapi.domain.order.entity.OrderProduct
 import com.kioschool.kioschoolapi.domain.order.entity.OrderSession
-import com.kioschool.kioschoolapi.domain.order.repository.CustomOrderRepository
-import com.kioschool.kioschoolapi.domain.order.repository.CustomOrderSessionRepository
-import com.kioschool.kioschoolapi.domain.order.repository.OrderProductRepository
-import com.kioschool.kioschoolapi.domain.order.repository.OrderRedisRepository
-import com.kioschool.kioschoolapi.domain.order.repository.OrderRepository
-import com.kioschool.kioschoolapi.domain.order.repository.OrderSessionRepository
+import com.kioschool.kioschoolapi.domain.order.repository.*
 import com.kioschool.kioschoolapi.domain.workspace.entity.Workspace
 import com.kioschool.kioschoolapi.domain.workspace.entity.WorkspaceSetting
 import com.kioschool.kioschoolapi.domain.workspace.entity.WorkspaceTable
@@ -140,5 +136,23 @@ class OrderService(
                 tableNumber = table.tableNumber
             )
         )
+    }
+
+
+    fun getSalesSum(workspaceId: Long, start: LocalDateTime, end: LocalDateTime): Long {
+        return customOrderRepository.getSalesSum(workspaceId, start, end)
+    }
+
+    fun getOrderCount(workspaceId: Long, start: LocalDateTime, end: LocalDateTime): Long {
+        return customOrderRepository.getOrderCount(workspaceId, start, end)
+    }
+
+    fun getTopSellingProducts(
+        workspaceId: Long,
+        start: LocalDateTime,
+        end: LocalDateTime,
+        limit: Int
+    ): List<ProductIdQuantityDto> {
+        return customOrderRepository.getTopSellingProducts(workspaceId, start, end, limit)
     }
 }

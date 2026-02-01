@@ -52,4 +52,8 @@ class JwtAuthenticationFilter(
             HttpMethod.values().joinToString { it.name() })
         response.status = HttpServletResponse.SC_OK
     }
+
+    override fun shouldNotFilterAsyncDispatch(): Boolean {
+        return false
+    }
 }
