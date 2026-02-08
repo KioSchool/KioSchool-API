@@ -4,7 +4,7 @@ import com.kioschool.kioschoolapi.domain.order.dto.common.OrderDto
 import com.kioschool.kioschoolapi.domain.product.dto.common.ProductDto
 
 data class DashboardDto(
-    val workspace: WorkspaceInfoDto,
+    val dashboardWorkspaceInfo: WorkspaceInfoDto,
     val stats: DashboardStatsDto,
     val topSellingProducts: List<TopSellingProductDto>,
     val recentOrders: List<OrderDto>,

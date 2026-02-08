@@ -46,7 +46,8 @@ class DashboardFacade(
 
         // Stats
         val salesSum = orderService.getSalesSum(workspaceId, startOfBusinessDay, endOfBusinessDay)
-        val orderCount = orderService.getOrderCount(workspaceId, startOfBusinessDay, endOfBusinessDay)
+        val orderCount =
+            orderService.getOrderCount(workspaceId, startOfBusinessDay, endOfBusinessDay)
         val avg = if (orderCount > 0) (salesSum.toDouble() / orderCount) else 0.0
 
         val statsDto = DashboardStatsDto(
@@ -62,7 +63,8 @@ class DashboardFacade(
             endOfBusinessDay,
             5
         )
-        val productMap = productService.getProducts(topSelling.map { it.productId }).associateBy { it.id }
+        val productMap =
+            productService.getProducts(topSelling.map { it.productId }).associateBy { it.id }
         val topSellingDtoList = topSelling.mapNotNull {
             val product = productMap[it.productId] ?: return@mapNotNull null
             TopSellingProductDto(
@@ -84,7 +86,7 @@ class DashboardFacade(
             .map { ProductDto.of(it) }
 
         return DashboardDto(
-            workspace = workspaceDto,
+            dashboardWorkspaceInfo = workspaceDto,
             stats = statsDto,
             topSellingProducts = topSellingDtoList,
             recentOrders = recentOrdersDtoList,

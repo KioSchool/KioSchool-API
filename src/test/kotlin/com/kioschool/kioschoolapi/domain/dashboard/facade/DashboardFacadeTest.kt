@@ -111,9 +111,9 @@ class DashboardFacadeTest {
 
         // Then
         // Workspace
-        assertEquals("Test Workspace", result.workspace.name)
-        assertEquals(1, result.workspace.occupiedTables)
-        assertEquals(2, result.workspace.totalTables)
+        assertEquals("Test Workspace", result.dashboardWorkspaceInfo.name)
+        assertEquals(1, result.dashboardWorkspaceInfo.occupiedTables)
+        assertEquals(2, result.dashboardWorkspaceInfo.totalTables)
 
         // Stats
         assertEquals(10000L, result.stats.totalSales)
