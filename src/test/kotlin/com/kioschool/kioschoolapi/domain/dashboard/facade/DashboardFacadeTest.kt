@@ -12,7 +12,7 @@ import com.kioschool.kioschoolapi.global.common.enums.OrderStatus
 import com.kioschool.kioschoolapi.global.common.enums.ProductStatus
 import io.mockk.every
 import io.mockk.mockk
-import kotlinx.coroutines.runBlocking
+
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.time.LocalDateTime
@@ -29,7 +29,7 @@ class DashboardFacadeTest {
     )
 
     @Test
-    fun `getDashboard returns aggregated data correctly`() = runBlocking {
+    fun `getDashboard returns aggregated data correctly`() {
         // Given
         val username = "admin"
         val workspaceId = 1L

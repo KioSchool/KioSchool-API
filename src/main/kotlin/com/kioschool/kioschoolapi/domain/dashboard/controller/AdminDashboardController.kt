@@ -18,7 +18,7 @@ class AdminDashboardController(
 ) {
     @Operation(summary = "대시보드 조회", description = "워크스페이스 대시보드를 조회합니다.")
     @GetMapping("/dashboard")
-    suspend fun getDashboard(
+    fun getDashboard(
         @AdminUsername username: String,
         @RequestParam workspaceId: Long
     ): DashboardDto {
