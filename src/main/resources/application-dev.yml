@@ -1,0 +1,30 @@
+spring:
+  datasource:
+    url: "${DATABASE_URL}"
+    username: "${DATABASE_USERNAME}"
+    password: "${DATABASE_PASSWORD}"
+  data:
+    redis:
+      host: "${REDIS_HOST}"
+      port: 6379
+      password: ${REDIS_PASSWORD}
+      ssl:
+        enabled: true
+cloud:
+  aws:
+    s3:
+      default-path: dev
+websocket:
+  allowed-origins: "https://dev.kio-school.com"
+discord:
+  webhook-url: "${DISCORD_WEBHOOK_URL}"
+kioschool:
+  base-url: "https://dev.kio-school.com"
+  cookie:
+    secure: true
+management:
+  endpoints:
+    web:
+      cors:
+        allowed-origins: "https://dev.kio-school.com"
+        allowed-methods: "*"
