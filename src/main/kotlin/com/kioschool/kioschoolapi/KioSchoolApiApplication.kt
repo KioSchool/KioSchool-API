@@ -26,6 +26,8 @@ class KioSchoolApiApplication {
         return CommandLineRunner {
             println("!!! [STARTUP_CHECK] APPLICATION IS RUNNING NEW VERSION !!!")
             println("!!! Active Profiles: ${Arrays.toString(ctx.environment.activeProfiles)} !!!")
+            println("!!! [DEBUG] Env Var (SPRING_PROFILES_ACTIVE): ${System.getenv("SPRING_PROFILES_ACTIVE")}")
+            println("!!! [DEBUG] System Prop (spring.profiles.active): ${System.getProperty("spring.profiles.active")}")
         }
     }
 }
