@@ -13,10 +13,6 @@ import org.springframework.security.web.DefaultSecurityFilterChain
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.CorsConfigurationSource
-import jakarta.annotation.PostConstruct
-import org.slf4j.LoggerFactory
-import org.springframework.http.HttpMethod
-
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 
 @Configuration
@@ -26,13 +22,6 @@ class SecurityConfiguration(
     private val allowedOrigins: String,
     private val jwtProvider: JwtProvider
 ) {
-    private val logger = LoggerFactory.getLogger(SecurityConfiguration::class.java)
-
-    @PostConstruct
-    fun init() {
-        println("[DEBUG_CORS] SecurityConfig Initialized")
-        println("[DEBUG_CORS] Allowed Origins from Property: $allowedOrigins")
-    }
 
     @Bean
     fun filterChain(httpSecurity: HttpSecurity): DefaultSecurityFilterChain? {
@@ -40,7 +29,6 @@ class SecurityConfiguration(
             .cors { it.configurationSource(corsConfigurationSource()) }
             .csrf { it.disable() }
             .authorizeHttpRequests {
-                it.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 it.requestMatchers("/actuator/**").permitAll()
             }
             .authorizeHttpRequests {
@@ -53,7 +41,7 @@ class SecurityConfiguration(
             }
             .authorizeHttpRequests { it.requestMatchers("/**").permitAll() }
             .addFilterBefore(
-                JwtAuthenticationFilter(jwtProvider),
+                JwtAuthenticationFilter(allowedOrigins, jwtProvider),
                 UsernamePasswordAuthenticationFilter::class.java
             ).logout {
                 it.disable()
@@ -66,12 +54,10 @@ class SecurityConfiguration(
     fun corsConfigurationSource(): CorsConfigurationSource {
         val configuration = CorsConfiguration()
 
-        configuration.allowedOriginPatterns = allowedOrigins.split(",").map { it.trim() } + "*"
-        configuration.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD")
+        configuration.allowedOriginPatterns = allowedOrigins.split(",").map { it.trim() }
+        configuration.allowedMethods = listOf("*")
         configuration.allowedHeaders = listOf("*")
         configuration.allowCredentials = true
-
-        println("[DEBUG_CORS] CorsConfigurationSource registered. Patterns: ${configuration.allowedOriginPatterns}")
 
         val source = UrlBasedCorsConfigurationSource()
         source.registerCorsConfiguration("/**", configuration)
