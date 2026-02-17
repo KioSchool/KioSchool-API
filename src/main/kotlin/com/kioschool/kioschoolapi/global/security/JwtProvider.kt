@@ -7,7 +7,6 @@ import io.jsonwebtoken.SignatureAlgorithm
 import io.jsonwebtoken.security.Keys
 import jakarta.servlet.http.HttpServletRequest
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.http.HttpHeaders
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Component
@@ -36,8 +35,8 @@ class JwtProvider(
     }
 
     fun resolveToken(request: HttpServletRequest): String? {
-        val rawToken = request.cookies?.find { it.name == HttpHeaders.AUTHORIZATION }?.value
-            ?: request.getHeader(HttpHeaders.AUTHORIZATION)
+        val rawToken = request.cookies?.find { it.name == "accessToken" }?.value
+            ?: request.getHeader("accessToken")
             ?: return null
 
         return rawToken.replace("Bearer ", "")
