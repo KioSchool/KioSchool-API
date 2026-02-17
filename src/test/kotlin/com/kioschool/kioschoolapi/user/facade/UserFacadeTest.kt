@@ -21,6 +21,7 @@ import org.springframework.mock.web.MockHttpServletResponse
 
 class UserFacadeTest : DescribeSpec({
     val isSecure = true
+    val cookieDomain = "test.com"
     val userService = mockk<UserService>()
     val emailService = mockk<EmailService>()
     val templateService = mockk<TemplateService>()
@@ -29,6 +30,7 @@ class UserFacadeTest : DescribeSpec({
 
     val sut = UserFacade(
         isSecure,
+        cookieDomain,
         userService,
         emailService,
         templateService,
@@ -63,7 +65,7 @@ class UserFacadeTest : DescribeSpec({
 
 
             assert(response.headerNames.contains("Set-Cookie"))
-            assert(response.getHeaderValue("Set-Cookie") == "Authorization=token; Path=/; Secure; HttpOnly; SameSite=NONE")
+            assert(response.getHeaderValue("Set-Cookie") == "Authorization=token; Path=/; Domain=test.com; Secure; HttpOnly; SameSite=NONE")
             assert(result.body == "login success")
 
 
