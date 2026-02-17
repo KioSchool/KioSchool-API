@@ -28,3 +28,4 @@ management:
       cors:
         allowed-origins: "https://dev.kio-school.com"
         allowed-methods: "*"
+        allowed-headers: "*"
