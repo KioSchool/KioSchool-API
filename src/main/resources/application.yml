@@ -40,8 +40,8 @@ server:
       max: 120
     accept-count: 100
     remoteip:
-      remote-ip-header: x-forwarded-for
-      protocol-header: x-forwarded-proto
+      remote-ip-header: X-Forwarded-For
+      protocol-header: X-Forwarded-Proto
   servlet:
     session:
       cookie:
