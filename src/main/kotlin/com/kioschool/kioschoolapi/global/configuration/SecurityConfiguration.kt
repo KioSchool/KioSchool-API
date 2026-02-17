@@ -41,7 +41,7 @@ class SecurityConfiguration(
             }
             .authorizeHttpRequests { it.requestMatchers("/**").permitAll() }
             .addFilterBefore(
-                JwtAuthenticationFilter(jwtProvider),
+                JwtAuthenticationFilter(allowedOrigins, jwtProvider),
                 UsernamePasswordAuthenticationFilter::class.java
             ).logout {
                 it.disable()
