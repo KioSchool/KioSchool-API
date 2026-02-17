@@ -77,7 +77,7 @@ class UserFacade(
         discordService.sendUserRegister(user)
 
         val token = jwtProvider.createToken(user)
-        val cookie = ResponseCookie.from(HttpHeaders.AUTHORIZATION, token)
+        val cookie = ResponseCookie.from("__session", token)
             .httpOnly(true)
             .secure(true)
             .path("/")

@@ -35,38 +35,11 @@ class JwtProvider(
     }
 
     fun resolveToken(request: HttpServletRequest): String? {
-        println("========== [DEBUG] resolveToken Start ==========")
-        println("Request URL: ${request.requestURL}")
+        val rawToken = request.cookies?.find { it.name == "__session" }?.value
+            ?: request.getHeader("__session")
+            ?: return null
 
-        // 1. 헤더 전체 출력 (Cookie 헤더가 살아있는지 확인)
-        println("--- [Headers] ---")
-        request.headerNames?.asIterator()?.forEachRemaining { name ->
-            println("Header [$name]: ${request.getHeader(name)}")
-        }
-
-        // 2. 파싱된 쿠키 배열 출력 (Tomcat이 쿠키를 인식했는지 확인)
-        println("--- [Parsed Cookies] ---")
-        val cookies = request.cookies
-        if (cookies == null) {
-            println("request.cookies is NULL! (Tomcat found no cookies)")
-        } else {
-            println("Cookie Count: ${cookies.size}")
-            cookies.forEach { cookie ->
-                println(" - Name: [${cookie.name}], Value: [${cookie.value.take(10)}...], Domain: [${cookie.domain}], Path: [${cookie.path}]")
-            }
-        }
-
-        // 3. 실제 로직 수행 (accessToken 이름으로 찾기)
-        // 주의: 로그인 컨트롤러에서도 쿠키 이름을 "accessToken"으로 바꿨는지 꼭 확인하세요!
-        val rawToken = cookies?.find { it.name == "__session" }?.value
-            ?: request.getHeader("__session") // 헤더에서도 찾음
-            ?: request.getHeader("Authorization") // 혹시 몰라 Authorization 헤더도 찾음
-
-        println("--- [Result] ---")
-        println("Resolved Raw Token: ${rawToken?.take(10)}...")
-        println("========== [DEBUG] resolveToken End ==========")
-
-        return rawToken?.replace("Bearer ", "")?.trim()
+        return rawToken.replace("Bearer ", "")
     }
 
     fun isValidToken(token: String): Boolean {
