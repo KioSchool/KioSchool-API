@@ -1,7 +1,9 @@
 name: Deploy
 on:
   push:
-    branches: [ "development" ] # development 브랜치에 푸시될 때만 실행 (실수로 dev 등이 배포되는 것 방지)
+    branches: [ "development" ]
+    # x.x.x 형태 또는 vX.X.X 형태의 태그가 푸시될 때 실행
+    tags: [ "dev-*.*.*" ]
 
 jobs:
   deploy:
@@ -11,6 +13,18 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      # 1. 태그명 또는 브랜치명을 기반으로 이미지 태그 결정
+      - name: Set Docker Image Tag
+        id: vars
+        run: |
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            # 태그 푸시인 경우 태그명을 그대로 사용 (예: 1.2.3)
+            echo "DOCKER_TAG=${{ github.ref_name }}" >> $GITHUB_ENV
+          else
+            # 브랜치 푸시인 경우 기존처럼 development 사용
+            echo "DOCKER_TAG=development" >> $GITHUB_ENV
+          fi
 
       - name: Set up JDK
         uses: actions/setup-java@v1
@@ -27,11 +41,12 @@ jobs:
         run: >-
           mkdir -p ~/.gradle/
           
-          echo "GRADLE_USER_HOME=${HOME}/.gradle" >> $GITHUB_ENV          
+          echo "GRADLE_USER_HOME=${HOME}/.gradle" >> $GITHUB_ENV
           
-          echo "${GRADLE_PROPERTIES}" > ~/.gradle/gradle.properties          
+          echo "${GRADLE_PROPERTIES}" > ~/.gradle/gradle.properties
           
           ./gradlew bootJar
+
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
@@ -41,24 +56,26 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      # 2. 결정된 $DOCKER_TAG를 사용하여 이미지 빌드 및 푸시
       - name: Build and push to Docker Hub
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/kioschool-server:development
+          # development와 x.x.x 태그가 동적으로 적용됨
+          tags: ${{ secrets.DOCKER_USERNAME }}/kioschool-server:${{ env.DOCKER_TAG }}
 
-      # 6. 구글 클라우드 인증 (GCP_CREDENTIALS 시크릿 필요)
       - name: Google Cloud Auth
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_CREDENTIALS }}
 
-      # 7. Cloud Run 배포 요청
+      # 3. Cloud Run에 새 이미지 버전으로 배포 요청
       - name: Deploy to Cloud Run
         uses: google-github-actions/deploy-cloudrun@v2
         with:
-          service: 'kioschool-server-dev'  # Cloud Run 서비스 이름
-          image: '${{ secrets.DOCKER_USERNAME }}/kioschool-server:development' # DockerHub 이미지 주소
-          region: 'asia-northeast3'   # 서울 리전
+          service: 'kioschool-server-dev'
+          # 여기서도 동적인 이미지 태그를 사용하여 즉시 반영 유도
+          image: '${{ secrets.DOCKER_USERNAME }}/kioschool-server:${{ env.DOCKER_TAG }}'
+          region: 'asia-northeast3'
