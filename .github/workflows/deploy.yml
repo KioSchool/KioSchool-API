@@ -1,7 +1,6 @@
 name: Deploy
 on:
   push:
-    branches: [ "development" ]
     # x.x.x 형태 또는 vX.X.X 형태의 태그가 푸시될 때 실행
     tags: [ "dev-*.*.*" ]
 
