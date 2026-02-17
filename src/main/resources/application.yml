@@ -45,6 +45,7 @@ server:
         same-site: none
   error:
     include-message: always
+  forward-headers-strategy: native
 springdoc:
   swagger-ui:
     tags-sorter: alpha
