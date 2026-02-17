@@ -19,8 +19,6 @@ import org.springframework.stereotype.Component
 class UserFacade(
     @Value("\${kioschool.cookie.secure}")
     private val isSecure: Boolean,
-    @Value("\${kioschool.cookie.domain:}")
-    private val cookieDomain: String,
     private val userService: UserService,
     private val emailService: EmailService,
     private val templateService: TemplateService,
@@ -38,7 +36,6 @@ class UserFacade(
         val token = jwtProvider.createToken(user)
         val authCookie =
             ResponseCookie.from(HttpHeaders.AUTHORIZATION, token)
-                .domain(cookieDomain)
                 .httpOnly(true)
                 .secure(isSecure)
                 .path("/")
