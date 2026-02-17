@@ -36,6 +36,10 @@ class JwtProvider(
     }
 
     fun resolveToken(request: HttpServletRequest): String? {
+        request.cookies?.forEach {
+            println("Found Cookie -> Name: ${it.name}, Value: ${it.value}")
+        } ?: println("No cookies found in request object at all")
+
         val rawToken = request.cookies?.find { it.name == HttpHeaders.AUTHORIZATION }?.value
             ?: request.getHeader(HttpHeaders.AUTHORIZATION)
             ?: return null
