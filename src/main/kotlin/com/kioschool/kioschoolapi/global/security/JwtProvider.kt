@@ -58,8 +58,8 @@ class JwtProvider(
 
         // 3. 실제 로직 수행 (accessToken 이름으로 찾기)
         // 주의: 로그인 컨트롤러에서도 쿠키 이름을 "accessToken"으로 바꿨는지 꼭 확인하세요!
-        val rawToken = cookies?.find { it.name == "kio_access_token" }?.value
-            ?: request.getHeader("kio_access_token") // 헤더에서도 찾음
+        val rawToken = cookies?.find { it.name == "__session" }?.value
+            ?: request.getHeader("__session") // 헤더에서도 찾음
             ?: request.getHeader("Authorization") // 혹시 몰라 Authorization 헤더도 찾음
 
         println("--- [Result] ---")
