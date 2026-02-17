@@ -37,7 +37,7 @@ class UserFacade(
 
         val token = jwtProvider.createToken(user)
         val authCookie =
-            ResponseCookie.from("kio_access_token", token)
+            ResponseCookie.from("__session", token)
                 .domain(cookieDomain)
                 .httpOnly(true)
                 .secure(isSecure)
@@ -50,7 +50,7 @@ class UserFacade(
     }
 
     fun logout(response: HttpServletResponse): ResponseEntity<String> {
-        val authCookie = ResponseCookie.from("kio_access_token", "")
+        val authCookie = ResponseCookie.from("__session", "")
             .httpOnly(true)
             .secure(isSecure)
             .path("/")
