@@ -13,6 +13,10 @@ import org.springframework.security.web.DefaultSecurityFilterChain
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.CorsConfigurationSource
+import jakarta.annotation.PostConstruct
+import org.slf4j.LoggerFactory
+import org.springframework.http.HttpMethod
+
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 
 @Configuration
@@ -22,6 +26,12 @@ class SecurityConfiguration(
     private val allowedOrigins: String,
     private val jwtProvider: JwtProvider
 ) {
+    private val logger = LoggerFactory.getLogger(SecurityConfiguration::class.java)
+
+    @PostConstruct
+    fun init() {
+        logger.info("[SecurityConfig] Allowed Origins: $allowedOrigins")
+    }
 
     @Bean
     fun filterChain(httpSecurity: HttpSecurity): DefaultSecurityFilterChain? {
@@ -29,6 +39,7 @@ class SecurityConfiguration(
             .cors { it.configurationSource(corsConfigurationSource()) }
             .csrf { it.disable() }
             .authorizeHttpRequests {
+                it.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 it.requestMatchers("/actuator/**").permitAll()
             }
             .authorizeHttpRequests {
@@ -55,7 +66,7 @@ class SecurityConfiguration(
         val configuration = CorsConfiguration()
 
         configuration.allowedOriginPatterns = allowedOrigins.split(",").map { it.trim() }
-        configuration.allowedMethods = listOf("*")
+        configuration.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD")
         configuration.allowedHeaders = listOf("*")
         configuration.allowCredentials = true
 
