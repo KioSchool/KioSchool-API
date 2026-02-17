@@ -65,7 +65,7 @@ class UserFacadeTest : DescribeSpec({
 
 
             assert(response.headerNames.contains("Set-Cookie"))
-            assert(response.getHeaderValue("Set-Cookie") == "Authorization=token; Path=/; Domain=test.com; Secure; HttpOnly; SameSite=NONE")
+            assert(response.getHeaderValue("Set-Cookie") == "__session=token; Path=/; Domain=test.com; Secure; HttpOnly; SameSite=NONE")
             assert(result.body == "login success")
 
 
@@ -116,7 +116,7 @@ class UserFacadeTest : DescribeSpec({
             val result = sut.logout(response)
 
             assert(response.headerNames.contains("Set-Cookie"))
-            assert(response.getHeaderValue("Set-Cookie") == "Authorization=; Path=/; Secure; HttpOnly; SameSite=NONE")
+            assert(response.getHeaderValue("Set-Cookie") == "__session=; Path=/; Secure; HttpOnly; SameSite=NONE")
             assert(result.body == "logout success")
         }
     }
@@ -146,7 +146,7 @@ class UserFacadeTest : DescribeSpec({
             val result = sut.register(response, loginId, loginPassword, name, email)
 
             assert(response.headerNames.contains("Set-Cookie"))
-            assert(response.getHeaderValue("Set-Cookie") == "Authorization=token; Path=/; Secure; HttpOnly; SameSite=NONE")
+            assert(response.getHeaderValue("Set-Cookie") == "__session=token; Path=/; Secure; HttpOnly; SameSite=NONE")
             assert(result.body == "register success")
 
             verify { userService.validateLoginId(loginId) }
