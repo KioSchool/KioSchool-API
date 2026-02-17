@@ -7,7 +7,6 @@ import io.jsonwebtoken.SignatureAlgorithm
 import io.jsonwebtoken.security.Keys
 import jakarta.servlet.http.HttpServletRequest
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.http.HttpHeaders
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Component
@@ -36,33 +35,11 @@ class JwtProvider(
     }
 
     fun resolveToken(request: HttpServletRequest): String? {
-        var token: String? = null
+        val rawToken = request.cookies?.find { it.name == "accessToken" }?.value
+            ?: request.getHeader("accessToken")
+            ?: return null
 
-        // 1. [정석] 쿠키 배열에서 찾기 (Authorization 또는 accessToken)
-        token = request.cookies?.find {
-            it.name == HttpHeaders.AUTHORIZATION || it.name == "accessToken"
-        }?.value
-
-        // 2. [비상대책] Tomcat이 쿠키 파싱을 못했을 경우, Raw Header를 직접 수색
-        if (token == null) {
-            val cookieHeader = request.getHeader("Cookie")
-            if (cookieHeader != null) {
-                // "Authorization=eyJ..." 패턴을 정규식으로 직접 찾음
-                // (이름을 accessToken으로 바꿨다면 "accessToken=([^;]+)" 로 수정 필요)
-                val match = Regex("accessToken=([^;]+)").find(cookieHeader)
-                token = match?.groupValues?.get(1)
-            }
-        }
-
-        // 3. [헤더] Bearer 토큰 확인 (앱/Postman 요청 대비)
-        if (token == null) {
-            val header = request.getHeader(HttpHeaders.AUTHORIZATION)
-            if (header != null && header.startsWith("Bearer ")) {
-                token = header.replace("Bearer ", "")
-            }
-        }
-
-        return token?.trim()
+        return rawToken.replace("Bearer ", "")
     }
 
     fun isValidToken(token: String): Boolean {
