@@ -19,11 +19,6 @@ class JwtAuthenticationFilter(
         response: HttpServletResponse,
         filterChain: FilterChain
     ) {
-        if (request.isPreflight()) {
-            allowCors(response)
-            return
-        }
-
         val token = jwtProvider.resolveToken(request)
         if (!token.isNullOrBlank() && jwtProvider.isValidToken(token)) {
             val authentication = jwtProvider.getAuthentication(token)
