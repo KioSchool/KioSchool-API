@@ -58,6 +58,7 @@ class WebSocketConfiguration(
                     val servletRequest = request.servletRequest
                     val token: Cookie? =
                         WebUtils.getCookie(servletRequest, HttpHeaders.AUTHORIZATION)
+                    println("WebSocket Handshake - Token: ${token?.value}")
                     attributes["token"] = token?.value ?: ""
                 }
                 return true
