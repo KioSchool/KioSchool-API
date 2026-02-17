@@ -30,8 +30,7 @@ class SecurityConfiguration(
 
     @PostConstruct
     fun init() {
-        println("[DEBUG_CORS] SecurityConfig Initialized")
-        println("[DEBUG_CORS] Allowed Origins from Property: $allowedOrigins")
+        logger.info("[SecurityConfig] Allowed Origins: $allowedOrigins")
     }
 
     @Bean
@@ -66,12 +65,10 @@ class SecurityConfiguration(
     fun corsConfigurationSource(): CorsConfigurationSource {
         val configuration = CorsConfiguration()
 
-        configuration.allowedOriginPatterns = allowedOrigins.split(",").map { it.trim() } + "*"
+        configuration.allowedOriginPatterns = allowedOrigins.split(",").map { it.trim() }
         configuration.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD")
         configuration.allowedHeaders = listOf("*")
         configuration.allowCredentials = true
-
-        println("[DEBUG_CORS] CorsConfigurationSource registered. Patterns: ${configuration.allowedOriginPatterns}")
 
         val source = UrlBasedCorsConfigurationSource()
         source.registerCorsConfiguration("/**", configuration)
