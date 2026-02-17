@@ -37,7 +37,7 @@ class UserFacade(
 
         val token = jwtProvider.createToken(user)
         val authCookie =
-            ResponseCookie.from("__session", token)
+            ResponseCookie.from(HttpHeaders.AUTHORIZATION, token)
                 .domain(cookieDomain)
                 .httpOnly(true)
                 .secure(isSecure)
@@ -50,7 +50,7 @@ class UserFacade(
     }
 
     fun logout(response: HttpServletResponse): ResponseEntity<String> {
-        val authCookie = ResponseCookie.from("__session", "")
+        val authCookie = ResponseCookie.from(HttpHeaders.AUTHORIZATION, "")
             .httpOnly(true)
             .secure(isSecure)
             .path("/")
@@ -77,7 +77,7 @@ class UserFacade(
         discordService.sendUserRegister(user)
 
         val token = jwtProvider.createToken(user)
-        val cookie = ResponseCookie.from("__session", token)
+        val cookie = ResponseCookie.from(HttpHeaders.AUTHORIZATION, token)
             .httpOnly(true)
             .secure(true)
             .path("/")
