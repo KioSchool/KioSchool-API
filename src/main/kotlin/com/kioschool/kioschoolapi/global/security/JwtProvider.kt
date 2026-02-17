@@ -7,6 +7,7 @@ import io.jsonwebtoken.SignatureAlgorithm
 import io.jsonwebtoken.security.Keys
 import jakarta.servlet.http.HttpServletRequest
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.http.HttpHeaders
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Component
@@ -35,8 +36,19 @@ class JwtProvider(
     }
 
     fun resolveToken(request: HttpServletRequest): String? {
-        val rawToken = request.cookies?.find { it.name == "__session" }?.value
-            ?: request.getHeader("__session")
+        val rawCookieHeader = request.getHeader("Cookie")
+        println("Raw Cookie Header: $rawCookieHeader")
+
+        if (rawCookieHeader == null) {
+            println("Cookie header is missing from the request entirely.")
+        }
+
+        request.cookies?.forEach {
+            println("Found Cookie -> Name: ${it.name}, Value: ${it.value}")
+        } ?: println("No cookies found in request object at all")
+
+        val rawToken = request.cookies?.find { it.name == HttpHeaders.AUTHORIZATION }?.value
+            ?: request.getHeader(HttpHeaders.AUTHORIZATION)
             ?: return null
 
         return rawToken.replace("Bearer ", "")

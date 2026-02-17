@@ -19,8 +19,6 @@ import org.springframework.stereotype.Component
 class UserFacade(
     @Value("\${kioschool.cookie.secure}")
     private val isSecure: Boolean,
-    @Value("\${kioschool.cookie.domain:}")
-    private val cookieDomain: String,
     private val userService: UserService,
     private val emailService: EmailService,
     private val templateService: TemplateService,
@@ -37,8 +35,7 @@ class UserFacade(
 
         val token = jwtProvider.createToken(user)
         val authCookie =
-            ResponseCookie.from("__session", token)
-                .domain(cookieDomain)
+            ResponseCookie.from(HttpHeaders.AUTHORIZATION, token)
                 .httpOnly(true)
                 .secure(isSecure)
                 .path("/")
@@ -50,7 +47,7 @@ class UserFacade(
     }
 
     fun logout(response: HttpServletResponse): ResponseEntity<String> {
-        val authCookie = ResponseCookie.from("__session", "")
+        val authCookie = ResponseCookie.from(HttpHeaders.AUTHORIZATION, "")
             .httpOnly(true)
             .secure(isSecure)
             .path("/")
@@ -77,7 +74,7 @@ class UserFacade(
         discordService.sendUserRegister(user)
 
         val token = jwtProvider.createToken(user)
-        val cookie = ResponseCookie.from("__session", token)
+        val cookie = ResponseCookie.from(HttpHeaders.AUTHORIZATION, token)
             .httpOnly(true)
             .secure(true)
             .path("/")

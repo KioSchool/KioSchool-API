@@ -22,7 +22,6 @@ kioschool:
   base-url: "https://kio-school.com"
   cookie:
     secure: true
-    domain: ".kio-school.com"
 management:
   endpoints:
     web:
