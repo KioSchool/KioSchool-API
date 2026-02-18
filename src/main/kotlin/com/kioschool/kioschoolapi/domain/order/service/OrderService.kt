@@ -16,6 +16,7 @@ import com.kioschool.kioschoolapi.global.websocket.dto.Message
 import com.kioschool.kioschoolapi.global.websocket.service.CustomWebSocketService
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
+import com.kioschool.kioschoolapi.domain.order.dto.common.OrderDto
 
 @Service
 class OrderService(
@@ -32,12 +33,13 @@ class OrderService(
         return orderRepository.save(order)
     }
 
+
     @OrderUpdateEvent
     fun saveOrderAndSendWebsocketMessage(order: Order, type: WebsocketType): Order {
         val savedOrder = orderRepository.save(order)
         websocketService.sendMessage(
             "/sub/order/${order.workspace.id}",
-            Message(type, savedOrder)
+            Message(type, OrderDto.of(savedOrder))
         )
         return savedOrder
     }
@@ -48,7 +50,7 @@ class OrderService(
         val order = savedOrderProduct.order
         websocketService.sendMessage(
             "/sub/order/${order.workspace.id}",
-            Message(WebsocketType.UPDATED, order)
+            Message(WebsocketType.UPDATED, OrderDto.of(order))
         )
         return savedOrderProduct
     }

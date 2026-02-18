@@ -1,14 +1,14 @@
 package com.kioschool.kioschoolapi.global.websocket.service
 
 import com.kioschool.kioschoolapi.global.websocket.dto.Message
-import org.springframework.messaging.simp.SimpMessagingTemplate
+import com.kioschool.kioschoolapi.global.websocket.redis.RedisPublisher
 import org.springframework.stereotype.Service
 
 @Service
 class CustomWebSocketService(
-    private val simpMessagingTemplate: SimpMessagingTemplate
+    private val redisPublisher: RedisPublisher
 ) {
     fun sendMessage(destination: String, message: Message) {
-        simpMessagingTemplate.convertAndSend(destination, message)
+        redisPublisher.publish(destination, message)
     }
 }
