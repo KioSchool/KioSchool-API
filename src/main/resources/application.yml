@@ -4,6 +4,10 @@ spring:
       max-file-size: 20MB
       max-request-size: 20MB
   datasource:
+    hikari:
+      minimum-idle: 10
+      max-lifetime: 1800000
+      connection-timeout: 3000
     driver-class-name: org.postgresql.Driver
   liquibase:
     change-log: classpath:db/changelog-master.yaml

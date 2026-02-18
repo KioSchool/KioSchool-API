@@ -21,7 +21,6 @@ import org.springframework.mock.web.MockHttpServletResponse
 
 class UserFacadeTest : DescribeSpec({
     val isSecure = true
-    val cookieDomain = "test.com"
     val userService = mockk<UserService>()
     val emailService = mockk<EmailService>()
     val templateService = mockk<TemplateService>()
@@ -30,7 +29,6 @@ class UserFacadeTest : DescribeSpec({
 
     val sut = UserFacade(
         isSecure,
-        cookieDomain,
         userService,
         emailService,
         templateService,
@@ -65,7 +63,7 @@ class UserFacadeTest : DescribeSpec({
 
 
             assert(response.headerNames.contains("Set-Cookie"))
-            assert(response.getHeaderValue("Set-Cookie") == "__session=token; Path=/; Domain=test.com; Secure; HttpOnly; SameSite=NONE")
+            assert(response.getHeaderValue("Set-Cookie") == "Authorization=token; Path=/; Secure; HttpOnly; SameSite=NONE")
             assert(result.body == "login success")
 
 
@@ -116,7 +114,7 @@ class UserFacadeTest : DescribeSpec({
             val result = sut.logout(response)
 
             assert(response.headerNames.contains("Set-Cookie"))
-            assert(response.getHeaderValue("Set-Cookie") == "__session=; Path=/; Secure; HttpOnly; SameSite=NONE")
+            assert(response.getHeaderValue("Set-Cookie") == "Authorization=; Path=/; Secure; HttpOnly; SameSite=NONE")
             assert(result.body == "logout success")
         }
     }
@@ -146,7 +144,7 @@ class UserFacadeTest : DescribeSpec({
             val result = sut.register(response, loginId, loginPassword, name, email)
 
             assert(response.headerNames.contains("Set-Cookie"))
-            assert(response.getHeaderValue("Set-Cookie") == "__session=token; Path=/; Secure; HttpOnly; SameSite=NONE")
+            assert(response.getHeaderValue("Set-Cookie") == "Authorization=token; Path=/; Secure; HttpOnly; SameSite=NONE")
             assert(result.body == "register success")
 
             verify { userService.validateLoginId(loginId) }
