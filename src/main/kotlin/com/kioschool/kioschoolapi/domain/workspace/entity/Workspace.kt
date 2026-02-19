@@ -18,34 +18,34 @@ class Workspace(
         mappedBy = "workspace",
         cascade = [CascadeType.ALL],
         orphanRemoval = true,
-        fetch = FetchType.EAGER
+        fetch = FetchType.LAZY
     )
     val members: MutableList<WorkspaceMember> = mutableListOf(),
     @OneToMany(
         mappedBy = "workspace",
         orphanRemoval = true,
-        fetch = FetchType.EAGER
+        fetch = FetchType.LAZY
     )
     @OrderBy("id")
     val products: MutableList<Product> = mutableListOf(),
     @OneToMany(
         mappedBy = "workspace",
         orphanRemoval = true,
-        fetch = FetchType.EAGER
+        fetch = FetchType.LAZY
     )
     val productCategories: MutableList<ProductCategory> = mutableListOf(),
     @JsonIgnore
     @OneToMany(
         mappedBy = "workspace",
         orphanRemoval = true,
-        fetch = FetchType.EAGER
+        fetch = FetchType.LAZY
     )
     val invitations: MutableList<WorkspaceInvitation> = mutableListOf(),
     @OneToMany(
         mappedBy = "workspace",
         cascade = [CascadeType.ALL],
         orphanRemoval = true,
-        fetch = FetchType.EAGER
+        fetch = FetchType.LAZY
     )
     val images: MutableList<WorkspaceImage> = mutableListOf(),
     var description: String = "",
@@ -55,7 +55,7 @@ class Workspace(
     @OneToOne(
         cascade = [CascadeType.ALL],
         orphanRemoval = true,
-        fetch = FetchType.EAGER
+        fetch = FetchType.LAZY
     )
     var workspaceSetting: WorkspaceSetting,
 ) : BaseEntity()

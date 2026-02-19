@@ -77,6 +77,7 @@ dependencies {
     testImplementation("io.kotest:kotest-assertions-core-jvm:5.8.0")
     testImplementation("io.kotest:kotest-assertions-json-jvm:5.8.0")
     testImplementation("io.mockk:mockk:1.13.9")
+    testImplementation("com.h2database:h2")
 }
 
 tasks.withType<KotlinCompile> {

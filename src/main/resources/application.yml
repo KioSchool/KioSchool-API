@@ -11,6 +11,10 @@ spring:
     driver-class-name: org.postgresql.Driver
   liquibase:
     change-log: classpath:db/changelog-master.yaml
+  jpa:
+    properties:
+      hibernate:
+        default_batch_fetch_size: 100
   thymeleaf:
     enabled: false
   mail:

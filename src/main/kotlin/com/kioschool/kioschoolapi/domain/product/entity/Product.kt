@@ -5,6 +5,7 @@ import com.kioschool.kioschoolapi.domain.workspace.entity.Workspace
 import com.kioschool.kioschoolapi.global.common.entity.BaseEntity
 import com.kioschool.kioschoolapi.global.common.enums.ProductStatus
 import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 
@@ -16,9 +17,9 @@ class Product(
     var price: Int,
     var imageUrl: String? = null,
     var status: ProductStatus = ProductStatus.SELLING,
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JsonIgnore
     val workspace: Workspace,
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     var productCategory: ProductCategory? = null
 ) : BaseEntity()
