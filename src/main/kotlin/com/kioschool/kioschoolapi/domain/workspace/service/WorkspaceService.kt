@@ -8,6 +8,7 @@ import com.kioschool.kioschoolapi.domain.workspace.exception.NoPermissionToInvit
 import com.kioschool.kioschoolapi.domain.workspace.exception.NoPermissionToJoinWorkspaceException
 import com.kioschool.kioschoolapi.domain.workspace.exception.WorkspaceInaccessibleException
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepository
+import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceMemberRepository
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceTableRepository
 import com.kioschool.kioschoolapi.global.aws.S3Service
 import com.kioschool.kioschoolapi.global.cache.annotation.WorkspaceUpdateEvent
@@ -25,6 +26,7 @@ class WorkspaceService(
     private val workspacePath: String,
     val workspaceRepository: WorkspaceRepository,
     val workspaceTableRepository: WorkspaceTableRepository,
+    val workspaceMemberRepository: WorkspaceMemberRepository,
     val userService: UserService,
     val s3Service: S3Service
 ) {
@@ -78,10 +80,9 @@ class WorkspaceService(
     }
 
     fun isAccessible(username: String, workspaceId: Long): Boolean {
-        val workspace = getWorkspace(workspaceId)
-        val user = userService.getUser(username)
-
-        return workspace.members.any { it.user.loginId == username } || user.role == UserRole.SUPER_ADMIN
+        if (userService.getUser(username).role == UserRole.SUPER_ADMIN) return true
+        
+        return workspaceMemberRepository.existsByWorkspaceIdAndUserLoginId(workspaceId, username)
     }
 
     fun checkAccessible(username: String, workspaceId: Long) {

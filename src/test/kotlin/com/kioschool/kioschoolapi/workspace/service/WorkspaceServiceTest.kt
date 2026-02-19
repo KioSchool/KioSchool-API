@@ -20,18 +20,28 @@ import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
 import org.springframework.web.multipart.MultipartFile
 import java.util.*
+import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceMemberRepository
 
 class WorkspaceServiceTest : DescribeSpec({
     val repository = mockk<WorkspaceRepository>()
     val workspaceTableRepository = mockk<WorkspaceTableRepository>()
+    val workspaceMemberRepository = mockk<WorkspaceMemberRepository>()
     val userService = mockk<UserService>()
     val s3Service = mockk<S3Service>()
 
-    val sut = WorkspaceService("test", repository, workspaceTableRepository, userService, s3Service)
+    val sut = WorkspaceService(
+        "test-path",
+        repository,
+        workspaceTableRepository,
+        workspaceMemberRepository,
+        userService,
+        s3Service
+    )
 
     beforeTest {
         mockkObject(repository)
         mockkObject(workspaceTableRepository)
+        mockkObject(workspaceMemberRepository)
         mockkObject(userService)
     }
 
@@ -179,38 +189,31 @@ class WorkspaceServiceTest : DescribeSpec({
         it("should return true when user is a member of workspace") {
             val username = "test"
             val workspaceId = 1L
-            val workspace = SampleEntity.workspace
             val user = SampleEntity.user
-            workspace.members.add(SampleEntity.workspaceMember(user, workspace))
 
             // Mock
             every {
-                repository.findById(workspaceId)
-            } returns Optional.of(workspace)
-
-            every {
                 userService.getUser(username)
             } returns user
+
+            every {
+                workspaceMemberRepository.existsByWorkspaceIdAndUserLoginId(workspaceId, username)
+            } returns true
 
             // Act
             sut.isAccessible(username, workspaceId) shouldBe true
 
             // Assert
-            verify { repository.findById(workspaceId) }
             verify { userService.getUser(username) }
+            verify { workspaceMemberRepository.existsByWorkspaceIdAndUserLoginId(workspaceId, username) }
         }
 
         it("should return true when user is a super admin") {
             val username = "test"
             val workspaceId = 1L
-            val workspace = SampleEntity.workspace.apply { members.clear() }
             val user = SampleEntity.user.apply { role = UserRole.SUPER_ADMIN }
 
             // Mock
-            every {
-                repository.findById(workspaceId)
-            } returns Optional.of(workspace)
-
             every {
                 userService.getUser(username)
             } returns user
@@ -219,31 +222,30 @@ class WorkspaceServiceTest : DescribeSpec({
             sut.isAccessible(username, workspaceId) shouldBe true
 
             // Assert
-            verify { repository.findById(workspaceId) }
             verify { userService.getUser(username) }
+            verify(exactly = 0) { workspaceMemberRepository.existsByWorkspaceIdAndUserLoginId(any(), any()) }
         }
 
         it("should return false when user is not a member of workspace and not a super admin") {
             val username = "test"
             val workspaceId = 1L
-            val workspace = SampleEntity.workspace.apply { members.clear() }
             val user = SampleEntity.user.apply { role = UserRole.ADMIN }
 
             // Mock
             every {
-                repository.findById(workspaceId)
-            } returns Optional.of(workspace)
-
-            every {
                 userService.getUser(username)
             } returns user
+
+            every {
+                workspaceMemberRepository.existsByWorkspaceIdAndUserLoginId(workspaceId, username)
+            } returns false
 
             // Act
             sut.isAccessible(username, workspaceId) shouldBe false
 
             // Assert
-            verify { repository.findById(workspaceId) }
             verify { userService.getUser(username) }
+            verify { workspaceMemberRepository.existsByWorkspaceIdAndUserLoginId(workspaceId, username) }
         }
     }
 
@@ -251,17 +253,10 @@ class WorkspaceServiceTest : DescribeSpec({
         it("should throw WorkspaceInaccessibleException when user is not a member of workspace and not a super admin") {
             val username = "test"
             val workspaceId = 1L
-            val workspace = SampleEntity.workspace.apply { members.clear() }
             val user = SampleEntity.user.apply { role = UserRole.ADMIN }
 
-            // Mock
-            every {
-                repository.findById(workspaceId)
-            } returns Optional.of(workspace)
-
-            every {
-                userService.getUser(username)
-            } returns user
+            every { userService.getUser(username) } returns user
+            every { workspaceMemberRepository.existsByWorkspaceIdAndUserLoginId(workspaceId, username) } returns false
 
             // Act & Assert
             shouldThrow<WorkspaceInaccessibleException> {
@@ -269,54 +264,37 @@ class WorkspaceServiceTest : DescribeSpec({
             }
 
             // Assert
-            verify { repository.findById(workspaceId) }
             verify { userService.getUser(username) }
+            verify { workspaceMemberRepository.existsByWorkspaceIdAndUserLoginId(workspaceId, username) }
         }
 
         it("should not throw WorkspaceInaccessibleException when user is a member of workspace") {
             val username = "test"
             val workspaceId = 1L
-            val workspace = SampleEntity.workspace
             val user = SampleEntity.user
-            workspace.members.add(SampleEntity.workspaceMember(user, workspace))
 
-            // Mock
-            every {
-                repository.findById(workspaceId)
-            } returns Optional.of(workspace)
-
-            every {
-                userService.getUser(username)
-            } returns user
+            every { userService.getUser(username) } returns user
+            every { workspaceMemberRepository.existsByWorkspaceIdAndUserLoginId(workspaceId, username) } returns true
 
             // Act & Assert
             sut.checkAccessible(username, workspaceId)
 
             // Assert
-            verify { repository.findById(workspaceId) }
             verify { userService.getUser(username) }
+            verify { workspaceMemberRepository.existsByWorkspaceIdAndUserLoginId(workspaceId, username) }
         }
 
         it("should not throw WorkspaceInaccessibleException when user is a super admin") {
             val username = "test"
             val workspaceId = 1L
-            val workspace = SampleEntity.workspace.apply { members.clear() }
             val user = SampleEntity.user.apply { role = UserRole.SUPER_ADMIN }
 
-            // Mock
-            every {
-                repository.findById(workspaceId)
-            } returns Optional.of(workspace)
-
-            every {
-                userService.getUser(username)
-            } returns user
+            every { userService.getUser(username) } returns user
 
             // Act & Assert
             sut.checkAccessible(username, workspaceId)
 
             // Assert
-            verify { repository.findById(workspaceId) }
             verify { userService.getUser(username) }
         }
     }
