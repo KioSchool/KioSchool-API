@@ -3,6 +3,7 @@ package com.kioschool.kioschoolapi.global.schedule
 import com.kioschool.kioschoolapi.global.schedule.entity.ExecutedOneTimeScript
 import com.kioschool.kioschoolapi.global.schedule.repository.ExecutedOneTimeScriptRepository
 import jakarta.transaction.Transactional
+import org.springframework.context.annotation.Profile
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 
@@ -10,6 +11,7 @@ fun interface Runnable {
     fun run()
 }
 
+@Profile("batch")
 @Component
 class OneTimeScheduler(
     private val oneTimeScripts: List<Runnable>,

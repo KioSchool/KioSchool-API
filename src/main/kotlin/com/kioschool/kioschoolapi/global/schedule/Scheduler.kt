@@ -4,10 +4,12 @@ import com.kioschool.kioschoolapi.domain.order.repository.OrderSessionRepository
 import com.kioschool.kioschoolapi.domain.order.service.OrderService
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceTableRepository
 import jakarta.transaction.Transactional
+import org.springframework.context.annotation.Profile
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime
 
+@Profile("batch")
 @Component
 class Scheduler(
     private val orderService: OrderService,
