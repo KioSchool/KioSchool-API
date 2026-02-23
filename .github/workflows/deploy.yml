@@ -80,3 +80,14 @@ jobs:
           # 여기서도 동적인 이미지 태그를 사용하여 즉시 반영 유도
           image: '${{ secrets.DOCKER_USERNAME }}/kioschool-server:${{ env.DOCKER_TAG }}'
           region: 'asia-northeast3'
+
+      - name: Deploy to batch server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.DEV_REMOTE_IP }}
+          username: ${{ secrets.DEV_REMOTE_SSH_ID }}
+          key: ${{ secrets.DEV_REMOTE_SSH_KEY }}
+          port: ${{ secrets.DEV_REMOTE_SSH_PORT }}
+          script: |
+            cd dev-batch
+            sudo bash update-server.sh
