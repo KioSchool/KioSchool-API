@@ -63,7 +63,9 @@ jobs:
           file: ./Dockerfile
           push: true
           # development와 x.x.x 태그가 동적으로 적용됨
-          tags: ${{ secrets.DOCKER_USERNAME }}/kioschool-server:${{ env.DOCKER_TAG }}
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/kioschool-server:${{ env.DOCKER_TAG }}
+            ${{ secrets.DOCKER_USERNAME }}/kioschool-server:development
 
       - name: Google Cloud Auth
         uses: google-github-actions/auth@v2
