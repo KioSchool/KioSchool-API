@@ -8,4 +8,10 @@ import java.time.LocalDateTime
 @Repository
 interface OrderSessionRepository : JpaRepository<OrderSession, Long> {
     fun findAllByEndAtIsNull(): List<OrderSession>
+
+    fun findAllByWorkspaceIdAndCreatedAtBetween(
+        workspaceId: Long,
+        start: LocalDateTime,
+        end: LocalDateTime
+    ): List<OrderSession>
 }
