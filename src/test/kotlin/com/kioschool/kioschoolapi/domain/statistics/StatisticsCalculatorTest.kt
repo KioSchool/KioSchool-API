@@ -99,6 +99,10 @@ class StatisticsCalculatorTest : BehaviorSpec({
             dailyOrderStatisticRepository.findByWorkspaceIdAndReferenceDate(workspaceId, referenceDate.minusDays(1))
         } returns Optional.empty()
 
+        every {
+            orderRepository.findValidOrders(workspaceId, referenceDate.minusDays(1).atTime(9, 0), referenceDate.atTime(9, 0))
+        } returns emptyList()
+
         When("Calculating statistics") {
             val result = calculator.calculate(workspaceId, referenceDate)
 

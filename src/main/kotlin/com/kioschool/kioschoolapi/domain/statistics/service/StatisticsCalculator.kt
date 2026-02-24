@@ -99,12 +99,29 @@ class StatisticsCalculator(
 
         val previousDayStats = dailyOrderStatisticRepository.findByWorkspaceIdAndReferenceDate(workspaceId, referenceDate.minusDays(1))
         
-        val previousDayComparison = previousDayStats.map {
+        val previousDayComparison = if (previousDayStats.isPresent) {
+            val it = previousDayStats.get()
             val growthRate = if (it.totalRevenue > 0) {
                 ((totalRevenue - it.totalRevenue).toDouble() / it.totalRevenue) * 100
             } else 0.0
             PreviousDayComparison(growthRate, totalOrders - it.totalOrders)
-        }.orElse(null)
+        } else {
+            val prevStart = referenceDate.minusDays(1).atTime(9, 0)
+            val prevEnd = referenceDate.atTime(9, 0)
+            val prevOrders = orderRepository.findValidOrders(workspaceId, prevStart, prevEnd)
+            
+            if (prevOrders.isEmpty()) {
+                null
+            } else {
+                val prevTotalRevenue = prevOrders.sumOf { it.totalPrice.toLong() }
+                val prevTotalOrders = prevOrders.size
+                
+                val growthRate = if (prevTotalRevenue > 0) {
+                    ((totalRevenue - prevTotalRevenue).toDouble() / prevTotalRevenue) * 100
+                } else 0.0
+                PreviousDayComparison(growthRate, totalOrders - prevTotalOrders)
+            }
+        }
 
         val result = DailyOrderStatistic(
             workspace = workspace,
