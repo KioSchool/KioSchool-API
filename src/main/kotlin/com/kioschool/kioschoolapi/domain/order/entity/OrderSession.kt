@@ -17,4 +17,8 @@ class OrderSession(
     var expectedEndAt: LocalDateTime?,
     var endAt: LocalDateTime? = null,
     val tableNumber: Int,
+    var usageTime: Int = 0,
+    var totalOrderPrice: Long = 0,
+    var orderCount: Int = 0,
+    var isGhostSession: Boolean = false,
 ) : BaseEntity()

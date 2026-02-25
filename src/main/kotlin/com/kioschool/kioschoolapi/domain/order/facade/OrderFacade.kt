@@ -297,6 +297,15 @@ class OrderFacade(
 
         val orderSession = orderService.getOrderSession(orderSessionId)
         orderSession.endAt = LocalDateTime.now()
+
+        val orders = orderService.getAllOrdersByOrderSession(orderSession)
+        val validOrders = orders.filter { it.status != OrderStatus.CANCELLED }
+        orderSession.totalOrderPrice = validOrders.sumOf { it.totalPrice.toLong() }
+        orderSession.orderCount = validOrders.size
+        orderSession.isGhostSession = false
+        val start = orderSession.createdAt ?: LocalDateTime.now()
+        orderSession.usageTime = java.time.temporal.ChronoUnit.MINUTES.between(start, orderSession.endAt).toInt()
+
         return OrderSessionDto.of(orderService.saveOrderSession(orderSession))
     }
 

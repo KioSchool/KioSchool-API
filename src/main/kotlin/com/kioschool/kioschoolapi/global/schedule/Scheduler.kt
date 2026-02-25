@@ -12,6 +12,8 @@ import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
+import com.kioschool.kioschoolapi.global.common.enums.OrderStatus
 
 @Profile("batch")
 @Component
@@ -35,7 +37,23 @@ class Scheduler(
         val workspaceTables = workspaceTableRepository.findAllByOrderSessionIsNotNull()
 
         notEndedOrderSessions.forEach { orderSession ->
-            orderSession.endAt = LocalDateTime.now()
+            val orders = orderService.getAllOrdersByOrderSession(orderSession)
+            val validOrders = orders.filter { it.status != OrderStatus.CANCELLED }
+
+            if (validOrders.isEmpty()) {
+                orderSession.endAt = orderSession.expectedEndAt ?: LocalDateTime.now()
+                orderSession.isGhostSession = true
+            } else {
+                val lastOrder = validOrders.maxByOrNull { it.createdAt ?: LocalDateTime.MIN }
+                orderSession.endAt = lastOrder?.createdAt ?: LocalDateTime.now()
+                orderSession.totalOrderPrice = validOrders.sumOf { it.totalPrice.toLong() }
+                orderSession.orderCount = validOrders.size
+                orderSession.isGhostSession = false
+            }
+            
+            val start = orderSession.createdAt ?: orderSession.endAt!!
+            orderSession.usageTime = ChronoUnit.MINUTES.between(start, orderSession.endAt).toInt()
+
             orderSessionRepository.save(orderSession)
         }
 

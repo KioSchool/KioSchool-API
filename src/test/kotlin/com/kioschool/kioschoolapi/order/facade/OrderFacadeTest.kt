@@ -814,6 +814,7 @@ class OrderFacadeTest : DescribeSpec({
             } returns SampleEntity.workspaceTable
             every { workspaceService.saveWorkspaceTable(any()) } returns SampleEntity.workspaceTable
             every { orderService.getOrderSession(orderSessionId) } returns SampleEntity.orderSession
+            every { orderService.getAllOrdersByOrderSession(SampleEntity.orderSession) } returns emptyList()
             every { orderService.saveOrderSession(any()) } returns SampleEntity.orderSession
 
             val result = sut.endOrderSession(username, workspaceId, tableNumber, orderSessionId)
@@ -825,6 +826,7 @@ class OrderFacadeTest : DescribeSpec({
             verify { workspaceService.getWorkspaceTable(SampleEntity.workspace, tableNumber) }
             verify { workspaceService.saveWorkspaceTable(any()) }
             verify { orderService.getOrderSession(orderSessionId) }
+            verify { orderService.getAllOrdersByOrderSession(SampleEntity.orderSession) }
             verify { orderService.saveOrderSession(any()) }
         }
     }
