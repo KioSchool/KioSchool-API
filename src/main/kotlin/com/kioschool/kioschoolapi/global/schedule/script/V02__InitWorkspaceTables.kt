@@ -5,7 +5,7 @@ import com.kioschool.kioschoolapi.global.schedule.Runnable
 import org.springframework.stereotype.Component
 
 @Component
-class InitWorkspaceTables(
+class V02__InitWorkspaceTables(
     private val workspaceService: WorkspaceService
 ) : Runnable {
     override fun run() {

@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component
 
 // workspace description null 값을 빈 문자열로 변경
 @Component
-class SetWorkspaceDescriptionNullToEmptyString(
+class V03__SetWorkspaceDescriptionNullToEmptyString(
     private val workspaceRepository: WorkspaceRepository
 ) : Runnable {
     override fun run() {

@@ -6,7 +6,7 @@ import com.kioschool.kioschoolapi.global.schedule.Runnable
 import org.springframework.stereotype.Component
 
 @Component
-class InitProductStatus(
+class V04__InitProductStatus(
     private val productRepository: ProductRepository
 ) : Runnable {
     override fun run() {

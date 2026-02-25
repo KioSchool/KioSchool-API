@@ -260,7 +260,8 @@ class OrderServiceTest : DescribeSpec({
                     workspaceId,
                     tableNumber,
                     start,
-                    end
+                    end,
+                    false
                 )
             } returns emptyList()
 
@@ -269,7 +270,8 @@ class OrderServiceTest : DescribeSpec({
                 workspaceId,
                 tableNumber,
                 start,
-                end
+                end,
+                false
             ) shouldBe emptyList()
 
             // Assert
@@ -278,7 +280,8 @@ class OrderServiceTest : DescribeSpec({
                     workspaceId,
                     tableNumber,
                     start,
-                    end
+                    end,
+                    false
                 )
             }
         }

@@ -6,7 +6,7 @@ import com.kioschool.kioschoolapi.global.schedule.Runnable
 import org.springframework.stereotype.Component
 
 @Component
-class InitWorkspaceSettings(
+class V01__InitWorkspaceSettings(
     private val workspaceService: WorkspaceService
 ) : Runnable {
     override fun run() {

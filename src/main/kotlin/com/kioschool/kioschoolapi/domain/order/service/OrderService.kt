@@ -95,13 +95,15 @@ class OrderService(
         workspaceId: Long,
         tableNumber: Int?,
         start: LocalDateTime,
-        end: LocalDateTime
+        end: LocalDateTime,
+        includeGhost: Boolean
     ): List<OrderSession> {
         return customOrderSessionRepository.findAllByCondition(
             workspaceId,
             tableNumber,
             start,
-            end
+            end,
+            includeGhost
         )
     }
 

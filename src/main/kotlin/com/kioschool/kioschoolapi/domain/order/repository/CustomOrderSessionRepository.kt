@@ -14,7 +14,8 @@ class CustomOrderSessionRepository(
         workspaceId: Long,
         tableNumber: Int?,
         start: LocalDateTime,
-        end: LocalDateTime
+        end: LocalDateTime,
+        includeGhost: Boolean
     ): List<OrderSession> {
         val orderSession = QOrderSession.orderSession
         val query = queryFactory.selectFrom(orderSession)
@@ -24,6 +25,10 @@ class CustomOrderSessionRepository(
 
         if (tableNumber != null) {
             query.where(orderSession.tableNumber.eq(tableNumber))
+        }
+
+        if (!includeGhost) {
+            query.where(orderSession.isGhostSession.eq(false))
         }
 
         return query.fetch()
