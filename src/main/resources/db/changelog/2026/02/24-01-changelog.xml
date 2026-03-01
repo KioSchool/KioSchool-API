@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS"
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+  <changeSet author="ji-inpark" id="1771904257478-1">
+    <createTable tableName="daily_order_statistic">
+      <column autoIncrement="true" name="id" type="BIGINT">
+        <constraints nullable="false" primaryKey="true" primaryKeyName="pk_daily_order_statistic"/>
+      </column>
+      <column name="created_at" type="DATETIME"/>
+      <column name="updated_at" type="DATETIME"/>
+      <column name="workspace_id" type="BIGINT"/>
+      <column name="reference_date" type="DATE"/>
+      <column name="total_sales_volume" type="INT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="total_revenue" type="BIGINT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="average_order_amount" type="INT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="total_orders" type="INT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="average_orders_per_table" type="DOUBLE">
+        <constraints nullable="false"/>
+      </column>
+      <column name="table_turnover_rate" type="DOUBLE">
+        <constraints nullable="false"/>
+      </column>
+      <column name="average_stay_time_minutes" type="DOUBLE">
+        <constraints nullable="false"/>
+      </column>
+      <column name="previous_day_comparison" type="TEXT"/>
+      <column name="sales_by_hour" type="TEXT"/>
+      <column name="popular_products" type="TEXT"/>
+    </createTable>
+  </changeSet>
+  <changeSet author="ji-inpark" id="1771904257478-2">
+    <addForeignKeyConstraint baseColumnNames="workspace_id" baseTableName="daily_order_statistic"
+      constraintName="FK_DAILY_ORDER_STATISTIC_ON_WORKSPACE" referencedColumnNames="id"
+      referencedTableName="workspace"/>
+  </changeSet>
+
+</databaseChangeLog>
