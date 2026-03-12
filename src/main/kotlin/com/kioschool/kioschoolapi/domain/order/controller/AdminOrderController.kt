@@ -77,7 +77,7 @@ class AdminOrderController(
         summary = "주문 세션 전체 조회",
         description = "주문 세션을 일단위로 전체조회합니다. targetDate 기준 9시부터 익일 9시까지 조회합니다."
     )
-    @GetMapping("/orders/table")
+    @GetMapping("/orders/sessions")
     fun getOrdersByTable(
         @AdminUsername username: String,
         @RequestParam("workspaceId") workspaceId: Long,
