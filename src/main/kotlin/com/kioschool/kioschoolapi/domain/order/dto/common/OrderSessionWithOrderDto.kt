@@ -13,6 +13,7 @@ data class OrderSessionWithOrderDto(
     val totalOrderPrice: Long,
     val orderCount: Int,
     val isGhostSession: Boolean,
+    val customerName: String?,
     val createdAt: LocalDateTime?,
     val updatedAt: LocalDateTime?,
     val orders: List<OrderDto>
@@ -28,6 +29,7 @@ data class OrderSessionWithOrderDto(
                 totalOrderPrice = orderSession.totalOrderPrice,
                 orderCount = orderSession.orderCount,
                 isGhostSession = orderSession.isGhostSession,
+                customerName = orderSession.customerName,
                 createdAt = orderSession.createdAt,
                 updatedAt = orderSession.updatedAt,
                 orders = orders.map { OrderDto.of(it) }
