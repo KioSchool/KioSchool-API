@@ -12,7 +12,6 @@ class CustomOrderSessionRepository(
 ) {
     fun findAllByCondition(
         workspaceId: Long,
-        tableNumber: Int?,
         start: LocalDateTime,
         end: LocalDateTime,
         includeGhost: Boolean
@@ -22,10 +21,6 @@ class CustomOrderSessionRepository(
             .where(orderSession.workspace.id.eq(workspaceId))
             .where(orderSession.createdAt.between(start, end))
             .orderBy(orderSession.createdAt.asc())
-
-        if (tableNumber != null) {
-            query.where(orderSession.tableNumber.eq(tableNumber))
-        }
 
         if (!includeGhost) {
             query.where(orderSession.isGhostSession.eq(false))

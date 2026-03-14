@@ -133,7 +133,6 @@ class OrderFacade(
     fun getOrderSessionsByDate(
         username: String,
         workspaceId: Long,
-        tableNumber: Int?,
         targetDate: LocalDate,
         includeGhost: Boolean
     ): List<OrderSessionWithOrderDto> {
@@ -144,7 +143,6 @@ class OrderFacade(
 
         val sessions = orderService.getAllOrderSessionsByCondition(
             workspaceId,
-            tableNumber,
             startDate,
             endDate,
             includeGhost

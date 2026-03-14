@@ -1,6 +1,7 @@
 package com.kioschool.kioschoolapi.domain.order.service
 
 import com.kioschool.kioschoolapi.domain.dashboard.dto.ProductIdQuantityDto
+import com.kioschool.kioschoolapi.domain.order.dto.common.OrderDto
 import com.kioschool.kioschoolapi.domain.order.entity.Order
 import com.kioschool.kioschoolapi.domain.order.entity.OrderProduct
 import com.kioschool.kioschoolapi.domain.order.entity.OrderSession
@@ -16,7 +17,6 @@ import com.kioschool.kioschoolapi.global.websocket.dto.Message
 import com.kioschool.kioschoolapi.global.websocket.service.CustomWebSocketService
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
-import com.kioschool.kioschoolapi.domain.order.dto.common.OrderDto
 
 @Service
 class OrderService(
@@ -93,14 +93,12 @@ class OrderService(
 
     fun getAllOrderSessionsByCondition(
         workspaceId: Long,
-        tableNumber: Int?,
         start: LocalDateTime,
         end: LocalDateTime,
         includeGhost: Boolean
     ): List<OrderSession> {
         return customOrderSessionRepository.findAllByCondition(
             workspaceId,
-            tableNumber,
             start,
             end,
             includeGhost

@@ -81,14 +81,12 @@ class AdminOrderController(
     fun getOrdersByTable(
         @AdminUsername username: String,
         @RequestParam("workspaceId") workspaceId: Long,
-        @RequestParam("tableNumber") tableNumber: Int? = null,
         @RequestParam("targetDate") targetDate: LocalDate,
         @RequestParam(value = "includeGhost", defaultValue = "false") includeGhost: Boolean
     ): List<OrderSessionWithOrderDto> {
         return orderFacade.getOrderSessionsByDate(
             username,
             workspaceId,
-            tableNumber,
             targetDate,
             includeGhost
         )
