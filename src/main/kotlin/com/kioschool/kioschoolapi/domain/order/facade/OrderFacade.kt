@@ -283,7 +283,7 @@ class OrderFacade(
         return OrderSessionDto.of(orderService.saveOrderSession(orderSession))
     }
 
-    @Transactional
+    @Transactional(rollbackFor = [EmptyOrderSessionException::class])
     fun endOrderSession(
         username: String,
         workspaceId: Long,
@@ -298,7 +298,6 @@ class OrderFacade(
             tableNumber
         )
         table.orderSession = null
-        workspaceService.saveWorkspaceTable(table)
 
         val orderSession = orderService.getOrderSession(orderSessionId)
         orderSession.endAt = LocalDateTime.now()
@@ -322,6 +321,7 @@ class OrderFacade(
         val start = orderSession.createdAt
         orderSession.usageTime = ChronoUnit.MINUTES.between(start, orderSession.endAt).toInt()
 
+        workspaceService.saveWorkspaceTable(table)
         return OrderSessionDto.of(orderService.saveOrderSession(orderSession))
     }
 
