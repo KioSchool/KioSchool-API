@@ -25,12 +25,6 @@ class OrderFacadeTest : DescribeSpec({
 
     val sut = OrderFacade(orderService, workspaceService, productService)
 
-    beforeTest {
-        mockkObject(orderService)
-        mockkObject(workspaceService)
-        mockkObject(productService)
-    }
-
     afterTest {
         clearAllMocks()
     }
@@ -443,7 +437,6 @@ class OrderFacadeTest : DescribeSpec({
             every {
                 orderService.getAllOrderSessionsByCondition(
                     workspaceId,
-                    tableNumber,
                     any(),
                     any(),
                     any()
@@ -453,7 +446,7 @@ class OrderFacadeTest : DescribeSpec({
 
             // 2. Act
             val result =
-                sut.getOrderSessionsByDate(username, workspaceId, tableNumber, startDate, false)
+                sut.getOrderSessionsByDate(username, workspaceId, startDate, false)
 
             // 3. Assert
             assert(result.size == 2)
@@ -473,7 +466,6 @@ class OrderFacadeTest : DescribeSpec({
             verify {
                 orderService.getAllOrderSessionsByCondition(
                     workspaceId,
-                    tableNumber,
                     any(),
                     any(),
                     false
@@ -494,7 +486,6 @@ class OrderFacadeTest : DescribeSpec({
             every {
                 orderService.getAllOrderSessionsByCondition(
                     workspaceId,
-                    tableNumber,
                     any(),
                     any(),
                     any()
@@ -503,7 +494,7 @@ class OrderFacadeTest : DescribeSpec({
 
             // 2. Act
             val result =
-                sut.getOrderSessionsByDate(username, workspaceId, tableNumber, startDate, false)
+                sut.getOrderSessionsByDate(username, workspaceId, startDate, false)
 
             // 3. Assert
             assert(result.isEmpty())
@@ -511,7 +502,6 @@ class OrderFacadeTest : DescribeSpec({
             verify {
                 orderService.getAllOrderSessionsByCondition(
                     workspaceId,
-                    tableNumber,
                     any(),
                     any(),
                     false
@@ -535,13 +525,12 @@ class OrderFacadeTest : DescribeSpec({
             } throws WorkspaceInaccessibleException()
 
             assertThrows<WorkspaceInaccessibleException> {
-                sut.getOrderSessionsByDate(username, workspaceId, tableNumber, startDate, false)
+                sut.getOrderSessionsByDate(username, workspaceId, startDate, false)
             }
 
             verify { workspaceService.checkAccessible(username, workspaceId) }
             verify(exactly = 0) {
                 orderService.getAllOrderSessionsByCondition(
-                    any(),
                     any(),
                     any(),
                     any(),
@@ -853,7 +842,7 @@ class OrderFacadeTest : DescribeSpec({
             } returns SampleEntity.workspaceTable
             every { workspaceService.saveWorkspaceTable(any()) } returns SampleEntity.workspaceTable
             every { orderService.getOrderSession(orderSessionId) } returns SampleEntity.orderSession
-            every { orderService.getAllOrdersByOrderSession(SampleEntity.orderSession) } returns emptyList()
+            every { orderService.getAllOrdersByOrderSession(any()) } returns emptyList()
 
             assertThrows<com.kioschool.kioschoolapi.domain.order.exception.EmptyOrderSessionException> {
                 sut.endOrderSession(username, workspaceId, tableNumber, orderSessionId)

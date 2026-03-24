@@ -258,7 +258,6 @@ class OrderServiceTest : DescribeSpec({
             every {
                 customOrderSessionRepository.findAllByCondition(
                     workspaceId,
-                    tableNumber,
                     start,
                     end,
                     false
@@ -268,7 +267,6 @@ class OrderServiceTest : DescribeSpec({
             // Act
             sut.getAllOrderSessionsByCondition(
                 workspaceId,
-                tableNumber,
                 start,
                 end,
                 false
@@ -278,7 +276,6 @@ class OrderServiceTest : DescribeSpec({
             verify {
                 customOrderSessionRepository.findAllByCondition(
                     workspaceId,
-                    tableNumber,
                     start,
                     end,
                     false

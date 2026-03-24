@@ -1,5 +1,6 @@
 package com.kioschool.kioschoolapi.global.schedule
 
+import com.kioschool.kioschoolapi.domain.order.entity.GhostType
 import com.kioschool.kioschoolapi.domain.order.repository.OrderSessionRepository
 import com.kioschool.kioschoolapi.domain.order.service.OrderService
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceTableRepository
@@ -42,13 +43,13 @@ class Scheduler(
 
             if (validOrders.isEmpty()) {
                 orderSession.endAt = orderSession.expectedEndAt ?: LocalDateTime.now()
-                orderSession.isGhostSession = true
+                orderSession.ghostType = GhostType.BATCH
             } else {
                 val lastOrder = validOrders.maxByOrNull { it.createdAt ?: LocalDateTime.MIN }
                 orderSession.endAt = lastOrder?.createdAt ?: LocalDateTime.now()
                 orderSession.totalOrderPrice = validOrders.sumOf { it.totalPrice.toLong() }
                 orderSession.orderCount = validOrders.size
-                orderSession.isGhostSession = false
+                orderSession.ghostType = GhostType.NONE
                 
                 if (orderSession.customerName == null) {
                     orderSession.customerName = validOrders.first().customerName

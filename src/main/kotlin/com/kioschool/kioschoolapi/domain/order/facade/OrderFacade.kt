@@ -2,6 +2,7 @@ package com.kioschool.kioschoolapi.domain.order.facade
 
 import com.kioschool.kioschoolapi.domain.order.dto.common.*
 import com.kioschool.kioschoolapi.domain.order.dto.request.OrderProductRequestBody
+import com.kioschool.kioschoolapi.domain.order.entity.GhostType
 import com.kioschool.kioschoolapi.domain.order.entity.Order
 import com.kioschool.kioschoolapi.domain.order.entity.OrderProduct
 import com.kioschool.kioschoolapi.domain.order.exception.EmptyOrderSessionException
@@ -298,6 +299,7 @@ class OrderFacade(
             tableNumber
         )
         table.orderSession = null
+        workspaceService.saveWorkspaceTable(table)
 
         val orderSession = orderService.getOrderSession(orderSessionId)
         orderSession.endAt = LocalDateTime.now()
@@ -309,9 +311,9 @@ class OrderFacade(
             if (isGhost == null) {
                 throw EmptyOrderSessionException()
             }
-            orderSession.isGhostSession = isGhost
+            orderSession.ghostType = if (isGhost) GhostType.USER else GhostType.NONE
         } else {
-            orderSession.isGhostSession = false
+            orderSession.ghostType = GhostType.NONE
             orderSession.customerName = validOrders.first().customerName
         }
 

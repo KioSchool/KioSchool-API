@@ -1,5 +1,6 @@
 package com.kioschool.kioschoolapi.domain.order.repository
 
+import com.kioschool.kioschoolapi.domain.order.entity.GhostType
 import com.kioschool.kioschoolapi.domain.order.entity.OrderSession
 import com.kioschool.kioschoolapi.domain.order.entity.QOrderSession
 import com.querydsl.jpa.impl.JPAQueryFactory
@@ -23,7 +24,7 @@ class CustomOrderSessionRepository(
             .orderBy(orderSession.createdAt.asc())
 
         if (!includeGhost) {
-            query.where(orderSession.isGhostSession.eq(false))
+            query.where(orderSession.ghostType.eq(GhostType.NONE))
         }
 
         return query.fetch()

@@ -4,8 +4,11 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.kioschool.kioschoolapi.domain.workspace.entity.Workspace
 import com.kioschool.kioschoolapi.global.common.entity.BaseEntity
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
+import jakarta.persistence.Transient
 import java.time.LocalDateTime
 
 @Entity
@@ -20,6 +23,7 @@ class OrderSession(
     var usageTime: Int = 0,
     var totalOrderPrice: Long = 0,
     var orderCount: Int = 0,
-    var isGhostSession: Boolean = false,
+    @Enumerated(EnumType.STRING)
+    var ghostType: GhostType = GhostType.NONE,
     var customerName: String? = null
 ) : BaseEntity()

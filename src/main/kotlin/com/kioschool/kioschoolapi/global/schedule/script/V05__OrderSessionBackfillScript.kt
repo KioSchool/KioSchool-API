@@ -1,5 +1,6 @@
 package com.kioschool.kioschoolapi.global.schedule.script
 
+import com.kioschool.kioschoolapi.domain.order.entity.GhostType
 import com.kioschool.kioschoolapi.domain.order.repository.OrderRepository
 import com.kioschool.kioschoolapi.domain.order.repository.OrderSessionRepository
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepository
@@ -40,9 +41,9 @@ class V05__OrderSessionBackfillScript(
                 val validOrders = orders.filter { it.status != OrderStatus.CANCELLED }
 
                 if (validOrders.isEmpty()) {
-                    session.isGhostSession = true
+                    session.ghostType = GhostType.BATCH
                 } else {
-                    session.isGhostSession = false
+                    session.ghostType = GhostType.NONE
                     session.totalOrderPrice = validOrders.sumOf { it.totalPrice.toLong() }
                     session.orderCount = validOrders.size
                     

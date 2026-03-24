@@ -1,5 +1,6 @@
 package com.kioschool.kioschoolapi.domain.order.dto.common
 
+import com.kioschool.kioschoolapi.domain.order.entity.GhostType
 import com.kioschool.kioschoolapi.domain.order.entity.OrderSession
 import java.time.LocalDateTime
 
@@ -11,7 +12,7 @@ data class OrderSessionDto(
     val usageTime: Int,
     val totalOrderPrice: Long,
     val orderCount: Int,
-    val isGhostSession: Boolean,
+    val ghostType: GhostType,
     val createdAt: LocalDateTime?,
     val updatedAt: LocalDateTime?
 ) {
@@ -25,7 +26,7 @@ data class OrderSessionDto(
                 usageTime = orderSession.usageTime,
                 totalOrderPrice = orderSession.totalOrderPrice,
                 orderCount = orderSession.orderCount,
-                isGhostSession = orderSession.isGhostSession,
+                ghostType = orderSession.ghostType,
                 createdAt = orderSession.createdAt,
                 updatedAt = orderSession.updatedAt
             )
