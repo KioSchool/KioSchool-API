@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS"
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+  <changeSet author="ji-inpark" id="1773242451394-1">
+    <addColumn tableName="order_session">
+      <column name="customer_name" type="VARCHAR(255)"/>
+      <column defaultValue="false" name="is_ghost_session" type="BOOLEAN"/>
+      <column defaultValue="0" name="order_count" type="INT"/>
+      <column defaultValue="0" name="total_order_price" type="BIGINT"/>
+      <column defaultValue="0" name="usage_time" type="INT"/>
+    </addColumn>
+  </changeSet>
+
+</databaseChangeLog>

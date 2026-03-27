@@ -20,8 +20,11 @@ class OneTimeScheduler(
     @Scheduled(initialDelay = 5000, fixedDelay = Long.MAX_VALUE)
     @Transactional
     fun executeOnce() {
-        oneTimeScripts.forEach { script ->
-            val scriptName = script::class.java.simpleName
+        val sortedScripts = oneTimeScripts.sortedBy { it::class.java.simpleName }
+        sortedScripts.forEach { script ->
+            val className = script::class.java.simpleName
+            // Strip V01__, V02__, etc., to keep backward compatibility with scripts already in the database
+            val scriptName = className.replace(Regex("^V\\d+__"), "")
             if (!executedOneTimeScriptRepository.existsByScriptName(scriptName)) {
                 script.run()
                 executedOneTimeScriptRepository.save(

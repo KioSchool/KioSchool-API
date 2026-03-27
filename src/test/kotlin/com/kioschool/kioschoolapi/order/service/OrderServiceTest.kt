@@ -258,27 +258,27 @@ class OrderServiceTest : DescribeSpec({
             every {
                 customOrderSessionRepository.findAllByCondition(
                     workspaceId,
-                    tableNumber,
                     start,
-                    end
+                    end,
+                    false
                 )
             } returns emptyList()
 
             // Act
             sut.getAllOrderSessionsByCondition(
                 workspaceId,
-                tableNumber,
                 start,
-                end
+                end,
+                false
             ) shouldBe emptyList()
 
             // Assert
             verify {
                 customOrderSessionRepository.findAllByCondition(
                     workspaceId,
-                    tableNumber,
                     start,
-                    end
+                    end,
+                    false
                 )
             }
         }

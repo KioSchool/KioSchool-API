@@ -1,5 +1,6 @@
 package com.kioschool.kioschoolapi.domain.order.dto.common
 
+import com.kioschool.kioschoolapi.domain.order.entity.GhostType
 import com.kioschool.kioschoolapi.domain.order.entity.Order
 import com.kioschool.kioschoolapi.domain.order.entity.OrderSession
 import java.time.LocalDateTime
@@ -9,6 +10,11 @@ data class OrderSessionWithOrderDto(
     val expectedEndAt: LocalDateTime?,
     val endAt: LocalDateTime?,
     val tableNumber: Int,
+    val usageTime: Int,
+    val totalOrderPrice: Long,
+    val orderCount: Int,
+    val ghostType: GhostType,
+    val customerName: String?,
     val createdAt: LocalDateTime?,
     val updatedAt: LocalDateTime?,
     val orders: List<OrderDto>
@@ -20,6 +26,11 @@ data class OrderSessionWithOrderDto(
                 expectedEndAt = orderSession.expectedEndAt,
                 endAt = orderSession.endAt,
                 tableNumber = orderSession.tableNumber,
+                usageTime = orderSession.usageTime,
+                totalOrderPrice = orderSession.totalOrderPrice,
+                orderCount = orderSession.orderCount,
+                ghostType = orderSession.ghostType,
+                customerName = orderSession.customerName,
                 createdAt = orderSession.createdAt,
                 updatedAt = orderSession.updatedAt,
                 orders = orders.map { OrderDto.of(it) }

@@ -2,8 +2,10 @@ package com.kioschool.kioschoolapi.domain.order.facade
 
 import com.kioschool.kioschoolapi.domain.order.dto.common.*
 import com.kioschool.kioschoolapi.domain.order.dto.request.OrderProductRequestBody
+import com.kioschool.kioschoolapi.domain.order.entity.GhostType
 import com.kioschool.kioschoolapi.domain.order.entity.Order
 import com.kioschool.kioschoolapi.domain.order.entity.OrderProduct
+import com.kioschool.kioschoolapi.domain.order.exception.EmptyOrderSessionException
 import com.kioschool.kioschoolapi.domain.order.exception.NoOrderSessionException
 import com.kioschool.kioschoolapi.domain.order.exception.OrderSessionAlreadyExistException
 import com.kioschool.kioschoolapi.domain.order.service.OrderService
@@ -15,6 +17,7 @@ import com.kioschool.kioschoolapi.global.common.enums.WebsocketType
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
@@ -128,20 +131,22 @@ class OrderFacade(
         )
     }
 
-    fun getOrdersByTable(
+    fun getOrderSessionsByDate(
         username: String,
         workspaceId: Long,
-        tableNumber: Int?,
-        startDate: LocalDateTime,
-        endDate: LocalDateTime
+        targetDate: LocalDate,
+        includeGhost: Boolean
     ): List<OrderSessionWithOrderDto> {
         workspaceService.checkAccessible(username, workspaceId)
 
+        val startDate = targetDate.atTime(9, 0)
+        val endDate = targetDate.plusDays(1).atTime(9, 0)
+
         val sessions = orderService.getAllOrderSessionsByCondition(
             workspaceId,
-            tableNumber,
             startDate,
-            endDate
+            endDate,
+            includeGhost
         )
 
         if (sessions.isEmpty()) {
@@ -279,12 +284,13 @@ class OrderFacade(
         return OrderSessionDto.of(orderService.saveOrderSession(orderSession))
     }
 
-    @Transactional
+    @Transactional(rollbackFor = [EmptyOrderSessionException::class])
     fun endOrderSession(
         username: String,
         workspaceId: Long,
         tableNumber: Int,
-        orderSessionId: Long
+        orderSessionId: Long,
+        isGhost: Boolean? = null
     ): OrderSessionDto {
         workspaceService.checkAccessible(username, workspaceId)
 
@@ -297,6 +303,27 @@ class OrderFacade(
 
         val orderSession = orderService.getOrderSession(orderSessionId)
         orderSession.endAt = LocalDateTime.now()
+
+        val orders = orderService.getAllOrdersByOrderSession(orderSession)
+        val validOrders = orders.filter { it.status != OrderStatus.CANCELLED }
+
+        if (validOrders.isEmpty()) {
+            if (isGhost == null) {
+                throw EmptyOrderSessionException()
+            }
+            orderSession.ghostType = if (isGhost) GhostType.USER else GhostType.NONE
+        } else {
+            orderSession.ghostType = GhostType.NONE
+            orderSession.customerName = validOrders.first().customerName
+        }
+
+        orderSession.totalOrderPrice = validOrders.sumOf { it.totalPrice.toLong() }
+        orderSession.orderCount = validOrders.size
+
+        val start = orderSession.createdAt
+        orderSession.usageTime = ChronoUnit.MINUTES.between(start, orderSession.endAt).toInt()
+
+        workspaceService.saveWorkspaceTable(table)
         return OrderSessionDto.of(orderService.saveOrderSession(orderSession))
     }
 

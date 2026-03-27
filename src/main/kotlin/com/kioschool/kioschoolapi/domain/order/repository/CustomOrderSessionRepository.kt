@@ -1,5 +1,6 @@
 package com.kioschool.kioschoolapi.domain.order.repository
 
+import com.kioschool.kioschoolapi.domain.order.entity.GhostType
 import com.kioschool.kioschoolapi.domain.order.entity.OrderSession
 import com.kioschool.kioschoolapi.domain.order.entity.QOrderSession
 import com.querydsl.jpa.impl.JPAQueryFactory
@@ -12,9 +13,9 @@ class CustomOrderSessionRepository(
 ) {
     fun findAllByCondition(
         workspaceId: Long,
-        tableNumber: Int?,
         start: LocalDateTime,
-        end: LocalDateTime
+        end: LocalDateTime,
+        includeGhost: Boolean
     ): List<OrderSession> {
         val orderSession = QOrderSession.orderSession
         val query = queryFactory.selectFrom(orderSession)
@@ -22,8 +23,8 @@ class CustomOrderSessionRepository(
             .where(orderSession.createdAt.between(start, end))
             .orderBy(orderSession.createdAt.asc())
 
-        if (tableNumber != null) {
-            query.where(orderSession.tableNumber.eq(tableNumber))
+        if (!includeGhost) {
+            query.where(orderSession.ghostType.eq(GhostType.NONE))
         }
 
         return query.fetch()
