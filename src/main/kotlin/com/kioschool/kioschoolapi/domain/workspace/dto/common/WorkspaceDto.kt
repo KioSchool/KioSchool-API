@@ -17,6 +17,7 @@ data class WorkspaceDto(
     val notice: String,
     val memo: String,
     val tableCount: Int,
+    val isOnboarding: Boolean,
     val workspaceSetting: WorkspaceSettingDto,
     val createdAt: LocalDateTime?,
     val updatedAt: LocalDateTime?
@@ -34,6 +35,7 @@ data class WorkspaceDto(
                 notice = workspace.notice,
                 memo = workspace.memo,
                 tableCount = workspace.tableCount,
+                isOnboarding = workspace.isOnboarding,
                 workspaceSetting = WorkspaceSettingDto.of(workspace.workspaceSetting),
                 createdAt = workspace.createdAt,
                 updatedAt = workspace.updatedAt

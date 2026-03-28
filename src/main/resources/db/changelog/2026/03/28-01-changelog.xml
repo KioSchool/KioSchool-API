@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS"
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+  <changeSet author="ji-inpark" id="1774687215236-1">
+    <addColumn tableName="workspace">
+      <column defaultValue="false" name="is_onboarding" type="BOOLEAN"/>
+    </addColumn>
+  </changeSet>
+  <changeSet author="ji-inpark" id="1774687215236-2">
+    <addNotNullConstraint columnName="is_onboarding" tableName="workspace"/>
+  </changeSet>
+
+</databaseChangeLog>
