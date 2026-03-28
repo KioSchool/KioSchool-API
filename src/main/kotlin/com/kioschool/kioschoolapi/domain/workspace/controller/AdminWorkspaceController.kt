@@ -131,6 +131,19 @@ class AdminWorkspaceController(
         )
     }
 
+    @Operation(summary = "워크스페이스 온보딩 상태 수정", description = "워크스페이스의 온보딩 진행 상태를 수정합니다.")
+    @PostMapping("/workspace/onboarding")
+    fun updateIsOnboarding(
+        @AdminUsername username: String,
+        @RequestBody body: UpdateIsOnboardingRequestBody
+    ): WorkspaceDto {
+        return workspaceFacade.updateIsOnboarding(
+            username,
+            body.workspaceId,
+            body.isOnboarding
+        )
+    }
+
     @Operation(summary = "워크스페이스 테이블 전체 조회", description = "워크스페이스의 모든 테이블을 조회합니다.")
     @GetMapping("/workspace/tables")
     fun getWorkspaceTables(

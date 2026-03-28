@@ -120,6 +120,12 @@ class WorkspaceService(
     }
 
     @WorkspaceUpdateEvent
+    fun updateIsOnboarding(workspace: Workspace, isOnboarding: Boolean): Workspace {
+        workspace.isOnboarding = isOnboarding
+        return workspaceRepository.save(workspace)
+    }
+
+    @WorkspaceUpdateEvent
     fun saveWorkspace(workspace: Workspace): Workspace {
         return workspaceRepository.save(workspace)
     }

@@ -95,6 +95,18 @@ class WorkspaceFacade(
         )
     }
 
+    fun updateIsOnboarding(username: String, workspaceId: Long, isOnboarding: Boolean): WorkspaceDto {
+        val user = userService.getUser(username)
+        val workspace = workspaceService.getWorkspace(workspaceId)
+
+        workspaceService.checkCanAccessWorkspace(user, workspace)
+        workspaceService.updateIsOnboarding(workspace, isOnboarding)
+
+        return WorkspaceDto.of(
+            workspace
+        )
+    }
+
     fun updateWorkspaceInfo(
         username: String,
         workspaceId: Long,

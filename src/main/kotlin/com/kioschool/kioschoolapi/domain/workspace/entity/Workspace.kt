@@ -52,6 +52,7 @@ class Workspace(
     var notice: String = "",
     var memo: String = "",
     var tableCount: Int = 1,
+    var isOnboarding: Boolean = true,
     @OneToOne(
         cascade = [CascadeType.ALL],
         orphanRemoval = true,
