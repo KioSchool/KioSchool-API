@@ -112,6 +112,7 @@ class OrderFacade(
             .map { OrderDto.of(it) }
     }
 
+    @Transactional
     fun changeOrderStatus(
         username: String,
         workspaceId: Long,
@@ -167,6 +168,7 @@ class OrderFacade(
         }
     }
 
+    @Transactional
     fun changeOrderProductServedCount(
         username: String,
         workspaceId: Long,
