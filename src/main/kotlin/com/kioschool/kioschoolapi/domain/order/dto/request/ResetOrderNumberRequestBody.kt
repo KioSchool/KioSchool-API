@@ -1,5 +1,7 @@
 package com.kioschool.kioschoolapi.domain.order.dto.request
 
+import com.kioschool.kioschoolapi.global.common.interfaces.WorkspaceAware
+
 data class ResetOrderNumberRequestBody(
-    val workspaceId: Long
-)
+    override val workspaceId: Long
+) : WorkspaceAware
