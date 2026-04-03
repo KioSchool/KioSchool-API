@@ -12,6 +12,9 @@ import org.aspectj.lang.annotation.Before
 import org.aspectj.lang.reflect.MethodSignature
 import org.springframework.stereotype.Component
 
+import org.springframework.security.core.context.SecurityContextHolder
+import com.kioschool.kioschoolapi.global.security.CustomUserDetails
+
 @Aspect
 @Component
 class WorkspaceWriteAccessAspect(
@@ -55,14 +58,17 @@ class WorkspaceWriteAccessAspect(
 
         // 2. 권한 검증 로직 (Facade 사용으로 캐시 활용)
         if (username != null && workspaceId != null) {
-            val userDto = userFacade.getUser(username)
+            val userRole = (SecurityContextHolder.getContext().authentication?.principal as? CustomUserDetails)?.user?.role
+                ?: userFacade.getUser(username).role
 
             // 타겟이 Super Admin일 경우에만 체크를 통과시킴
-            if (userDto.role == UserRole.SUPER_ADMIN) {
+            if (userRole == UserRole.SUPER_ADMIN) {
+                val userId = (SecurityContextHolder.getContext().authentication?.principal as? CustomUserDetails)?.user?.id
+                    ?: userFacade.getUser(username).id
                 val workspaceDto = workspaceFacade.getWorkspace(workspaceId)
                 
                 // Super Admin 본인이 소유(생성)한 워크스페이스가 아닌 경우 예외를 발생 (Read-Only 처리)
-                if (workspaceDto.owner.id != userDto.id) {
+                if (workspaceDto.owner.id != userId) {
                     throw SuperAdminWorkspaceReadOnlyException()
                 }
             }

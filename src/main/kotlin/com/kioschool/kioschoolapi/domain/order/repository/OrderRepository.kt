@@ -5,6 +5,7 @@ import com.kioschool.kioschoolapi.domain.order.entity.OrderSession
 import com.kioschool.kioschoolapi.global.common.enums.OrderStatus
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springframework.data.jpa.repository.EntityGraph
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
@@ -13,6 +14,9 @@ import java.time.LocalDateTime
 
 @Repository
 interface OrderRepository : JpaRepository<Order, Long> {
+    @EntityGraph(attributePaths = ["orderProducts", "orderSession"])
+    fun findWithDetailsById(id: Long): Order?
+
     fun findAllByWorkspaceIdAndTableNumber(
         workspaceId: Long,
         tableNumber: Int,

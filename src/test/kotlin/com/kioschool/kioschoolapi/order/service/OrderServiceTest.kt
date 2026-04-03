@@ -26,6 +26,7 @@ class OrderServiceTest : DescribeSpec({
     val orderProductRepository = mockk<OrderProductRepository>()
     val orderSessionRepository = mockk<OrderSessionRepository>()
     val customOrderSessionRepository = mockk<CustomOrderSessionRepository>()
+    val eventPublisher = mockk<org.springframework.context.ApplicationEventPublisher>()
 
     val sut = OrderService(
         repository,
@@ -34,7 +35,8 @@ class OrderServiceTest : DescribeSpec({
         orderRedisRepository,
         orderProductRepository,
         orderSessionRepository,
-        customOrderSessionRepository
+        customOrderSessionRepository,
+        eventPublisher
     )
 
     beforeTest {
@@ -46,6 +48,7 @@ class OrderServiceTest : DescribeSpec({
         mockkObject(orderProductRepository)
         mockkObject(orderSessionRepository)
         mockkObject(customOrderSessionRepository)
+        mockkObject(eventPublisher)
     }
 
     afterTest {
@@ -76,19 +79,14 @@ class OrderServiceTest : DescribeSpec({
 
             // Mock
             every { repository.save(order) } returns order
-            every {
-                websocketService.sendMessage(
-                    "/sub/order/${order.workspace.id}",
-                    any()
-                )
-            } returns Unit
+            every { eventPublisher.publishEvent(any<Any>()) } just Runs
 
             // Act
             sut.saveOrderAndSendWebsocketMessage(order, type) shouldBe order
 
             // Assert
             verify { repository.save(order) }
-            verify { websocketService.sendMessage("/sub/order/${order.workspace.id}", any()) }
+            verify { eventPublisher.publishEvent(any<Any>()) }
         }
     }
 
@@ -99,24 +97,14 @@ class OrderServiceTest : DescribeSpec({
 
             // Mock
             every { orderProductRepository.save(orderProduct) } returns orderProduct
-            every {
-                websocketService.sendMessage(
-                    "/sub/order/${orderProduct.order.workspace.id}",
-                    any()
-                )
-            } returns Unit
+            every { eventPublisher.publishEvent(any<Any>()) } just Runs
 
             // Act
             sut.saveOrderProductAndSendWebsocketMessage(orderProduct) shouldBe orderProduct
 
             // Assert
             verify { orderProductRepository.save(orderProduct) }
-            verify {
-                websocketService.sendMessage(
-                    "/sub/order/${orderProduct.order.workspace.id}",
-                    any()
-                )
-            }
+            verify { eventPublisher.publishEvent(any<Any>()) }
         }
     }
 
@@ -169,15 +157,13 @@ class OrderServiceTest : DescribeSpec({
             val order = SampleEntity.order1
 
             // Mock
-            every { repository.findById(orderId) } returns mockk {
-                every { get() } returns order
-            }
+            every { repository.findWithDetailsById(orderId) } returns order
 
             // Act
             sut.getOrder(orderId) shouldBe order
 
             // Assert
-            verify { repository.findById(orderId) }
+            verify { repository.findWithDetailsById(orderId) }
         }
     }
 
