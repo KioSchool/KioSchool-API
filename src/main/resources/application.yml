@@ -6,7 +6,8 @@ spring:
   datasource:
     hikari:
       minimum-idle: 10
-      max-lifetime: 1800000
+      max-lifetime: 580000 # GCP의 10분(600,000ms) Idle 연결 종료 대비
+      keepalive-time: 300000 # 추가로 5분마다 커넥션 상태 확인
       connection-timeout: 3000
     driver-class-name: org.postgresql.Driver
   liquibase:

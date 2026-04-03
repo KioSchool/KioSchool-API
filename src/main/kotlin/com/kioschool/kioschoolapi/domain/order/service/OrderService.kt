@@ -1,10 +1,10 @@
 package com.kioschool.kioschoolapi.domain.order.service
 
 import com.kioschool.kioschoolapi.domain.dashboard.dto.ProductIdQuantityDto
-import com.kioschool.kioschoolapi.domain.order.dto.common.OrderDto
 import com.kioschool.kioschoolapi.domain.order.entity.Order
 import com.kioschool.kioschoolapi.domain.order.entity.OrderProduct
 import com.kioschool.kioschoolapi.domain.order.entity.OrderSession
+import com.kioschool.kioschoolapi.domain.order.event.OrderWebsocketEvent
 import com.kioschool.kioschoolapi.domain.order.repository.*
 import com.kioschool.kioschoolapi.domain.workspace.entity.Workspace
 import com.kioschool.kioschoolapi.domain.workspace.entity.WorkspaceSetting
@@ -13,7 +13,6 @@ import com.kioschool.kioschoolapi.global.cache.annotation.OrderProductUpdateEven
 import com.kioschool.kioschoolapi.global.cache.annotation.OrderUpdateEvent
 import com.kioschool.kioschoolapi.global.common.enums.OrderStatus
 import com.kioschool.kioschoolapi.global.common.enums.WebsocketType
-import com.kioschool.kioschoolapi.global.websocket.dto.Message
 import com.kioschool.kioschoolapi.global.websocket.service.CustomWebSocketService
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
@@ -26,7 +25,8 @@ class OrderService(
     private val orderRedisRepository: OrderRedisRepository,
     private val orderProductRepository: OrderProductRepository,
     private val orderSessionRepository: OrderSessionRepository,
-    private val customOrderSessionRepository: CustomOrderSessionRepository
+    private val customOrderSessionRepository: CustomOrderSessionRepository,
+    private val eventPublisher: org.springframework.context.ApplicationEventPublisher
 ) {
     @OrderUpdateEvent
     fun saveOrder(order: Order): Order {
@@ -37,20 +37,18 @@ class OrderService(
     @OrderUpdateEvent
     fun saveOrderAndSendWebsocketMessage(order: Order, type: WebsocketType): Order {
         val savedOrder = orderRepository.save(order)
-        websocketService.sendMessage(
-            "/sub/order/${order.workspace.id}",
-            Message(type, OrderDto.of(savedOrder))
-        )
+        eventPublisher.publishEvent(OrderWebsocketEvent(savedOrder.id, type))
         return savedOrder
     }
 
     @OrderProductUpdateEvent
     fun saveOrderProductAndSendWebsocketMessage(orderProduct: OrderProduct): OrderProduct {
         val savedOrderProduct = orderProductRepository.save(orderProduct)
-        val order = savedOrderProduct.order
-        websocketService.sendMessage(
-            "/sub/order/${order.workspace.id}",
-            Message(WebsocketType.UPDATED, OrderDto.of(order))
+        eventPublisher.publishEvent(
+            OrderWebsocketEvent(
+                savedOrderProduct.order.id,
+                WebsocketType.UPDATED
+            )
         )
         return savedOrderProduct
     }
