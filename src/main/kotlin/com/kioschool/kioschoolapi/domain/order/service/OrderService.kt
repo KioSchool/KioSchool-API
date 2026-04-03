@@ -74,7 +74,7 @@ class OrderService(
     }
 
     fun getOrderProduct(orderProductId: Long): OrderProduct {
-        return orderProductRepository.findById(orderProductId).get()
+        return orderProductRepository.findWithOrderById(orderProductId) ?: throw NoSuchElementException()
     }
 
     fun getOrderNumber(workspaceId: Long): Long {
