@@ -58,12 +58,12 @@ class WorkspaceWriteAccessAspect(
 
         // 2. 권한 검증 로직 (Facade 사용으로 캐시 활용)
         if (username != null && workspaceId != null) {
-            val userRole = (SecurityContextHolder.getContext().authentication?.principal as? CustomUserDetails)?.user?.role
+            val userRole = (SecurityContextHolder.getContext().authentication?.principal as? CustomUserDetails)?.role
                 ?: userFacade.getUser(username).role
 
             // 타겟이 Super Admin일 경우에만 체크를 통과시킴
             if (userRole == UserRole.SUPER_ADMIN) {
-                val userId = (SecurityContextHolder.getContext().authentication?.principal as? CustomUserDetails)?.user?.id
+                val userId = (SecurityContextHolder.getContext().authentication?.principal as? CustomUserDetails)?.userId
                     ?: userFacade.getUser(username).id
                 val workspaceDto = workspaceFacade.getWorkspace(workspaceId)
                 

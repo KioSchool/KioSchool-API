@@ -41,6 +41,7 @@ repositories {
 
 dependencies {
     implementation("com.google.cloud:spring-cloud-gcp-starter-trace")
+    implementation("net.ttddyy.observation:datasource-micrometer-spring-boot:1.0.3")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-webflux")

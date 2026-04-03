@@ -84,8 +84,8 @@ class WorkspaceService(
 
     fun isAccessible(username: String, workspaceId: Long): Boolean {
         val userRole = (SecurityContextHolder.getContext().authentication?.principal as? CustomUserDetails)
-            ?.takeIf { it.user.loginId == username }
-            ?.user?.role
+            ?.takeIf { it.loginId == username }
+            ?.role
             ?: userService.getUser(username).role
             
         if (userRole == UserRole.SUPER_ADMIN) return true
