@@ -20,6 +20,9 @@ import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import java.util.*
 
+import org.springframework.security.core.context.SecurityContextHolder
+import com.kioschool.kioschoolapi.global.security.CustomUserDetails
+
 @Service
 class WorkspaceService(
     @Value("\${cloud.aws.s3.default-path}")
@@ -80,7 +83,12 @@ class WorkspaceService(
     }
 
     fun isAccessible(username: String, workspaceId: Long): Boolean {
-        if (userService.getUser(username).role == UserRole.SUPER_ADMIN) return true
+        val userRole = (SecurityContextHolder.getContext().authentication?.principal as? CustomUserDetails)
+            ?.takeIf { it.user.loginId == username }
+            ?.user?.role
+            ?: userService.getUser(username).role
+            
+        if (userRole == UserRole.SUPER_ADMIN) return true
         
         return workspaceMemberRepository.existsByWorkspaceIdAndUserLoginId(workspaceId, username)
     }
@@ -90,7 +98,10 @@ class WorkspaceService(
     }
 
     fun checkCanAccessWorkspace(user: User, workspace: Workspace) {
-        if (!isAccessible(user.loginId, workspace.id)) throw WorkspaceInaccessibleException()
+        if (user.role == UserRole.SUPER_ADMIN) return
+        if (!workspaceMemberRepository.existsByWorkspaceIdAndUserLoginId(workspace.id, user.loginId)) {
+            throw WorkspaceInaccessibleException()
+        }
     }
 
     fun checkCanInviteWorkspace(user: User, workspace: Workspace) {

@@ -1,4 +1,10 @@
 spring:
+  cloud:
+    gcp:
+      core:
+        enabled: false # 로컬 환경 구동 시 GCP 인증 에러(ADC) 우회
+      trace:
+        enabled: false # 로컬 구동 시 Trace 비활성화
   servlet:
     multipart:
       max-file-size: 20MB
@@ -67,6 +73,9 @@ portone:
   api-key: "${PORTONE_API_KEY}"
   api-secret: "${PORTONE_API_SECRET}"
 management:
+  tracing:
+    sampling:
+      probability: 1.0 # 100% 샘플링 (디버깅 시, 이후 낮추는 것을 권장. 예: 0.1)
   health:
     defaults:
       enabled: false

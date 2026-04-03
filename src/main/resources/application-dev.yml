@@ -1,4 +1,10 @@
 spring:
+  cloud:
+    gcp:
+      core:
+        enabled: true # dev 환경에서는 GCP Trace 활성화
+      trace:
+        enabled: true
   datasource:
     url: "${DATABASE_URL}"
     username: "${DATABASE_USERNAME}"

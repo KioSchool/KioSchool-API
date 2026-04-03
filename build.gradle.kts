@@ -29,11 +29,18 @@ java {
     sourceCompatibility = JavaVersion.VERSION_17
 }
 
+dependencyManagement {
+    imports {
+        mavenBom("com.google.cloud:spring-cloud-gcp-dependencies:4.8.4")
+    }
+}
+
 repositories {
     mavenCentral()
 }
 
 dependencies {
+    implementation("com.google.cloud:spring-cloud-gcp-starter-trace")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
