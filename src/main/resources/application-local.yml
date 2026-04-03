@@ -1,4 +1,10 @@
 spring:
+  cloud:
+    gcp:
+      core:
+        enabled: false # 로컬 환경 구동 시 GCP 인증 에러(ADC) 우회
+      trace:
+        enabled: false # 로컬 환경에서 Cloud Trace 비활성화
   jpa:
     show-sql: true
   data:
@@ -25,6 +31,8 @@ kioschool:
   cookie:
     secure: false
 management:
+  tracing:
+    enabled: false # 로컬 환경에서 Cloud Trace 비활성화
   endpoints:
     web:
       cors:
