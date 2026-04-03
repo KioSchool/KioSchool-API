@@ -174,15 +174,13 @@ class OrderServiceTest : DescribeSpec({
             val orderProduct = SampleEntity.orderProduct1
 
             // Mock
-            every { orderProductRepository.findById(orderProductId) } returns mockk {
-                every { get() } returns orderProduct
-            }
+            every { orderProductRepository.findWithOrderById(orderProductId) } returns orderProduct
 
             // Act
             sut.getOrderProduct(orderProductId) shouldBe orderProduct
 
             // Assert
-            verify { orderProductRepository.findById(orderProductId) }
+            verify { orderProductRepository.findWithOrderById(orderProductId) }
         }
     }
 

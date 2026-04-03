@@ -11,10 +11,11 @@ spring:
       max-request-size: 20MB
   datasource:
     hikari:
-      minimum-idle: 10
+      minimum-idle: 0 # Cloud Run(서버리스) 환경 방치 방지: 0으로 두어 쓰지 않는 커넥션 풀을 바로 비우도록 함 (DB쪽 무작위 킬 방지)
+      idle-timeout: 60000 # 60초간 안 쓰면 Hikari가 먼저 놓아줌
       max-lifetime: 580000 # GCP의 10분(600,000ms) Idle 연결 종료 대비
-      keepalive-time: 300000 # 추가로 5분마다 커넥션 상태 확인
-      connection-timeout: 3000
+      keepalive-time: 300000
+      connection-timeout: 5000
     driver-class-name: org.postgresql.Driver
   liquibase:
     change-log: classpath:db/changelog-master.yaml
