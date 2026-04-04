@@ -1,3 +1,12 @@
 spring:
+  cloud:
+    gcp:
+      core:
+        enabled: false # 배치 환경에서는 GCP 인증 우회
+      trace:
+        enabled: false # 배치 환경에서 트레이싱 끔
   main:
     web-application-type: none
+management:
+  tracing:
+    enabled: false
