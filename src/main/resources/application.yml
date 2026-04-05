@@ -12,8 +12,8 @@ spring:
   datasource:
     hikari:
       maximum-pool-size: 10 # 최대로 맺을 수 있는 커넥션 수
-      minimum-idle: 10 # maximum-pool-size와 동일하게 설정하여 '고정 크기 풀(Fixed Pool)'로 운영 (갑작스런 다중 요청 시 커넥션 맺느라 생기는 70ms 지연 원천 차단)
-      idle-timeout: 60000
+      minimum-idle: 0 # 고정 풀 롤백: Cloud Run 환경에서는 커넥션 유지가 오히려 '좀비 커넥션 폭탄'이 되므로 즉시 0으로 비우도록 원복
+      idle-timeout: 10000 # 10초 대기 후 즉시 연결 종료 (서버리스 동결 전 최대한 빨리 깔끔하게 폐기하기 위함)
       max-lifetime: 540000 
       keepalive-time: 60000 
       connection-timeout: 1000 
