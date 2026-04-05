@@ -11,11 +11,12 @@ spring:
       max-request-size: 20MB
   datasource:
     hikari:
-      minimum-idle: 2 # 자주 발생하는 신규 커넥션 비용을 막기 위해 최소 2개는 풀에 대기시킴 (Warm Pool)
-      idle-timeout: 60000 # 1분 대기 후 불필요한 추가 연결은 반환 처리
-      max-lifetime: 540000 # 9분. 방화벽이나 오라클DB가 커넥션을 끊어버리기 전(보통 10분)에 먼저 깔끔하게 버림
-      keepalive-time: 60000 # 1분 단위로 DB에 가볍게 핑을 찔러 죽은 커넥션 방지 (Cloud Run이 잠깐씩 깰 때마다 순환)
-      connection-timeout: 1000 # (1초) 사용 가능한 커넥션이 없을 때 빠르게 Fail-Fast 처리 (대량 트래픽 시 병목 방지)
+      maximum-pool-size: 10 # 최대로 맺을 수 있는 커넥션 수
+      minimum-idle: 10 # maximum-pool-size와 동일하게 설정하여 '고정 크기 풀(Fixed Pool)'로 운영 (갑작스런 다중 요청 시 커넥션 맺느라 생기는 70ms 지연 원천 차단)
+      idle-timeout: 60000
+      max-lifetime: 540000 
+      keepalive-time: 60000 
+      connection-timeout: 1000 
     driver-class-name: org.postgresql.Driver
   liquibase:
     change-log: classpath:db/changelog-master.yaml
