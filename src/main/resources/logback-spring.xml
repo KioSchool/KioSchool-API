@@ -30,14 +30,19 @@
   <logger additivity="false" level="INFO"
     name="com.kioschool.kioschoolapi.global.logging.aop.LoggingAspect">
     <appender-ref ref="CONSOLE_JSON"/>
+    <appender-ref ref="STACKDRIVER"/>
   </logger>
 
   <!-- Root Logger: 기본 Spring Boot 로그는 CONSOLE_DEFAULT Appender 사용 -->
   <root level="INFO">
     <appender-ref ref="CONSOLE_DEFAULT"/>
+    <appender-ref ref="STACKDRIVER"/>
   </root>
 
   <!-- LoggingAspect 로거: JSON 형식으로 출력 -->
   <springProperty name="springAppName" scope="context" source="spring.application.name"/>
+  
+  <!-- GCP Cloud Logging (Stackdriver) Appender -->
+  <include resource="com/google/cloud/spring/logging/logback-appender.xml" />
 
 </configuration>
