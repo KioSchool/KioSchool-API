@@ -12,12 +12,12 @@ spring:
       max-request-size: 20MB
   datasource:
     hikari:
-      maximum-pool-size: 10 # 최대로 맺을 수 있는 커넥션 수
-      minimum-idle: 0 # 고정 풀 롤백: Cloud Run 환경에서는 커넥션 유지가 오히려 '좀비 커넥션 폭탄'이 되므로 즉시 0으로 비우도록 원복
-      idle-timeout: 10000 # 10초 대기 후 즉시 연결 종료 (서버리스 동결 전 최대한 빨리 깔끔하게 폐기하기 위함)
+      maximum-pool-size: 10 # 고정 풀 크기 권장 (CPU 코어수, DB 스펙에 맞춰 조절)
+      minimum-idle: 10 # 서버리스가 아닌 오라클 VM(항상 켜져있음)이므로 10개 풀을 항상 유지하여 acquire 지연 제거!
+      # idle-timeout: 10000 (minimum-idle과 maximum-pool-size가 동일한 고정 풀에서는 idle-timeout 설정이 무시되므로 삭제)
       max-lifetime: 540000 
       keepalive-time: 60000 
-      connection-timeout: 1000 
+      connection-timeout: 3000 # 커넥션 타임아웃은 일반적인 수준(3초)으로 살짝 여유있게 조정
     driver-class-name: org.postgresql.Driver
   liquibase:
     change-log: classpath:db/changelog-master.yaml
