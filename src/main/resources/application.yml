@@ -1,10 +1,11 @@
 spring:
-  cloud:
-    gcp:
-      core:
-        enabled: true
-      trace:
-        enabled: true
+  # GCP 임시 주석 처리 (오라클 전환)
+  # cloud:
+  #   gcp:
+  #     core:
+  #       enabled: true
+  #     trace:
+  #       enabled: true
   servlet:
     multipart:
       max-file-size: 20MB

@@ -31,7 +31,8 @@ java {
 
 dependencyManagement {
     imports {
-        mavenBom("com.google.cloud:spring-cloud-gcp-dependencies:4.8.4")
+        // GCP 임시 주석 처리 (오라클 전환)
+        // mavenBom("com.google.cloud:spring-cloud-gcp-dependencies:4.8.4")
     }
 }
 
@@ -40,7 +41,8 @@ repositories {
 }
 
 dependencies {
-    implementation("com.google.cloud:spring-cloud-gcp-starter-trace")
+    // GCP Cloud Trace 임시 주석 처리 (오라클 전환)
+    // implementation("com.google.cloud:spring-cloud-gcp-starter-trace")
     implementation("net.ttddyy.observation:datasource-micrometer-spring-boot:1.0.3")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-web")
