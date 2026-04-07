@@ -1,10 +1,11 @@
 spring:
-  cloud:
-    gcp:
-      core:
-        enabled: false # 로컬 환경 구동 시 GCP 인증 에러(ADC) 우회
-      trace:
-        enabled: false # 로컬 환경에서 Cloud Trace 비활성화
+  # GCP 임시 주석 처리 (오라클 전환)
+  # cloud:
+  #   gcp:
+  #     core:
+  #       enabled: false # 로컬 환경 구동 시 GCP 인증 에러(ADC) 우회
+  #     trace:
+  #       enabled: false # 로컬 환경에서 Cloud Trace 비활성화
   jpa:
     show-sql: true
   data:
