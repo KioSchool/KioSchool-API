@@ -16,7 +16,6 @@ import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 import com.kioschool.kioschoolapi.global.common.enums.OrderStatus
 
-@Profile("batch")
 @Component
 class Scheduler(
     private val orderService: OrderService,

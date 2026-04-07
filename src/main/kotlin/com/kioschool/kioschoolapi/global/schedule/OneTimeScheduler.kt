@@ -11,7 +11,6 @@ fun interface Runnable {
     fun run()
 }
 
-@Profile("batch")
 @Component
 class OneTimeScheduler(
     private val oneTimeScripts: List<Runnable>,
