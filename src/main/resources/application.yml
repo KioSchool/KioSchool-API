@@ -1,11 +1,14 @@
 spring:
-  # GCP 임시 주석 처리 (오라클 전환)
-  # cloud:
-  #   gcp:
-  #     core:
-  #       enabled: true
-  #     trace:
-  #       enabled: true
+  # GCP Cloud Logging 복구 (GCP Key 연동)
+  cloud:
+    gcp:
+      core:
+        enabled: true
+      logging:
+        # GCP Log Explorer에서 로그를 분리해서 보기 위한 식별자 (예: kioschool-server-dev, kioschool-server-prod)
+        log-id: "kioschool-server-${spring.profiles.active:default}"
+      # trace:
+      #   enabled: true
   servlet:
     multipart:
       max-file-size: 20MB

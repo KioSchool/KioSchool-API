@@ -31,8 +31,8 @@ java {
 
 dependencyManagement {
     imports {
-        // GCP 임시 주석 처리 (오라클 전환)
-        // mavenBom("com.google.cloud:spring-cloud-gcp-dependencies:4.8.4")
+        // GCP 복구 (오라클 전환 후 Cloud Logging 연동)
+        mavenBom("com.google.cloud:spring-cloud-gcp-dependencies:4.8.4")
     }
 }
 
@@ -41,7 +41,8 @@ repositories {
 }
 
 dependencies {
-    // GCP Cloud Trace 임시 주석 처리 (오라클 전환)
+    // GCP Cloud Logging 복구
+    implementation("com.google.cloud:spring-cloud-gcp-starter-logging")
     // implementation("com.google.cloud:spring-cloud-gcp-starter-trace")
     // GCP Tracing이 빠지면서 Tracer 빈이 사라져 ttddyy observation도 작동 불가이므로 임시 주석 처리
     // implementation("net.ttddyy.observation:datasource-micrometer-spring-boot:1.0.3")
