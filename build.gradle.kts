@@ -43,9 +43,8 @@ repositories {
 dependencies {
     // GCP Cloud Logging 복구
     implementation("com.google.cloud:spring-cloud-gcp-starter-logging")
-    // implementation("com.google.cloud:spring-cloud-gcp-starter-trace")
-    // GCP Tracing이 빠지면서 Tracer 빈이 사라져 ttddyy observation도 작동 불가이므로 임시 주석 처리
-    // implementation("net.ttddyy.observation:datasource-micrometer-spring-boot:1.0.3")
+    implementation("com.google.cloud:spring-cloud-gcp-starter-trace")
+    implementation("net.ttddyy.observation:datasource-micrometer-spring-boot:1.0.3")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
