@@ -10,6 +10,7 @@ import org.aspectj.lang.JoinPoint
 import org.aspectj.lang.annotation.Aspect
 import org.aspectj.lang.annotation.Before
 import org.aspectj.lang.reflect.MethodSignature
+import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 
 import org.springframework.security.core.context.SecurityContextHolder
@@ -17,6 +18,7 @@ import com.kioschool.kioschoolapi.global.security.CustomUserDetails
 
 @Aspect
 @Component
+@Profile("prod")
 class WorkspaceWriteAccessAspect(
     private val userFacade: UserFacade,
     private val workspaceFacade: WorkspaceFacade
