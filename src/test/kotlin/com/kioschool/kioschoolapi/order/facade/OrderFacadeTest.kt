@@ -15,7 +15,7 @@ import com.kioschool.kioschoolapi.global.common.enums.WebsocketType
 import io.kotest.core.spec.style.DescribeSpec
 import io.mockk.*
 import org.junit.jupiter.api.assertThrows
-import org.springframework.data.domain.PageImpl
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 class OrderFacadeTest : DescribeSpec({
@@ -24,12 +24,6 @@ class OrderFacadeTest : DescribeSpec({
     val productService = mockk<ProductService>()
 
     val sut = OrderFacade(orderService, workspaceService, productService)
-
-    beforeTest {
-        mockkObject(orderService)
-        mockkObject(workspaceService)
-        mockkObject(productService)
-    }
 
     afterTest {
         clearAllMocks()
@@ -197,8 +191,8 @@ class OrderFacadeTest : DescribeSpec({
             val tableNumber = 1
             val startDate = LocalDateTime.of(2021, 1, 1, 0, 0)
             val endDate = LocalDateTime.of(2021, 1, 2, 0, 0)
-            val statusStr = OrderStatus.PAID.name
-            val status = OrderStatus.PAID
+            val statusStrs = listOf(OrderStatus.PAID.name)
+            val statuses = listOf(OrderStatus.PAID)
 
             every { workspaceService.checkAccessible(username, workspaceId) } just Runs
             every {
@@ -206,7 +200,7 @@ class OrderFacadeTest : DescribeSpec({
                     workspaceId,
                     startDate,
                     endDate,
-                    status,
+                    statuses,
                     tableNumber
                 )
             } returns listOf(SampleEntity.order1)
@@ -216,7 +210,7 @@ class OrderFacadeTest : DescribeSpec({
                 workspaceId,
                 startDate,
                 endDate,
-                statusStr,
+                statusStrs,
                 tableNumber
             )
 
@@ -228,7 +222,7 @@ class OrderFacadeTest : DescribeSpec({
                     workspaceId,
                     startDate,
                     endDate,
-                    status,
+                    statuses,
                     tableNumber
                 )
             }
@@ -426,34 +420,102 @@ class OrderFacadeTest : DescribeSpec({
     }
 
     describe("getOrdersByTable") {
-        it("should call workspaceService.checkAccessible and orderService.getAllOrdersByTable") {
+        it("should return orders grouped by session") {
+            // 1. Arrange
             val username = "test"
             val workspaceId = 1L
             val tableNumber = 1
-            val page = 0
-            val size = 10
+            val startDate = LocalDate.now()
+            LocalDateTime.now()
+
+            val mockSessions = listOf(SampleEntity.testSession1, SampleEntity.testSession2)
+            val mockSessionIds = mockSessions.map { it.id }
+            val mockOrders =
+                listOf(SampleEntity.order1s1, SampleEntity.order2s1, SampleEntity.order1s2)
 
             every { workspaceService.checkAccessible(username, workspaceId) } just Runs
             every {
-                orderService.getAllOrdersByTable(workspaceId, tableNumber, page, size)
-            } returns PageImpl(listOf(SampleEntity.order1))
+                orderService.getAllOrderSessionsByCondition(
+                    workspaceId,
+                    any(),
+                    any(),
+                    any()
+                )
+            } returns mockSessions
+            every { orderService.getAllOrdersByOrderSessionIds(mockSessionIds) } returns mockOrders
 
-            val result = sut.getOrdersByTable(username, workspaceId, tableNumber, page, size)
+            // 2. Act
+            val result =
+                sut.getOrderSessionsByDate(username, workspaceId, startDate, false)
 
-            assert(result.content.first().id == SampleEntity.order1.id)
+            // 3. Assert
+            assert(result.size == 2)
+
+            val resultSession1 = result.find { it.id == 1L }
+            assert(resultSession1 != null)
+            assert(resultSession1!!.orders.size == 2)
+            assert(resultSession1.orders.any { it.id == 10L })
+            assert(resultSession1.orders.any { it.id == 11L })
+
+            val resultSession2 = result.find { it.id == 2L }
+            assert(resultSession2 != null)
+            assert(resultSession2!!.orders.size == 1)
+            assert(resultSession2.orders.any { it.id == 20L })
 
             verify { workspaceService.checkAccessible(username, workspaceId) }
             verify {
-                orderService.getAllOrdersByTable(workspaceId, tableNumber, page, size)
+                orderService.getAllOrderSessionsByCondition(
+                    workspaceId,
+                    any(),
+                    any(),
+                    false
+                )
             }
+            verify { orderService.getAllOrdersByOrderSessionIds(mockSessionIds) }
+        }
+
+        it("should return empty list when no sessions are found") {
+            // 1. Arrange
+            val username = "test"
+            val workspaceId = 1L
+            val tableNumber = 1
+            val startDate = LocalDate.now()
+            LocalDateTime.now()
+
+            every { workspaceService.checkAccessible(username, workspaceId) } just Runs
+            every {
+                orderService.getAllOrderSessionsByCondition(
+                    workspaceId,
+                    any(),
+                    any(),
+                    any()
+                )
+            } returns emptyList()
+
+            // 2. Act
+            val result =
+                sut.getOrderSessionsByDate(username, workspaceId, startDate, false)
+
+            // 3. Assert
+            assert(result.isEmpty())
+
+            verify {
+                orderService.getAllOrderSessionsByCondition(
+                    workspaceId,
+                    any(),
+                    any(),
+                    false
+                )
+            }
+            verify(exactly = 0) { orderService.getAllOrdersByOrderSessionIds(any()) }
         }
 
         it("should throw WorkspaceInaccessibleException when workspace is not accessible") {
             val username = "test"
             val workspaceId = 1L
             val tableNumber = 1
-            val page = 0
-            val size = 10
+            val startDate = LocalDate.now()
+            LocalDateTime.now()
 
             every {
                 workspaceService.checkAccessible(
@@ -463,12 +525,17 @@ class OrderFacadeTest : DescribeSpec({
             } throws WorkspaceInaccessibleException()
 
             assertThrows<WorkspaceInaccessibleException> {
-                sut.getOrdersByTable(username, workspaceId, tableNumber, page, size)
+                sut.getOrderSessionsByDate(username, workspaceId, startDate, false)
             }
 
             verify { workspaceService.checkAccessible(username, workspaceId) }
             verify(exactly = 0) {
-                orderService.getAllOrdersByTable(workspaceId, tableNumber, page, size)
+                orderService.getAllOrderSessionsByCondition(
+                    any(),
+                    any(),
+                    any(),
+                    any()
+                )
             }
         }
     }
@@ -759,7 +826,7 @@ class OrderFacadeTest : DescribeSpec({
     }
 
     describe("endOrderSession") {
-        it("should end order session") {
+        it("should throw EmptyOrderSessionException when order session has no valid orders and isGhost is null") {
             val username = "test"
             val workspaceId = 1L
             val tableNumber = 1
@@ -775,9 +842,42 @@ class OrderFacadeTest : DescribeSpec({
             } returns SampleEntity.workspaceTable
             every { workspaceService.saveWorkspaceTable(any()) } returns SampleEntity.workspaceTable
             every { orderService.getOrderSession(orderSessionId) } returns SampleEntity.orderSession
+            every { orderService.getAllOrdersByOrderSession(any()) } returns emptyList()
+
+            assertThrows<com.kioschool.kioschoolapi.domain.order.exception.EmptyOrderSessionException> {
+                sut.endOrderSession(username, workspaceId, tableNumber, orderSessionId)
+            }
+
+            verify { workspaceService.checkAccessible(username, workspaceId) }
+            verify { workspaceService.getWorkspace(workspaceId) }
+            verify { workspaceService.getWorkspaceTable(SampleEntity.workspace, tableNumber) }
+            verify { workspaceService.saveWorkspaceTable(any()) }
+            verify { orderService.getOrderSession(orderSessionId) }
+            verify { orderService.getAllOrdersByOrderSession(SampleEntity.orderSession) }
+            verify(exactly = 0) { orderService.saveOrderSession(any()) }
+        }
+
+        it("should end order session when order session has no valid orders and isGhost is true") {
+            val username = "test"
+            val workspaceId = 1L
+            val tableNumber = 1
+            val orderSessionId = 1L
+
+            every { workspaceService.checkAccessible(username, workspaceId) } just Runs
+            every { workspaceService.getWorkspace(workspaceId) } returns SampleEntity.workspace
+            every {
+                workspaceService.getWorkspaceTable(
+                    SampleEntity.workspace,
+                    tableNumber
+                )
+            } returns SampleEntity.workspaceTable
+            every { workspaceService.saveWorkspaceTable(any()) } returns SampleEntity.workspaceTable
+            every { orderService.getOrderSession(orderSessionId) } returns SampleEntity.orderSession
+            every { orderService.getAllOrdersByOrderSession(SampleEntity.orderSession) } returns emptyList()
             every { orderService.saveOrderSession(any()) } returns SampleEntity.orderSession
 
-            val result = sut.endOrderSession(username, workspaceId, tableNumber, orderSessionId)
+            val result =
+                sut.endOrderSession(username, workspaceId, tableNumber, orderSessionId, true)
 
             assert(result.id == SampleEntity.orderSession.id)
 
@@ -786,6 +886,7 @@ class OrderFacadeTest : DescribeSpec({
             verify { workspaceService.getWorkspaceTable(SampleEntity.workspace, tableNumber) }
             verify { workspaceService.saveWorkspaceTable(any()) }
             verify { orderService.getOrderSession(orderSessionId) }
+            verify { orderService.getAllOrdersByOrderSession(SampleEntity.orderSession) }
             verify { orderService.saveOrderSession(any()) }
         }
     }

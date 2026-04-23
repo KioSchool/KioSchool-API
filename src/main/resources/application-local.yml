@@ -1,4 +1,13 @@
 spring:
+  # GCP 연동 비활성화 (로컬 개발 시 인증 오류 우회)
+  cloud:
+    gcp:
+      core:
+        enabled: false
+      trace:
+        enabled: false
+      logging:
+        enabled: false
   jpa:
     show-sql: true
   data:
@@ -25,6 +34,8 @@ kioschool:
   cookie:
     secure: false
 management:
+  tracing:
+    enabled: false # 로컬 환경에서 Cloud Trace 비활성화
   endpoints:
     web:
       cors:

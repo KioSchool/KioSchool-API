@@ -26,16 +26,30 @@
   <!-- 기본 Spring Boot 로그를 위한 콘솔 Appender (텍스트 형식) -->
   <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
 
-  <!-- LoggingAspect에서 발생하는 로그를 위한 콘솔 Appender (JSON 형식) -->
-  <logger additivity="false" level="INFO"
-    name="com.kioschool.kioschoolapi.global.logging.aop.LoggingAspect">
-    <appender-ref ref="CONSOLE_JSON"/>
-  </logger>
+  <!-- 로컬을 비롯한 기본 환경 (dev | prod 아닐 때) -->
+  <springProfile name="!dev &amp; !prod">
+    <logger additivity="false" level="INFO" name="com.kioschool.kioschoolapi.global.logging.aop.LoggingAspect">
+      <appender-ref ref="CONSOLE_JSON"/>
+    </logger>
+    <root level="INFO">
+      <appender-ref ref="CONSOLE_DEFAULT"/>
+    </root>
+  </springProfile>
 
-  <!-- Root Logger: 기본 Spring Boot 로그는 CONSOLE_DEFAULT Appender 사용 -->
-  <root level="INFO">
-    <appender-ref ref="CONSOLE_DEFAULT"/>
-  </root>
+  <!-- 개발(dev) 및 운영(prod) 환경 -->
+  <springProfile name="dev | prod">
+    <!-- GCP Cloud Logging (Stackdriver) Appender -->
+    <include resource="com/google/cloud/spring/logging/logback-appender.xml" />
+    
+    <logger additivity="false" level="INFO" name="com.kioschool.kioschoolapi.global.logging.aop.LoggingAspect">
+      <appender-ref ref="CONSOLE_JSON"/>
+      <appender-ref ref="STACKDRIVER"/>
+    </logger>
+    <root level="INFO">
+      <appender-ref ref="CONSOLE_DEFAULT"/>
+      <appender-ref ref="STACKDRIVER"/>
+    </root>
+  </springProfile>
 
   <!-- LoggingAspect 로거: JSON 형식으로 출력 -->
   <springProperty name="springAppName" scope="context" source="spring.application.name"/>

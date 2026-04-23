@@ -1,6 +1,11 @@
 package com.kioschool.kioschoolapi.order.service
 
-import com.kioschool.kioschoolapi.domain.order.repository.*
+import com.kioschool.kioschoolapi.domain.order.repository.CustomOrderRepository
+import com.kioschool.kioschoolapi.domain.order.repository.CustomOrderSessionRepository
+import com.kioschool.kioschoolapi.domain.order.repository.OrderProductRepository
+import com.kioschool.kioschoolapi.domain.order.repository.OrderRedisRepository
+import com.kioschool.kioschoolapi.domain.order.repository.OrderRepository
+import com.kioschool.kioschoolapi.domain.order.repository.OrderSessionRepository
 import com.kioschool.kioschoolapi.domain.order.service.OrderService
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.factory.SampleEntity
@@ -20,6 +25,8 @@ class OrderServiceTest : DescribeSpec({
     val orderRedisRepository = mockk<OrderRedisRepository>()
     val orderProductRepository = mockk<OrderProductRepository>()
     val orderSessionRepository = mockk<OrderSessionRepository>()
+    val customOrderSessionRepository = mockk<CustomOrderSessionRepository>()
+    val eventPublisher = mockk<org.springframework.context.ApplicationEventPublisher>()
 
     val sut = OrderService(
         repository,
@@ -27,7 +34,9 @@ class OrderServiceTest : DescribeSpec({
         customOrderRepository,
         orderRedisRepository,
         orderProductRepository,
-        orderSessionRepository
+        orderSessionRepository,
+        customOrderSessionRepository,
+        eventPublisher
     )
 
     beforeTest {
@@ -38,6 +47,8 @@ class OrderServiceTest : DescribeSpec({
         mockkObject(orderRedisRepository)
         mockkObject(orderProductRepository)
         mockkObject(orderSessionRepository)
+        mockkObject(customOrderSessionRepository)
+        mockkObject(eventPublisher)
     }
 
     afterTest {
@@ -68,19 +79,14 @@ class OrderServiceTest : DescribeSpec({
 
             // Mock
             every { repository.save(order) } returns order
-            every {
-                websocketService.sendMessage(
-                    "/sub/order/${order.workspace.id}",
-                    any()
-                )
-            } returns Unit
+            every { eventPublisher.publishEvent(any<Any>()) } just Runs
 
             // Act
             sut.saveOrderAndSendWebsocketMessage(order, type) shouldBe order
 
             // Assert
             verify { repository.save(order) }
-            verify { websocketService.sendMessage("/sub/order/${order.workspace.id}", any()) }
+            verify { eventPublisher.publishEvent(any<Any>()) }
         }
     }
 
@@ -91,24 +97,14 @@ class OrderServiceTest : DescribeSpec({
 
             // Mock
             every { orderProductRepository.save(orderProduct) } returns orderProduct
-            every {
-                websocketService.sendMessage(
-                    "/sub/order/${orderProduct.order.workspace.id}",
-                    any()
-                )
-            } returns Unit
+            every { eventPublisher.publishEvent(any<Any>()) } just Runs
 
             // Act
             sut.saveOrderProductAndSendWebsocketMessage(orderProduct) shouldBe orderProduct
 
             // Assert
             verify { orderProductRepository.save(orderProduct) }
-            verify {
-                websocketService.sendMessage(
-                    "/sub/order/${orderProduct.order.workspace.id}",
-                    any()
-                )
-            }
+            verify { eventPublisher.publishEvent(any<Any>()) }
         }
     }
 
@@ -118,7 +114,7 @@ class OrderServiceTest : DescribeSpec({
             val workspaceId = 1L
             val startDate = null
             val endDate = null
-            val status = null
+            val statuses = null
             val tableNumber = null
 
             // Mock
@@ -127,7 +123,7 @@ class OrderServiceTest : DescribeSpec({
                     workspaceId,
                     startDate,
                     endDate,
-                    status,
+                    statuses,
                     tableNumber
                 )
             } returns emptyList()
@@ -137,7 +133,7 @@ class OrderServiceTest : DescribeSpec({
                 workspaceId,
                 startDate,
                 endDate,
-                status,
+                statuses,
                 tableNumber
             ) shouldBe emptyList()
 
@@ -147,7 +143,7 @@ class OrderServiceTest : DescribeSpec({
                     workspaceId,
                     startDate,
                     endDate,
-                    status,
+                    statuses,
                     tableNumber
                 )
             }
@@ -161,15 +157,13 @@ class OrderServiceTest : DescribeSpec({
             val order = SampleEntity.order1
 
             // Mock
-            every { repository.findById(orderId) } returns mockk {
-                every { get() } returns order
-            }
+            every { repository.findWithDetailsById(orderId) } returns order
 
             // Act
             sut.getOrder(orderId) shouldBe order
 
             // Assert
-            verify { repository.findById(orderId) }
+            verify { repository.findWithDetailsById(orderId) }
         }
     }
 
@@ -180,15 +174,13 @@ class OrderServiceTest : DescribeSpec({
             val orderProduct = SampleEntity.orderProduct1
 
             // Mock
-            every { orderProductRepository.findById(orderProductId) } returns mockk {
-                every { get() } returns orderProduct
-            }
+            every { orderProductRepository.findWithOrderById(orderProductId) } returns orderProduct
 
             // Act
             sut.getOrderProduct(orderProductId) shouldBe orderProduct
 
             // Assert
-            verify { orderProductRepository.findById(orderProductId) }
+            verify { orderProductRepository.findWithOrderById(orderProductId) }
         }
     }
 
@@ -238,45 +230,39 @@ class OrderServiceTest : DescribeSpec({
         }
     }
 
-    describe("getAllOrdersByTable") {
-        it("should call orderRepository.findAllByTableNumber") {
+    describe("getAllOrderSessionsByCondition") {
+        it("should call customOrderSessionRepository.findAllByCondition") {
             // Arrange
             val workspaceId = 1L
             val tableNumber = 1
-            val page = 1
-            val size = 10
+            val start = java.time.LocalDateTime.now()
+            val end = java.time.LocalDateTime.now()
 
             // Mock
             every {
-                repository.findAllByWorkspaceIdAndTableNumber(
+                customOrderSessionRepository.findAllByCondition(
                     workspaceId,
-                    tableNumber,
-                    PageRequest.of(
-                        page, size, Sort.by(
-                            Sort.Order.desc("id")
-                        )
-                    )
+                    start,
+                    end,
+                    false
                 )
-            } returns mockk()
+            } returns emptyList()
 
             // Act
-            sut.getAllOrdersByTable(
+            sut.getAllOrderSessionsByCondition(
                 workspaceId,
-                tableNumber,
-                page,
-                size
-            )
+                start,
+                end,
+                false
+            ) shouldBe emptyList()
 
             // Assert
             verify {
-                repository.findAllByWorkspaceIdAndTableNumber(
+                customOrderSessionRepository.findAllByCondition(
                     workspaceId,
-                    tableNumber,
-                    PageRequest.of(
-                        page, size, Sort.by(
-                            Sort.Order.desc("id")
-                        )
-                    )
+                    start,
+                    end,
+                    false
                 )
             }
         }
@@ -315,6 +301,22 @@ class OrderServiceTest : DescribeSpec({
 
             // Assert
             verify { repository.findAllByOrderSession(orderSession) }
+        }
+    }
+
+    describe("getAllOrdersByOrderSessionIds") {
+        it("should call customOrderRepository.findAllByOrderSessionIds") {
+            // Arrange
+            val sessionIds = listOf(1L, 2L)
+            val mockOrders = listOf(SampleEntity.order1s1, SampleEntity.order1s2)
+            every { customOrderRepository.findAllByOrderSessionIds(sessionIds) } returns mockOrders
+
+            // Act
+            val result = sut.getAllOrdersByOrderSessionIds(sessionIds)
+
+            // Assert
+            result shouldBe mockOrders
+            verify { customOrderRepository.findAllByOrderSessionIds(sessionIds) }
         }
     }
 

@@ -2,8 +2,10 @@ package com.kioschool.kioschoolapi.domain.order.facade
 
 import com.kioschool.kioschoolapi.domain.order.dto.common.*
 import com.kioschool.kioschoolapi.domain.order.dto.request.OrderProductRequestBody
+import com.kioschool.kioschoolapi.domain.order.entity.GhostType
 import com.kioschool.kioschoolapi.domain.order.entity.Order
 import com.kioschool.kioschoolapi.domain.order.entity.OrderProduct
+import com.kioschool.kioschoolapi.domain.order.exception.EmptyOrderSessionException
 import com.kioschool.kioschoolapi.domain.order.exception.NoOrderSessionException
 import com.kioschool.kioschoolapi.domain.order.exception.OrderSessionAlreadyExistException
 import com.kioschool.kioschoolapi.domain.order.service.OrderService
@@ -13,9 +15,9 @@ import com.kioschool.kioschoolapi.global.cache.constant.CacheNames
 import com.kioschool.kioschoolapi.global.common.enums.OrderStatus
 import com.kioschool.kioschoolapi.global.common.enums.WebsocketType
 import org.springframework.cache.annotation.Cacheable
-import org.springframework.data.domain.Page
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
@@ -84,18 +86,18 @@ class OrderFacade(
         workspaceId: Long,
         startDate: LocalDateTime?,
         endDate: LocalDateTime?,
-        status: String?,
+        statuses: List<String>?,
         tableNumber: Int?
     ): List<OrderDto> {
         workspaceService.checkAccessible(username, workspaceId)
 
-        val parsedStatus = status?.let { OrderStatus.valueOf(it) }
+        val parsedStatuses = statuses?.map { OrderStatus.valueOf(it) }
 
         return orderService.getAllOrdersByCondition(
             workspaceId,
             startDate,
             endDate,
-            parsedStatus,
+            parsedStatuses,
             tableNumber
         ).map { OrderDto.of(it) }
     }
@@ -110,6 +112,7 @@ class OrderFacade(
             .map { OrderDto.of(it) }
     }
 
+    @Transactional
     fun changeOrderStatus(
         username: String,
         workspaceId: Long,
@@ -129,18 +132,43 @@ class OrderFacade(
         )
     }
 
-    fun getOrdersByTable(
+    fun getOrderSessionsByDate(
         username: String,
         workspaceId: Long,
-        tableNumber: Int,
-        page: Int,
-        size: Int
-    ): Page<OrderDto> {
+        targetDate: LocalDate,
+        includeGhost: Boolean
+    ): List<OrderSessionWithOrderDto> {
         workspaceService.checkAccessible(username, workspaceId)
-        return orderService.getAllOrdersByTable(workspaceId, tableNumber, page, size)
-            .map { OrderDto.of(it) }
+
+        val startDate = targetDate.atTime(9, 0)
+        val endDate = targetDate.plusDays(1).atTime(9, 0)
+
+        val sessions = orderService.getAllOrderSessionsByCondition(
+            workspaceId,
+            startDate,
+            endDate,
+            includeGhost
+        )
+
+        if (sessions.isEmpty()) {
+            return emptyList()
+        }
+
+        val sessionIds = sessions.map { it.id }
+
+        val orders = orderService.getAllOrdersByOrderSessionIds(sessionIds)
+
+        val ordersBySessionId = orders
+            .mapNotNull { order -> order.orderSession?.let { it.id to order } }
+            .groupBy({ it.first }, { it.second })
+
+        return sessions.map { session ->
+            val sessionOrders = ordersBySessionId[session.id] ?: emptyList()
+            OrderSessionWithOrderDto.of(session, sessionOrders)
+        }
     }
 
+    @Transactional
     fun changeOrderProductServedCount(
         username: String,
         workspaceId: Long,
@@ -170,13 +198,13 @@ class OrderFacade(
     ): List<OrderPrefixSumPrice> {
         workspaceService.checkAccessible(username, workspaceId)
 
-        val parsedStatus = status?.let { OrderStatus.valueOf(it) }
+        val parsedStatuses = status?.let { listOf(OrderStatus.valueOf(it)) }
 
         val orders = orderService.getAllOrdersByCondition(
             workspaceId,
             startDate,
             endDate,
-            parsedStatus,
+            parsedStatuses,
             null
         )
 
@@ -200,13 +228,13 @@ class OrderFacade(
     ): List<OrderHourlyPrice> {
         workspaceService.checkAccessible(username, workspaceId)
 
-        val parsedStatus = status?.let { OrderStatus.valueOf(it) }
+        val parsedStatuses = status?.let { listOf(OrderStatus.valueOf(it)) }
 
         val orders = orderService.getAllOrdersByCondition(
             workspaceId,
             startDate,
             endDate,
-            parsedStatus,
+            parsedStatuses,
             null
         )
 
@@ -258,12 +286,13 @@ class OrderFacade(
         return OrderSessionDto.of(orderService.saveOrderSession(orderSession))
     }
 
-    @Transactional
+    @Transactional(rollbackFor = [EmptyOrderSessionException::class])
     fun endOrderSession(
         username: String,
         workspaceId: Long,
         tableNumber: Int,
-        orderSessionId: Long
+        orderSessionId: Long,
+        isGhost: Boolean? = null
     ): OrderSessionDto {
         workspaceService.checkAccessible(username, workspaceId)
 
@@ -276,6 +305,27 @@ class OrderFacade(
 
         val orderSession = orderService.getOrderSession(orderSessionId)
         orderSession.endAt = LocalDateTime.now()
+
+        val orders = orderService.getAllOrdersByOrderSession(orderSession)
+        val validOrders = orders.filter { it.status != OrderStatus.CANCELLED }
+
+        if (validOrders.isEmpty()) {
+            if (isGhost == null) {
+                throw EmptyOrderSessionException()
+            }
+            orderSession.ghostType = if (isGhost) GhostType.USER else GhostType.NONE
+        } else {
+            orderSession.ghostType = GhostType.NONE
+            orderSession.customerName = validOrders.first().customerName
+        }
+
+        orderSession.totalOrderPrice = validOrders.sumOf { it.totalPrice.toLong() }
+        orderSession.orderCount = validOrders.size
+
+        val start = orderSession.createdAt
+        orderSession.usageTime = ChronoUnit.MINUTES.between(start, orderSession.endAt).toInt()
+
+        workspaceService.saveWorkspaceTable(table)
         return OrderSessionDto.of(orderService.saveOrderSession(orderSession))
     }
 

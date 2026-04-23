@@ -3,6 +3,7 @@ package com.kioschool.kioschoolapi.domain.account.service
 import com.kioschool.kioschoolapi.domain.account.entity.Account
 import com.kioschool.kioschoolapi.domain.account.entity.Bank
 import com.kioschool.kioschoolapi.domain.account.repository.AccountRepository
+import com.kioschool.kioschoolapi.domain.user.entity.User
 import org.springframework.stereotype.Service
 
 @Service
@@ -19,4 +20,9 @@ class AccountService(
         return accountRepository.save(account)
     }
 
+    fun deleteAccount(user: User) {
+        val account = user.account ?: return
+        user.account = null
+        accountRepository.delete(account)
+    }
 }

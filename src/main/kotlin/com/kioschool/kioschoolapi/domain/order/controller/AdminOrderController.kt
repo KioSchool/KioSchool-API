@@ -6,8 +6,8 @@ import com.kioschool.kioschoolapi.domain.order.facade.OrderFacade
 import com.kioschool.kioschoolapi.global.security.annotation.AdminUsername
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
-import org.springframework.data.domain.Page
 import org.springframework.web.bind.annotation.*
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Tag(name = "Admin Order Controller")
@@ -24,7 +24,7 @@ class AdminOrderController(
         @RequestParam("workspaceId") workspaceId: Long,
         @RequestParam("startDate") startDate: LocalDateTime? = null,
         @RequestParam("endDate") endDate: LocalDateTime? = null,
-        @RequestParam("status") status: String? = null,
+        @RequestParam("statuses") statuses: List<String>? = null,
         @RequestParam("tableNumber") tableNumber: Int? = null
     ): List<OrderDto> {
         return orderFacade.getOrdersByCondition(
@@ -32,7 +32,7 @@ class AdminOrderController(
             workspaceId,
             startDate,
             endDate,
-            status,
+            statuses,
             tableNumber
         )
     }
@@ -73,21 +73,22 @@ class AdminOrderController(
         )
     }
 
-    @Operation(summary = "테이블별 주문 조회", description = "테이블별 주문을 조회합니다.")
-    @GetMapping("/orders/table")
+    @Operation(
+        summary = "주문 세션 전체 조회",
+        description = "주문 세션을 일단위로 전체조회합니다. targetDate 기준 9시부터 익일 9시까지 조회합니다."
+    )
+    @GetMapping("/orders/sessions")
     fun getOrdersByTable(
         @AdminUsername username: String,
         @RequestParam("workspaceId") workspaceId: Long,
-        @RequestParam("tableNumber") tableNumber: Int,
-        @RequestParam("page") page: Int,
-        @RequestParam("size") size: Int
-    ): Page<OrderDto> {
-        return orderFacade.getOrdersByTable(
+        @RequestParam("targetDate") targetDate: LocalDate,
+        @RequestParam(value = "includeGhost", defaultValue = "false") includeGhost: Boolean
+    ): List<OrderSessionWithOrderDto> {
+        return orderFacade.getOrderSessionsByDate(
             username,
             workspaceId,
-            tableNumber,
-            page,
-            size
+            targetDate,
+            includeGhost
         )
     }
 
@@ -184,7 +185,8 @@ class AdminOrderController(
             username,
             body.workspaceId,
             body.tableNumber,
-            body.orderSessionId
+            body.orderSessionId,
+            body.isGhost
         )
     }
 }

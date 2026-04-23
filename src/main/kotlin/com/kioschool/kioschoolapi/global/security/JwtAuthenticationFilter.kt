@@ -19,11 +19,6 @@ class JwtAuthenticationFilter(
         response: HttpServletResponse,
         filterChain: FilterChain
     ) {
-        if (request.isPreflight()) {
-            allowCors(response)
-            return
-        }
-
         val token = jwtProvider.resolveToken(request)
         if (!token.isNullOrBlank() && jwtProvider.isValidToken(token)) {
             val authentication = jwtProvider.getAuthentication(token)
@@ -51,5 +46,9 @@ class JwtAuthenticationFilter(
             HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS,
             HttpMethod.values().joinToString { it.name() })
         response.status = HttpServletResponse.SC_OK
+    }
+
+    override fun shouldNotFilterAsyncDispatch(): Boolean {
+        return false
     }
 }

@@ -8,6 +8,7 @@ import com.kioschool.kioschoolapi.domain.workspace.exception.NoPermissionToInvit
 import com.kioschool.kioschoolapi.domain.workspace.exception.NoPermissionToJoinWorkspaceException
 import com.kioschool.kioschoolapi.domain.workspace.exception.WorkspaceInaccessibleException
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepository
+import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceMemberRepository
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceTableRepository
 import com.kioschool.kioschoolapi.global.aws.S3Service
 import com.kioschool.kioschoolapi.global.cache.annotation.WorkspaceUpdateEvent
@@ -19,12 +20,16 @@ import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import java.util.*
 
+import org.springframework.security.core.context.SecurityContextHolder
+import com.kioschool.kioschoolapi.global.security.CustomUserDetails
+
 @Service
 class WorkspaceService(
     @Value("\${cloud.aws.s3.default-path}")
     private val workspacePath: String,
     val workspaceRepository: WorkspaceRepository,
     val workspaceTableRepository: WorkspaceTableRepository,
+    val workspaceMemberRepository: WorkspaceMemberRepository,
     val userService: UserService,
     val s3Service: S3Service
 ) {
@@ -78,10 +83,14 @@ class WorkspaceService(
     }
 
     fun isAccessible(username: String, workspaceId: Long): Boolean {
-        val workspace = getWorkspace(workspaceId)
-        val user = userService.getUser(username)
-
-        return workspace.members.any { it.user.loginId == username } || user.role == UserRole.SUPER_ADMIN
+        val userRole = (SecurityContextHolder.getContext().authentication?.principal as? CustomUserDetails)
+            ?.takeIf { it.loginId == username }
+            ?.role
+            ?: userService.getUser(username).role
+            
+        if (userRole == UserRole.SUPER_ADMIN) return true
+        
+        return workspaceMemberRepository.existsByWorkspaceIdAndUserLoginId(workspaceId, username)
     }
 
     fun checkAccessible(username: String, workspaceId: Long) {
@@ -89,7 +98,10 @@ class WorkspaceService(
     }
 
     fun checkCanAccessWorkspace(user: User, workspace: Workspace) {
-        if (!isAccessible(user.loginId, workspace.id)) throw WorkspaceInaccessibleException()
+        if (user.role == UserRole.SUPER_ADMIN) return
+        if (!workspaceMemberRepository.existsByWorkspaceIdAndUserLoginId(workspace.id, user.loginId)) {
+            throw WorkspaceInaccessibleException()
+        }
     }
 
     fun checkCanInviteWorkspace(user: User, workspace: Workspace) {
@@ -115,6 +127,12 @@ class WorkspaceService(
     @WorkspaceUpdateEvent
     fun updateTableCount(workspace: Workspace, tableCount: Int): Workspace {
         workspace.tableCount = tableCount
+        return workspaceRepository.save(workspace)
+    }
+
+    @WorkspaceUpdateEvent
+    fun updateIsOnboarding(workspace: Workspace, isOnboarding: Boolean): Workspace {
+        workspace.isOnboarding = isOnboarding
         return workspaceRepository.save(workspace)
     }
 

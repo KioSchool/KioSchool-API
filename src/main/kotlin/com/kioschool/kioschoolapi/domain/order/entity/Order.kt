@@ -9,7 +9,7 @@ import jakarta.persistence.*
 @Entity
 @Table(name = "order", schema = "PUBLIC")
 class Order(
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JsonIgnore
     val workspace: Workspace,
     val tableNumber: Int,
@@ -20,6 +20,6 @@ class Order(
     var totalPrice: Int = 0,
     var status: OrderStatus = OrderStatus.NOT_PAID,
     val orderNumber: Long,
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     val orderSession: OrderSession?
 ) : BaseEntity()

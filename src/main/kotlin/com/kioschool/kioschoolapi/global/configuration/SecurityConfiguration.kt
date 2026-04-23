@@ -29,6 +29,9 @@ class SecurityConfiguration(
             .cors { it.configurationSource(corsConfigurationSource()) }
             .csrf { it.disable() }
             .authorizeHttpRequests {
+                it.requestMatchers("/actuator/**").permitAll()
+            }
+            .authorizeHttpRequests {
                 it.requestMatchers("/super-admin/**")
                     .hasAuthority(UserRole.SUPER_ADMIN.name)
             }

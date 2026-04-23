@@ -335,7 +335,7 @@ class WorkspaceFacadeTest : DescribeSpec({
             every { userService.getUser(username) } returns user
             every { workspaceService.getWorkspace(workspaceId) } returns workspace
             every { workspaceService.checkCanAccessWorkspace(user, workspace) } just Runs
-            every { workspaceService.updateTableCount(workspace, tableCount) } just Runs
+            every { workspaceService.updateTableCount(workspace, tableCount) } returns workspace
             every { workspaceService.updateWorkspaceTables(workspace) } just Runs
 
             val result = sut.updateTableCount(username, workspaceId, tableCount)

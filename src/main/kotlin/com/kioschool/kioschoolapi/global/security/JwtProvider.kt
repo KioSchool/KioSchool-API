@@ -1,6 +1,7 @@
 package com.kioschool.kioschoolapi.global.security
 
 import com.kioschool.kioschoolapi.domain.user.entity.User
+import com.kioschool.kioschoolapi.global.common.enums.UserRole
 import com.nimbusds.jose.util.StandardCharset
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.SignatureAlgorithm
@@ -27,6 +28,7 @@ class JwtProvider(
         val now = Date()
         val claims = Jwts.claims().setSubject(user.loginId)
         claims["roles"] = listOf(user.role.name)
+        claims["userId"] = user.id
         return Jwts.builder()
             .setIssuedAt(now)
             .setClaims(claims)
@@ -57,7 +59,29 @@ class JwtProvider(
     }
 
     fun getAuthentication(token: String): Authentication {
-        val userDetails = userDetailService.loadUserByUsername(getLoginId(token))
+        val claims = Jwts.parserBuilder()
+            .setSigningKey(secretKey)
+            .build()
+            .parseClaimsJws(token)
+            .body
+
+        val loginId = claims.subject
+        val userId = claims["userId"] as? Number
+        val roles = claims["roles"] as? List<*>
+
+        if (userId == null || roles.isNullOrEmpty()) {
+            // 과거 호환용: 토큰에 userId나 roles가 없으면 기존처럼 DB 조회로 폴백
+            val userDetails = userDetailService.loadUserByUsername(loginId)
+            return UsernamePasswordAuthenticationToken(userDetails, "", userDetails.authorities)
+        }
+
+        // DB 조회 없이 토큰 정보만으로 인증 객체 생성
+        val roleStr = roles.first().toString()
+        val userDetails = CustomUserDetails(
+            userId = userId.toLong(),
+            loginId = loginId,
+            role = UserRole.valueOf(roleStr)
+        )
         return UsernamePasswordAuthenticationToken(userDetails, "", userDetails.authorities)
     }
 

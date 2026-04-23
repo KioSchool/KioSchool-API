@@ -1,8 +1,10 @@
 package com.kioschool.kioschoolapi.domain.order.service
 
+import com.kioschool.kioschoolapi.domain.dashboard.dto.ProductIdQuantityDto
 import com.kioschool.kioschoolapi.domain.order.entity.Order
 import com.kioschool.kioschoolapi.domain.order.entity.OrderProduct
 import com.kioschool.kioschoolapi.domain.order.entity.OrderSession
+import com.kioschool.kioschoolapi.domain.order.event.OrderWebsocketEvent
 import com.kioschool.kioschoolapi.domain.order.repository.*
 import com.kioschool.kioschoolapi.domain.workspace.entity.Workspace
 import com.kioschool.kioschoolapi.domain.workspace.entity.WorkspaceSetting
@@ -11,11 +13,7 @@ import com.kioschool.kioschoolapi.global.cache.annotation.OrderProductUpdateEven
 import com.kioschool.kioschoolapi.global.cache.annotation.OrderUpdateEvent
 import com.kioschool.kioschoolapi.global.common.enums.OrderStatus
 import com.kioschool.kioschoolapi.global.common.enums.WebsocketType
-import com.kioschool.kioschoolapi.global.websocket.dto.Message
 import com.kioschool.kioschoolapi.global.websocket.service.CustomWebSocketService
-import org.springframework.data.domain.Page
-import org.springframework.data.domain.PageRequest
-import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 
@@ -26,30 +24,31 @@ class OrderService(
     private val customOrderRepository: CustomOrderRepository,
     private val orderRedisRepository: OrderRedisRepository,
     private val orderProductRepository: OrderProductRepository,
-    private val orderSessionRepository: OrderSessionRepository
+    private val orderSessionRepository: OrderSessionRepository,
+    private val customOrderSessionRepository: CustomOrderSessionRepository,
+    private val eventPublisher: org.springframework.context.ApplicationEventPublisher
 ) {
     @OrderUpdateEvent
     fun saveOrder(order: Order): Order {
         return orderRepository.save(order)
     }
 
+
     @OrderUpdateEvent
     fun saveOrderAndSendWebsocketMessage(order: Order, type: WebsocketType): Order {
         val savedOrder = orderRepository.save(order)
-        websocketService.sendMessage(
-            "/sub/order/${order.workspace.id}",
-            Message(type, savedOrder)
-        )
+        eventPublisher.publishEvent(OrderWebsocketEvent(savedOrder.id, type))
         return savedOrder
     }
 
     @OrderProductUpdateEvent
     fun saveOrderProductAndSendWebsocketMessage(orderProduct: OrderProduct): OrderProduct {
         val savedOrderProduct = orderProductRepository.save(orderProduct)
-        val order = savedOrderProduct.order
-        websocketService.sendMessage(
-            "/sub/order/${order.workspace.id}",
-            Message(WebsocketType.UPDATED, order)
+        eventPublisher.publishEvent(
+            OrderWebsocketEvent(
+                savedOrderProduct.order.id,
+                WebsocketType.UPDATED
+            )
         )
         return savedOrderProduct
     }
@@ -58,24 +57,24 @@ class OrderService(
         workspaceId: Long,
         startDate: LocalDateTime?,
         endDate: LocalDateTime?,
-        status: OrderStatus?,
+        statuses: List<OrderStatus>?,
         tableNumber: Int?
     ): List<Order> {
         return customOrderRepository.findAllByCondition(
             workspaceId,
             startDate,
             endDate,
-            status,
+            statuses,
             tableNumber
         )
     }
 
     fun getOrder(orderId: Long): Order {
-        return orderRepository.findById(orderId).get()
+        return orderRepository.findWithDetailsById(orderId) ?: throw NoSuchElementException("Order not found")
     }
 
     fun getOrderProduct(orderProductId: Long): OrderProduct {
-        return orderProductRepository.findById(orderProductId).get()
+        return orderProductRepository.findWithOrderById(orderProductId) ?: throw NoSuchElementException()
     }
 
     fun getOrderNumber(workspaceId: Long): Long {
@@ -90,22 +89,17 @@ class OrderService(
         orderRedisRepository.resetAllOrderNumber()
     }
 
-    fun getAllOrdersByTable(
+    fun getAllOrderSessionsByCondition(
         workspaceId: Long,
-        tableNumber: Int,
-        page: Int,
-        size: Int
-    ): Page<Order> {
-        return orderRepository.findAllByWorkspaceIdAndTableNumber(
+        start: LocalDateTime,
+        end: LocalDateTime,
+        includeGhost: Boolean
+    ): List<OrderSession> {
+        return customOrderSessionRepository.findAllByCondition(
             workspaceId,
-            tableNumber,
-            PageRequest.of(
-                page,
-                size,
-                Sort.by(
-                    Sort.Order.desc("id")
-                )
-            )
+            start,
+            end,
+            includeGhost
         )
     }
 
@@ -115,6 +109,10 @@ class OrderService(
 
     fun getAllOrdersByOrderSession(orderSession: OrderSession): List<Order> {
         return orderRepository.findAllByOrderSession(orderSession)
+    }
+
+    fun getAllOrdersByOrderSessionIds(sessionIds: List<Long>): List<Order> {
+        return customOrderRepository.findAllByOrderSessionIds(sessionIds)
     }
 
     fun saveOrderSession(orderSession: OrderSession): OrderSession {
@@ -138,5 +136,23 @@ class OrderService(
                 tableNumber = table.tableNumber
             )
         )
+    }
+
+
+    fun getSalesSum(workspaceId: Long, start: LocalDateTime, end: LocalDateTime): Long {
+        return customOrderRepository.getSalesSum(workspaceId, start, end)
+    }
+
+    fun getOrderCount(workspaceId: Long, start: LocalDateTime, end: LocalDateTime): Long {
+        return customOrderRepository.getOrderCount(workspaceId, start, end)
+    }
+
+    fun getTopSellingProducts(
+        workspaceId: Long,
+        start: LocalDateTime,
+        end: LocalDateTime,
+        limit: Int
+    ): List<ProductIdQuantityDto> {
+        return customOrderRepository.getTopSellingProducts(workspaceId, start, end, limit)
     }
 }

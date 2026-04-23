@@ -3,13 +3,14 @@ package com.kioschool.kioschoolapi.domain.order.entity
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.kioschool.kioschoolapi.global.common.entity.BaseEntity
 import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 
 @Entity
 @Table(name = "order_product")
 class OrderProduct(
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JsonIgnore
     val order: Order,
     val productId: Long,

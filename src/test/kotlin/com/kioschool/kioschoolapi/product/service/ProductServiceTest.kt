@@ -10,6 +10,7 @@ import com.kioschool.kioschoolapi.domain.product.repository.ProductRepository
 import com.kioschool.kioschoolapi.domain.product.service.ProductService
 import com.kioschool.kioschoolapi.factory.SampleEntity
 import com.kioschool.kioschoolapi.global.aws.S3Service
+import com.kioschool.kioschoolapi.global.common.enums.ProductStatus
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
@@ -289,8 +290,8 @@ class ProductServiceTest : DescribeSpec({
                     workspaceId
                 )
             } returns listOf(
-                SampleEntity.productWithId(1L),
-                SampleEntity.productWithId(2L)
+                SampleEntity.productWithId(1L).apply { status = ProductStatus.SELLING },
+                SampleEntity.productWithId(2L).apply { status = ProductStatus.SELLING }
             )
 
             // Act and Assert
@@ -329,7 +330,7 @@ class ProductServiceTest : DescribeSpec({
             }
         }
 
-        it("should throw NotSellableProductException if product is not sellable") {
+        it("should throw NotSellableProductException if product status is not SELLING") {
             val workspaceId = 1L
             val productIds = listOf(1L, 2L)
 
@@ -340,8 +341,8 @@ class ProductServiceTest : DescribeSpec({
                     workspaceId
                 )
             } returns listOf(
-                SampleEntity.productWithId(1L),
-                SampleEntity.productWithId(2L).apply { isSellable = false }
+                SampleEntity.productWithId(1L).apply { status = ProductStatus.SOLD_OUT },
+                SampleEntity.productWithId(2L)
             )
 
             // Act and Assert

@@ -1,12 +1,33 @@
 spring:
+  # GCP Cloud Logging 복구 (GCP Key 연동)
+  cloud:
+    gcp:
+      core:
+        enabled: true
+      logging:
+        # GCP Log Explorer에서 로그를 분리해서 보기 위한 식별자 (예: kioschool-server-dev, kioschool-server-prod)
+        log-id: "kioschool-server-${spring.profiles.active:default}"
+      trace:
+        enabled: true
   servlet:
     multipart:
       max-file-size: 20MB
       max-request-size: 20MB
   datasource:
+    hikari:
+      maximum-pool-size: 10 # 고정 풀 크기 권장 (CPU 코어수, DB 스펙에 맞춰 조절)
+      minimum-idle: 10 # 서버리스가 아닌 오라클 VM(항상 켜져있음)이므로 10개 풀을 항상 유지하여 acquire 지연 제거!
+      # idle-timeout: 10000 (minimum-idle과 maximum-pool-size가 동일한 고정 풀에서는 idle-timeout 설정이 무시되므로 삭제)
+      max-lifetime: 540000 
+      keepalive-time: 60000 
+      connection-timeout: 3000 # 커넥션 타임아웃은 일반적인 수준(3초)으로 살짝 여유있게 조정
     driver-class-name: org.postgresql.Driver
   liquibase:
     change-log: classpath:db/changelog-master.yaml
+  jpa:
+    properties:
+      hibernate:
+        default_batch_fetch_size: 100
   thymeleaf:
     enabled: false
   mail:
@@ -39,12 +60,17 @@ server:
       min-spare: 10
       max: 120
     accept-count: 100
+    remoteip:
+      internal-proxies: ".*"
+      remote-ip-header: X-Forwarded-For
+      protocol-header: X-Forwarded-Proto
   servlet:
     session:
       cookie:
         same-site: none
   error:
     include-message: always
+  forward-headers-strategy: native
 springdoc:
   swagger-ui:
     tags-sorter: alpha
@@ -53,6 +79,10 @@ portone:
   api-key: "${PORTONE_API_KEY}"
   api-secret: "${PORTONE_API_SECRET}"
 management:
+  tracing:
+    enabled: true
+    sampling:
+      probability: 0.1 # 10% 샘플링
   health:
     defaults:
       enabled: false
