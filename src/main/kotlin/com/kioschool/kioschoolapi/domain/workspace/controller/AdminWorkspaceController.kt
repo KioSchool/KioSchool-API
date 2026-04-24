@@ -28,7 +28,7 @@ class AdminWorkspaceController(
         @AdminUsername username: String,
         @RequestParam workspaceId: Long
     ): WorkspaceDto {
-        return workspaceFacade.getWorkspace(workspaceId)
+        return workspaceFacade.getWorkspace(username, workspaceId)
     }
 
     @Operation(summary = "워크스페이스 생성", description = "워크스페이스를 생성합니다.")
