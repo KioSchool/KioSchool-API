@@ -25,6 +25,15 @@ class WorkspaceFacade(
         return WorkspaceDto.of(workspaceService.getWorkspace(workspaceId))
     }
 
+    fun getWorkspace(username: String, workspaceId: Long): WorkspaceDto {
+        val user = userService.getUser(username)
+        val workspace = workspaceService.getWorkspace(workspaceId)
+
+        workspaceService.checkCanAccessWorkspace(user, workspace)
+
+        return WorkspaceDto.of(workspace)
+    }
+
     fun getWorkspaces(username: String): List<WorkspaceDto> {
         val user = userService.getUser(username)
         return user.getWorkspaces().map { WorkspaceDto.of(it) }
