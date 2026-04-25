@@ -108,6 +108,7 @@ class LoggingAspect(private val objectMapper: ObjectMapper) {
         return try {
             objectMapper.writeValueAsString(obj)
         } catch (e: Exception) {
+            log.warn("Failed to serialize object: {}", e.message)
             "[SERIALIZATION_ERROR]"
         }
     }

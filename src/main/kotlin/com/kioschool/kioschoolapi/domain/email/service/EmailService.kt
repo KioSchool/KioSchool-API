@@ -10,6 +10,7 @@ import com.kioschool.kioschoolapi.domain.email.repository.EmailCodeRepository
 import com.kioschool.kioschoolapi.domain.email.repository.EmailDomainRepository
 import com.kioschool.kioschoolapi.domain.user.exception.UserNotFoundException
 import jakarta.transaction.Transactional
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
@@ -28,6 +29,7 @@ class EmailService(
     private val emailCodeRepository: EmailCodeRepository,
     private val emailDomainRepository: EmailDomainRepository
 ) {
+    private val log = LoggerFactory.getLogger(javaClass)
 
     fun createOrUpdateRegisterEmailCode(emailAddress: String, code: String): EmailCode {
         val emailCode =
@@ -57,8 +59,9 @@ class EmailService(
 
         try {
             javaMailSender.send(message)
-        } catch (_: Exception) {
-            throw EmailSendFailureException()
+        } catch (e: Exception) {
+            log.error("Failed to send email to {}", address, e)
+            throw EmailSendFailureException(e)
         }
     }
 
