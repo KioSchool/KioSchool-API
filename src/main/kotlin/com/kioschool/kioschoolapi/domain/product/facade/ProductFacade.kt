@@ -190,6 +190,7 @@ class ProductFacade(
             }
         }
         return productService.saveProducts(products)
+            .sortedBy { it.index ?: Int.MAX_VALUE }
             .map { ProductDto.of(it) }
     }
 
