@@ -12,6 +12,7 @@ data class ProductDto(
     val imageUrl: String?,
     val status: ProductStatus?,
     val productCategory: ProductCategoryDto?,
+    val index: Int?,
     val createdAt: LocalDateTime?,
     val updatedAt: LocalDateTime?
 ) {
@@ -25,6 +26,7 @@ data class ProductDto(
                 imageUrl = product.imageUrl,
                 status = product.status,
                 productCategory = product.productCategory?.let { ProductCategoryDto.of(it) },
+                index = product.index,
                 createdAt = product.createdAt,
                 updatedAt = product.updatedAt
             )

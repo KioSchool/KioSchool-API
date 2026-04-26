@@ -2,6 +2,7 @@ package com.kioschool.kioschoolapi.domain.product.facade
 
 import com.kioschool.kioschoolapi.domain.product.dto.common.ProductCategoryDto
 import com.kioschool.kioschoolapi.domain.product.dto.common.ProductDto
+import com.kioschool.kioschoolapi.domain.product.dto.request.CategoryProductSortInfo
 import com.kioschool.kioschoolapi.domain.product.entity.ProductCategory
 import com.kioschool.kioschoolapi.domain.product.service.ProductService
 import com.kioschool.kioschoolapi.domain.workspace.exception.WorkspaceInaccessibleException
@@ -154,6 +155,42 @@ class ProductFacade(
         }
         return productService.saveProductCategories(productCategories)
             .map { ProductCategoryDto.of(it) }
+    }
+
+    fun sortProducts(
+        username: String,
+        workspaceId: Long,
+        sorts: List<CategoryProductSortInfo>
+    ): List<ProductDto> {
+        workspaceService.checkAccessible(username, workspaceId)
+
+        val uniqueCategoryIds = sorts.mapNotNull { it.categoryId }.distinct()
+        val categories = productService.getProductCategories(uniqueCategoryIds)
+        val categoryMap = categories.associateBy { it.id }
+
+        categories.forEach {
+            if (it.workspace.id != workspaceId) throw WorkspaceInaccessibleException()
+        }
+
+        val allProductIds = sorts.flatMap { it.productIds }.distinct()
+        val products = productService.getProducts(allProductIds)
+        products.forEach {
+            if (it.workspace.id != workspaceId) throw WorkspaceInaccessibleException()
+        }
+        val productMap = products.associateBy { it.id }
+
+        sorts.forEach { sortInfo ->
+            val targetCategory = sortInfo.categoryId?.let { categoryMap[it] }
+            sortInfo.productIds.forEachIndexed { index, productId ->
+                val product = productMap[productId]
+                if (product != null) {
+                    product.productCategory = targetCategory
+                    product.index = index
+                }
+            }
+        }
+        return productService.saveProducts(products)
+            .map { ProductDto.of(it) }
     }
 
     fun updateProductStatus(
