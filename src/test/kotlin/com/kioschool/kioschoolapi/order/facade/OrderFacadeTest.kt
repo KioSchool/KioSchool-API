@@ -424,9 +424,7 @@ class OrderFacadeTest : DescribeSpec({
             // 1. Arrange
             val username = "test"
             val workspaceId = 1L
-            val tableNumber = 1
             val startDate = LocalDate.now()
-            LocalDateTime.now()
 
             val mockSessions = listOf(SampleEntity.testSession1, SampleEntity.testSession2)
             val mockSessionIds = mockSessions.map { it.id }
@@ -478,9 +476,7 @@ class OrderFacadeTest : DescribeSpec({
             // 1. Arrange
             val username = "test"
             val workspaceId = 1L
-            val tableNumber = 1
             val startDate = LocalDate.now()
-            LocalDateTime.now()
 
             every { workspaceService.checkAccessible(username, workspaceId) } just Runs
             every {
@@ -513,9 +509,7 @@ class OrderFacadeTest : DescribeSpec({
         it("should throw WorkspaceInaccessibleException when workspace is not accessible") {
             val username = "test"
             val workspaceId = 1L
-            val tableNumber = 1
             val startDate = LocalDate.now()
-            LocalDateTime.now()
 
             every {
                 workspaceService.checkAccessible(
