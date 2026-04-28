@@ -197,4 +197,9 @@ class WorkspaceService(
     fun saveWorkspaceTable(table: WorkspaceTable): WorkspaceTable {
         return workspaceTableRepository.save(table)
     }
+
+    fun getWorkspaceTableByHash(workspace: Workspace, tableHash: String): WorkspaceTable {
+        return workspaceTableRepository.findByTableHashAndWorkspace(tableHash, workspace)
+            .orElseThrow { WorkspaceTableNotFoundException() }
+    }
 }
