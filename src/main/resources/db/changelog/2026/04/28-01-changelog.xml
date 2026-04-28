@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS"
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+  <changeSet author="ji-inpark" id="1777384761822-2">
+    <addUniqueConstraint columnNames="table_hash" constraintName="uc_workspace_table_tablehash"
+      tableName="workspace_table"/>
+  </changeSet>
+  <changeSet author="ji-inpark" id="1777384761822-1">
+    <addNotNullConstraint columnDataType="VARCHAR(255)" columnName="table_hash"
+      tableName="workspace_table" validate="true"/>
+  </changeSet>
+
+</databaseChangeLog>

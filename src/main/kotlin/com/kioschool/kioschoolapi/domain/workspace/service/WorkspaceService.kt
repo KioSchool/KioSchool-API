@@ -3,44 +3,39 @@ package com.kioschool.kioschoolapi.domain.workspace.service
 import com.kioschool.kioschoolapi.domain.user.entity.User
 import com.kioschool.kioschoolapi.domain.user.service.UserService
 import com.kioschool.kioschoolapi.domain.workspace.entity.*
-import com.kioschool.kioschoolapi.domain.workspace.exception.NoPermissionToCreateWorkspaceException
-import com.kioschool.kioschoolapi.domain.workspace.exception.NoPermissionToInviteException
-import com.kioschool.kioschoolapi.domain.workspace.exception.NoPermissionToJoinWorkspaceException
-import com.kioschool.kioschoolapi.domain.workspace.exception.WorkspaceInaccessibleException
-import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepository
+import com.kioschool.kioschoolapi.domain.workspace.exception.*
+import com.kioschool.kioschoolapi.domain.workspace.repository.CustomWorkspaceRepository
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceMemberRepository
+import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepository
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceTableRepository
 import com.kioschool.kioschoolapi.global.aws.S3Service
 import com.kioschool.kioschoolapi.global.cache.annotation.WorkspaceUpdateEvent
 import com.kioschool.kioschoolapi.global.common.enums.UserRole
+import com.kioschool.kioschoolapi.global.security.CustomUserDetails
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import java.util.*
-
-import org.springframework.security.core.context.SecurityContextHolder
-import com.kioschool.kioschoolapi.global.security.CustomUserDetails
 
 @Service
 class WorkspaceService(
     @Value("\${cloud.aws.s3.default-path}")
     private val workspacePath: String,
     val workspaceRepository: WorkspaceRepository,
+    val customWorkspaceRepository: CustomWorkspaceRepository,
     val workspaceTableRepository: WorkspaceTableRepository,
     val workspaceMemberRepository: WorkspaceMemberRepository,
     val userService: UserService,
     val s3Service: S3Service
 ) {
     fun getAllWorkspaces(name: String?, page: Int, size: Int): Page<Workspace> {
-        if (!name.isNullOrBlank())
-            return workspaceRepository.findByNameContains(
-                name,
-                PageRequest.of(page, size)
-            )
-
-        return workspaceRepository.findAll(PageRequest.of(page, size))
+        return customWorkspaceRepository.findAllByCondition(
+            name,
+            PageRequest.of(page, size)
+        )
     }
 
     fun checkCanCreateWorkspace(user: User) {
@@ -79,17 +74,19 @@ class WorkspaceService(
     }
 
     fun getWorkspace(workspaceId: Long): Workspace {
-        return workspaceRepository.findById(workspaceId).get()
+        return workspaceRepository.findById(workspaceId)
+            .orElseThrow { WorkspaceNotFoundException() }
     }
 
     fun isAccessible(username: String, workspaceId: Long): Boolean {
-        val userRole = (SecurityContextHolder.getContext().authentication?.principal as? CustomUserDetails)
-            ?.takeIf { it.loginId == username }
-            ?.role
-            ?: userService.getUser(username).role
-            
+        val userRole =
+            (SecurityContextHolder.getContext().authentication?.principal as? CustomUserDetails)
+                ?.takeIf { it.loginId == username }
+                ?.role
+                ?: userService.getUser(username).role
+
         if (userRole == UserRole.SUPER_ADMIN) return true
-        
+
         return workspaceMemberRepository.existsByWorkspaceIdAndUserLoginId(workspaceId, username)
     }
 
@@ -99,7 +96,11 @@ class WorkspaceService(
 
     fun checkCanAccessWorkspace(user: User, workspace: Workspace) {
         if (user.role == UserRole.SUPER_ADMIN) return
-        if (!workspaceMemberRepository.existsByWorkspaceIdAndUserLoginId(workspace.id, user.loginId)) {
+        if (!workspaceMemberRepository.existsByWorkspaceIdAndUserLoginId(
+                workspace.id,
+                user.loginId
+            )
+        ) {
             throw WorkspaceInaccessibleException()
         }
     }
@@ -195,5 +196,10 @@ class WorkspaceService(
 
     fun saveWorkspaceTable(table: WorkspaceTable): WorkspaceTable {
         return workspaceTableRepository.save(table)
+    }
+
+    fun getWorkspaceTableByHash(workspace: Workspace, tableHash: String): WorkspaceTable {
+        return workspaceTableRepository.findByTableHashAndWorkspace(tableHash, workspace)
+            .orElseThrow { WorkspaceTableNotFoundException() }
     }
 }
