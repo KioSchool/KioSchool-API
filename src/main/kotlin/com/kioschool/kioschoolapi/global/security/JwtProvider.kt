@@ -12,6 +12,7 @@ import org.springframework.http.HttpHeaders
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Component
+import org.slf4j.LoggerFactory
 import java.util.*
 
 
@@ -21,6 +22,8 @@ class JwtProvider(
     private val salt: String,
     private val userDetailService: CustomUserDetailService
 ) {
+    private val log = LoggerFactory.getLogger(javaClass)
+
     private val secretKey = Keys.hmacShaKeyFor(salt.toByteArray(StandardCharset.UTF_8))
     private val expirationTime = 1000L * 60 * 60 * 24
 
@@ -37,12 +40,16 @@ class JwtProvider(
             .compact()
     }
 
+    companion object {
+        const val BEARER_PREFIX = "Bearer "
+    }
+
     fun resolveToken(request: HttpServletRequest): String? {
         val rawToken = request.cookies?.find { it.name == HttpHeaders.AUTHORIZATION }?.value
             ?: request.getHeader(HttpHeaders.AUTHORIZATION)
             ?: return null
 
-        return rawToken.replace("Bearer ", "")
+        return rawToken.replace(BEARER_PREFIX, "")
     }
 
     fun isValidToken(token: String): Boolean {
@@ -52,8 +59,9 @@ class JwtProvider(
                 .setSigningKey(secretKey)
                 .build()
                 .parseClaimsJws(token)
-            return claims.body.expiration.after(now)
+            claims.body.expiration.after(now)
         } catch (e: Exception) {
+            log.warn("Invalid JWT token: {}", e.message)
             false
         }
     }

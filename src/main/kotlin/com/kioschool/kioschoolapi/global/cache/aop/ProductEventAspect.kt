@@ -20,4 +20,14 @@ class ProductEventAspect(
     fun handleProductUpdate(product: Product) {
         eventPublisher.publishEvent(ProductUpdatedEvent(product.workspace.id))
     }
+
+    @AfterReturning(
+        pointcut = "@annotation(com.kioschool.kioschoolapi.global.cache.annotation.ProductsUpdateEvent)",
+        returning = "products"
+    )
+    fun handleProductsUpdateList(products: List<Product>) {
+        if (products.isNotEmpty()) {
+            eventPublisher.publishEvent(ProductUpdatedEvent(products.first().workspace.id))
+        }
+    }
 }

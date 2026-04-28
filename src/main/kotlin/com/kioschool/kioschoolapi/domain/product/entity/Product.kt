@@ -21,5 +21,6 @@ class Product(
     @JsonIgnore
     val workspace: Workspace,
     @ManyToOne(fetch = FetchType.LAZY)
-    var productCategory: ProductCategory? = null
+    var productCategory: ProductCategory? = null,
+    var index: Int? = null
 ) : BaseEntity()

@@ -9,6 +9,7 @@ import com.kioschool.kioschoolapi.domain.statistics.service.StatisticsCalculator
 import com.kioschool.kioschoolapi.domain.statistics.repository.DailyOrderStatisticRepository
 import jakarta.transaction.Transactional
 import org.springframework.context.annotation.Profile
+import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import java.time.LocalDate
@@ -25,6 +26,8 @@ class Scheduler(
     private val statisticsCalculator: StatisticsCalculator,
     private val dailyOrderStatisticRepository: DailyOrderStatisticRepository
 ) {
+    private val log = LoggerFactory.getLogger(javaClass)
+
     @Scheduled(cron = "0 0 9 * * *", zone = "Asia/Seoul")
     fun resetAllOrderNumber() {
         orderService.resetAllOrderNumber()
@@ -79,7 +82,7 @@ class Scheduler(
                     val statistic = statisticsCalculator.calculate(workspace.id, referenceDate)
                     dailyOrderStatisticRepository.save(statistic)
                 } catch (e: Exception) {
-                    e.printStackTrace()
+                    log.error("Failed to generate daily statistics for workspace ${workspace.id}", e)
                 }
             }
         }

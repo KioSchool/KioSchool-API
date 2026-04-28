@@ -9,6 +9,7 @@ import org.springframework.data.redis.listener.ChannelTopic
 import org.springframework.data.redis.listener.RedisMessageListenerContainer
 import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.stereotype.Service
+import org.slf4j.LoggerFactory
 
 @Service
 class RedisSubscriber(
@@ -18,6 +19,8 @@ class RedisSubscriber(
     @Qualifier("redisPubSubTemplate")
     private val redisTemplate: RedisTemplate<String, Any>
 ) : MessageListener {
+
+    private val log = LoggerFactory.getLogger(javaClass)
 
     init {
         redisMessageListenerContainer.addMessageListener(this, channelTopic)
@@ -29,7 +32,7 @@ class RedisSubscriber(
                 redisTemplate.valueSerializer.deserialize(message.body) as RedisPubSubMessage
             messagingTemplate.convertAndSend(pubSubMessage.destination, pubSubMessage.payload)
         } catch (e: Exception) {
-            println("Redis Subscriber Error: ${e.message}")
+            log.error("Redis Subscriber Error: {}", e.message, e)
         }
     }
 }

@@ -103,6 +103,19 @@ class AdminProductController(
         @RequestParam productId: Long
     ) = productFacade.deleteProduct(username, productId)
 
+    @Operation(summary = "상품 정렬", description = "주어진 카테고리에 맞게 순서대로 상품을 정렬합니다.")
+    @PutMapping("/products/sort")
+    fun sortProducts(
+        @AdminUsername username: String,
+        @RequestBody body: SortProductsRequestBody
+    ): List<ProductDto> {
+        return productFacade.sortProducts(
+            username,
+            body.workspaceId,
+            body.sorts
+        )
+    }
+
     @Operation(summary = "상품 카테고리 생성", description = "상품 카테고리를 생성합니다.")
     @PostMapping("/product-category")
     fun createProductCategory(
