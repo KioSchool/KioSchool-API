@@ -8,6 +8,7 @@ import com.kioschool.kioschoolapi.domain.workspace.exception.NoPermissionToInvit
 import com.kioschool.kioschoolapi.domain.workspace.exception.NoPermissionToJoinWorkspaceException
 import com.kioschool.kioschoolapi.domain.workspace.exception.WorkspaceInaccessibleException
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepository
+import com.kioschool.kioschoolapi.domain.workspace.repository.CustomWorkspaceRepository
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceMemberRepository
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceTableRepository
 import com.kioschool.kioschoolapi.global.aws.S3Service
@@ -28,19 +29,17 @@ class WorkspaceService(
     @Value("\${cloud.aws.s3.default-path}")
     private val workspacePath: String,
     val workspaceRepository: WorkspaceRepository,
+    val customWorkspaceRepository: CustomWorkspaceRepository,
     val workspaceTableRepository: WorkspaceTableRepository,
     val workspaceMemberRepository: WorkspaceMemberRepository,
     val userService: UserService,
     val s3Service: S3Service
 ) {
     fun getAllWorkspaces(name: String?, page: Int, size: Int): Page<Workspace> {
-        if (!name.isNullOrBlank())
-            return workspaceRepository.findByNameContains(
-                name,
-                PageRequest.of(page, size)
-            )
-
-        return workspaceRepository.findAll(PageRequest.of(page, size))
+        return customWorkspaceRepository.findAllByCondition(
+            name,
+            PageRequest.of(page, size)
+        )
     }
 
     fun checkCanCreateWorkspace(user: User) {
