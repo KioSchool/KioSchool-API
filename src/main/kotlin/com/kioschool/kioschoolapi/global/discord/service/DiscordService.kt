@@ -39,9 +39,9 @@ class DiscordService(
     }
 
     @Async
-    fun sendPopupResult(username: String, result: String) {
+    fun sendPopupResult(sender: String, result: String) {
         val message = """## [팝업 결과]
-        |아이디: $username
+        |전송자: $sender
         $result
         """.trimMargin()
 
