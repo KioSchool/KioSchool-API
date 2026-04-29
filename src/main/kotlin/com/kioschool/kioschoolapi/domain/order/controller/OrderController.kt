@@ -20,6 +20,7 @@ class OrderController(
     ): OrderDto {
         return orderFacade.createOrder(
             body.workspaceId,
+            body.tableNumber,
             body.tableHash,
             body.customerName,
             body.orderProducts

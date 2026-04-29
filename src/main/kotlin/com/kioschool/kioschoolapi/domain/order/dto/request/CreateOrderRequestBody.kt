@@ -4,7 +4,9 @@ import com.kioschool.kioschoolapi.global.common.interfaces.WorkspaceAware
 
 data class CreateOrderRequestBody(
     override val workspaceId: Long,
-    val tableHash: String,
+    // todo remove after use tableHash
+    val tableNumber: Int,
+    val tableHash: String?,
     val orderProducts: List<OrderProductRequestBody>,
     val customerName: String
 ) : WorkspaceAware
