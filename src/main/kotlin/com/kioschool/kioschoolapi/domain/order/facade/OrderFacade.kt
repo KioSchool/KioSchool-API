@@ -30,20 +30,13 @@ class OrderFacade(
     @Transactional
     fun createOrder(
         workspaceId: Long,
-        // todo remove after use tableHash
-        tableNumber: Int,
-        tableHash: String?,
+        tableHash: String,
         customerName: String,
         rawOrderProducts: List<OrderProductRequestBody>
     ): OrderDto {
         val workspace = workspaceService.getWorkspace(workspaceId)
         val productIds = rawOrderProducts.map { it.productId }
-        // todo remove after use tableHash
-        val table =
-            if (tableHash == null)
-                workspaceService.getWorkspaceTable(workspace, tableNumber)
-            else
-                workspaceService.getWorkspaceTableByHash(workspace, tableHash)
+        val table = workspaceService.getWorkspaceTableByHash(workspace, tableHash)
         val currentOrderSession = table.orderSession ?: throw NoOrderSessionException()
 
         productService.validateProducts(workspaceId, productIds)

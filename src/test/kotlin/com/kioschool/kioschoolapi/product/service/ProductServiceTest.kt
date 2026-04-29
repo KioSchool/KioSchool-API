@@ -177,12 +177,12 @@ class ProductServiceTest : DescribeSpec({
             val workspaceId = 1L
             val productId = 1L
             val file = mockk<MultipartFile>()
-
+            every { file.inputStream } returns java.io.ByteArrayInputStream(ByteArray(0))
 
             //Mock
             every {
-                s3Service.uploadFile(
-                    file,
+                s3Service.uploadResizedWebpImage(
+                    any(),
                     any<String>()
                 )
             } returns "test"
@@ -191,7 +191,7 @@ class ProductServiceTest : DescribeSpec({
             sut.getImageUrl(workspaceId, productId, file) shouldBe "test"
 
             // Assert
-            verify { s3Service.uploadFile(file, any<String>()) }
+            verify { s3Service.uploadResizedWebpImage(any(), any<String>()) }
         }
 
         it("should return null if file is null") {

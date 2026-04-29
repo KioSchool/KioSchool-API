@@ -12,5 +12,5 @@ class WorkspaceImage(
     @JsonIgnore
     @ManyToOne
     val workspace: Workspace,
-    val url: String
+    var url: String
 ) : BaseEntity()

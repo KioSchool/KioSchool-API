@@ -45,9 +45,9 @@ class OrderFacadeTest : DescribeSpec({
 
             every { workspaceService.getWorkspace(workspaceId) } returns SampleEntity.workspace
             every {
-                workspaceService.getWorkspaceTable(
+                workspaceService.getWorkspaceTableByHash(
                     workspace,
-                    tableNumber
+                    "dummy_hash"
                 )
             } returns SampleEntity.workspaceTable.apply { orderSession = SampleEntity.orderSession }
             every { orderService.getOrderNumber(workspaceId) } returns 1
@@ -67,14 +67,14 @@ class OrderFacadeTest : DescribeSpec({
                 order
             }
 
-            val result = sut.createOrder(workspaceId, tableNumber, customerName, rawOrderProducts)
+            val result = sut.createOrder(workspaceId, "dummy_hash", customerName, rawOrderProducts)
 
             assert(result.customerName == customerName)
             assert(result.orderProducts.size == 1)
             assert(result.totalPrice == 1000)
 
             verify { workspaceService.getWorkspace(workspaceId) }
-            verify { workspaceService.getWorkspaceTable(workspace, tableNumber) }
+            verify { workspaceService.getWorkspaceTableByHash(workspace, "dummy_hash") }
             verify { orderService.getOrderNumber(workspaceId) }
             verify { orderService.saveOrder(any<Order>()) }
             verify { productService.validateProducts(workspaceId, any()) }
@@ -98,9 +98,9 @@ class OrderFacadeTest : DescribeSpec({
 
             every { workspaceService.getWorkspace(workspaceId) } returns SampleEntity.workspace
             every {
-                workspaceService.getWorkspaceTable(
+                workspaceService.getWorkspaceTableByHash(
                     SampleEntity.workspace,
-                    tableNumber
+                    "dummy_hash"
                 )
             } returns SampleEntity.workspaceTable.apply { orderSession = SampleEntity.orderSession }
             every { orderService.getOrderNumber(workspaceId) } returns 1
@@ -120,7 +120,7 @@ class OrderFacadeTest : DescribeSpec({
                 order
             }
 
-            val result = sut.createOrder(workspaceId, tableNumber, customerName, rawOrderProducts)
+            val result = sut.createOrder(workspaceId, "dummy_hash", customerName, rawOrderProducts)
 
             assert(result.customerName == customerName)
             assert(result.orderProducts.size == 1)
@@ -128,7 +128,7 @@ class OrderFacadeTest : DescribeSpec({
             assert(result.totalPrice == 1000)
 
             verify { workspaceService.getWorkspace(workspaceId) }
-            verify { workspaceService.getWorkspaceTable(SampleEntity.workspace, tableNumber) }
+            verify { workspaceService.getWorkspaceTableByHash(SampleEntity.workspace, "dummy_hash") }
             verify { orderService.getOrderNumber(workspaceId) }
             verify { orderService.saveOrder(any<Order>()) }
             verify { productService.validateProducts(workspaceId, any()) }
@@ -151,18 +151,18 @@ class OrderFacadeTest : DescribeSpec({
 
             every { workspaceService.getWorkspace(workspaceId) } returns SampleEntity.workspace
             every {
-                workspaceService.getWorkspaceTable(
+                workspaceService.getWorkspaceTableByHash(
                     SampleEntity.workspace,
-                    tableNumber
+                    "dummy_hash"
                 )
             } returns SampleEntity.workspaceTable.apply { orderSession = null }
 
             assertThrows<NoOrderSessionException> {
-                sut.createOrder(workspaceId, tableNumber, customerName, rawOrderProducts)
+                sut.createOrder(workspaceId, "dummy_hash", customerName, rawOrderProducts)
             }
 
             verify { workspaceService.getWorkspace(workspaceId) }
-            verify { workspaceService.getWorkspaceTable(SampleEntity.workspace, tableNumber) }
+            verify { workspaceService.getWorkspaceTableByHash(SampleEntity.workspace, "dummy_hash") }
             verify(exactly = 0) { orderService.getOrderNumber(workspaceId) }
             verify(exactly = 0) { orderService.saveOrder(any<Order>()) }
             verify(exactly = 0) { productService.validateProducts(workspaceId, any()) }
