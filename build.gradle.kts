@@ -89,6 +89,8 @@ dependencies {
     testImplementation("io.kotest:kotest-assertions-json-jvm:5.8.0")
     testImplementation("io.mockk:mockk:1.13.9")
     testImplementation("com.h2database:h2")
+    implementation("com.sksamuel.scrimage:scrimage-core:4.3.0")
+    implementation("com.sksamuel.scrimage:scrimage-webp:4.3.0")
 }
 
 tasks.withType<KotlinCompile> {
