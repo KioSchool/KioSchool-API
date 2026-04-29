@@ -100,8 +100,8 @@ class ProductService(
     fun getImageUrl(workspaceId: Long, productId: Long, file: MultipartFile?): String? {
         val date = System.currentTimeMillis()
         val path =
-            "$productPath/workspace$workspaceId/product/product${productId}/${date.hashCode()}.jpg"
-        return if (file != null) s3Service.uploadFile(file, path) else null
+            "$productPath/workspace$workspaceId/product/product-${productId}/${date.hashCode()}.webp"
+        return if (file != null) s3Service.uploadResizedWebpImage(file.inputStream, path) else null
     }
 
     @ProductCategoryUpdateEvent

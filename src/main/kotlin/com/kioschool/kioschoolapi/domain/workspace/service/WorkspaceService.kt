@@ -153,8 +153,8 @@ class WorkspaceService(
     fun saveWorkspaceImages(workspace: Workspace, newImageFiles: List<MultipartFile>): Workspace {
         newImageFiles.forEach {
             val path =
-                "$workspacePath/workspace${workspace.id}/workspace/${System.currentTimeMillis()}.jpg"
-            val imageUrl = s3Service.uploadFile(it, path)
+                "$workspacePath/workspace${workspace.id}/workspace/${System.currentTimeMillis()}.webp"
+            val imageUrl = s3Service.uploadResizedWebpImage(it.inputStream, path)
             workspace.images.add(WorkspaceImage(workspace = workspace, url = imageUrl))
         }
         return workspaceRepository.save(workspace)
