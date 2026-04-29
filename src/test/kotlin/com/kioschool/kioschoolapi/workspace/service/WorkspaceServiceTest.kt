@@ -7,6 +7,7 @@ import com.kioschool.kioschoolapi.domain.workspace.exception.NoPermissionToInvit
 import com.kioschool.kioschoolapi.domain.workspace.exception.NoPermissionToJoinWorkspaceException
 import com.kioschool.kioschoolapi.domain.workspace.exception.WorkspaceInaccessibleException
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepository
+import com.kioschool.kioschoolapi.domain.workspace.repository.CustomWorkspaceRepository
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceTableRepository
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.factory.SampleEntity
@@ -24,6 +25,7 @@ import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceMemberRep
 
 class WorkspaceServiceTest : DescribeSpec({
     val repository = mockk<WorkspaceRepository>()
+    val customWorkspaceRepository = mockk<CustomWorkspaceRepository>()
     val workspaceTableRepository = mockk<WorkspaceTableRepository>()
     val workspaceMemberRepository = mockk<WorkspaceMemberRepository>()
     val userService = mockk<UserService>()
@@ -32,6 +34,7 @@ class WorkspaceServiceTest : DescribeSpec({
     val sut = WorkspaceService(
         "test-path",
         repository,
+        customWorkspaceRepository,
         workspaceTableRepository,
         workspaceMemberRepository,
         userService,
@@ -57,7 +60,7 @@ class WorkspaceServiceTest : DescribeSpec({
 
             // Mock
             every {
-                repository.findByNameContains(
+                customWorkspaceRepository.findAllByCondition(
                     name,
                     PageRequest.of(page, size)
                 )
@@ -67,26 +70,29 @@ class WorkspaceServiceTest : DescribeSpec({
             sut.getAllWorkspaces(name, page, size)
 
             // Assert
-            verify { repository.findByNameContains(name, PageRequest.of(page, size)) }
+            verify { customWorkspaceRepository.findAllByCondition(name, PageRequest.of(page, size)) }
             verify(exactly = 0) { repository.findAll(PageRequest.of(page, size)) }
         }
 
-        it("should call findAll when name is null") {
+        it("should call findAllByCondition with null name when name is null or blank") {
             val name = null
             val page = 0
             val size = 10
 
             // Mock
             every {
-                repository.findAll(PageRequest.of(page, size))
+                customWorkspaceRepository.findAllByCondition(
+                    name,
+                    PageRequest.of(page, size)
+                )
             } returns PageImpl(listOf())
 
             // Act
             sut.getAllWorkspaces(name, page, size)
 
             // Assert
-            verify { repository.findAll(PageRequest.of(page, size)) }
-            verify(exactly = 0) { repository.findByNameContains(any(), any()) }
+            verify { customWorkspaceRepository.findAllByCondition(name, PageRequest.of(page, size)) }
+            verify(exactly = 0) { repository.findAll(PageRequest.of(page, size)) }
         }
     }
 
