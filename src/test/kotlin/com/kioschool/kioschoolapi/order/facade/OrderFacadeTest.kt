@@ -47,7 +47,7 @@ class OrderFacadeTest : DescribeSpec({
             every {
                 workspaceService.getWorkspaceTableByHash(
                     workspace,
-                    tableNumber
+                    "dummy_hash"
                 )
             } returns SampleEntity.workspaceTable.apply { orderSession = SampleEntity.orderSession }
             every { orderService.getOrderNumber(workspaceId) } returns 1
@@ -100,7 +100,7 @@ class OrderFacadeTest : DescribeSpec({
             every {
                 workspaceService.getWorkspaceTableByHash(
                     SampleEntity.workspace,
-                    tableNumber
+                    "dummy_hash"
                 )
             } returns SampleEntity.workspaceTable.apply { orderSession = SampleEntity.orderSession }
             every { orderService.getOrderNumber(workspaceId) } returns 1
@@ -153,7 +153,7 @@ class OrderFacadeTest : DescribeSpec({
             every {
                 workspaceService.getWorkspaceTableByHash(
                     SampleEntity.workspace,
-                    tableNumber
+                    "dummy_hash"
                 )
             } returns SampleEntity.workspaceTable.apply { orderSession = null }
 
@@ -730,7 +730,7 @@ class OrderFacadeTest : DescribeSpec({
             every { workspaceService.checkAccessible(username, workspaceId) } just Runs
             every { workspaceService.getWorkspace(workspaceId) } returns SampleEntity.workspace
             every {
-                workspaceService.getWorkspaceTableByHash(
+                workspaceService.getWorkspaceTable(
                     SampleEntity.workspace,
                     tableNumber
                 )
@@ -744,13 +744,13 @@ class OrderFacadeTest : DescribeSpec({
             } returns SampleEntity.orderSession
             every { workspaceService.saveWorkspaceTable(any()) } returns SampleEntity.workspaceTable
 
-            val result = sut.startOrderSession(username, workspaceId, "dummy_hash")
+            val result = sut.startOrderSession(username, workspaceId, tableNumber)
 
             assert(result.id == SampleEntity.orderSession.id)
 
             verify { workspaceService.checkAccessible(username, workspaceId) }
             verify { workspaceService.getWorkspace(workspaceId) }
-            verify { workspaceService.getWorkspaceTableByHash(SampleEntity.workspace, "dummy_hash") }
+            verify { workspaceService.getWorkspaceTable(SampleEntity.workspace, tableNumber) }
             verify { orderService.createOrderSession(any(), any(), any()) }
             verify { workspaceService.saveWorkspaceTable(any()) }
         }
@@ -763,19 +763,19 @@ class OrderFacadeTest : DescribeSpec({
             every { workspaceService.checkAccessible(username, workspaceId) } just Runs
             every { workspaceService.getWorkspace(workspaceId) } returns SampleEntity.workspace
             every {
-                workspaceService.getWorkspaceTableByHash(
+                workspaceService.getWorkspaceTable(
                     SampleEntity.workspace,
                     tableNumber
                 )
             } returns SampleEntity.workspaceTable.apply { orderSession = SampleEntity.orderSession }
 
             assertThrows<OrderSessionAlreadyExistException> {
-                sut.startOrderSession(username, workspaceId, "dummy_hash")
+                sut.startOrderSession(username, workspaceId, tableNumber)
             }
 
             verify { workspaceService.checkAccessible(username, workspaceId) }
             verify { workspaceService.getWorkspace(workspaceId) }
-            verify { workspaceService.getWorkspaceTableByHash(SampleEntity.workspace, "dummy_hash") }
+            verify { workspaceService.getWorkspaceTable(SampleEntity.workspace, tableNumber) }
             verify(exactly = 0) { orderService.createOrderSession(any(), any(), any()) }
             verify(exactly = 0) { workspaceService.saveWorkspaceTable(any()) }
         }
@@ -829,7 +829,7 @@ class OrderFacadeTest : DescribeSpec({
             every { workspaceService.checkAccessible(username, workspaceId) } just Runs
             every { workspaceService.getWorkspace(workspaceId) } returns SampleEntity.workspace
             every {
-                workspaceService.getWorkspaceTableByHash(
+                workspaceService.getWorkspaceTable(
                     SampleEntity.workspace,
                     tableNumber
                 )
@@ -839,12 +839,12 @@ class OrderFacadeTest : DescribeSpec({
             every { orderService.getAllOrdersByOrderSession(any()) } returns emptyList()
 
             assertThrows<com.kioschool.kioschoolapi.domain.order.exception.EmptyOrderSessionException> {
-                sut.endOrderSession(username, workspaceId, "dummy_hash", orderSessionId)
+                sut.endOrderSession(username, workspaceId, tableNumber, orderSessionId)
             }
 
             verify { workspaceService.checkAccessible(username, workspaceId) }
             verify { workspaceService.getWorkspace(workspaceId) }
-            verify { workspaceService.getWorkspaceTableByHash(SampleEntity.workspace, "dummy_hash") }
+            verify { workspaceService.getWorkspaceTable(SampleEntity.workspace, tableNumber) }
             verify { workspaceService.saveWorkspaceTable(any()) }
             verify { orderService.getOrderSession(orderSessionId) }
             verify { orderService.getAllOrdersByOrderSession(SampleEntity.orderSession) }
@@ -860,7 +860,7 @@ class OrderFacadeTest : DescribeSpec({
             every { workspaceService.checkAccessible(username, workspaceId) } just Runs
             every { workspaceService.getWorkspace(workspaceId) } returns SampleEntity.workspace
             every {
-                workspaceService.getWorkspaceTableByHash(
+                workspaceService.getWorkspaceTable(
                     SampleEntity.workspace,
                     tableNumber
                 )
@@ -871,13 +871,13 @@ class OrderFacadeTest : DescribeSpec({
             every { orderService.saveOrderSession(any()) } returns SampleEntity.orderSession
 
             val result =
-                sut.endOrderSession(username, workspaceId, "dummy_hash", orderSessionId, true)
+                sut.endOrderSession(username, workspaceId, tableNumber, orderSessionId, true)
 
             assert(result.id == SampleEntity.orderSession.id)
 
             verify { workspaceService.checkAccessible(username, workspaceId) }
             verify { workspaceService.getWorkspace(workspaceId) }
-            verify { workspaceService.getWorkspaceTableByHash(SampleEntity.workspace, "dummy_hash") }
+            verify { workspaceService.getWorkspaceTable(SampleEntity.workspace, tableNumber) }
             verify { workspaceService.saveWorkspaceTable(any()) }
             verify { orderService.getOrderSession(orderSessionId) }
             verify { orderService.getAllOrdersByOrderSession(SampleEntity.orderSession) }
@@ -926,18 +926,18 @@ class OrderFacadeTest : DescribeSpec({
 
             every { workspaceService.getWorkspace(workspaceId) } returns SampleEntity.workspace
             every {
-                workspaceService.getWorkspaceTableByHash(
+                workspaceService.getWorkspaceTable(
                     SampleEntity.workspace,
                     tableNumber
                 )
             } returns SampleEntity.workspaceTable.apply { orderSession = SampleEntity.orderSession }
 
-            val result = sut.isOrderAvailable(workspaceId, "dummy_hash")
+            val result = sut.isOrderAvailable(workspaceId, tableNumber)
 
             assert(result)
 
             verify { workspaceService.getWorkspace(workspaceId) }
-            verify { workspaceService.getWorkspaceTableByHash(SampleEntity.workspace, "dummy_hash") }
+            verify { workspaceService.getWorkspaceTable(SampleEntity.workspace, tableNumber) }
         }
 
         it("should return false if order session is not started") {
@@ -946,18 +946,18 @@ class OrderFacadeTest : DescribeSpec({
 
             every { workspaceService.getWorkspace(workspaceId) } returns SampleEntity.workspace
             every {
-                workspaceService.getWorkspaceTableByHash(
+                workspaceService.getWorkspaceTable(
                     SampleEntity.workspace,
                     tableNumber
                 )
             } returns SampleEntity.workspaceTable.apply { orderSession = null }
 
-            val result = sut.isOrderAvailable(workspaceId, "dummy_hash")
+            val result = sut.isOrderAvailable(workspaceId, tableNumber)
 
             assert(!result)
 
             verify { workspaceService.getWorkspace(workspaceId) }
-            verify { workspaceService.getWorkspaceTableByHash(SampleEntity.workspace, "dummy_hash") }
+            verify { workspaceService.getWorkspaceTable(SampleEntity.workspace, tableNumber) }
         }
     }
 })
