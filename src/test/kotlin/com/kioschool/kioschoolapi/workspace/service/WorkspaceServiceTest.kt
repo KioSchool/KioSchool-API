@@ -441,9 +441,10 @@ class WorkspaceServiceTest : DescribeSpec({
         it("should save workspace images") {
             val workspace = SampleEntity.workspace
             val newImageFiles = listOf(mockk<MultipartFile>(), mockk<MultipartFile>())
+            newImageFiles.forEach { every { it.inputStream } returns java.io.ByteArrayInputStream(ByteArray(0)) }
 
             every {
-                s3Service.uploadFile(any<MultipartFile>(), any<String>())
+                s3Service.uploadResizedWebpImage(any(), any<String>())
             } returns "imageUrl"
             every {
                 repository.save(workspace)
@@ -453,7 +454,7 @@ class WorkspaceServiceTest : DescribeSpec({
 
             assert(result == workspace)
 
-            verify(exactly = 2) { s3Service.uploadFile(any<MultipartFile>(), any<String>()) }
+            verify(exactly = 2) { s3Service.uploadResizedWebpImage(any(), any<String>()) }
             verify { repository.save(workspace) }
         }
     }

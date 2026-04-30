@@ -8,18 +8,29 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 
+import org.springframework.core.env.Environment
+import org.springframework.transaction.annotation.Propagation
+import org.springframework.transaction.annotation.Transactional
+
 @Component
 class V07__ResizeExistingImages(
     private val productRepository: ProductRepository,
     private val workspaceImageRepository: WorkspaceImageRepository,
     private val s3Service: S3Service,
+    private val environment: Environment,
     @Value("\${cloud.aws.s3.default-path}")
     private val defaultPath: String
 ) : Runnable {
 
     private val logger = LoggerFactory.getLogger(V07__ResizeExistingImages::class.java)
 
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     override fun run() {
+        if (environment.activeProfiles.any { it == "local" || it == "default" } || environment.activeProfiles.isEmpty()) {
+            logger.info("Skipping V07__ResizeExistingImages script in local environment.")
+            return
+        }
+
         logger.info("Starting V07__ResizeExistingImages script...")
 
         val products = productRepository.findAll().filter { it.imageUrl != null }
