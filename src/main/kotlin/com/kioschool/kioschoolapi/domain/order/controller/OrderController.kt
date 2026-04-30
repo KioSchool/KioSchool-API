@@ -2,6 +2,7 @@ package com.kioschool.kioschoolapi.domain.order.controller
 
 import com.kioschool.kioschoolapi.domain.order.dto.common.OrderDto
 import com.kioschool.kioschoolapi.domain.order.dto.request.CreateOrderRequestBody
+import com.kioschool.kioschoolapi.domain.order.exception.TableHashIsNullException
 import com.kioschool.kioschoolapi.domain.order.facade.OrderFacade
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -19,7 +20,7 @@ class OrderController(
         @RequestBody body: CreateOrderRequestBody
     ): OrderDto {
         if (body.tableHash == null) {
-            throw IllegalArgumentException("주문 URL이 유효하지 않습니다. QR 코드를 다시 스캔해주세요.")
+            throw TableHashIsNullException()
         }
 
         return orderFacade.createOrder(
