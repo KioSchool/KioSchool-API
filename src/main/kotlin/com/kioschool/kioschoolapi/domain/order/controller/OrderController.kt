@@ -18,6 +18,10 @@ class OrderController(
     fun createOrder(
         @RequestBody body: CreateOrderRequestBody
     ): OrderDto {
+        if (body.tableHash == null) {
+            throw IllegalArgumentException("주문 URL이 유효하지 않습니다. QR 코드를 다시 스캔해주세요.")
+        }
+
         return orderFacade.createOrder(
             body.workspaceId,
             body.tableHash,
