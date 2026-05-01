@@ -27,4 +27,13 @@ class TemplateService(
 
         return templateEngine.process("resetPasswordEmail", context)
     }
+
+    fun getEmailDomainAddedEmailTemplate(name: String, domain: String): String {
+        val context = Context().apply {
+            setVariable("name", name)
+            setVariable("domain", domain)
+        }
+
+        return templateEngine.process("emailDomainAddedEmail", context)
+    }
 }

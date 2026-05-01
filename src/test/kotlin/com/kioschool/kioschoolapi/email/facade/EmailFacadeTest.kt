@@ -11,11 +11,13 @@ import org.springframework.data.domain.PageImpl
 
 class EmailFacadeTest : DescribeSpec({
     val emailService = mockk<EmailService>()
+    val templateService = mockk<com.kioschool.kioschoolapi.global.template.TemplateService>()
 
-    val sut = EmailFacade(emailService)
+    val sut = EmailFacade(emailService, templateService)
 
     beforeTest {
         mockkObject(emailService)
+        mockkObject(templateService)
     }
 
     afterTest {
@@ -61,6 +63,34 @@ class EmailFacadeTest : DescribeSpec({
 
             verify { emailService.validateEmailDomainDuplicate(domain) }
             verify { emailService.registerEmailDomain(name, domain) }
+            verify(exactly = 0) { templateService.getEmailDomainAddedEmailTemplate(any(), any()) }
+            verify(exactly = 0) { emailService.sendEmail(any(), any(), any()) }
+        }
+
+        it("should send email if domain has @") {
+            val name = "name"
+            val email = "test@domain.com"
+            val domain = "domain.com"
+            val template = "template"
+
+            every { emailService.validateEmailDomainDuplicate(domain) } returns Unit
+            every {
+                emailService.registerEmailDomain(
+                    name,
+                    domain
+                )
+            } returns SampleEntity.emailDomain
+            every { templateService.getEmailDomainAddedEmailTemplate(name, domain) } returns template
+            every { emailService.sendEmail(email, "키오스쿨 이메일 도메인 추가 안내", template) } returns Unit
+
+            val result = sut.registerEmailDomain(name, email)
+
+            assert(result.name == SampleEntity.emailDomain.name)
+
+            verify { emailService.validateEmailDomainDuplicate(domain) }
+            verify { emailService.registerEmailDomain(name, domain) }
+            verify { templateService.getEmailDomainAddedEmailTemplate(name, domain) }
+            verify { emailService.sendEmail(email, "키오스쿨 이메일 도메인 추가 안내", template) }
         }
 
         it("should throw exception if domain is duplicated") {
