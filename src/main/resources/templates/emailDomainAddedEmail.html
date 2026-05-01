@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>키오스쿨 이메일 도메인 추가 안내</title>
+  <style>
+    body {
+      font-family: 'Apple SD Gothic Neo', 'NanumGothic', 'Malgun Gothic', 'Inter', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f3f4f6;
+    }
+  </style>
+</head>
+<body>
+<div
+    style="background-color: #f3f4f6; padding: 40px 20px; text-align: center; width: 100%; box-sizing: border-box;">
+  <div
+      style="background-color: #ffffff; padding: 40px 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); margin: 0 auto; max-width: 450px; text-align: center; box-sizing: border-box;">
+
+    <!-- Application Title -->
+    <h1 style="font-size: 28px; font-weight: 800; color: #1f2937; margin-top: 0; margin-bottom: 24px; letter-spacing: -0.5px;">
+      키오스쿨
+    </h1>
+
+    <div style="background-color: #eb6d09; border-radius: 8px; padding: 24px; margin-bottom: 24px;">
+      <p style="color: #ffffff; font-size: 20px; font-weight: 700; line-height: 1.5; margin: 0; word-break: keep-all;">
+        <span th:text="${name}"></span><br>
+        <span th:text="${domain}"></span><br>
+        이메일 도메인이 추가되었어요!
+      </p>
+    </div>
+
+    <!-- Instruction Message -->
+    <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0;">
+      이제부터 해당 도메인으로<br>회원가입 등 키오스쿨 서비스를 이용하실 수 있습니다.
+    </p>
+
+  </div>
+</div>
+</body>
+</html>
