@@ -14,8 +14,10 @@ class BaseEntity {
     val id: Long = 0
 
     @CreatedDate
+    @Column(name = "created_at", updatable = false)
     var createdAt: LocalDateTime? = LocalDateTime.MIN
 
     @LastModifiedDate
+    @Column(name = "updated_at")
     var updatedAt: LocalDateTime? = LocalDateTime.MIN
 }

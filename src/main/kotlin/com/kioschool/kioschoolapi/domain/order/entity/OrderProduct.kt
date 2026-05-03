@@ -6,11 +6,19 @@ import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
+import jakarta.persistence.Index
+import jakarta.persistence.JoinColumn
 
 @Entity
-@Table(name = "order_product")
+@Table(
+    name = "order_product",
+    indexes = [
+        Index(name = "idx_order_product_order_id", columnList = "order_id")
+    ]
+)
 class OrderProduct(
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id")
     @JsonIgnore
     val order: Order,
     val productId: Long,

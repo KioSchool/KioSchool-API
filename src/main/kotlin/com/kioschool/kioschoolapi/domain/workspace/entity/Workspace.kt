@@ -11,7 +11,7 @@ import jakarta.persistence.*
 @Table(name = "workspace")
 class Workspace(
     var name: String,
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     val owner: User,
     @JsonIgnore
     @OneToMany(

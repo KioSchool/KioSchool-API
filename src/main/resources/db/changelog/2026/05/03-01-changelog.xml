@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS"
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+  <changeSet author="ji-inpark" id="1777789316925-33">
+    <createIndex indexName="idx_order_product_order_id" tableName="order_product">
+      <column name="order_id"/>
+    </createIndex>
+  </changeSet>
+  <changeSet author="ji-inpark" id="1777789316925-34">
+    <createIndex indexName="idx_order_session_workspace_created" tableName="order_session">
+      <column name="workspace_id"/>
+      <column name="created_at"/>
+    </createIndex>
+  </changeSet>
+  <changeSet author="ji-inpark" id="1777789316925-35">
+    <createIndex indexName="idx_product_workspace_category_index" tableName="product">
+      <column name="workspace_id"/>
+      <column name="product_category_id"/>
+      <column name="index"/>
+    </createIndex>
+  </changeSet>
+  <changeSet author="ji-inpark" id="1777789316925-36">
+    <createIndex indexName="idx_order_session_id" schemaName="public" tableName="order">
+      <column name="order_session_id"/>
+    </createIndex>
+  </changeSet>
+  <changeSet author="ji-inpark" id="1777789316925-37">
+    <createIndex indexName="idx_order_workspace_created_status" schemaName="public"
+      tableName="order">
+      <column name="workspace_id"/>
+      <column name="created_at"/>
+      <column name="status"/>
+    </createIndex>
+  </changeSet>
+
+</databaseChangeLog>

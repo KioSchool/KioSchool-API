@@ -8,9 +8,16 @@ import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
+import jakarta.persistence.Index
+import jakarta.persistence.JoinColumn
 
 @Entity
-@Table(name = "product")
+@Table(
+    name = "product",
+    indexes = [
+        Index(name = "idx_product_workspace_category_index", columnList = "workspace_id, product_category_id, index")
+    ]
+)
 class Product(
     var name: String,
     var description: String,
@@ -18,9 +25,11 @@ class Product(
     var imageUrl: String? = null,
     var status: ProductStatus = ProductStatus.SELLING,
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "workspace_id")
     @JsonIgnore
     val workspace: Workspace,
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_category_id")
     var productCategory: ProductCategory? = null,
     var index: Int? = null
 ) : BaseEntity()

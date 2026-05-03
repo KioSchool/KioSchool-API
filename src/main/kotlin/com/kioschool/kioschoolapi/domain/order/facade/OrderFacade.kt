@@ -22,6 +22,7 @@ import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
 @Component
+@Transactional(readOnly = true)
 class OrderFacade(
     private val orderService: OrderService,
     private val workspaceService: WorkspaceService,

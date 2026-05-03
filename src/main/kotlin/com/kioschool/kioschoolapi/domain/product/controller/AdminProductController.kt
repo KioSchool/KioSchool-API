@@ -46,7 +46,7 @@ class AdminProductController(
 
     @Operation(summary = "상품 생성", description = "상품을 생성합니다.")
     @PostMapping("/product", consumes = [MediaType.ALL_VALUE])
-    fun createOrUpdateProduct(
+    fun createProduct(
         @AdminUsername username: String,
         @RequestPart body: CreateProductRequestBody,
         @RequestPart file: MultipartFile?

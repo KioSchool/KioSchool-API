@@ -9,12 +9,21 @@ import jakarta.persistence.Enumerated
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import jakarta.persistence.Transient
+import jakarta.persistence.Index
+import jakarta.persistence.FetchType
+import jakarta.persistence.JoinColumn
 import java.time.LocalDateTime
 
 @Entity
-@Table(name = "order_session")
+@Table(
+    name = "order_session",
+    indexes = [
+        Index(name = "idx_order_session_workspace_created", columnList = "workspace_id, created_at")
+    ]
+)
 class OrderSession(
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "workspace_id")
     @JsonIgnore
     val workspace: Workspace,
     var expectedEndAt: LocalDateTime?,

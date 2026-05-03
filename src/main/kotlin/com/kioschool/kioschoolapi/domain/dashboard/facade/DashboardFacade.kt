@@ -13,9 +13,11 @@ import com.kioschool.kioschoolapi.global.common.enums.OrderStatus
 import com.kioschool.kioschoolapi.global.common.enums.ProductStatus
 
 import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
 
 @Component
+@Transactional(readOnly = true)
 class DashboardFacade(
     private val workspaceService: WorkspaceService,
     private val orderService: OrderService,
