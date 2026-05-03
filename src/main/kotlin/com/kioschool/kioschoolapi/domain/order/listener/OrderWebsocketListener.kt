@@ -21,7 +21,7 @@ class OrderWebsocketListener(
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(readOnly = true)
     fun handleOrderWebsocketEvent(event: OrderWebsocketEvent) {
-        val order = orderRepository.findById(event.orderId).orElse(null) ?: return
+        val order = orderRepository.findWithDetailsById(event.orderId) ?: return
         websocketService.sendMessage(
             "/sub/order/${order.workspace.id}",
             Message(event.type, OrderDto.of(order))
