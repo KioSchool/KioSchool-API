@@ -154,6 +154,7 @@ class ProductFacade(
             productCategoryMap[productCategoryId]!!.index = index
         }
         return productService.saveProductCategories(productCategories)
+            .sortedBy { it.index ?: Int.MAX_VALUE }
             .map { ProductCategoryDto.of(it) }
     }
 
