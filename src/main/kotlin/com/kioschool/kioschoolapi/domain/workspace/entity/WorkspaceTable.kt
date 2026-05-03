@@ -8,12 +8,12 @@ import jakarta.persistence.*
 @Entity
 @Table(name = "workspace_table")
 class WorkspaceTable(
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JsonIgnore
     val workspace: Workspace,
     val tableNumber: Int,
     @Column(unique = true)
     val tableHash: String,
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     var orderSession: OrderSession? = null,
 ) : BaseEntity()

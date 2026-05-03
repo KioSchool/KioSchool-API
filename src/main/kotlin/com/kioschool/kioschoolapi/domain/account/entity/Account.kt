@@ -2,13 +2,14 @@ package com.kioschool.kioschoolapi.domain.account.entity
 
 import com.kioschool.kioschoolapi.global.common.entity.BaseEntity
 import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 
 @Entity
 @Table(name = "account", schema = "PUBLIC")
 class Account(
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     var bank: Bank,
     var accountNumber: String,
     var accountHolder: String,

@@ -3,6 +3,7 @@ package com.kioschool.kioschoolapi.domain.workspace.entity
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.kioschool.kioschoolapi.global.common.entity.BaseEntity
 import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 
@@ -10,7 +11,7 @@ import jakarta.persistence.Table
 @Table(name = "workspace_image")
 class WorkspaceImage(
     @JsonIgnore
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     val workspace: Workspace,
     var url: String
 ) : BaseEntity()
