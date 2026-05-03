@@ -12,6 +12,7 @@ import org.springframework.http.server.ServletServerHttpRequest
 import org.springframework.messaging.converter.MessageConverter
 import org.springframework.messaging.simp.config.ChannelRegistration
 import org.springframework.messaging.simp.config.MessageBrokerRegistry
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler
 import org.springframework.web.socket.WebSocketHandler
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry
@@ -42,7 +43,14 @@ class WebSocketConfiguration(
     }
 
     override fun configureMessageBroker(registry: MessageBrokerRegistry) {
+        val taskScheduler = ThreadPoolTaskScheduler()
+        taskScheduler.setPoolSize(1)
+        taskScheduler.setThreadNamePrefix("ws-heartbeat-thread-")
+        taskScheduler.initialize()
+
         registry.enableSimpleBroker("/sub")
+            .setHeartbeatValue(longArrayOf(10000, 10000))
+            .setTaskScheduler(taskScheduler)
     }
 
     @Bean
