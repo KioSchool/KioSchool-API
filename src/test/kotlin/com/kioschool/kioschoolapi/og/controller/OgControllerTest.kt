@@ -104,7 +104,7 @@ class OgControllerTest : DescribeSpec({
             val body = sut.ogOrder(ws.id).body!!
 
             assert(!body.contains("<script>"))
-            assert(body.contains("&lt;script&gt;") || body.contains("&quot;"))
+            assert(body.contains("&lt;script&gt;") && body.contains("&quot;"))
         }
 
         it("includes a canonical og:url with the workspaceId query string") {
