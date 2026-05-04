@@ -5,10 +5,10 @@ import com.sksamuel.scrimage.ImmutableImage
 import com.sksamuel.scrimage.nio.PngWriter
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.stereotype.Service
+import org.springframework.stereotype.Component
 import java.security.MessageDigest
 
-@Service
+@Component
 class OgCardGenerator(
     private val s3Service: S3Service,
     @Value("\${cloud.aws.s3.default-path}")
@@ -39,7 +39,7 @@ class OgCardGenerator(
         return url
     }
 
-    fun expectedUrl(workspaceId: Long, sourcePhotoUrl: String): String =
+    fun predictedUrl(workspaceId: Long, sourcePhotoUrl: String): String =
         s3Service.urlFor(pathFor(workspaceId, sourcePhotoUrl))
 
     private fun pathFor(workspaceId: Long, sourcePhotoUrl: String): String {

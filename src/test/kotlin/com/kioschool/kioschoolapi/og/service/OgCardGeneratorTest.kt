@@ -48,7 +48,7 @@ class OgCardGeneratorTest : DescribeSpec({
             assert(paths[0] != paths[1]) { "Different sources should yield different hashes" }
         }
 
-        it("expectedUrl matches the path used by generate for the same input") {
+        it("predictedUrl matches the path used by generate for the same input") {
             val photoBytes = loadFixture("test-photo.jpg")
             every { s3Service.downloadFileStream(any()) } returns ByteArrayInputStream(photoBytes)
             val uploadPath = slot<String>()
@@ -56,7 +56,7 @@ class OgCardGeneratorTest : DescribeSpec({
             every { s3Service.urlFor(any()) } answers { "computed:${firstArg<String>()}" }
 
             sut.generate(7L, "https://example/x.jpg")
-            val expected = sut.expectedUrl(7L, "https://example/x.jpg")
+            val expected = sut.predictedUrl(7L, "https://example/x.jpg")
 
             verify { s3Service.urlFor(uploadPath.captured) }
             assert(expected == "computed:${uploadPath.captured}")
