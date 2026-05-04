@@ -6,7 +6,7 @@ import com.kioschool.kioschoolapi.domain.workspace.entity.WorkspaceSetting
 import com.kioschool.kioschoolapi.domain.workspace.event.WorkspaceUpdatedEvent
 import com.kioschool.kioschoolapi.domain.workspace.listener.WorkspaceOgImageListener
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepository
-import com.kioschool.kioschoolapi.global.og.service.OgCardGenerator
+import com.kioschool.kioschoolapi.global.og.service.OgService
 import com.kioschool.kioschoolapi.factory.SampleEntity
 import com.kioschool.kioschoolapi.global.common.entity.BaseEntity
 import io.kotest.core.spec.style.DescribeSpec
@@ -20,10 +20,10 @@ import kotlin.reflect.full.superclasses
 
 class WorkspaceOgImageListenerTest : DescribeSpec({
     val workspaceRepository = mockk<WorkspaceRepository>()
-    val ogCardGenerator = mockk<OgCardGenerator>()
-    val sut = WorkspaceOgImageListener(workspaceRepository, ogCardGenerator)
+    val ogService = mockk<OgService>()
+    val sut = WorkspaceOgImageListener(workspaceRepository, ogService)
 
-    beforeEach { clearMocks(workspaceRepository, ogCardGenerator) }
+    beforeEach { clearMocks(workspaceRepository, ogService) }
 
     fun BaseEntity.setBaseId(id: Long) {
         val f = this::class.superclasses.first().java.getDeclaredField("id")
@@ -61,15 +61,15 @@ class WorkspaceOgImageListenerTest : DescribeSpec({
                 imagesWithIds = listOf(1L to "https://cdn/photo.jpg"),
             )
             every { workspaceRepository.findById(1L) } returns Optional.of(ws)
-            every { ogCardGenerator.predictedUrl(1L, "https://cdn/photo.jpg") } returns "https://cdn/og/new.png"
-            every { ogCardGenerator.generate(1L, "https://cdn/photo.jpg") } returns "https://cdn/og/new.png"
+            every { ogService.predictedOgUrl(1L, "https://cdn/photo.jpg") } returns "https://cdn/og/new.png"
+            every { ogService.regenerateOgCard(1L, "https://cdn/photo.jpg") } returns "https://cdn/og/new.png"
             val saved = slot<Workspace>()
             every { workspaceRepository.save(capture(saved)) } answers { firstArg() }
 
             sut.on(WorkspaceUpdatedEvent(1L))
 
             assert(saved.captured.ogImageUrl == "https://cdn/og/new.png")
-            verify(exactly = 1) { ogCardGenerator.generate(1L, "https://cdn/photo.jpg") }
+            verify(exactly = 1) { ogService.regenerateOgCard(1L, "https://cdn/photo.jpg") }
             verify(exactly = 1) { workspaceRepository.save(any()) }
         }
 
@@ -80,11 +80,11 @@ class WorkspaceOgImageListenerTest : DescribeSpec({
                 imagesWithIds = listOf(1L to "https://cdn/photo.jpg"),
             )
             every { workspaceRepository.findById(2L) } returns Optional.of(ws)
-            every { ogCardGenerator.predictedUrl(2L, "https://cdn/photo.jpg") } returns "https://cdn/og/same.png"
+            every { ogService.predictedOgUrl(2L, "https://cdn/photo.jpg") } returns "https://cdn/og/same.png"
 
             sut.on(WorkspaceUpdatedEvent(2L))
 
-            verify(exactly = 0) { ogCardGenerator.generate(any(), any()) }
+            verify(exactly = 0) { ogService.regenerateOgCard(any(), any()) }
             verify(exactly = 0) { workspaceRepository.save(any()) }
         }
 
@@ -101,7 +101,7 @@ class WorkspaceOgImageListenerTest : DescribeSpec({
             sut.on(WorkspaceUpdatedEvent(3L))
 
             assert(saved.captured.ogImageUrl == null)
-            verify(exactly = 0) { ogCardGenerator.generate(any(), any()) }
+            verify(exactly = 0) { ogService.regenerateOgCard(any(), any()) }
             verify(exactly = 1) { workspaceRepository.save(any()) }
         }
 
@@ -112,8 +112,8 @@ class WorkspaceOgImageListenerTest : DescribeSpec({
                 imagesWithIds = listOf(1L to "https://cdn/photo.jpg"),
             )
             every { workspaceRepository.findById(4L) } returns Optional.of(ws)
-            every { ogCardGenerator.predictedUrl(4L, "https://cdn/photo.jpg") } returns "https://cdn/og/new.png"
-            every { ogCardGenerator.generate(4L, "https://cdn/photo.jpg") } throws RuntimeException("S3 down")
+            every { ogService.predictedOgUrl(4L, "https://cdn/photo.jpg") } returns "https://cdn/og/new.png"
+            every { ogService.regenerateOgCard(4L, "https://cdn/photo.jpg") } throws RuntimeException("S3 down")
 
             sut.on(WorkspaceUpdatedEvent(4L))
 
@@ -133,16 +133,16 @@ class WorkspaceOgImageListenerTest : DescribeSpec({
                 ),
             )
             every { workspaceRepository.findById(5L) } returns Optional.of(ws)
-            every { ogCardGenerator.predictedUrl(5L, "https://cdn/three.jpg") } returns "https://cdn/og/three-card.png"
-            every { ogCardGenerator.generate(5L, "https://cdn/three.jpg") } returns "https://cdn/og/three-card.png"
+            every { ogService.predictedOgUrl(5L, "https://cdn/three.jpg") } returns "https://cdn/og/three-card.png"
+            every { ogService.regenerateOgCard(5L, "https://cdn/three.jpg") } returns "https://cdn/og/three-card.png"
             every { workspaceRepository.save(any()) } answers { firstArg() }
 
             sut.on(WorkspaceUpdatedEvent(5L))
 
-            verify(exactly = 1) { ogCardGenerator.predictedUrl(5L, "https://cdn/three.jpg") }
-            verify(exactly = 1) { ogCardGenerator.generate(5L, "https://cdn/three.jpg") }
-            verify(exactly = 0) { ogCardGenerator.generate(5L, "https://cdn/seven.jpg") }
-            verify(exactly = 0) { ogCardGenerator.generate(5L, "https://cdn/nine.jpg") }
+            verify(exactly = 1) { ogService.predictedOgUrl(5L, "https://cdn/three.jpg") }
+            verify(exactly = 1) { ogService.regenerateOgCard(5L, "https://cdn/three.jpg") }
+            verify(exactly = 0) { ogService.regenerateOgCard(5L, "https://cdn/seven.jpg") }
+            verify(exactly = 0) { ogService.regenerateOgCard(5L, "https://cdn/nine.jpg") }
         }
 
         it("does nothing when the workspace cannot be found") {
@@ -150,8 +150,8 @@ class WorkspaceOgImageListenerTest : DescribeSpec({
 
             sut.on(WorkspaceUpdatedEvent(404L))
 
-            verify(exactly = 0) { ogCardGenerator.generate(any(), any()) }
-            verify(exactly = 0) { ogCardGenerator.predictedUrl(any(), any()) }
+            verify(exactly = 0) { ogService.regenerateOgCard(any(), any()) }
+            verify(exactly = 0) { ogService.predictedOgUrl(any(), any()) }
             verify(exactly = 0) { workspaceRepository.save(any()) }
         }
     }

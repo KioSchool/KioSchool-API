@@ -4,7 +4,7 @@ import com.kioschool.kioschoolapi.domain.workspace.entity.Workspace
 import com.kioschool.kioschoolapi.domain.workspace.entity.WorkspaceImage
 import com.kioschool.kioschoolapi.domain.workspace.entity.WorkspaceSetting
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepository
-import com.kioschool.kioschoolapi.global.og.service.OgCardGenerator
+import com.kioschool.kioschoolapi.global.og.service.OgService
 import com.kioschool.kioschoolapi.factory.SampleEntity
 import com.kioschool.kioschoolapi.global.common.entity.BaseEntity
 import com.kioschool.kioschoolapi.global.schedule.script.OgBackfillStep
@@ -19,10 +19,10 @@ import kotlin.reflect.full.superclasses
 
 class V08BackfillOgCardsTest : DescribeSpec({
     val workspaceRepository = mockk<WorkspaceRepository>()
-    val ogCardGenerator = mockk<OgCardGenerator>()
-    val sut = OgBackfillStep(workspaceRepository, ogCardGenerator)
+    val ogService = mockk<OgService>()
+    val sut = OgBackfillStep(workspaceRepository, ogService)
 
-    beforeEach { clearMocks(workspaceRepository, ogCardGenerator) }
+    beforeEach { clearMocks(workspaceRepository, ogService) }
 
     fun BaseEntity.setBaseId(id: Long) {
         val f = this::class.superclasses.first().java.getDeclaredField("id")
@@ -64,7 +64,7 @@ class V08BackfillOgCardsTest : DescribeSpec({
             val result = sut.processOne(1L)
 
             assert(result == Result.SKIPPED)
-            verify(exactly = 0) { ogCardGenerator.generate(any(), any()) }
+            verify(exactly = 0) { ogService.regenerateOgCard(any(), any()) }
             verify(exactly = 0) { workspaceRepository.save(any()) }
         }
 
@@ -79,7 +79,7 @@ class V08BackfillOgCardsTest : DescribeSpec({
             val result = sut.processOne(2L)
 
             assert(result == Result.SKIPPED)
-            verify(exactly = 0) { ogCardGenerator.generate(any(), any()) }
+            verify(exactly = 0) { ogService.regenerateOgCard(any(), any()) }
             verify(exactly = 0) { workspaceRepository.save(any()) }
         }
 
@@ -89,7 +89,7 @@ class V08BackfillOgCardsTest : DescribeSpec({
             val result = sut.processOne(99L)
 
             assert(result == Result.SKIPPED)
-            verify(exactly = 0) { ogCardGenerator.generate(any(), any()) }
+            verify(exactly = 0) { ogService.regenerateOgCard(any(), any()) }
             verify(exactly = 0) { workspaceRepository.save(any()) }
         }
 
@@ -100,14 +100,14 @@ class V08BackfillOgCardsTest : DescribeSpec({
                 imagesWithIds = listOf(1L to "photo.jpg"),
             )
             every { workspaceRepository.findById(3L) } returns Optional.of(ws)
-            every { ogCardGenerator.generate(3L, "photo.jpg") } returns "https://og/new.png"
+            every { ogService.regenerateOgCard(3L, "photo.jpg") } returns "https://og/new.png"
             every { workspaceRepository.save(ws) } returns ws
 
             val result = sut.processOne(3L)
 
             assert(result == Result.PROCESSED)
             assert(ws.ogImageUrl == "https://og/new.png")
-            verify(exactly = 1) { ogCardGenerator.generate(3L, "photo.jpg") }
+            verify(exactly = 1) { ogService.regenerateOgCard(3L, "photo.jpg") }
             verify(exactly = 1) { workspaceRepository.save(ws) }
         }
     }

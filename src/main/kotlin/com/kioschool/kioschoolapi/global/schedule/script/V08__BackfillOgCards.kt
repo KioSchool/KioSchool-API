@@ -1,7 +1,7 @@
 package com.kioschool.kioschoolapi.global.schedule.script
 
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepository
-import com.kioschool.kioschoolapi.global.og.service.OgCardGenerator
+import com.kioschool.kioschoolapi.global.og.service.OgService
 import com.kioschool.kioschoolapi.global.schedule.Runnable
 import org.slf4j.LoggerFactory
 import org.springframework.core.env.Environment
@@ -54,26 +54,26 @@ class V08__BackfillOgCards(
 /**
  * Per-workspace backfill step. Split out of [V08__BackfillOgCards] so that the
  * `@Transactional` proxy is honored when called from `run()` — same-class
- * invocation would bypass the AOP proxy and leave `ws.images` (a lazy collection)
- * inaccessible.
+ * invocation would bypass the AOP proxy and leave `workspace.images` (a lazy
+ * collection) inaccessible.
  */
 @Component
 class OgBackfillStep(
     private val workspaceRepository: WorkspaceRepository,
-    private val ogCardGenerator: OgCardGenerator,
+    private val ogService: OgService,
 ) {
     enum class Result { PROCESSED, SKIPPED }
 
     @Transactional
     fun processOne(workspaceId: Long): Result {
-        val ws = workspaceRepository.findById(workspaceId).orElse(null)
+        val workspace = workspaceRepository.findById(workspaceId).orElse(null)
             ?: return Result.SKIPPED
-        if (ws.ogImageUrl != null) return Result.SKIPPED
-        val primaryPhotoUrl = ws.images.minByOrNull { it.id }?.url
+        if (workspace.ogImageUrl != null) return Result.SKIPPED
+        val primaryPhotoUrl = workspace.images.minByOrNull { it.id }?.url
             ?: return Result.SKIPPED
-        val newUrl = ogCardGenerator.generate(ws.id, primaryPhotoUrl)
-        ws.ogImageUrl = newUrl
-        workspaceRepository.save(ws)
+        val newUrl = ogService.regenerateOgCard(workspace.id, primaryPhotoUrl)
+        workspace.ogImageUrl = newUrl
+        workspaceRepository.save(workspace)
         return Result.PROCESSED
     }
 }
