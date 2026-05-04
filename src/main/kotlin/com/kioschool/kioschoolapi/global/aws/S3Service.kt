@@ -45,4 +45,22 @@ class S3Service(
         val objectKey = if (path.startsWith("/")) path.substring(1) else path
         amazonS3Client.deleteObject(bucketName, objectKey)
     }
+
+    fun uploadBytes(bytes: ByteArray, path: String, contentType: String): String {
+        val metadata = ObjectMetadata().apply {
+            contentLength = bytes.size.toLong()
+            this.contentType = contentType
+            cacheControl = "public, max-age=31536000, immutable"
+        }
+        amazonS3Client.putObject(
+            bucketName,
+            path,
+            ByteArrayInputStream(bytes),
+            metadata
+        )
+        return amazonS3Client.getUrl(bucketName, path).toString()
+    }
+
+    fun urlFor(path: String): String =
+        amazonS3Client.getUrl(bucketName, path).toString()
 }
