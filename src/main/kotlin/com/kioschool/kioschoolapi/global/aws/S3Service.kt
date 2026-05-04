@@ -58,7 +58,7 @@ class S3Service(
             ByteArrayInputStream(bytes),
             metadata
         )
-        return amazonS3Client.getUrl(bucketName, path).toString()
+        return urlFor(path)
     }
 
     fun urlFor(path: String): String =
