@@ -28,3 +28,8 @@ management:
       cors:
         allowed-origins: "https://kio-school.com"
         allowed-methods: "*"
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false

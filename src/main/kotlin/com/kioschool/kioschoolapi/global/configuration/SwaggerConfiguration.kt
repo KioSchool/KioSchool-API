@@ -3,8 +3,10 @@ package com.kioschool.kioschoolapi.global.configuration
 import org.springdoc.core.models.GroupedOpenApi
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Profile
 
 @Configuration
+@Profile("!prod")
 class SwaggerConfiguration {
     @Bean
     fun superAdminGroup(): GroupedOpenApi {
