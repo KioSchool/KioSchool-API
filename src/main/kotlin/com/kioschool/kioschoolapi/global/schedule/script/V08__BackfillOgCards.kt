@@ -17,8 +17,6 @@ class V08__BackfillOgCards(
 ) : Runnable {
     private val logger = LoggerFactory.getLogger(V08__BackfillOgCards::class.java)
 
-    enum class Result { PROCESSED, SKIPPED }
-
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     override fun run() {
         if (environment.activeProfiles.any { it == "local" || it == "default" } || environment.activeProfiles.isEmpty()) {
@@ -35,8 +33,8 @@ class V08__BackfillOgCards(
         for (workspaceId in workspaceIds) {
             try {
                 when (backfillStep.processOne(workspaceId)) {
-                    Result.PROCESSED -> processed++
-                    Result.SKIPPED -> skipped++
+                    OgBackfillStep.Result.PROCESSED -> processed++
+                    OgBackfillStep.Result.SKIPPED -> skipped++
                 }
                 Thread.sleep(50L)
             } catch (e: Exception) {
@@ -53,21 +51,29 @@ class V08__BackfillOgCards(
     }
 }
 
+/**
+ * Per-workspace backfill step. Split out of [V08__BackfillOgCards] so that the
+ * `@Transactional` proxy is honored when called from `run()` — same-class
+ * invocation would bypass the AOP proxy and leave `ws.images` (a lazy collection)
+ * inaccessible.
+ */
 @Component
 class OgBackfillStep(
     private val workspaceRepository: WorkspaceRepository,
     private val ogCardGenerator: OgCardGenerator,
 ) {
+    enum class Result { PROCESSED, SKIPPED }
+
     @Transactional
-    fun processOne(workspaceId: Long): V08__BackfillOgCards.Result {
+    fun processOne(workspaceId: Long): Result {
         val ws = workspaceRepository.findById(workspaceId).orElse(null)
-            ?: return V08__BackfillOgCards.Result.SKIPPED
-        if (ws.ogImageUrl != null) return V08__BackfillOgCards.Result.SKIPPED
+            ?: return Result.SKIPPED
+        if (ws.ogImageUrl != null) return Result.SKIPPED
         val primaryPhotoUrl = ws.images.minByOrNull { it.id }?.url
-            ?: return V08__BackfillOgCards.Result.SKIPPED
+            ?: return Result.SKIPPED
         val newUrl = ogCardGenerator.generate(ws.id, primaryPhotoUrl)
         ws.ogImageUrl = newUrl
         workspaceRepository.save(ws)
-        return V08__BackfillOgCards.Result.PROCESSED
+        return Result.PROCESSED
     }
 }

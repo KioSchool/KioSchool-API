@@ -8,7 +8,7 @@ import com.kioschool.kioschoolapi.domain.workspace.service.OgCardGenerator
 import com.kioschool.kioschoolapi.factory.SampleEntity
 import com.kioschool.kioschoolapi.global.common.entity.BaseEntity
 import com.kioschool.kioschoolapi.global.schedule.script.OgBackfillStep
-import com.kioschool.kioschoolapi.global.schedule.script.V08__BackfillOgCards.Result
+import com.kioschool.kioschoolapi.global.schedule.script.OgBackfillStep.Result
 import io.kotest.core.spec.style.DescribeSpec
 import io.mockk.clearMocks
 import io.mockk.every
