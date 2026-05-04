@@ -6,7 +6,7 @@ import com.kioschool.kioschoolapi.domain.workspace.entity.WorkspaceSetting
 import com.kioschool.kioschoolapi.domain.workspace.event.WorkspaceUpdatedEvent
 import com.kioschool.kioschoolapi.domain.workspace.listener.WorkspaceOgImageListener
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepository
-import com.kioschool.kioschoolapi.domain.workspace.service.OgCardGenerator
+import com.kioschool.kioschoolapi.global.og.service.OgCardGenerator
 import com.kioschool.kioschoolapi.factory.SampleEntity
 import com.kioschool.kioschoolapi.global.common.entity.BaseEntity
 import io.kotest.core.spec.style.DescribeSpec

@@ -1,6 +1,6 @@
-package com.kioschool.kioschoolapi.workspace.service
+package com.kioschool.kioschoolapi.og.service
 
-import com.kioschool.kioschoolapi.domain.workspace.service.OgCardGenerator
+import com.kioschool.kioschoolapi.global.og.service.OgCardGenerator
 import com.kioschool.kioschoolapi.global.aws.S3Service
 import io.kotest.core.spec.style.DescribeSpec
 import io.mockk.every

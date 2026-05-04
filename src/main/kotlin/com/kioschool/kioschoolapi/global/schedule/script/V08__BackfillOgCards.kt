@@ -1,7 +1,7 @@
 package com.kioschool.kioschoolapi.global.schedule.script
 
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepository
-import com.kioschool.kioschoolapi.domain.workspace.service.OgCardGenerator
+import com.kioschool.kioschoolapi.global.og.service.OgCardGenerator
 import com.kioschool.kioschoolapi.global.schedule.Runnable
 import org.slf4j.LoggerFactory
 import org.springframework.core.env.Environment

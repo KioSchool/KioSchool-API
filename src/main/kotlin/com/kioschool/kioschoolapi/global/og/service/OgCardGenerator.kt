@@ -1,4 +1,4 @@
-package com.kioschool.kioschoolapi.domain.workspace.service
+package com.kioschool.kioschoolapi.global.og.service
 
 import com.kioschool.kioschoolapi.global.aws.S3Service
 import com.sksamuel.scrimage.ImmutableImage

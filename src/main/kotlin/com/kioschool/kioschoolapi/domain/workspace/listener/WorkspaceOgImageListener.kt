@@ -2,7 +2,7 @@ package com.kioschool.kioschoolapi.domain.workspace.listener
 
 import com.kioschool.kioschoolapi.domain.workspace.event.WorkspaceUpdatedEvent
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepository
-import com.kioschool.kioschoolapi.domain.workspace.service.OgCardGenerator
+import com.kioschool.kioschoolapi.global.og.service.OgCardGenerator
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
