@@ -1,12 +1,16 @@
 package com.kioschool.kioschoolapi.domain.account.controller
 
+import com.kioschool.kioschoolapi.domain.account.dto.common.AccountConnectionStatusDto
 import com.kioschool.kioschoolapi.domain.account.dto.common.BankDto
 import com.kioschool.kioschoolapi.domain.account.dto.request.AddBankRequestBody
 import com.kioschool.kioschoolapi.domain.account.dto.request.DeleteBankRequestBody
 import com.kioschool.kioschoolapi.domain.account.facade.AccountFacade
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.data.domain.Page
 import org.springframework.web.bind.annotation.*
+
+@Tag(name = "Super Admin Account Controller")
 
 @RestController
 @RequestMapping("/super-admin")
@@ -37,5 +41,14 @@ class SuperAdminAccountController(
         @RequestBody body: DeleteBankRequestBody
     ): BankDto {
         return accountFacade.deleteBank(body.id)
+    }
+
+    @Operation(
+        summary = "계정 연동 현황 조회",
+        description = "전체 유저 중 계좌(Account)를 연동한 유저와 미연동 유저의 수 및 비율을 조회합니다."
+    )
+    @GetMapping("/account-status")
+    fun getAccountConnectionStatus(): AccountConnectionStatusDto {
+        return accountFacade.getAccountConnectionStatus()
     }
 }

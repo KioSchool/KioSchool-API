@@ -351,4 +351,18 @@ class OrderFacade(
         val isOrderSessionStarted = table.orderSession != null
         return isOrderSessionStarted
     }
+
+    fun getAllOrdersGlobal(
+        workspaceId: Long?,
+        startDate: LocalDateTime?,
+        endDate: LocalDateTime?,
+        statuses: List<String>?,
+        page: Int,
+        size: Int
+    ): org.springframework.data.domain.Page<SuperAdminOrderDto> {
+        val parsedStatuses = statuses?.map { OrderStatus.valueOf(it) }
+        val pageable = org.springframework.data.domain.PageRequest.of(page, size)
+        return orderService.getAllOrdersGlobal(workspaceId, startDate, endDate, parsedStatuses, pageable)
+            .map { SuperAdminOrderDto.of(it) }
+    }
 }

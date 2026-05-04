@@ -16,4 +16,6 @@ interface OrderSessionRepository : JpaRepository<OrderSession, Long> {
         start: LocalDateTime,
         end: LocalDateTime
     ): List<OrderSession>
+
+    fun findAllByWorkspaceId(workspaceId: Long): List<OrderSession>
 }
