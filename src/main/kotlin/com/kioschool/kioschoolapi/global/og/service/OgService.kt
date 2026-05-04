@@ -9,7 +9,7 @@ import org.springframework.web.util.HtmlUtils
 class OgService(
     private val workspaceService: WorkspaceService,
     private val ogCardGenerator: OgCardGenerator,
-    @Value("\${kio.og.fallback-image-url}")
+    @Value("\${kio-school.og.fallback-image-url}")
     private val fallbackImageUrl: String,
 ) {
     fun renderOrderHtml(workspaceId: Long?): String {
