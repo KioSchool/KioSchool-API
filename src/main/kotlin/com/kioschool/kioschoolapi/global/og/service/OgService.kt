@@ -28,9 +28,9 @@ class OgService(
         ogCardGenerator.predictedUrl(workspaceId, sourcePhotoUrl)
 
     private fun renderOgHtml(canonical: String, title: String, image: String): String {
-        val titleEsc = HtmlUtils.htmlEscape(title)
-        val canonicalEsc = HtmlUtils.htmlEscape(canonical)
-        val imageEsc = HtmlUtils.htmlEscape(image)
+        val titleEsc = HtmlUtils.htmlEscape(title, "UTF-8")
+        val canonicalEsc = HtmlUtils.htmlEscape(canonical, "UTF-8")
+        val imageEsc = HtmlUtils.htmlEscape(image, "UTF-8")
         return """
             <!doctype html>
             <html lang="ko"><head>
