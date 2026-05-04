@@ -61,6 +61,12 @@ class S3Service(
         return urlFor(path)
     }
 
+    /**
+     * S3 키만으로 퍼블릭 URL을 계산한다 (PUT 없음). [OgCardGenerator.expectedUrl]이
+     * hash 선검사할 때 — 즉 사진이 안 바뀌었으면 다운로드/합성/업로드를 모두 스킵하기 위해
+     * — 사용한다. [uploadBytes]도 응답을 만들 때 이 메서드를 거쳐서 두 경로의 URL이
+     * 항상 같은 형태로 나오도록 보장한다.
+     */
     fun urlFor(path: String): String =
         amazonS3Client.getUrl(bucketName, path).toString()
 }
