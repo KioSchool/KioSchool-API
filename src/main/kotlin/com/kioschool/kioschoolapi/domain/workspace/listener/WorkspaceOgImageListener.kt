@@ -17,7 +17,7 @@ class WorkspaceOgImageListener(
 ) {
     private val logger = LoggerFactory.getLogger(WorkspaceOgImageListener::class.java)
 
-    @Async
+    @Async("taskExecutor")
     @Transactional
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     fun on(event: WorkspaceUpdatedEvent) {
