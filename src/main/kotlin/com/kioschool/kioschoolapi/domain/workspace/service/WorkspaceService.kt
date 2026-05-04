@@ -78,6 +78,9 @@ class WorkspaceService(
             .orElseThrow { WorkspaceNotFoundException() }
     }
 
+    fun findWorkspaceOrNull(workspaceId: Long): Workspace? =
+        workspaceRepository.findById(workspaceId).orElse(null)
+
     fun isAccessible(username: String, workspaceId: Long): Boolean {
         val userRole =
             (SecurityContextHolder.getContext().authentication?.principal as? CustomUserDetails)
