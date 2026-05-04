@@ -39,18 +39,22 @@ class WorkspaceOgImageListener(
         val expectedOgUrl = ogCardGenerator.expectedUrl(workspace.id, primaryPhotoUrl)
         if (workspace.ogImageUrl == expectedOgUrl) return
 
-        val newOgUrl = runCatching { ogCardGenerator.generate(workspace.id, primaryPhotoUrl) }
-            .getOrElse { ex ->
-                // Preserve the previously-good og card. Surfacing via logger.error keeps
-                // the user-facing flow intact; Sentry can be wired in later.
-                logger.error(
-                    "OG card generation failed for workspaceId={}, source={}",
-                    workspace.id,
-                    primaryPhotoUrl,
-                    ex,
-                )
-                return
-            }
+        val newOgUrl = try {
+            ogCardGenerator.generate(workspace.id, primaryPhotoUrl)
+        } catch (ex: Exception) {
+            // Preserve the previously-good og card. JVM Errors (OOM/SOE) are intentionally
+            // not caught so they propagate to the executor's uncaught handler.
+            logger.error(
+                "OG card generation failed for workspaceId={}, source={}",
+                workspace.id,
+                primaryPhotoUrl,
+                ex,
+            )
+            return
+        }
+        // Last-write-wins: concurrent updates to the same workspace can race here. The
+        // hash precheck above mitigates but does not eliminate this. Acceptable while
+        // photo-edit frequency is low; revisit with @Version optimistic lock if it bites.
         workspace.ogImageUrl = newOgUrl
         workspaceRepository.save(workspace)
     }
