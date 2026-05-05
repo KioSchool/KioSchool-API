@@ -8,6 +8,9 @@ import com.kioschool.kioschoolapi.domain.workspace.exception.NoPermissionToJoinW
 import com.kioschool.kioschoolapi.domain.workspace.exception.WorkspaceInaccessibleException
 import com.kioschool.kioschoolapi.domain.workspace.facade.WorkspaceFacade
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
+import com.kioschool.kioschoolapi.domain.order.repository.OrderRepository
+import com.kioschool.kioschoolapi.domain.order.repository.OrderSessionRepository
+import com.kioschool.kioschoolapi.domain.statistics.repository.DailyOrderStatisticRepository
 import com.kioschool.kioschoolapi.factory.SampleEntity
 import com.kioschool.kioschoolapi.global.discord.service.DiscordService
 import io.kotest.core.spec.style.DescribeSpec
@@ -19,13 +22,19 @@ class WorkspaceFacadeTest : DescribeSpec({
     val userService = mockk<UserService>()
     val discordService = mockk<DiscordService>()
     val workspaceService = mockk<WorkspaceService>()
+    val orderRepository = mockk<OrderRepository>()
+    val orderSessionRepository = mockk<OrderSessionRepository>()
+    val dailyOrderStatisticRepository = mockk<DailyOrderStatisticRepository>()
 
-    val sut = WorkspaceFacade(userService, discordService, workspaceService)
+    val sut = WorkspaceFacade(userService, discordService, workspaceService, orderRepository, orderSessionRepository, dailyOrderStatisticRepository)
 
     beforeTest {
         mockkObject(userService)
         mockkObject(discordService)
         mockkObject(workspaceService)
+        mockkObject(orderRepository)
+        mockkObject(orderSessionRepository)
+        mockkObject(dailyOrderStatisticRepository)
     }
 
     afterTest {
