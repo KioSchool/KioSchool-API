@@ -31,4 +31,6 @@ interface OrderRepository : JpaRepository<Order, Long> {
         @Param("start") start: LocalDateTime,
         @Param("end") end: LocalDateTime
     ): List<Order>
+
+    fun findAllByWorkspaceId(workspaceId: Long): List<Order>
 }

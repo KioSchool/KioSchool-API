@@ -4,6 +4,7 @@ import com.kioschool.kioschoolapi.domain.account.exception.IncorrectAccountHolde
 import com.kioschool.kioschoolapi.domain.account.facade.AccountFacade
 import com.kioschool.kioschoolapi.domain.account.service.AccountService
 import com.kioschool.kioschoolapi.domain.account.service.BankService
+import com.kioschool.kioschoolapi.domain.user.repository.UserRepository
 import com.kioschool.kioschoolapi.domain.user.service.UserService
 import com.kioschool.kioschoolapi.factory.SampleEntity
 import com.kioschool.kioschoolapi.global.portone.service.PortoneService
@@ -18,15 +19,17 @@ class AccountFacadeTest : DescribeSpec({
     val bankService = mockk<BankService>()
     val accountService = mockk<AccountService>()
     val userService = mockk<UserService>()
+    val userRepository = mockk<UserRepository>()
     val portoneService = mockk<PortoneService>()
     val tossService = mockk<TossService>()
 
-    val sut = AccountFacade(bankService, accountService, userService, portoneService, tossService)
+    val sut = AccountFacade(bankService, accountService, userService, userRepository, portoneService, tossService)
 
     beforeTest {
         mockkObject(bankService)
         mockkObject(accountService)
         mockkObject(userService)
+        mockkObject(userRepository)
         mockkObject(portoneService)
         mockkObject(tossService)
     }

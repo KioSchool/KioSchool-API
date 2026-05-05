@@ -202,4 +202,23 @@ class WorkspaceService(
         return workspaceTableRepository.findByTableHashAndWorkspace(tableHash, workspace)
             .orElseThrow { WorkspaceTableNotFoundException() }
     }
+
+    fun deleteWorkspace(workspace: Workspace) {
+        workspaceRepository.delete(workspace)
+    }
+
+    fun deleteAllWorkspaceTables(workspace: Workspace) {
+        val tables = workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace)
+        workspaceTableRepository.deleteAll(tables)
+    }
+
+    @WorkspaceUpdateEvent
+    fun changeWorkspaceOwner(workspace: Workspace, newOwner: User): Workspace {
+        // 새 소유자가 워크스페이스 멤버가 아니라면 멤버로 추가
+        if (workspace.members.none { it.user.id == newOwner.id }) {
+            workspace.members.add(WorkspaceMember(workspace = workspace, user = newOwner))
+        }
+        workspace.owner = newOwner
+        return workspaceRepository.save(workspace)
+    }
 }

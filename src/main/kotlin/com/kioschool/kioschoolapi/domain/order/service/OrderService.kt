@@ -155,4 +155,14 @@ class OrderService(
     ): List<ProductIdQuantityDto> {
         return customOrderRepository.getTopSellingProducts(workspaceId, start, end, limit)
     }
+
+    fun getAllOrdersGlobal(
+        workspaceId: Long?,
+        startDate: LocalDateTime?,
+        endDate: LocalDateTime?,
+        statuses: List<OrderStatus>?,
+        pageable: org.springframework.data.domain.Pageable
+    ): org.springframework.data.domain.Page<Order> {
+        return customOrderRepository.findAllGlobal(workspaceId, startDate, endDate, statuses, pageable)
+    }
 }
