@@ -37,7 +37,7 @@ class WorkspaceOgImageListener(
         // Hash precheck: WorkspaceUpdatedEvent fires for non-photo changes too
         // (name/memo/tableCount/etc.). If the source photo did not change, the
         // expected url stays the same and we can skip the expensive regen.
-        val expectedOgUrl = ogService.predictedOgUrl(workspace.id, primaryPhotoUrl)
+        val expectedOgUrl = ogService.getExpectedOgUrl(workspace.id, primaryPhotoUrl)
         if (workspace.ogImageUrl == expectedOgUrl) return
 
         val newOgUrl = try {

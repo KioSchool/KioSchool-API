@@ -101,12 +101,12 @@ class OgServiceTest : DescribeSpec({
         }
     }
 
-    describe("predictedOgUrl + regenerateOgCard") {
+    describe("getExpectedOgUrl + regenerateOgCard") {
         it("delegates to OgCardGenerator") {
-            every { ogCardGenerator.predictedUrl(7L, "src.jpg") } returns "https://og/predicted.png"
+            every { ogCardGenerator.getExpectedUrl(7L, "src.jpg") } returns "https://og/predicted.png"
             every { ogCardGenerator.generate(7L, "src.jpg") } returns "https://og/generated.png"
 
-            assert(sut.predictedOgUrl(7L, "src.jpg") == "https://og/predicted.png")
+            assert(sut.getExpectedOgUrl(7L, "src.jpg") == "https://og/predicted.png")
             assert(sut.regenerateOgCard(7L, "src.jpg") == "https://og/generated.png")
         }
     }

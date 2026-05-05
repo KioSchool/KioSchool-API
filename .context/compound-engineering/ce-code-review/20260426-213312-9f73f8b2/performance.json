@@ -1,0 +1,61 @@
+{
+  "reviewer": "performance",
+  "findings": [
+    {
+      "title": "computeDistribution does a full table scan over all orders with GROUP BY workspace_id; cold-cache requests will be very expensive and prone to thundering herd",
+      "severity": "high",
+      "file": "src/main/kotlin/com/kioschool/kioschoolapi/domain/seasoninsight/service/SeasonDistributionService.kt",
+      "line": 27,
+      "confidence": 75,
+      "autofix_class": "manual",
+      "owner": "performance",
+      "requires_verification": true,
+      "pre_existing": false,
+      "suggested_fix": "Two issues compound here. (1) `repo.aggregateAll()` issues a single query but it is `workspace LEFT JOIN order GROUP BY workspace.id, workspace.tableCount` over the *entire* `order` table with no time/status filter and no covering index — for a kiosk SaaS the order table will dominate load and this query can easily hit seconds-to-minutes as the product matures. (2) The `@Cacheable` is backed by Spring's standard Redis cache (`RedisCacheWriter.nonLockingRedisCacheWriter` in CacheConfiguration.kt), so when the 1h entry expires every concurrent admin request will re-run the full aggregate in parallel (cache stampede). Mitigations to consider: filter at SQL level to only ended workspaces (`HAVING max(created_at) < :cutoff`), add a composite index on `order(workspace_id, created_at, status)`, switch this cache to a locking writer (`RedisCacheWriter.lockingRedisCacheWriter`) or use a scheduled refresh job that pre-warms the value so user requests never trigger the recompute."
+    },
+    {
+      "title": "Order table aggregations rely on workspace_id / created_at indexes that are not declared in any Liquibase changelog",
+      "severity": "high",
+      "file": "src/main/kotlin/com/kioschool/kioschoolapi/domain/seasoninsight/repository/SeasonInsightRepository.kt",
+      "line": 47,
+      "confidence": 75,
+      "autofix_class": "manual",
+      "owner": "performance",
+      "requires_verification": true,
+      "pre_existing": true,
+      "suggested_fix": "`aggregateForWorkspace` filters `order.workspace.id = ?` and computes `count(distinct cast(created_at as date))` and `max(created_at)`. `aggregateAll` does the same across all workspaces. Order.kt has no `@Index` and a grep over `src/main/resources/db/changelog` returns zero `createIndex`/`CREATE INDEX` statements that mention `order` or `workspace_id`. MySQL/Postgres do *not* automatically index FK columns on the child side; only the PK is indexed by default. Without a `(workspace_id, created_at)` composite index, both queries will degenerate to full table scans plus a sort/hash group, so the 5m per-workspace cache miss is also at risk, not just the 1h global cache. Add a Liquibase changeset creating `idx_order_workspace_created_at (workspace_id, created_at)` (and ideally include `status` to cover the case-when filters) before this endpoint sees production traffic."
+    },
+    {
+      "title": "Cache stampede on @Cacheable getInsight — 5m TTL plus per-workspace key means each cold key triggers a full aggregateForWorkspace + computeDistribution under concurrent admin load",
+      "severity": "medium",
+      "file": "src/main/kotlin/com/kioschool/kioschoolapi/domain/seasoninsight/service/SeasonInsightService.kt",
+      "line": 21,
+      "confidence": 75,
+      "autofix_class": "manual",
+      "owner": "performance",
+      "requires_verification": false,
+      "pre_existing": false,
+      "suggested_fix": "Spring's `@Cacheable` over the non-locking Redis writer used in CacheConfiguration.kt does not synchronize concurrent loads. With `key = \"#workspaceId\"` and a 5-minute TTL, every workspace's first admin page-load after expiry runs `aggregateForWorkspace` again, and if the global distribution also expired it runs the heavy `aggregateAll` too. Either set `sync = true` on the @Cacheable (Spring will then use the cache writer's get-or-load lock — verify the Redis cache manager supports it), or switch the cache writer to `RedisCacheWriter.lockingRedisCacheWriter(...)` for at least `seasonInsight` and `seasonDistribution`."
+    },
+    {
+      "title": "Distribution payload size is O(N workspaces) per metric and is serialized to Redis on every miss",
+      "severity": "low",
+      "file": "src/main/kotlin/com/kioschool/kioschoolapi/domain/seasoninsight/service/SeasonDistributionService.kt",
+      "line": 41,
+      "confidence": 50,
+      "autofix_class": "manual",
+      "owner": "performance",
+      "requires_verification": true,
+      "pre_existing": false,
+      "suggested_fix": "`SeasonDistribution` keeps 5 sorted lists of length up to N (ended workspace count) plus one Long list. Stored in Redis via `GenericJackson2JsonRedisSerializer` with `DefaultTyping.EVERYTHING` enabled, every Double is serialized with type metadata, so the payload grows fast. At a few thousand ended workspaces this is fine; at the tens-of-thousands range you'll be moving multi-MB blobs over Redis on every 1h miss, every read, and on JVM heap for downstream computation. Consider precomputing only the percentile breakpoints needed by `PercentileCalculator` / `MilestoneTierResolver` (e.g., 5/25/50/75/95/max) and caching those scalars instead of the full sorted arrays."
+    }
+  ],
+  "residual_risks": [
+    "Actual production size of the `order` table and the count of ended workspaces is unknown from the diff; if both are small (<10k orders, <500 workspaces) the indexing/stampede concerns are not yet hot but will be once the product scales.",
+    "CacheConfiguration uses `nonLockingRedisCacheWriter`, so any other @Cacheable with a heavy load function shares the same stampede risk — not specific to this feature."
+  ],
+  "testing_gaps": [
+    "No load test or EXPLAIN-based verification that `aggregateAll()` and `aggregateForWorkspace()` use indexes; recommend adding an integration test that seeds N workspaces / M orders and asserts query latency stays below a budget.",
+    "No test exercises concurrent first-time access to `getInsight` for the same or many workspaces to prove the cache prevents N parallel DB aggregations."
+  ]
+}

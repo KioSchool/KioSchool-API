@@ -22,8 +22,8 @@ class OgService(
     fun regenerateOgCard(workspaceId: Long, sourcePhotoUrl: String): String =
         ogCardGenerator.generate(workspaceId, sourcePhotoUrl)
 
-    fun predictedOgUrl(workspaceId: Long, sourcePhotoUrl: String): String =
-        ogCardGenerator.predictedUrl(workspaceId, sourcePhotoUrl)
+    fun getExpectedOgUrl(workspaceId: Long, sourcePhotoUrl: String): String =
+        ogCardGenerator.getExpectedUrl(workspaceId, sourcePhotoUrl)
 
     private fun renderOgHtml(canonical: String, title: String, image: String): String {
         val titleEsc = HtmlUtils.htmlEscape(title, "UTF-8")

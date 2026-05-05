@@ -1,0 +1,128 @@
+{
+  "reviewer": "testing",
+  "findings": [
+    {
+      "title": "SeasonInsightRepository has zero tests; complex QueryDSL (CASE/SUM/distinct cast as date) untested",
+      "severity": "P1",
+      "file": "src/main/kotlin/com/kioschool/kioschoolapi/domain/seasoninsight/repository/SeasonInsightRepository.kt",
+      "line": 15,
+      "confidence": 100,
+      "autofix_class": "manual_required",
+      "owner": "feature-author",
+      "requires_verification": false,
+      "pre_existing": false,
+      "suggested_fix": "Add a @DataJpaTest (or @SpringBootTest with @Transactional) integration test that seeds Workspace + Order rows of various OrderStatus (CANCELLED/PAID/etc.) across multiple dates and asserts: (a) totalSales excludes CANCELLED, (b) cancelledOrders counts only CANCELLED, (c) businessDayCount equals distinct calendar dates of order.createdAt, (d) lastOrderAt = MAX(createdAt), (e) aggregateAll() left-joins so workspaces with no orders appear with totalSales=0/lastOrderAt=null, (f) tableCount fallback when workspace not found returns 0. Without this test the SQL templates 'count(distinct cast({0} as date))' and the case-when SUM expressions can silently break under DB engine differences."
+    },
+    {
+      "title": "AdminSeasonInsightController has no test; @AdminUsername resolver and path mapping unverified",
+      "severity": "P2",
+      "file": "src/main/kotlin/com/kioschool/kioschoolapi/domain/seasoninsight/controller/AdminSeasonInsightController.kt",
+      "line": 20,
+      "confidence": 75,
+      "autofix_class": "manual_required",
+      "owner": "feature-author",
+      "requires_verification": false,
+      "pre_existing": false,
+      "suggested_fix": "Codebase convention skips controller tests, but for an admin endpoint that depends on @AdminUsername security resolver + WorkspaceService.checkAccessible, add at minimum a @WebMvcTest verifying: (1) GET /admin/workspaces/{id}/season-insight returns 200 with expected JSON shape, (2) unauthenticated/non-admin requests are rejected, (3) PathVariable parses Long correctly. Otherwise wiring regressions (e.g. wrong path, missing security annotation) ship to prod."
+    },
+    {
+      "title": "SeasonInsightService strengths field never asserted in non-empty-distribution test cases",
+      "severity": "P2",
+      "file": "src/test/kotlin/com/kioschool/kioschoolapi/domain/seasoninsight/service/SeasonInsightServiceTest.kt",
+      "line": 43,
+      "confidence": 75,
+      "autofix_class": "manual_required",
+      "owner": "feature-author",
+      "requires_verification": false,
+      "pre_existing": false,
+      "suggested_fix": "Given('정상 워크스페이스 + 모집단 100개...') only asserts cumulativeSales/businessDayCount/socialProof/milestone but never asserts response.strengths. The wiring of strengthSelector inside SeasonInsightService is therefore only exercised structurally (no assertion). Add an assertion that strengths is a non-empty list of expected metric names for this aggregate so a regression where strengths is dropped/swapped is caught."
+    },
+    {
+      "title": "SeasonDistributionService happy-path test only asserts totalSales/populationSize, omits 4 other distribution fields",
+      "severity": "P2",
+      "file": "src/test/kotlin/com/kioschool/kioschoolapi/domain/seasoninsight/service/SeasonDistributionServiceTest.kt",
+      "line": 42,
+      "confidence": 75,
+      "autofix_class": "manual_required",
+      "owner": "feature-author",
+      "requires_verification": false,
+      "pre_existing": false,
+      "suggested_fix": "Given('종료 시즌 6개...') asserts only populationSize and totalSales. avgOrderAmount/turnoverRate/tableRevenue/lowCancellationRate are populated via metricsCalc.calculate + mapNotNull + sorted but never asserted. Add explicit assertions on these 4 lists, including: (a) sorted ascending, (b) mapNotNull drops null metrics (test by including one ended workspace with totalOrders=0 / tableCount=0 producing nulls and verifying the resulting list size is N-1)."
+    },
+    {
+      "title": "MilestoneTierResolver percentile boundary values (10, 30, 50) not exercised",
+      "severity": "P2",
+      "file": "src/test/kotlin/com/kioschool/kioschoolapi/domain/seasoninsight/service/MilestoneTierResolverTest.kt",
+      "line": 24,
+      "confidence": 75,
+      "autofix_class": "manual_required",
+      "owner": "feature-author",
+      "requires_verification": false,
+      "pre_existing": false,
+      "suggested_fix": "Tests cover percentile=8/25/45/61 but never exactly 10, 30, or 50 — the inclusive thresholds in MilestoneTier.fromPercentile (`percentile <= TOP_10.percentileThreshold`). Add three tests pinning exact boundaries: percentile==10 -> TOP_10, percentile==30 -> TOP_30, percentile==50 -> TOP_50, and percentile==51 -> null. This is the exact tier->null transition point and a likely off-by-one source."
+    },
+    {
+      "title": "MilestoneTierResolver MILESTONE_FLOOR_KRW boundary at exactly 1,000,000 not tested",
+      "severity": "P2",
+      "file": "src/test/kotlin/com/kioschool/kioschoolapi/domain/seasoninsight/service/MilestoneTierResolverTest.kt",
+      "line": 18,
+      "confidence": 75,
+      "autofix_class": "manual_required",
+      "owner": "feature-author",
+      "requires_verification": false,
+      "pre_existing": false,
+      "suggested_fix": "Test asserts 999,999 -> null but never asserts that exactly 1,000,000 passes the floor (since `cumulativeSales < MILESTONE_FLOOR_KRW`, exactly 1M should resolve based on percentile, not return null). Add `resolve(1_000_000L, distribution)` and assert it returns the percentile-derived tier (not null). The 100만원 컷 boundary is policy-critical and an off-by-one here changes who gets a milestone badge."
+    },
+    {
+      "title": "SeasonInsightService @Cacheable behavior is untested",
+      "severity": "P2",
+      "file": "src/main/kotlin/com/kioschool/kioschoolapi/domain/seasoninsight/service/SeasonInsightService.kt",
+      "line": 21,
+      "confidence": 75,
+      "autofix_class": "manual_required",
+      "owner": "feature-author",
+      "requires_verification": false,
+      "pre_existing": false,
+      "suggested_fix": "Both @Cacheable annotations (SEASON_INSIGHT#5m keyed on workspaceId, SEASON_DISTRIBUTION#1h keyed on 'global') are silently invalid in the current unit tests because no Spring CacheManager is wired. Add a lightweight @SpringBootTest (or a focused @Import(CacheConfiguration::class) test) verifying: (1) two consecutive calls with same workspaceId hit repo only once, (2) different workspaceIds invoke repo twice, (3) cache name strings 'seasonInsight#5m' and 'seasonDistribution#1h' are recognised by the configured CacheManager. Otherwise a typo in the cache name string ships silently."
+    },
+    {
+      "title": "PercentileCalculator biggerIsBetter=false: empty distribution and out-of-range value untested",
+      "severity": "P3",
+      "file": "src/test/kotlin/com/kioschool/kioschoolapi/domain/seasoninsight/service/PercentileCalculatorTest.kt",
+      "line": 58,
+      "confidence": 75,
+      "autofix_class": "manual_required",
+      "owner": "feature-author",
+      "requires_verification": false,
+      "pre_existing": false,
+      "suggested_fix": "Empty-distribution test only checks biggerIsBetter=true. The current implementation always returns 100 regardless of direction — verify this is desired semantics for biggerIsBetter=false and add a test pinning it. Also add boundary tests for biggerIsBetter=false: value below all (best) -> percentile=1, value above all (worst) -> percentile=100, mirroring the biggerIsBetter=true cases."
+    },
+    {
+      "title": "SeasonInsightFacadeTest second Given may leak workspaceService stub from first Given",
+      "severity": "P3",
+      "file": "src/test/kotlin/com/kioschool/kioschoolapi/domain/seasoninsight/facade/SeasonInsightFacadeTest.kt",
+      "line": 41,
+      "confidence": 50,
+      "autofix_class": "manual_required",
+      "owner": "feature-author",
+      "requires_verification": true,
+      "pre_existing": false,
+      "suggested_fix": "Second Given calls clearMocks(insightService) but does not clearMocks(workspaceService). Stubs on workspaceService.checkAccessible('alice', 7L) from first Given remain. Today nothing references 'alice' in the second Given, so it works, but this is the same mock-state-leakage pattern noted in the intent. Recommend converting both mockk<>() declarations into per-spec setup with `beforeTest { clearMocks(workspaceService, insightService) }` to remove the latent foot-gun. Verify whether this pattern repeats in any of the service tests where mockk values are declared at spec scope and reused across multiple Given blocks (SeasonInsightServiceTest, SeasonDistributionServiceTest)."
+    }
+  ],
+  "residual_risks": [
+    "Repository SQL correctness (case-when SUM, count distinct cast as date, left-join to workspaces with zero orders) is the highest-risk untested surface. A H2-vs-MySQL dialect bug here would silently corrupt every downstream calculation including the milestone tier shown to users.",
+    "Cache key collisions or invalid cache name strings ('seasonInsight#5m', 'seasonDistribution#1h') are not validated by any test running against the real Spring CacheManager.",
+    "End-to-end behavior (controller -> facade -> service -> repository) and security wiring (@AdminUsername + WorkspaceService.checkAccessible) is verified only by mocked unit tests; no smoke test confirms the endpoint actually serves a 200 with the expected JSON shape."
+  ],
+  "testing_gaps": [
+    "No integration test for SeasonInsightRepository (QueryDSL aggregateForWorkspace + aggregateAll).",
+    "No controller-layer test for AdminSeasonInsightController (no @WebMvcTest).",
+    "No test for ClockConfiguration bean wiring (acceptable — trivial).",
+    "No test verifying @Cacheable annotations actually take effect with the configured CacheManager.",
+    "Strengths field of SeasonInsightResponse never asserted in service-level tests with non-empty distribution.",
+    "Distribution lists (avgOrderAmount/turnoverRate/tableRevenue/lowCancellationRate) and mapNotNull behavior in SeasonDistributionService not asserted on happy path.",
+    "Milestone exact percentile boundaries (10/30/50) and MILESTONE_FLOOR_KRW exact 1,000,000 boundary not tested.",
+    "PercentileCalculator biggerIsBetter=false empty/out-of-range cases not tested."
+  ]
+}

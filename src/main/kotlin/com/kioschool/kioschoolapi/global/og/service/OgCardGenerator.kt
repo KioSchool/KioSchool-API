@@ -39,8 +39,8 @@ class OgCardGenerator(
         return url
     }
 
-    fun predictedUrl(workspaceId: Long, sourcePhotoUrl: String): String =
-        s3Service.urlFor(pathFor(workspaceId, sourcePhotoUrl))
+    fun getExpectedUrl(workspaceId: Long, sourcePhotoUrl: String): String =
+        s3Service.getPublicUrl(pathFor(workspaceId, sourcePhotoUrl))
 
     private fun pathFor(workspaceId: Long, sourcePhotoUrl: String): String {
         val hash = sha1(sourcePhotoUrl).take(8)

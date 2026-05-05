@@ -62,7 +62,7 @@ class WorkspaceOgImageListenerTest : DescribeSpec({
                 imagesWithIds = listOf(1L to "https://cdn/photo.jpg"),
             )
             every { workspaceRepository.findById(1L) } returns Optional.of(ws)
-            every { ogService.predictedOgUrl(1L, "https://cdn/photo.jpg") } returns "https://cdn/og/new.png"
+            every { ogService.getExpectedOgUrl(1L, "https://cdn/photo.jpg") } returns "https://cdn/og/new.png"
             every { ogService.regenerateOgCard(1L, "https://cdn/photo.jpg") } returns "https://cdn/og/new.png"
             val saved = slot<Workspace>()
             every { workspaceRepository.save(capture(saved)) } answers { firstArg() }
@@ -81,7 +81,7 @@ class WorkspaceOgImageListenerTest : DescribeSpec({
                 imagesWithIds = listOf(1L to "https://cdn/photo.jpg"),
             )
             every { workspaceRepository.findById(2L) } returns Optional.of(ws)
-            every { ogService.predictedOgUrl(2L, "https://cdn/photo.jpg") } returns "https://cdn/og/same.png"
+            every { ogService.getExpectedOgUrl(2L, "https://cdn/photo.jpg") } returns "https://cdn/og/same.png"
 
             sut.on(WorkspaceUpdatedEvent(2L))
 
@@ -113,7 +113,7 @@ class WorkspaceOgImageListenerTest : DescribeSpec({
                 imagesWithIds = listOf(1L to "https://cdn/photo.jpg"),
             )
             every { workspaceRepository.findById(4L) } returns Optional.of(ws)
-            every { ogService.predictedOgUrl(4L, "https://cdn/photo.jpg") } returns "https://cdn/og/new.png"
+            every { ogService.getExpectedOgUrl(4L, "https://cdn/photo.jpg") } returns "https://cdn/og/new.png"
             every { ogService.regenerateOgCard(4L, "https://cdn/photo.jpg") } throws RuntimeException("S3 down")
 
             sut.on(WorkspaceUpdatedEvent(4L))
@@ -134,13 +134,13 @@ class WorkspaceOgImageListenerTest : DescribeSpec({
                 ),
             )
             every { workspaceRepository.findById(5L) } returns Optional.of(ws)
-            every { ogService.predictedOgUrl(5L, "https://cdn/three.jpg") } returns "https://cdn/og/three-card.png"
+            every { ogService.getExpectedOgUrl(5L, "https://cdn/three.jpg") } returns "https://cdn/og/three-card.png"
             every { ogService.regenerateOgCard(5L, "https://cdn/three.jpg") } returns "https://cdn/og/three-card.png"
             every { workspaceRepository.save(any()) } answers { firstArg() }
 
             sut.on(WorkspaceUpdatedEvent(5L))
 
-            verify(exactly = 1) { ogService.predictedOgUrl(5L, "https://cdn/three.jpg") }
+            verify(exactly = 1) { ogService.getExpectedOgUrl(5L, "https://cdn/three.jpg") }
             verify(exactly = 1) { ogService.regenerateOgCard(5L, "https://cdn/three.jpg") }
             verify(exactly = 0) { ogService.regenerateOgCard(5L, "https://cdn/seven.jpg") }
             verify(exactly = 0) { ogService.regenerateOgCard(5L, "https://cdn/nine.jpg") }
@@ -152,7 +152,7 @@ class WorkspaceOgImageListenerTest : DescribeSpec({
             sut.on(WorkspaceUpdatedEvent(404L))
 
             verify(exactly = 0) { ogService.regenerateOgCard(any(), any()) }
-            verify(exactly = 0) { ogService.predictedOgUrl(any(), any()) }
+            verify(exactly = 0) { ogService.getExpectedOgUrl(any(), any()) }
             verify(exactly = 0) { workspaceRepository.save(any()) }
         }
     }
