@@ -1,19 +1,17 @@
 package com.kioschool.kioschoolapi.global.og.service
 
-import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
+import com.kioschool.kioschoolapi.domain.workspace.entity.Workspace
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.web.util.HtmlUtils
 
 @Service
 class OgService(
-    private val workspaceService: WorkspaceService,
     private val ogCardGenerator: OgCardGenerator,
     @Value("\${kio-school.og.fallback-image-url}")
     private val fallbackImageUrl: String,
 ) {
-    fun renderOrderHtml(workspaceId: Long?): String {
-        val workspace = workspaceId?.let { workspaceService.findWorkspaceOrNull(it) }
+    fun renderOrderHtmlFor(workspace: Workspace?, workspaceId: Long?): String {
         val title = workspace?.let { "${it.name} · 키오스쿨" } ?: "키오스쿨"
         val image = workspace?.ogImageUrl ?: fallbackImageUrl
         val canonical = "https://kio-school.com/order" +

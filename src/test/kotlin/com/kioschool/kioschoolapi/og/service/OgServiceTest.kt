@@ -2,7 +2,6 @@ package com.kioschool.kioschoolapi.og.service
 
 import com.kioschool.kioschoolapi.domain.workspace.entity.Workspace
 import com.kioschool.kioschoolapi.domain.workspace.entity.WorkspaceSetting
-import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.factory.SampleEntity
 import com.kioschool.kioschoolapi.global.common.entity.BaseEntity
 import com.kioschool.kioschoolapi.global.og.service.OgCardGenerator
@@ -14,15 +13,13 @@ import io.mockk.mockk
 import kotlin.reflect.full.superclasses
 
 class OgServiceTest : DescribeSpec({
-    val workspaceService = mockk<WorkspaceService>()
     val ogCardGenerator = mockk<OgCardGenerator>()
     val sut = OgService(
-        workspaceService = workspaceService,
         ogCardGenerator = ogCardGenerator,
         fallbackImageUrl = "https://kio-school.com/preview.png",
     )
 
-    beforeEach { clearMocks(workspaceService, ogCardGenerator) }
+    beforeEach { clearMocks(ogCardGenerator) }
 
     fun BaseEntity.setBaseId(id: Long) {
         val f = this::class.superclasses.first().java.getDeclaredField("id")
@@ -45,42 +42,39 @@ class OgServiceTest : DescribeSpec({
         return ws
     }
 
-    describe("renderOrderHtml") {
+    describe("renderOrderHtmlFor") {
         it("renders og:image=ogImageUrl and og:title with workspace name when found") {
             val ws = newWorkspace(
                 workspaceId = 1L,
                 name = "테스트주점",
                 ogImageUrl = "https://og/test.png",
             )
-            every { workspaceService.findWorkspaceOrNull(ws.id) } returns ws
 
-            val body = sut.renderOrderHtml(ws.id)
+            val body = sut.renderOrderHtmlFor(ws, ws.id)
 
             assert(body.contains("""<meta property="og:image"""))
             assert(body.contains("https://og/test.png"))
             assert(body.contains("테스트주점 · 키오스쿨"))
         }
 
-        it("falls back to global preview image when workspaceId is null") {
-            val body = sut.renderOrderHtml(null)
+        it("falls back to global preview image when workspace and workspaceId are both null") {
+            val body = sut.renderOrderHtmlFor(null, null)
 
             assert(body.contains("https://kio-school.com/preview.png"))
             assert(!body.contains("og:image\" content=\"\""))
         }
 
-        it("falls back when workspaceId does not match any workspace") {
-            every { workspaceService.findWorkspaceOrNull(999L) } returns null
-
-            val body = sut.renderOrderHtml(999L)
+        it("falls back when workspace is null even though workspaceId was provided") {
+            val body = sut.renderOrderHtmlFor(null, 999L)
 
             assert(body.contains("https://kio-school.com/preview.png"))
+            assert(body.contains("?workspaceId=999"))
         }
 
         it("falls back when workspace exists but has no ogImageUrl yet") {
             val ws = newWorkspace(workspaceId = 2L, ogImageUrl = null)
-            every { workspaceService.findWorkspaceOrNull(ws.id) } returns ws
 
-            val body = sut.renderOrderHtml(ws.id)
+            val body = sut.renderOrderHtmlFor(ws, ws.id)
 
             assert(body.contains("https://kio-school.com/preview.png"))
         }
@@ -91,9 +85,8 @@ class OgServiceTest : DescribeSpec({
                 name = """Tap"House <script>""",
                 ogImageUrl = "https://og/x.png",
             )
-            every { workspaceService.findWorkspaceOrNull(ws.id) } returns ws
 
-            val body = sut.renderOrderHtml(ws.id)
+            val body = sut.renderOrderHtmlFor(ws, ws.id)
 
             assert(!body.contains("<script>"))
             assert(body.contains("&lt;script&gt;") && body.contains("&quot;"))
@@ -101,9 +94,8 @@ class OgServiceTest : DescribeSpec({
 
         it("includes a canonical og:url with the workspaceId query string") {
             val ws = newWorkspace(workspaceId = 4L, ogImageUrl = "https://og/x.png")
-            every { workspaceService.findWorkspaceOrNull(ws.id) } returns ws
 
-            val body = sut.renderOrderHtml(ws.id)
+            val body = sut.renderOrderHtmlFor(ws, ws.id)
 
             assert(body.contains("https://kio-school.com/order?workspaceId=${ws.id}"))
         }
