@@ -12,7 +12,7 @@ import jakarta.persistence.*
 class Workspace(
     var name: String,
     @ManyToOne(fetch = FetchType.LAZY)
-    val owner: User,
+    var owner: User,
     @JsonIgnore
     @OneToMany(
         mappedBy = "workspace",

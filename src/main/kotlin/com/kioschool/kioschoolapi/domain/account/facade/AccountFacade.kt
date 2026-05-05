@@ -1,9 +1,11 @@
 package com.kioschool.kioschoolapi.domain.account.facade
 
+import com.kioschool.kioschoolapi.domain.account.dto.common.AccountConnectionStatusDto
 import com.kioschool.kioschoolapi.domain.account.dto.common.BankDto
 import com.kioschool.kioschoolapi.domain.account.service.AccountService
 import com.kioschool.kioschoolapi.domain.account.service.BankService
 import com.kioschool.kioschoolapi.domain.user.dto.common.UserDto
+import com.kioschool.kioschoolapi.domain.user.repository.UserRepository
 import com.kioschool.kioschoolapi.domain.user.service.UserService
 import com.kioschool.kioschoolapi.global.portone.service.PortoneService
 import com.kioschool.kioschoolapi.global.toss.service.TossService
@@ -15,6 +17,7 @@ class AccountFacade(
     private val bankService: BankService,
     private val accountService: AccountService,
     private val userService: UserService,
+    private val userRepository: UserRepository,
     private val portoneService: PortoneService,
     private val tossService: TossService
 ) {
@@ -65,5 +68,19 @@ class AccountFacade(
         val user = userService.getUser(username)
         user.account?.tossAccountUrl = null
         return UserDto.of(userService.saveUser(user))
+    }
+
+    fun getAccountConnectionStatus(): AccountConnectionStatusDto {
+        val total = userRepository.count()
+        val withAccount = userRepository.countUsersWithAccount()
+        val withoutAccount = userRepository.countUsersWithoutAccount()
+        val rate = if (total > 0) withAccount.toDouble() / total else 0.0
+
+        return AccountConnectionStatusDto(
+            totalUsers = total,
+            usersWithAccount = withAccount,
+            usersWithoutAccount = withoutAccount,
+            connectionRate = rate
+        )
     }
 }

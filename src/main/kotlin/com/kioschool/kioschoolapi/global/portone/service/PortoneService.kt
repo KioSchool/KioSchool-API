@@ -23,7 +23,8 @@ class PortoneService(
         val accessToken = getAccessToken()
 
         val response = portoneApi.getAccountHolder(accessToken, bank, accountNumber).execute()
-        val realAccountHolder = response.body()?.response?.bank_holder ?: ""
+        val rawRealAccountHolder = response.body()?.response?.bank_holder ?: ""
+        val realAccountHolder = rawRealAccountHolder.take(3)
 
         if (realAccountHolder != accountHolder) {
             throw IncorrectAccountHolderException()

@@ -8,6 +8,9 @@ import com.kioschool.kioschoolapi.global.common.enums.OrderStatus
 import com.querydsl.core.types.Projections.constructor
 import com.querydsl.core.types.dsl.Expressions.numberTemplate
 import com.querydsl.jpa.impl.JPAQueryFactory
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
 
@@ -66,6 +69,40 @@ class CustomOrderRepository(
                 order.status.ne(OrderStatus.CANCELLED)
             )
             .fetchOne() ?: 0L
+    }
+
+    fun findAllGlobal(
+        workspaceId: Long?,
+        startDate: LocalDateTime?,
+        endDate: LocalDateTime?,
+        statuses: List<OrderStatus>?,
+        pageable: Pageable
+    ): Page<Order> {
+        val order = QOrder.order
+        val query = queryFactory.selectFrom(order)
+            .orderBy(order.createdAt.desc())
+
+        if (workspaceId != null) query.where(order.workspace.id.eq(workspaceId))
+        if (startDate != null) query.where(order.createdAt.goe(startDate))
+        if (endDate != null) query.where(order.createdAt.loe(endDate))
+        if (statuses != null && statuses.isNotEmpty()) query.where(order.status.`in`(statuses))
+
+        val total = queryFactory.select(order.count())
+            .from(order)
+            .apply {
+                if (workspaceId != null) where(order.workspace.id.eq(workspaceId))
+                if (startDate != null) where(order.createdAt.goe(startDate))
+                if (endDate != null) where(order.createdAt.loe(endDate))
+                if (statuses != null && statuses.isNotEmpty()) where(order.status.`in`(statuses))
+            }
+            .fetchOne() ?: 0L
+
+        val results = query
+            .offset(pageable.offset)
+            .limit(pageable.pageSize.toLong())
+            .fetch()
+
+        return PageImpl(results, pageable, total)
     }
 
     fun getTopSellingProducts(
