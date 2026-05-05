@@ -4,6 +4,7 @@ import com.kioschool.kioschoolapi.domain.workspace.event.WorkspaceUpdatedEvent
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepository
 import com.kioschool.kioschoolapi.global.og.service.OgService
 import org.slf4j.LoggerFactory
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
@@ -21,7 +22,7 @@ class WorkspaceOgImageListener(
     @Transactional
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     fun on(event: WorkspaceUpdatedEvent) {
-        val workspace = workspaceRepository.findById(event.workspaceId).orElse(null) ?: return
+        val workspace = workspaceRepository.findByIdOrNull(event.workspaceId) ?: return
         val primaryPhotoUrl = workspace.images.minByOrNull { it.id }?.url
 
         if (primaryPhotoUrl == null) {

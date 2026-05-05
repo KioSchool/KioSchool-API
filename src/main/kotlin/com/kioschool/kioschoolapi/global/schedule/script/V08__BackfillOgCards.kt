@@ -5,6 +5,7 @@ import com.kioschool.kioschoolapi.global.og.service.OgService
 import com.kioschool.kioschoolapi.global.schedule.Runnable
 import org.slf4j.LoggerFactory
 import org.springframework.core.env.Environment
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
@@ -66,7 +67,7 @@ class OgBackfillStep(
 
     @Transactional
     fun processOne(workspaceId: Long): Result {
-        val workspace = workspaceRepository.findById(workspaceId).orElse(null)
+        val workspace = workspaceRepository.findByIdOrNull(workspaceId)
             ?: return Result.SKIPPED
         if (workspace.ogImageUrl != null) return Result.SKIPPED
         val primaryPhotoUrl = workspace.images.minByOrNull { it.id }?.url

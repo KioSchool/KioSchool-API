@@ -14,8 +14,9 @@ import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
-import io.mockk.verify
 import java.util.Optional
+import io.mockk.verify
+
 import kotlin.reflect.full.superclasses
 
 class WorkspaceOgImageListenerTest : DescribeSpec({
