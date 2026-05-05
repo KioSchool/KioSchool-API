@@ -20,7 +20,7 @@ class OgService(
     }
 
     fun regenerateOgCard(workspaceId: Long, sourcePhotoUrl: String): String =
-        ogCardGenerator.generate(workspaceId, sourcePhotoUrl)
+        ogCardGenerator.generateUrl(workspaceId, sourcePhotoUrl)
 
     fun getExpectedOgUrl(workspaceId: Long, sourcePhotoUrl: String): String =
         ogCardGenerator.getExpectedUrl(workspaceId, sourcePhotoUrl)

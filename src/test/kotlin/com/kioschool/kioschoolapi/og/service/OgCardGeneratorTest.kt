@@ -27,7 +27,7 @@ class OgCardGeneratorTest : DescribeSpec({
             every { s3Service.uploadBytes(capture(capturedBytes), capture(capturedPath), "image/png") } returns
                 "https://bucket.s3.ap-northeast-2.amazonaws.com/test-path/workspace42/og/HASH8CHR.png"
 
-            val resultUrl = sut.generate(workspaceId = 42L, sourcePhotoUrl = photoUrl)
+            val resultUrl = sut.generateUrl(workspaceId = 42L, sourcePhotoUrl = photoUrl)
 
             assert(capturedPath.captured.startsWith("test-path/workspace42/og/"))
             assert(capturedPath.captured.endsWith(".png"))
@@ -42,8 +42,8 @@ class OgCardGeneratorTest : DescribeSpec({
             val paths = mutableListOf<String>()
             every { s3Service.uploadBytes(any(), capture(paths), any()) } returns "url"
 
-            sut.generate(1L, "https://example/a.jpg")
-            sut.generate(1L, "https://example/b.jpg")
+            sut.generateUrl(1L, "https://example/a.jpg")
+            sut.generateUrl(1L, "https://example/b.jpg")
 
             assert(paths[0] != paths[1]) { "Different sources should yield different hashes" }
         }
@@ -55,7 +55,7 @@ class OgCardGeneratorTest : DescribeSpec({
             every { s3Service.uploadBytes(any(), capture(uploadPath), any()) } returns "ignored"
             every { s3Service.getPublicUrl(any()) } answers { "computed:${firstArg<String>()}" }
 
-            sut.generate(7L, "https://example/x.jpg")
+            sut.generateUrl(7L, "https://example/x.jpg")
             val expected = sut.getExpectedUrl(7L, "https://example/x.jpg")
 
             verify { s3Service.getPublicUrl(uploadPath.captured) }
@@ -66,7 +66,7 @@ class OgCardGeneratorTest : DescribeSpec({
             every { s3Service.downloadFileStream(any()) } returns ByteArrayInputStream(byteArrayOf(0, 1, 2, 3))
 
             assertThrows<Exception> {
-                sut.generate(1L, "https://example/broken")
+                sut.generateUrl(1L, "https://example/broken")
             }
         }
     }

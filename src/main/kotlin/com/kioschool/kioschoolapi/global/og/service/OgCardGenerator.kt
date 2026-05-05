@@ -22,7 +22,7 @@ class OgCardGenerator(
         resource.use { ImmutableImage.loader().fromStream(it) }
     }
 
-    fun generate(workspaceId: Long, sourcePhotoUrl: String): String {
+    fun generateUrl(workspaceId: Long, sourcePhotoUrl: String): String {
         val photo = s3Service.downloadFileStream(sourcePhotoUrl).use {
             ImmutableImage.loader().fromStream(it)
         }
