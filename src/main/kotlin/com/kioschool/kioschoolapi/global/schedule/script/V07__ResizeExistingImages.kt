@@ -6,9 +6,8 @@ import com.kioschool.kioschoolapi.global.aws.S3Service
 import com.kioschool.kioschoolapi.global.schedule.Runnable
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.stereotype.Component
-
 import org.springframework.core.env.Environment
+import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 
@@ -26,7 +25,7 @@ class V07__ResizeExistingImages(
 
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     override fun run() {
-        if (environment.activeProfiles.any { it == "local" || it == "default" } || environment.activeProfiles.isEmpty()) {
+        if (environment.activeProfiles.any { it == "local" || it == "default" || it == "dev" } || environment.activeProfiles.isEmpty()) {
             logger.info("Skipping V07__ResizeExistingImages script in local environment.")
             return
         }
