@@ -36,6 +36,23 @@ class Scheduler(
     @Transactional
     @Scheduled(cron = "0 0 9 * * *", zone = "Asia/Seoul")
     fun resetAllOrderSession() {
+        val maxRetries = 3
+        var lastException: Exception? = null
+
+        repeat(maxRetries) { attempt ->
+            try {
+                doResetAllOrderSession()
+                return
+            } catch (e: Exception) {
+                lastException = e
+                log.warn("resetAllOrderSession attempt ${attempt + 1}/$maxRetries failed: ${e.message}")
+            }
+        }
+
+        log.error("resetAllOrderSession failed after $maxRetries attempts", lastException)
+    }
+
+    private fun doResetAllOrderSession() {
         val notEndedOrderSessions = orderSessionRepository.findAllByEndAtIsNull()
         val workspaceTables = workspaceTableRepository.findAllByOrderSessionIsNotNull()
 
@@ -52,12 +69,12 @@ class Scheduler(
                 orderSession.totalOrderPrice = validOrders.sumOf { it.totalPrice.toLong() }
                 orderSession.orderCount = validOrders.size
                 orderSession.ghostType = GhostType.NONE
-                
+
                 if (orderSession.customerName == null) {
                     orderSession.customerName = validOrders.first().customerName
                 }
             }
-            
+
             val start = orderSession.createdAt ?: orderSession.endAt!!
             orderSession.usageTime = ChronoUnit.MINUTES.between(start, orderSession.endAt).toInt()
 
