@@ -36,3 +36,8 @@ out/
 ### VS Code ###
 .vscode/
 .jpb/
+
+# local-only noise
+.DS_Store
+**/.DS_Store
+.context/

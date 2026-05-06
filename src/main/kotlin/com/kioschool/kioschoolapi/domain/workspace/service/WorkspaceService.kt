@@ -10,6 +10,7 @@ import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepositor
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceTableRepository
 import com.kioschool.kioschoolapi.global.aws.S3Service
 import com.kioschool.kioschoolapi.global.cache.annotation.WorkspaceUpdateEvent
+import org.springframework.data.repository.findByIdOrNull
 import com.kioschool.kioschoolapi.global.common.enums.UserRole
 import com.kioschool.kioschoolapi.global.security.CustomUserDetails
 import org.springframework.beans.factory.annotation.Value
@@ -77,6 +78,9 @@ class WorkspaceService(
         return workspaceRepository.findById(workspaceId)
             .orElseThrow { WorkspaceNotFoundException() }
     }
+
+    fun findWorkspaceOrNull(workspaceId: Long): Workspace? =
+        workspaceRepository.findByIdOrNull(workspaceId)
 
     fun isAccessible(username: String, workspaceId: Long): Boolean {
         val userRole =

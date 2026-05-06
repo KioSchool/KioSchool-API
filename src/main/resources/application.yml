@@ -86,3 +86,7 @@ management:
   health:
     defaults:
       enabled: false
+
+kio-school:
+  og:
+    fallback-image-url: "https://kio-school.com/preview.png"

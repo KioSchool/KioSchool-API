@@ -59,4 +59,6 @@ class Workspace(
         fetch = FetchType.LAZY
     )
     var workspaceSetting: WorkspaceSetting,
+    @Column(name = "og_image_url", length = 512)
+    var ogImageUrl: String? = null,
 ) : BaseEntity()
