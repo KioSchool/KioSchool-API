@@ -45,4 +45,28 @@ class S3Service(
         val objectKey = if (path.startsWith("/")) path.substring(1) else path
         amazonS3Client.deleteObject(bucketName, objectKey)
     }
+
+    fun uploadBytes(bytes: ByteArray, path: String, contentType: String): String {
+        val metadata = ObjectMetadata().apply {
+            contentLength = bytes.size.toLong()
+            this.contentType = contentType
+            cacheControl = "public, max-age=31536000, immutable"
+        }
+        amazonS3Client.putObject(
+            bucketName,
+            path,
+            ByteArrayInputStream(bytes),
+            metadata
+        )
+        return getPublicUrl(path)
+    }
+
+    /**
+     * S3 키만으로 퍼블릭 URL을 계산한다 (PUT 없음). [OgCardGenerator.getExpectedUrl]이
+     * hash 선검사할 때 — 즉 사진이 안 바뀌었으면 다운로드/합성/업로드를 모두 스킵하기 위해
+     * — 사용한다. [uploadBytes]도 응답을 만들 때 이 메서드를 거쳐서 두 경로의 URL이
+     * 항상 같은 형태로 나오도록 보장한다.
+     */
+    fun getPublicUrl(path: String): String =
+        amazonS3Client.getUrl(bucketName, path).toString()
 }
