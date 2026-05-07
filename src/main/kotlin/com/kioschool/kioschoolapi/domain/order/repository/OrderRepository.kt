@@ -33,4 +33,8 @@ interface OrderRepository : JpaRepository<Order, Long> {
     ): List<Order>
 
     fun findAllByWorkspaceId(workspaceId: Long): List<Order>
+
+    fun countByStatusAndCreatedAtAfter(status: OrderStatus, createdAt: LocalDateTime): Long
+
+    fun countByCreatedAtAfter(createdAt: LocalDateTime): Long
 }

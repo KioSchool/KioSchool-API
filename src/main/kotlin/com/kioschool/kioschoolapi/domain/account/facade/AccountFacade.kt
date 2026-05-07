@@ -74,13 +74,19 @@ class AccountFacade(
         val total = userRepository.count()
         val withAccount = userRepository.countUsersWithAccount()
         val withoutAccount = userRepository.countUsersWithoutAccount()
+        val withToss = userRepository.countUsersWithTossAccount()
         val rate = if (total > 0) withAccount.toDouble() / total else 0.0
+        val tossRateOfTotal = if (total > 0) withToss.toDouble() / total else 0.0
+        val tossRateOfAccount = if (withAccount > 0) withToss.toDouble() / withAccount else 0.0
 
         return AccountConnectionStatusDto(
             totalUsers = total,
             usersWithAccount = withAccount,
             usersWithoutAccount = withoutAccount,
-            connectionRate = rate
+            connectionRate = rate,
+            usersWithToss = withToss,
+            tossRateOfTotal = tossRateOfTotal,
+            tossRateOfAccount = tossRateOfAccount
         )
     }
 }
