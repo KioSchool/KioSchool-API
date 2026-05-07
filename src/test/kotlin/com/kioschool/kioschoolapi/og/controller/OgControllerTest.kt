@@ -2,15 +2,17 @@ package com.kioschool.kioschoolapi.og.controller
 
 import com.kioschool.kioschoolapi.global.og.controller.OgController
 import com.kioschool.kioschoolapi.global.og.facade.OgFacade
+import com.kioschool.kioschoolapi.global.og.facade.ShareLinkAction
 import io.kotest.core.spec.style.DescribeSpec
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import java.net.URI
 
 class OgControllerTest : DescribeSpec({
     val ogFacade = mockk<OgFacade>()
-    val sut = OgController(ogFacade, baseUrl = "https://kio-school.com")
+    val sut = OgController(ogFacade)
 
     beforeEach { clearMocks(ogFacade) }
 
@@ -39,146 +41,46 @@ class OgControllerTest : DescribeSpec({
     }
 
     describe("shareLink") {
-        val botUas = listOf(
-            "Mozilla/5.0 (compatible; KAKAOTALK 9.0.0)",
-            "facebookexternalhit/1.1",
-            "Slackbot-LinkExpanding 1.0",
-            "Mozilla/5.0 (compatible; Googlebot/2.1)",
-            "Twitterbot/1.0",
-            "Mozilla/5.0 (compatible; bingbot/2.0)",
-        )
+        // controller는 분기 로직을 갖지 않고 facade가 반환한 ShareLinkAction을
+        // HTTP 응답으로 래핑만 한다. 분기 자체의 검증은 OgFacadeTest에서.
+        it("wraps RenderOgHtml action as 200 + text/html;charset=UTF-8 + 10min public cache") {
+            every {
+                ogFacade.resolveShareLink(42L, null, null, "KAKAOTALK")
+            } returns ShareLinkAction.RenderOgHtml("<html>og</html>")
 
-        botUas.forEach { ua ->
-            it("returns og HTML for bot UA: ${ua.take(40)}") {
-                every { ogFacade.renderOrderHtml(42L) } returns "<html>og</html>"
-
-                val response = sut.shareLink(42L, tableNumber = null, tableHash = null, userAgent = ua)
-
-                assert(response.statusCode.value() == 200)
-                assert(response.body == "<html>og</html>")
-                val contentType = response.headers.contentType?.toString() ?: ""
-                assert(contentType.startsWith("text/html"))
-                assert(contentType.contains("UTF-8", ignoreCase = true))
-                val cacheControl = response.headers.cacheControl ?: ""
-                assert(cacheControl.contains("max-age=600"))
-                assert(cacheControl.contains("public"))
-                verify(exactly = 1) { ogFacade.renderOrderHtml(42L) }
-            }
-        }
-
-        it("og card is workspace-level and ignores table params even when present") {
-            every { ogFacade.renderOrderHtml(42L) } returns "<html>og</html>"
-
-            val response = sut.shareLink(
-                workspaceId = 42L,
-                tableNumber = 3,
-                tableHash = "abc123",
-                userAgent = "Mozilla/5.0 (compatible; KAKAOTALK 9.0.0)",
-            )
+            val response = sut.shareLink(42L, null, null, "KAKAOTALK")
 
             assert(response.statusCode.value() == 200)
             assert(response.body == "<html>og</html>")
-            // og 카드는 워크스페이스 단위라 테이블 무관 — renderOrderHtml(workspaceId)만 호출
-            verify(exactly = 1) { ogFacade.renderOrderHtml(42L) }
+            val contentType = response.headers.contentType?.toString() ?: ""
+            assert(contentType.startsWith("text/html"))
+            assert(contentType.contains("UTF-8", ignoreCase = true))
+            val cacheControl = response.headers.cacheControl ?: ""
+            assert(cacheControl.contains("max-age=600"))
+            assert(cacheControl.contains("public"))
         }
 
-        val humanUas = listOf(
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
-            "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Safari/604.1",
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Firefox/120.0",
-        )
+        it("wraps RedirectToOrder action as 302 + Location header") {
+            val target = URI.create("https://kio-school.com/order?workspaceId=42")
+            every {
+                ogFacade.resolveShareLink(42L, null, null, "Chrome")
+            } returns ShareLinkAction.RedirectToOrder(target)
 
-        humanUas.forEach { ua ->
-            it("returns 302 redirect for human UA: ${ua.take(40)}") {
-                val response = sut.shareLink(42L, tableNumber = null, tableHash = null, userAgent = ua)
-
-                assert(response.statusCode.value() == 302)
-                val location = response.headers.location?.toString() ?: ""
-                assert(location == "https://kio-school.com/order?workspaceId=42") {
-                    "Expected redirect to canonical order URL, got: $location"
-                }
-                assert(response.body == null)
-                verify(exactly = 0) { ogFacade.renderOrderHtml(any()) }
-            }
-        }
-
-        it("treats missing UA header as a human (302 redirect)") {
-            val response = sut.shareLink(42L, tableNumber = null, tableHash = null, userAgent = null)
+            val response = sut.shareLink(42L, null, null, "Chrome")
 
             assert(response.statusCode.value() == 302)
-            val location = response.headers.location?.toString() ?: ""
-            assert(location == "https://kio-school.com/order?workspaceId=42")
-            verify(exactly = 0) { ogFacade.renderOrderHtml(any()) }
+            assert(response.headers.location == target)
+            assert(response.body == null)
         }
 
-        it("treats blank UA header as a human (302 redirect)") {
-            val response = sut.shareLink(42L, tableNumber = null, tableHash = null, userAgent = "")
+        it("forwards all params to facade verbatim") {
+            every {
+                ogFacade.resolveShareLink(7L, 3, "abc123", "Chrome")
+            } returns ShareLinkAction.RedirectToOrder(URI.create("https://example/dummy"))
 
-            assert(response.statusCode.value() == 302)
-            verify(exactly = 0) { ogFacade.renderOrderHtml(any()) }
-        }
+            sut.shareLink(7L, 3, "abc123", "Chrome")
 
-        it("uses configured baseUrl for the redirect target") {
-            val devSut = OgController(ogFacade, baseUrl = "https://dev.kio-school.com")
-
-            val response = devSut.shareLink(7L, tableNumber = null, tableHash = null, userAgent = "Chrome")
-
-            assert(response.headers.location?.toString() == "https://dev.kio-school.com/order?workspaceId=7")
-        }
-
-        it("preserves tableNumber and tableHash in the redirect target so a friend can join the same table session") {
-            val response = sut.shareLink(
-                workspaceId = 42L,
-                tableNumber = 3,
-                tableHash = "abc123",
-                userAgent = "Chrome",
-            )
-
-            assert(response.statusCode.value() == 302)
-            val location = response.headers.location?.toString() ?: ""
-            assert(location == "https://kio-school.com/order?workspaceId=42&tableNumber=3&tableHash=abc123") {
-                "Expected redirect to include both table params, got: $location"
-            }
-        }
-
-        it("preserves only tableNumber when tableHash is absent") {
-            val response = sut.shareLink(
-                workspaceId = 42L,
-                tableNumber = 3,
-                tableHash = null,
-                userAgent = "Chrome",
-            )
-
-            val location = response.headers.location?.toString() ?: ""
-            assert(location == "https://kio-school.com/order?workspaceId=42&tableNumber=3")
-        }
-
-        it("preserves only tableHash when tableNumber is absent") {
-            val response = sut.shareLink(
-                workspaceId = 42L,
-                tableNumber = null,
-                tableHash = "abc123",
-                userAgent = "Chrome",
-            )
-
-            val location = response.headers.location?.toString() ?: ""
-            assert(location == "https://kio-school.com/order?workspaceId=42&tableHash=abc123")
-        }
-
-        it("URL-encodes tableHash to handle special characters safely") {
-            val response = sut.shareLink(
-                workspaceId = 42L,
-                tableNumber = null,
-                // 사실 tableHash는 보통 UUID 문자라 이런 특수문자가 안 들어오지만, 안전망 검증.
-                tableHash = "hash with spaces & symbols",
-                userAgent = "Chrome",
-            )
-
-            val location = response.headers.location?.toString() ?: ""
-            // UriComponentsBuilder가 encoding 처리
-            assert(!location.contains("hash with spaces")) { "Expected encoded output, got: $location" }
-            assert(location.contains("workspaceId=42"))
-            assert(location.contains("tableHash="))
+            verify(exactly = 1) { ogFacade.resolveShareLink(7L, 3, "abc123", "Chrome") }
         }
     }
 })
