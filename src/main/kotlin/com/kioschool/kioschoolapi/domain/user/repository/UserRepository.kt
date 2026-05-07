@@ -22,4 +22,7 @@ interface UserRepository : JpaRepository<User, Long> {
 
     @Query("SELECT COUNT(u) FROM User u WHERE u.account IS NULL")
     fun countUsersWithoutAccount(): Long
+
+    @Query("SELECT COUNT(u) FROM User u WHERE u.account.tossAccountUrl IS NOT NULL")
+    fun countUsersWithTossAccount(): Long
 }

@@ -37,7 +37,12 @@ class S3Service(
 
     fun downloadFileStream(url: String): InputStream {
         // S3 버킷/키에 의존하지 않고, 어떤 URL이든 직접 다운로드합니다. (단, 퍼블릭 접근이 가능한 URL이어야 함)
-        return java.net.URI(url).toURL().openStream()
+        // 타임아웃을 명시적으로 둬서 대용량 다운로드/지연된 응답이 worker 스레드를 무기한 점거하지 않도록 한다.
+        val connection = java.net.URI(url).toURL().openConnection().apply {
+            connectTimeout = DOWNLOAD_CONNECT_TIMEOUT_MS
+            readTimeout = DOWNLOAD_READ_TIMEOUT_MS
+        }
+        return connection.getInputStream()
     }
 
     fun deleteFile(url: String) {
@@ -69,4 +74,9 @@ class S3Service(
      */
     fun getPublicUrl(path: String): String =
         amazonS3Client.getUrl(bucketName, path).toString()
+
+    companion object {
+        const val DOWNLOAD_CONNECT_TIMEOUT_MS = 5_000
+        const val DOWNLOAD_READ_TIMEOUT_MS = 30_000
+    }
 }
