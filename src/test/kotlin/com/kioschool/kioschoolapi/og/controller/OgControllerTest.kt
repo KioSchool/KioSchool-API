@@ -10,7 +10,7 @@ import io.mockk.verify
 
 class OgControllerTest : DescribeSpec({
     val ogFacade = mockk<OgFacade>()
-    val sut = OgController(ogFacade)
+    val sut = OgController(ogFacade, baseUrl = "https://kio-school.com")
 
     beforeEach { clearMocks(ogFacade) }
 
@@ -35,6 +35,79 @@ class OgControllerTest : DescribeSpec({
 
             assert(response.body == "<html>fallback</html>")
             verify(exactly = 1) { ogFacade.renderOrderHtml(null) }
+        }
+    }
+
+    describe("shareLink") {
+        val botUas = listOf(
+            "Mozilla/5.0 (compatible; KAKAOTALK 9.0.0)",
+            "facebookexternalhit/1.1",
+            "Slackbot-LinkExpanding 1.0",
+            "Mozilla/5.0 (compatible; Googlebot/2.1)",
+            "Twitterbot/1.0",
+            "Mozilla/5.0 (compatible; bingbot/2.0)",
+        )
+
+        botUas.forEach { ua ->
+            it("returns og HTML for bot UA: ${ua.take(40)}") {
+                every { ogFacade.renderOrderHtml(42L) } returns "<html>og</html>"
+
+                val response = sut.shareLink(42L, ua)
+
+                assert(response.statusCode.value() == 200)
+                assert(response.body == "<html>og</html>")
+                val contentType = response.headers.contentType?.toString() ?: ""
+                assert(contentType.startsWith("text/html"))
+                assert(contentType.contains("UTF-8", ignoreCase = true))
+                val cacheControl = response.headers.cacheControl ?: ""
+                assert(cacheControl.contains("max-age=600"))
+                assert(cacheControl.contains("public"))
+                verify(exactly = 1) { ogFacade.renderOrderHtml(42L) }
+            }
+        }
+
+        val humanUas = listOf(
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Safari/604.1",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Firefox/120.0",
+        )
+
+        humanUas.forEach { ua ->
+            it("returns 302 redirect for human UA: ${ua.take(40)}") {
+                val response = sut.shareLink(42L, ua)
+
+                assert(response.statusCode.value() == 302)
+                val location = response.headers.location?.toString() ?: ""
+                assert(location == "https://kio-school.com/order?workspaceId=42") {
+                    "Expected redirect to canonical order URL, got: $location"
+                }
+                assert(response.body == null)
+                verify(exactly = 0) { ogFacade.renderOrderHtml(any()) }
+            }
+        }
+
+        it("treats missing UA header as a human (302 redirect)") {
+            val response = sut.shareLink(42L, null)
+
+            assert(response.statusCode.value() == 302)
+            val location = response.headers.location?.toString() ?: ""
+            assert(location == "https://kio-school.com/order?workspaceId=42")
+            verify(exactly = 0) { ogFacade.renderOrderHtml(any()) }
+        }
+
+        it("treats blank UA header as a human (302 redirect)") {
+            val response = sut.shareLink(42L, "")
+
+            assert(response.statusCode.value() == 302)
+            verify(exactly = 0) { ogFacade.renderOrderHtml(any()) }
+        }
+
+        it("uses configured baseUrl for the redirect target") {
+            val devSut = OgController(ogFacade, baseUrl = "https://dev.kio-school.com")
+
+            val response = devSut.shareLink(7L, "Chrome")
+
+            assert(response.headers.location?.toString() == "https://dev.kio-school.com/order?workspaceId=7")
         }
     }
 })
