@@ -31,11 +31,11 @@ class OgController(
     @GetMapping("/og/share/{workspaceId}")
     fun shareLink(
         @PathVariable workspaceId: Long,
-        @RequestParam(required = false) tableNumber: Int?,
+        @RequestParam(required = false) tableNo: Int?,
         @RequestParam(required = false) tableHash: String?,
         @RequestHeader(HttpHeaders.USER_AGENT, required = false) userAgent: String?,
     ): ResponseEntity<String> =
-        when (val action = ogFacade.resolveShareLink(workspaceId, tableNumber, tableHash, userAgent)) {
+        when (val action = ogFacade.resolveShareLink(workspaceId, tableNo, tableHash, userAgent)) {
             is ShareLinkAction.RenderOgHtml ->
                 ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType("${MediaType.TEXT_HTML_VALUE};charset=UTF-8"))

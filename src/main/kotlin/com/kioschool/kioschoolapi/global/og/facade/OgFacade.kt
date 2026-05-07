@@ -24,22 +24,24 @@ class OgFacade(
      * `/share/{workspaceId}` 진입을 봇/사람으로 분기.
      *
      * - 봇 → og 메타태그 미니 HTML (워크스페이스 단위 카드, 테이블 정보 무관)
-     * - 사람 → 실제 주문 페이지로 redirect URI. tableNumber/tableHash가 들어오면
+     * - 사람 → 실제 주문 페이지로 redirect URI. tableNo/tableHash가 들어오면
      *   query string에 보존해서 친구가 같은 테이블 세션에 합류 가능하도록.
      */
     fun resolveShareLink(
         workspaceId: Long,
-        tableNumber: Int?,
+        tableNo: Int?,
         tableHash: String?,
         userAgent: String?,
     ): ShareLinkAction {
         return if (isBot(userAgent)) {
             ShareLinkAction.RenderOgHtml(renderOrderHtml(workspaceId))
         } else {
+            // 프론트 SPA가 query string에서 `tableNo`를 읽는 컨벤션을 사용하므로
+            // 들어온 이름과 redirect URL에 박는 이름 모두 `tableNo`로 맞춘다.
             val target = UriComponentsBuilder.fromUriString("$baseUrl/order")
                 .queryParam("workspaceId", workspaceId)
                 .apply {
-                    tableNumber?.let { queryParam("tableNumber", it) }
+                    tableNo?.let { queryParam("tableNo", it) }
                     tableHash?.let { queryParam("tableHash", it) }
                 }
                 .build()
