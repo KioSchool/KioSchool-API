@@ -69,5 +69,16 @@ class OgCardGeneratorTest : DescribeSpec({
                 sut.generateUrl(1L, "https://example/broken")
             }
         }
+
+        it("throws when the source photo exceeds MAX_SOURCE_BYTES (OOM guard)") {
+            // MAX_SOURCE_BYTES + 1 만큼의 더미 byte. scrimage 디코딩 단계까진 가지 않아야 함.
+            val oversized = ByteArray(OgCardGenerator.MAX_SOURCE_BYTES + 1)
+            every { s3Service.downloadFileStream(any()) } returns ByteArrayInputStream(oversized)
+
+            val ex = assertThrows<IllegalStateException> {
+                sut.generateUrl(1L, "https://example/huge.jpg")
+            }
+            assert(ex.message!!.contains("exceeds size cap"))
+        }
     }
 })
