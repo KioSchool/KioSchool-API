@@ -83,7 +83,7 @@ class OgFacadeTest : DescribeSpec({
                 every { workspaceService.findWorkspaceOrNull(42L) } returns ws
                 every { ogService.renderOrderHtmlFor(ws, 42L) } returns "<html>og</html>"
 
-                val action = sut.resolveShareLink(42L, tableNumber = null, tableHash = null, userAgent = ua)
+                val action = sut.resolveShareLink(42L, tableNo = null, tableHash = null, userAgent = ua)
 
                 assert(action is ShareLinkAction.RenderOgHtml)
                 assert((action as ShareLinkAction.RenderOgHtml).body == "<html>og</html>")
@@ -97,7 +97,7 @@ class OgFacadeTest : DescribeSpec({
 
             val action = sut.resolveShareLink(
                 workspaceId = 42L,
-                tableNumber = 3,
+                tableNo = 3,
                 tableHash = "abc123",
                 userAgent = "KAKAOTALK",
             )
@@ -117,7 +117,7 @@ class OgFacadeTest : DescribeSpec({
 
         humanUas.forEach { ua ->
             it("returns RedirectToOrder for human UA: ${ua.take(40)}") {
-                val action = sut.resolveShareLink(42L, tableNumber = null, tableHash = null, userAgent = ua)
+                val action = sut.resolveShareLink(42L, tableNo = null, tableHash = null, userAgent = ua)
 
                 assert(action is ShareLinkAction.RedirectToOrder)
                 val target = (action as ShareLinkAction.RedirectToOrder).target.toString()
@@ -149,29 +149,29 @@ class OgFacadeTest : DescribeSpec({
             assert(target == "https://dev.kio-school.com/order?workspaceId=7")
         }
 
-        it("preserves tableNumber and tableHash in the redirect target") {
+        it("preserves tableNo and tableHash in the redirect target") {
             val action = sut.resolveShareLink(
                 workspaceId = 42L,
-                tableNumber = 3,
+                tableNo = 3,
                 tableHash = "abc123",
                 userAgent = "Chrome",
             )
 
             val target = (action as ShareLinkAction.RedirectToOrder).target.toString()
-            assert(target == "https://kio-school.com/order?workspaceId=42&tableNumber=3&tableHash=abc123") {
+            assert(target == "https://kio-school.com/order?workspaceId=42&tableNo=3&tableHash=abc123") {
                 "Expected redirect to include both table params, got: $target"
             }
         }
 
-        it("preserves only tableNumber when tableHash is absent") {
-            val action = sut.resolveShareLink(42L, tableNumber = 3, tableHash = null, userAgent = "Chrome")
+        it("preserves only tableNo when tableHash is absent") {
+            val action = sut.resolveShareLink(42L, tableNo = 3, tableHash = null, userAgent = "Chrome")
 
             val target = (action as ShareLinkAction.RedirectToOrder).target.toString()
-            assert(target == "https://kio-school.com/order?workspaceId=42&tableNumber=3")
+            assert(target == "https://kio-school.com/order?workspaceId=42&tableNo=3")
         }
 
-        it("preserves only tableHash when tableNumber is absent") {
-            val action = sut.resolveShareLink(42L, tableNumber = null, tableHash = "abc123", userAgent = "Chrome")
+        it("preserves only tableHash when tableNo is absent") {
+            val action = sut.resolveShareLink(42L, tableNo = null, tableHash = "abc123", userAgent = "Chrome")
 
             val target = (action as ShareLinkAction.RedirectToOrder).target.toString()
             assert(target == "https://kio-school.com/order?workspaceId=42&tableHash=abc123")
@@ -180,7 +180,7 @@ class OgFacadeTest : DescribeSpec({
         it("URL-encodes tableHash to handle special characters safely") {
             val action = sut.resolveShareLink(
                 workspaceId = 42L,
-                tableNumber = null,
+                tableNo = null,
                 tableHash = "hash with spaces & symbols",
                 userAgent = "Chrome",
             )
