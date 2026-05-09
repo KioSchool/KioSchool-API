@@ -83,6 +83,10 @@ management:
     enabled: true
     sampling:
       probability: 0.1 # 10% 샘플링
+  metrics:
+    export:
+      stackdriver:
+        enabled: true
   health:
     defaults:
       enabled: false
