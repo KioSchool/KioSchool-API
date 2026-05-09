@@ -44,6 +44,7 @@ dependencies {
     // GCP Cloud Logging 복구
     implementation("com.google.cloud:spring-cloud-gcp-starter-logging")
     implementation("com.google.cloud:spring-cloud-gcp-starter-trace")
+    implementation("com.google.cloud:spring-cloud-gcp-starter-metrics")
     implementation("net.ttddyy.observation:datasource-micrometer-spring-boot:1.0.3")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-web")

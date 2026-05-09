@@ -8,6 +8,8 @@ spring:
         enabled: false
       logging:
         enabled: false
+      metrics:
+        enabled: false
   jpa:
     show-sql: true
   data:
