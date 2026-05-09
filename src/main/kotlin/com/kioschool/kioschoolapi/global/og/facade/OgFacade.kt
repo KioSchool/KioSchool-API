@@ -56,9 +56,20 @@ class OgFacade(
     }
 
     companion object {
+        // 봇 전용 토큰만 매칭. webview/in-app browser가 자기 식별자(KAKAOTALK 9.7.0,
+        // NAVER, Daum 등)를 UA에 포함시키는 케이스가 많아서 광범위한 토큰은 사용자를
+        // 봇으로 오인시킨다. 카카오톡 모바일 in-app browser 사용자가 share link를
+        // 클릭했을 때 og HTML을 받아 빈 화면을 보던 사고를 막기 위해 정밀화.
+        //
+        // 봇 전용 식별자 매핑:
+        //   - 카카오톡 preview crawler:    Kakaotalk-Scrap (in-app은 KAKAOTALK/x.x.x (INAPP))
+        //   - 카카오스토리 preview crawler: kakaostory-Scrap
+        //   - 네이버 검색 봇:              Yeti
+        //   - 다음 검색 봇:                Daumoa
+        //   - WhatsApp link preview:      WhatsApp/x.x.x (슬래시로 in-app과 구분)
         private val BOT_PATTERN: Pattern = Pattern.compile(
-            "(?i)(facebookexternalhit|KAKAOTALK|kakaostory|Slackbot|Twitterbot|" +
-                "Discordbot|TelegramBot|LinkedInBot|WhatsApp|naver|Yeti|Daum|Googlebot|bingbot)"
+            "(?i)(facebookexternalhit|Kakaotalk-Scrap|kakaostory-Scrap|Slackbot|Twitterbot|" +
+                "Discordbot|TelegramBot|LinkedInBot|WhatsApp/|Yeti|Daumoa|Googlebot|bingbot)"
         )
     }
 }
