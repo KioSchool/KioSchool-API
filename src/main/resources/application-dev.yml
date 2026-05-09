@@ -26,6 +26,10 @@ management:
   tracing:
     sampling:
       probability: 1.0 # 100% 샘플링
+  stackdriver:
+    metrics:
+      export:
+        enabled: true
   endpoints:
     web:
       cors:

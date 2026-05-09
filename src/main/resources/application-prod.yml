@@ -23,6 +23,10 @@ kioschool:
   cookie:
     secure: true
 management:
+  stackdriver:
+    metrics:
+      export:
+        enabled: true
   endpoints:
     web:
       cors:

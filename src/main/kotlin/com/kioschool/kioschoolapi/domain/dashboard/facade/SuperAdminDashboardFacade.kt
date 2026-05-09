@@ -30,10 +30,10 @@ class SuperAdminDashboardFacade(
         val newUsersLast7Days = userRepository.countByCreatedAtAfter(sevenDaysAgo)
         val newUsersLast30Days = userRepository.countByCreatedAtAfter(thirtyDaysAgo)
 
-        val totalWorkspaces = workspaceRepository.count()
+        val totalWorkspaces = workspaceRepository.countByMembersNotEmpty()
         val newWorkspacesLast7Days = workspaceRepository.countByCreatedAtAfter(sevenDaysAgo)
         val newWorkspacesLast30Days = workspaceRepository.countByCreatedAtAfter(thirtyDaysAgo)
-        val onboardingCompleted = workspaceRepository.countByIsOnboardingFalse()
+        val onboardingCompleted = workspaceRepository.countOnboardingCompletedWithMembers()
         val onboardingRate = if (totalWorkspaces > 0) onboardingCompleted.toDouble() / totalWorkspaces else 0.0
 
         val totalRevenue = dailyOrderStatisticRepository.sumTotalRevenue()
