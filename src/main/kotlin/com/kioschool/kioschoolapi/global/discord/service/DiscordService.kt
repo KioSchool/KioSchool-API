@@ -48,6 +48,25 @@ class DiscordService(
         send(message)
     }
 
+    @Async
+    fun sendInsightCardSummary(
+        referenceDate: java.time.LocalDate,
+        successCount: Int,
+        failedWorkspaceIds: List<Long>
+    ) {
+        val failedSection = if (failedWorkspaceIds.isEmpty()) "없음"
+        else failedWorkspaceIds.joinToString(", ")
+
+        val message =
+            """## [데일리 인사이트 카드 생성]
+            |기준일: $referenceDate
+            |성공: ${successCount}건
+            |실패 워크스페이스: $failedSection
+            """.trimMargin()
+
+        send(message)
+    }
+
     private fun send(message: String) {
         val body = FormBody.Builder()
             .add("content", message)
