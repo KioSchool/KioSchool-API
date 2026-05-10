@@ -7,6 +7,7 @@ import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceTableRepo
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepository
 import com.kioschool.kioschoolapi.domain.statistics.service.StatisticsCalculator
 import com.kioschool.kioschoolapi.domain.statistics.repository.DailyOrderStatisticRepository
+import com.kioschool.kioschoolapi.domain.insight.service.DailyInsightCardGenerationService
 import jakarta.transaction.Transactional
 import org.springframework.context.annotation.Profile
 import org.slf4j.LoggerFactory
@@ -24,7 +25,8 @@ class Scheduler(
     private val workspaceTableRepository: WorkspaceTableRepository,
     private val workspaceRepository: WorkspaceRepository,
     private val statisticsCalculator: StatisticsCalculator,
-    private val dailyOrderStatisticRepository: DailyOrderStatisticRepository
+    private val dailyOrderStatisticRepository: DailyOrderStatisticRepository,
+    private val dailyInsightCardGenerationService: DailyInsightCardGenerationService
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
