@@ -89,6 +89,20 @@ class Scheduler(
         }
     }
 
+    @Scheduled(cron = "0 6 9 * * *", zone = "Asia/Seoul")
+    fun generateDailyInsightCards() {
+        val maxRetries = 3
+        repeat(maxRetries) { attempt ->
+            try {
+                dailyInsightCardGenerationService.generateForYesterday()
+                return
+            } catch (e: Exception) {
+                log.warn("generateDailyInsightCards attempt ${attempt + 1}/$maxRetries failed: ${e.message}")
+            }
+        }
+        log.error("generateDailyInsightCards failed after $maxRetries attempts")
+    }
+
     @Transactional
     @Scheduled(cron = "0 5 9 * * *", zone = "Asia/Seoul")
     fun generateDailyStatistics() {
