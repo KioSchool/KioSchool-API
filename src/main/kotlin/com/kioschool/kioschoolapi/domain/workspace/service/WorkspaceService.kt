@@ -18,6 +18,7 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
 import java.util.*
 
@@ -113,6 +114,7 @@ class WorkspaceService(
         if (workspace.owner != user) throw NoPermissionToInviteException()
     }
 
+    @Transactional
     @WorkspaceUpdateEvent
     fun inviteUserToWorkspace(workspace: Workspace, user: User): Workspace {
         val workspaceInvitation = WorkspaceInvitation(
@@ -123,24 +125,28 @@ class WorkspaceService(
         return workspaceRepository.save(workspace)
     }
 
+    @Transactional
     @WorkspaceUpdateEvent
     fun removeUserFromWorkspace(workspace: Workspace, user: User): Workspace {
         workspace.members.removeIf { it.user == user }
         return workspaceRepository.save(workspace)
     }
 
+    @Transactional
     @WorkspaceUpdateEvent
     fun updateTableCount(workspace: Workspace, tableCount: Int): Workspace {
         workspace.tableCount = tableCount
         return workspaceRepository.save(workspace)
     }
 
+    @Transactional
     @WorkspaceUpdateEvent
     fun updateIsOnboarding(workspace: Workspace, isOnboarding: Boolean): Workspace {
         workspace.isOnboarding = isOnboarding
         return workspaceRepository.save(workspace)
     }
 
+    @Transactional
     @WorkspaceUpdateEvent
     fun saveWorkspace(workspace: Workspace): Workspace {
         return workspaceRepository.save(workspace)
@@ -153,6 +159,7 @@ class WorkspaceService(
         }
     }
 
+    @Transactional
     @WorkspaceUpdateEvent
     fun saveWorkspaceImages(workspace: Workspace, newImageFiles: List<MultipartFile>): Workspace {
         newImageFiles.forEach {
@@ -216,6 +223,7 @@ class WorkspaceService(
         workspaceTableRepository.deleteAll(tables)
     }
 
+    @Transactional
     @WorkspaceUpdateEvent
     fun changeWorkspaceOwner(workspace: Workspace, newOwner: User): Workspace {
         // 새 소유자가 워크스페이스 멤버가 아니라면 멤버로 추가
