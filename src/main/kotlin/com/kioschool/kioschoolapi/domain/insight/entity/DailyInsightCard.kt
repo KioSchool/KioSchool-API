@@ -8,10 +8,7 @@ import jakarta.persistence.*
 import java.time.LocalDate
 
 @Entity
-@Table(
-    name = "daily_insight_card",
-    indexes = [Index(name = "idx_dic_workspace_date", columnList = "workspace_id, reference_date", unique = true)]
-)
+@Table(name = "daily_insight_card")
 class DailyInsightCard(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "workspace_id")
