@@ -13,7 +13,6 @@ data class InsightCardResponse(
     val bestMetricKey: String?,
     val bestMetricPercentile: Double?,
     val headline: String,
-    val imageUrl: String,
     val payload: CardPayload
 ) {
     companion object {
@@ -24,7 +23,6 @@ data class InsightCardResponse(
                 bestMetricKey = entity.bestMetricKey,
                 bestMetricPercentile = entity.bestMetricPercentile,
                 headline = entity.headline,
-                imageUrl = entity.imageUrl,
                 payload = entity.payload
             )
     }
