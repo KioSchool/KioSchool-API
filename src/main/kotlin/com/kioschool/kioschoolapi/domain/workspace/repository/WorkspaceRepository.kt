@@ -14,8 +14,12 @@ interface WorkspaceRepository : JpaRepository<Workspace, Long> {
 
     fun countByCreatedAtAfter(createdAt: LocalDateTime): Long
 
-    fun countByIsOnboardingFalse(): Long
+    @Query("SELECT COUNT(DISTINCT w.id) FROM Workspace w WHERE w.isOnboarding = false AND SIZE(w.members) > 0")
+    fun countOnboardingCompletedWithMembers(): Long
 
     @Query("SELECT w FROM Workspace w ORDER BY w.createdAt DESC")
     fun findAllOrderByCreatedAtDesc(pageable: Pageable): Page<Workspace>
+
+    @Query("SELECT COUNT(DISTINCT w.id) FROM Workspace w WHERE SIZE(w.members) > 0")
+    fun countByMembersNotEmpty(): Long
 }
