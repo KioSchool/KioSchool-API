@@ -1,6 +1,5 @@
 package com.kioschool.kioschoolapi.domain.insight.service
 
-import com.kioschool.kioschoolapi.domain.insight.card.InsightCardSelection
 import com.kioschool.kioschoolapi.domain.insight.entity.CardPayload
 import com.kioschool.kioschoolapi.domain.insight.entity.DailyInsightCard
 import com.kioschool.kioschoolapi.domain.insight.property.InsightProperties
@@ -48,20 +47,14 @@ class DailyInsightCardGenerationService(
             val workspaceId = stat.workspace.id
             try {
                 if (cardRepository.findByWorkspaceIdAndReferenceDate(workspaceId, referenceDate).isPresent) {
-                    logger.debug(
-                        "Insight card already exists; skipping. workspaceId={}, referenceDate={}",
-                        workspaceId, referenceDate
-                    )
+                    logger.debug("Insight card already exists; skipping. workspaceId={}, referenceDate={}", workspaceId, referenceDate)
                     return@forEach
                 }
 
                 generateOne(stat, referenceDate, cohorts, bucketEdges)
                 successCount++
             } catch (e: Exception) {
-                logger.error(
-                    "Failed to generate insight card. workspaceId={}, referenceDate={}",
-                    workspaceId, referenceDate, e
-                )
+                logger.error("Failed to generate insight card. workspaceId={}, referenceDate={}", workspaceId, referenceDate, e)
                 failedWorkspaceIds.add(workspaceId)
             }
         }
@@ -84,52 +77,25 @@ class DailyInsightCardGenerationService(
         val cohort = cohorts[bucket]
             ?: throw IllegalStateException("No cohort context for bucket=$bucket, workspaceId=${workspace.id}")
 
-        val selection = scoringService.scoreCard(stat, cohort)
+        val topMetrics = scoringService.pickTop4(stat, cohort)
+        val (template, headline) = scoringService.decideHeadline(topMetrics)
+        val first = topMetrics.firstOrNull()
+
         val card = DailyInsightCard(
             workspace = workspace,
             referenceDate = referenceDate,
-            template = selection.template,
-            bestMetricKey = metricKeyOf(selection),
-            bestMetricPercentile = percentileOf(selection),
-            headline = headlineOf(selection),
-            payload = payloadOf(selection, stat),
-            topMetrics = emptyList()
+            template = template,
+            bestMetricKey = first?.key,
+            bestMetricPercentile = first?.percentile,
+            headline = headline,
+            payload = CardPayload(
+                totalRevenue = stat.totalRevenue,
+                totalOrders = stat.totalOrders,
+                averageOrderAmount = stat.averageOrderAmount,
+                averageStayMinutes = stat.averageStayTimeMinutes
+            ),
+            topMetrics = topMetrics
         )
         cardRepository.save(card)
-    }
-
-    private fun metricKeyOf(selection: InsightCardSelection): String? = when (selection) {
-        is InsightCardSelection.SingleTrophy -> selection.metric.key
-        is InsightCardSelection.Milestone -> selection.metric.key
-        is InsightCardSelection.StoryNumbers -> null
-    }
-
-    private fun percentileOf(selection: InsightCardSelection): Double? = when (selection) {
-        is InsightCardSelection.SingleTrophy -> selection.result.percentile
-        is InsightCardSelection.Milestone -> selection.result.percentile
-        is InsightCardSelection.StoryNumbers -> null
-    }
-
-    private fun headlineOf(selection: InsightCardSelection): String = when (selection) {
-        is InsightCardSelection.SingleTrophy -> selection.metric.renderHeadline(selection.result)
-        is InsightCardSelection.Milestone -> selection.metric.renderHeadline(selection.result)
-        is InsightCardSelection.StoryNumbers -> "어제 우리가 만든 숫자"
-    }
-
-    private fun payloadOf(selection: InsightCardSelection, stat: DailyOrderStatistic): CardPayload = when (selection) {
-        is InsightCardSelection.SingleTrophy -> CardPayload(
-            cohortAverageRatio = selection.result.cohortAverageRatio,
-            absoluteValue = selection.result.absoluteValue
-        )
-        is InsightCardSelection.Milestone -> CardPayload(
-            milestoneStep = selection.result.milestoneStep,
-            absoluteValue = selection.result.absoluteValue
-        )
-        is InsightCardSelection.StoryNumbers -> CardPayload(
-            totalRevenue = stat.totalRevenue,
-            totalOrders = stat.totalOrders,
-            averageOrderAmount = stat.averageOrderAmount,
-            averageStayMinutes = stat.averageStayTimeMinutes
-        )
     }
 }
