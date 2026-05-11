@@ -13,7 +13,8 @@ data class InsightCardResponse(
     val bestMetricKey: String?,
     val bestMetricPercentile: Double?,
     val headline: String,
-    val payload: CardPayload
+    val payload: CardPayload,
+    val topMetrics: List<MetricSummary>
 ) {
     companion object {
         fun fromEntity(entity: DailyInsightCard): InsightCardResponse =
@@ -23,7 +24,8 @@ data class InsightCardResponse(
                 bestMetricKey = entity.bestMetricKey,
                 bestMetricPercentile = entity.bestMetricPercentile,
                 headline = entity.headline,
-                payload = entity.payload
+                payload = entity.payload,
+                topMetrics = entity.topMetrics
             )
     }
 }
