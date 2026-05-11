@@ -92,8 +92,8 @@ class DailyInsightCardGenerationService(
             bestMetricKey = metricKeyOf(selection),
             bestMetricPercentile = percentileOf(selection),
             headline = headlineOf(selection),
-            imageUrl = "",
-            payload = payloadOf(selection, stat)
+            payload = payloadOf(selection, stat),
+            topMetrics = emptyList()
         )
         cardRepository.save(card)
     }

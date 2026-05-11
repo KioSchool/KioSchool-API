@@ -1,7 +1,9 @@
 package com.kioschool.kioschoolapi.domain.insight.entity
 
 import com.kioschool.kioschoolapi.domain.insight.card.CardTemplate
+import com.kioschool.kioschoolapi.domain.insight.dto.MetricSummary
 import com.kioschool.kioschoolapi.domain.insight.entity.converter.CardPayloadConverter
+import com.kioschool.kioschoolapi.domain.insight.entity.converter.MetricSummaryListConverter
 import com.kioschool.kioschoolapi.domain.workspace.entity.Workspace
 import com.kioschool.kioschoolapi.global.common.entity.BaseEntity
 import jakarta.persistence.*
@@ -28,10 +30,11 @@ class DailyInsightCard(
     @Column(length = 255)
     val headline: String,
 
-    @Column(length = 512)
-    val imageUrl: String,
-
     @Convert(converter = CardPayloadConverter::class)
     @Column(columnDefinition = "TEXT")
-    val payload: CardPayload
+    val payload: CardPayload,
+
+    @Convert(converter = MetricSummaryListConverter::class)
+    @Column(name = "top_metrics", columnDefinition = "TEXT")
+    val topMetrics: List<MetricSummary> = emptyList()
 ) : BaseEntity()
