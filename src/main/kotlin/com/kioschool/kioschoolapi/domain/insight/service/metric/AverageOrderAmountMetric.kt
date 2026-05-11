@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component
 )
 class AverageOrderAmountMetric : InsightMetric {
     override val key = "average-order-amount"
+    override val label = "객단가"
     override val category = MetricCategory.EFFICIENCY
 
     override fun supports(stat: DailyOrderStatistic, cohort: CohortContext): Boolean =
@@ -35,6 +36,9 @@ class AverageOrderAmountMetric : InsightMetric {
 
     override fun renderHeadline(result: MetricResult): String =
         "객단가 ₩${(result.absoluteValue as Int).formatted()} · 상위 ${(100 - (result.percentile ?: 0.0)).toInt()}%"
+
+    override fun formatValue(result: MetricResult): String =
+        "₩${(result.absoluteValue as Int).formatted()}"
 
     private fun Int.formatted(): String = "%,d".format(this)
 }

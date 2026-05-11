@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component
 @ConditionalOnProperty(prefix = "kioschool.insight.metric.orders-per-table", name = ["enabled"], havingValue = "true", matchIfMissing = true)
 class OrdersPerTableMetric : InsightMetric {
     override val key = "orders-per-table"
+    override val label = "테이블당 주문"
     override val category = MetricCategory.EFFICIENCY
 
     override fun supports(stat: DailyOrderStatistic, cohort: CohortContext): Boolean =
@@ -25,4 +26,7 @@ class OrdersPerTableMetric : InsightMetric {
 
     override fun renderHeadline(result: MetricResult): String =
         "테이블당 ${"%.1f".format(result.absoluteValue)}건 · 상위 ${(100 - (result.percentile ?: 0.0)).toInt()}%"
+
+    override fun formatValue(result: MetricResult): String =
+        "${"%.1f".format(result.absoluteValue)}건"
 }

@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component
 @ConditionalOnProperty(prefix = "kioschool.insight.metric.menu-diversity", name = ["enabled"], havingValue = "true", matchIfMissing = true)
 class MenuDiversityMetric : InsightMetric {
     override val key = "menu-diversity"
+    override val label = "메뉴 활용도"
     override val category = MetricCategory.LOYALTY
 
     private fun diversityRatio(stat: DailyOrderStatistic): Double {
@@ -30,4 +31,7 @@ class MenuDiversityMetric : InsightMetric {
 
     override fun renderHeadline(result: MetricResult): String =
         "메뉴 활용도 ${((result.absoluteValue as Double) * 100).toInt()}% · 상위 ${(100 - (result.percentile ?: 0.0)).toInt()}%"
+
+    override fun formatValue(result: MetricResult): String =
+        "${((result.absoluteValue as Double) * 100).toInt()}%"
 }

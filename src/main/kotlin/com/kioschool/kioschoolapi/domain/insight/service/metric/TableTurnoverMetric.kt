@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component
 )
 class TableTurnoverMetric : InsightMetric {
     override val key = "table-turnover"
+    override val label = "회전율"
     override val category = MetricCategory.EFFICIENCY
 
     override fun supports(stat: DailyOrderStatistic, cohort: CohortContext): Boolean =
@@ -35,4 +36,7 @@ class TableTurnoverMetric : InsightMetric {
 
     override fun renderHeadline(result: MetricResult): String =
         "회전율 ${"%.1f".format(result.absoluteValue as Double)}회 · 상위 ${(100 - (result.percentile ?: 0.0)).toInt()}%"
+
+    override fun formatValue(result: MetricResult): String =
+        "${"%.1f".format(result.absoluteValue)}회"
 }

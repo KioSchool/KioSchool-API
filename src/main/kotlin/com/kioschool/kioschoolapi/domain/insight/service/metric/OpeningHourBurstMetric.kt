@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component
 @ConditionalOnProperty(prefix = "kioschool.insight.metric.opening-hour-burst", name = ["enabled"], havingValue = "true", matchIfMissing = true)
 class OpeningHourBurstMetric : InsightMetric {
     override val key = "opening-hour-burst"
+    override val label = "오픈런 점유율"
     override val category = MetricCategory.BURST
 
     private fun share(stat: DailyOrderStatistic): Double {
@@ -31,4 +32,7 @@ class OpeningHourBurstMetric : InsightMetric {
 
     override fun renderHeadline(result: MetricResult): String =
         "오픈런 점유율 ${(((result.absoluteValue as Double)) * 100).toInt()}% · 상위 ${(100 - (result.percentile ?: 0.0)).toInt()}%"
+
+    override fun formatValue(result: MetricResult): String =
+        "${((result.absoluteValue as Double) * 100).toInt()}%"
 }

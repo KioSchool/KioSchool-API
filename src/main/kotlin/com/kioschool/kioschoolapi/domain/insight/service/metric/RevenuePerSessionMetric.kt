@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component
 @ConditionalOnProperty(prefix = "kioschool.insight.metric.revenue-per-session", name = ["enabled"], havingValue = "true", matchIfMissing = true)
 class RevenuePerSessionMetric : InsightMetric {
     override val key = "revenue-per-session"
+    override val label = "세션당 매출"
     override val category = MetricCategory.EFFICIENCY
 
     private fun perSession(stat: DailyOrderStatistic): Long {
@@ -33,5 +34,10 @@ class RevenuePerSessionMetric : InsightMetric {
     override fun renderHeadline(result: MetricResult): String {
         val k = ((result.absoluteValue as Long) / 1_000)
         return "세션당 ₩${"%,d".format(k)}K · 상위 ${(100 - (result.percentile ?: 0.0)).toInt()}%"
+    }
+
+    override fun formatValue(result: MetricResult): String {
+        val k = (result.absoluteValue as Long) / 1_000
+        return "₩${"%,d".format(k)}K"
     }
 }

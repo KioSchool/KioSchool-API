@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component
 )
 class PeakHourRevenueMetric : InsightMetric {
     override val key = "peak-hour-revenue"
+    override val label = "시간당 피크"
     override val category = MetricCategory.BURST
 
     private fun peakOf(stat: DailyOrderStatistic): Long =
@@ -43,5 +44,10 @@ class PeakHourRevenueMetric : InsightMetric {
         val peakHour = result.milestoneStep ?: 0L
         val peakRevenue = result.absoluteValue as Long
         return "${peakHour}시 피크 ₩${peakRevenue / 1000}K · 상위 ${(100 - (result.percentile ?: 0.0)).toInt()}%"
+    }
+
+    override fun formatValue(result: MetricResult): String {
+        val k = (result.absoluteValue as Long) / 1_000
+        return "₩${"%,d".format(k)}K"
     }
 }

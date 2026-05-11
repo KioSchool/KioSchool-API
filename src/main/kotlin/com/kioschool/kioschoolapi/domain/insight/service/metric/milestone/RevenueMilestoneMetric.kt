@@ -20,6 +20,7 @@ class RevenueMilestoneMetric(
     private val properties: InsightProperties
 ) : InsightMetric {
     override val key = "revenue-milestone"
+    override val label = "매출"
     override val category = MetricCategory.MILESTONE
 
     override fun supports(stat: DailyOrderStatistic, cohort: CohortContext): Boolean = true
@@ -39,5 +40,14 @@ class RevenueMilestoneMetric(
     override fun renderHeadline(result: MetricResult): String {
         val step = result.milestoneStep ?: 0L
         return "💰 ${step / 1_000_000}백만원 매출 돌파!"
+    }
+
+    override fun formatValue(result: MetricResult): String {
+        val revenue = result.absoluteValue as Long
+        return when {
+            revenue >= 1_000_000 -> "₩${"%.1f".format(revenue / 1_000_000.0)}M"
+            revenue >= 1_000 -> "₩${"%,d".format(revenue / 1_000)}K"
+            else -> "₩${"%,d".format(revenue)}"
+        }
     }
 }

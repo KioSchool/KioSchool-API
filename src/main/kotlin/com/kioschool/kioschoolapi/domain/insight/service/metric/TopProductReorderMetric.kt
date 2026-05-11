@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component
 @ConditionalOnProperty(prefix = "kioschool.insight.metric.top-product-reorder", name = ["enabled"], havingValue = "true", matchIfMissing = true)
 class TopProductReorderMetric : InsightMetric {
     override val key = "top-product-reorder"
+    override val label = "1위 상품 재주문"
     override val category = MetricCategory.LOYALTY
 
     private fun topReorderRate(stat: DailyOrderStatistic): Double =
@@ -27,4 +28,7 @@ class TopProductReorderMetric : InsightMetric {
 
     override fun renderHeadline(result: MetricResult): String =
         "1위 상품 재주문율 ${(result.absoluteValue as Double).toInt()}% · 상위 ${(100 - (result.percentile ?: 0.0)).toInt()}%"
+
+    override fun formatValue(result: MetricResult): String =
+        "${(result.absoluteValue as Double).toInt()}%"
 }

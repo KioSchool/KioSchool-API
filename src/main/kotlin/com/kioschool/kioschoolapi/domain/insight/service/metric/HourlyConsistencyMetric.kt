@@ -9,6 +9,7 @@ import kotlin.math.sqrt
 @ConditionalOnProperty(prefix = "kioschool.insight.metric.hourly-consistency", name = ["enabled"], havingValue = "true", matchIfMissing = true)
 class HourlyConsistencyMetric : InsightMetric {
     override val key = "hourly-consistency"
+    override val label = "시간 일관성"
     override val category = MetricCategory.BURST
 
     private fun coefficientOfVariation(stat: DailyOrderStatistic): Double {
@@ -35,4 +36,9 @@ class HourlyConsistencyMetric : InsightMetric {
 
     override fun renderHeadline(result: MetricResult): String =
         "전 시간 꾸준함 상위 ${(100 - (result.percentile ?: 0.0)).toInt()}%"
+
+    override fun formatValue(result: MetricResult): String {
+        val pct = result.percentile ?: 0.0
+        return "상위 ${(100 - pct).toInt()}%"
+    }
 }

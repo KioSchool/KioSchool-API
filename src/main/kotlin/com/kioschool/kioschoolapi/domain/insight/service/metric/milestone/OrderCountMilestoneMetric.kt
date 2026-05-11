@@ -15,6 +15,7 @@ class OrderCountMilestoneMetric(
     private val properties: InsightProperties
 ) : InsightMetric {
     override val key = "order-count-milestone"
+    override val label = "주문"
     override val category = MetricCategory.MILESTONE
 
     override fun supports(stat: DailyOrderStatistic, cohort: CohortContext): Boolean = true
@@ -28,4 +29,7 @@ class OrderCountMilestoneMetric(
 
     override fun renderHeadline(result: MetricResult): String =
         "📋 ${result.milestoneStep}주문 돌파!"
+
+    override fun formatValue(result: MetricResult): String =
+        "${result.absoluteValue as Int}건"
 }

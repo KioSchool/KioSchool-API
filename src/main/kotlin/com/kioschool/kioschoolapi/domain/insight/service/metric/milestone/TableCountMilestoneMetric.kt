@@ -16,6 +16,7 @@ class TableCountMilestoneMetric(
     private val properties: InsightProperties
 ) : InsightMetric {
     override val key = "table-count-milestone"
+    override val label = "테이블"
     override val category = MetricCategory.MILESTONE
 
     private fun tablesUsed(stat: DailyOrderStatistic): Int {
@@ -34,4 +35,7 @@ class TableCountMilestoneMetric(
 
     override fun renderHeadline(result: MetricResult): String =
         "🪑 ${result.milestoneStep}테이블 돌파!"
+
+    override fun formatValue(result: MetricResult): String =
+        "${result.absoluteValue as Int}"
 }
