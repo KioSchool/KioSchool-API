@@ -6,11 +6,19 @@
   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
                       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
   <changeSet author="kioschool-team" id="1778600000000-1">
+    <preConditions onFail="MARK_RAN">
+      <not>
+        <columnExists tableName="daily_insight_card" columnName="top_metrics"/>
+      </not>
+    </preConditions>
     <addColumn tableName="daily_insight_card">
       <column name="top_metrics" type="TEXT"/>
     </addColumn>
   </changeSet>
   <changeSet author="kioschool-team" id="1778600000000-2">
+    <preConditions onFail="MARK_RAN">
+      <columnExists tableName="daily_insight_card" columnName="image_url"/>
+    </preConditions>
     <dropColumn tableName="daily_insight_card" columnName="image_url"/>
   </changeSet>
 </databaseChangeLog>
