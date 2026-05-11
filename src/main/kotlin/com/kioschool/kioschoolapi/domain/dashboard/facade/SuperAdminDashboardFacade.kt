@@ -77,6 +77,8 @@ class SuperAdminDashboardFacade(
             )
         }
 
+        val onboardingTimeStats = buildOnboardingTimeStats(totalUsers)
+
         val workspacesWithOrder = dailyOrderStatisticRepository.countActiveWorkspacesSince(
             LocalDate.of(2000, 1, 1)
         )
@@ -113,8 +115,62 @@ class SuperAdminDashboardFacade(
                 cancelledOrdersLast30Days = cancelledLast30Days,
                 totalOrdersForCancelRate = totalOrdersForCancelRate,
                 topWorkspaces = topWorkspaces,
-                funnel = funnel
+                funnel = funnel,
+                onboardingTimeStats = onboardingTimeStats
             )
+        )
+    }
+
+    private fun buildOnboardingTimeStats(totalUsers: Long): SuperAdminDashboardDto.OnboardingTimeStats {
+        val rows = workspaceRepository.findUserRegistrationAndFirstWorkspaceCreatedAt()
+        val neverCreatedCount = totalUsers - rows.size
+
+        val minutesList = rows.mapNotNull { row ->
+            val userCreatedAt = row[0] as? LocalDateTime ?: return@mapNotNull null
+            val firstWorkspaceCreatedAt = row[1] as? LocalDateTime ?: return@mapNotNull null
+            java.time.Duration.between(userCreatedAt, firstWorkspaceCreatedAt).toMinutes().toDouble()
+        }.filter { it >= 0 }.sorted()
+
+        if (minutesList.isEmpty()) {
+            return SuperAdminDashboardDto.OnboardingTimeStats(
+                averageMinutes = 0.0,
+                medianMinutes = 0.0,
+                neverCreatedCount = neverCreatedCount,
+                distribution = BUCKET_DEFINITIONS.map { SuperAdminDashboardDto.DistributionBucket(it.first, 0) }
+            )
+        }
+
+        val average = minutesList.average()
+        val median = if (minutesList.size % 2 == 0) {
+            (minutesList[minutesList.size / 2 - 1] + minutesList[minutesList.size / 2]) / 2.0
+        } else {
+            minutesList[minutesList.size / 2]
+        }
+
+        val distribution = BUCKET_DEFINITIONS.map { (label, min, max) ->
+            val count = minutesList.count { it >= min && it < max }
+            SuperAdminDashboardDto.DistributionBucket(label, count)
+        }
+
+        return SuperAdminDashboardDto.OnboardingTimeStats(
+            averageMinutes = average,
+            medianMinutes = median,
+            neverCreatedCount = neverCreatedCount,
+            distribution = distribution
+        )
+    }
+
+    companion object {
+        // Triple: label, minMinutes (inclusive), maxMinutes (exclusive)
+        private val BUCKET_DEFINITIONS = listOf(
+            Triple("10분 미만", 0.0, 10.0),
+            Triple("10~30분", 10.0, 30.0),
+            Triple("30분~1시간", 30.0, 60.0),
+            Triple("1~6시간", 60.0, 360.0),
+            Triple("6~24시간", 360.0, 1440.0),
+            Triple("1~3일", 1440.0, 4320.0),
+            Triple("3~7일", 4320.0, 10080.0),
+            Triple("7일 초과", 10080.0, Double.MAX_VALUE)
         )
     }
 }
