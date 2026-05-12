@@ -1,22 +1,21 @@
 package com.kioschool.kioschoolapi.global.schedule
 
+import com.kioschool.kioschoolapi.domain.insight.service.DailyInsightCardGenerationService
 import com.kioschool.kioschoolapi.domain.order.entity.GhostType
 import com.kioschool.kioschoolapi.domain.order.repository.OrderSessionRepository
 import com.kioschool.kioschoolapi.domain.order.service.OrderService
-import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceTableRepository
-import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepository
-import com.kioschool.kioschoolapi.domain.statistics.service.StatisticsCalculator
 import com.kioschool.kioschoolapi.domain.statistics.repository.DailyOrderStatisticRepository
-import com.kioschool.kioschoolapi.domain.insight.service.DailyInsightCardGenerationService
+import com.kioschool.kioschoolapi.domain.statistics.service.StatisticsCalculator
+import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepository
+import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceTableRepository
+import com.kioschool.kioschoolapi.global.common.enums.OrderStatus
 import jakarta.transaction.Transactional
-import org.springframework.context.annotation.Profile
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
-import com.kioschool.kioschoolapi.global.common.enums.OrderStatus
 
 @Component
 class Scheduler(
@@ -89,7 +88,7 @@ class Scheduler(
         }
     }
 
-    @Scheduled(cron = "0 6 9 * * *", zone = "Asia/Seoul")
+    @Scheduled(cron = "0 10 9 * * *", zone = "Asia/Seoul")
     fun generateDailyInsightCards() {
         val maxRetries = 3
         repeat(maxRetries) { attempt ->
@@ -110,12 +109,19 @@ class Scheduler(
         val workspaces = workspaceRepository.findAll()
 
         workspaces.forEach { workspace ->
-            if (dailyOrderStatisticRepository.findByWorkspaceIdAndReferenceDate(workspace.id, referenceDate).isEmpty) {
+            if (dailyOrderStatisticRepository.findByWorkspaceIdAndReferenceDate(
+                    workspace.id,
+                    referenceDate
+                ).isEmpty
+            ) {
                 try {
                     val statistic = statisticsCalculator.calculate(workspace.id, referenceDate)
                     dailyOrderStatisticRepository.save(statistic)
                 } catch (e: Exception) {
-                    log.error("Failed to generate daily statistics for workspace ${workspace.id}", e)
+                    log.error(
+                        "Failed to generate daily statistics for workspace ${workspace.id}",
+                        e
+                    )
                 }
             }
         }
