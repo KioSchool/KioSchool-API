@@ -7,6 +7,7 @@ object CacheNames {
     const val PRODUCTS = "products"
     const val REAL_TIME_STATISTICS = "realTimeStatistics"
     const val HISTORY_STATISTICS = "historyStatistics"
+    const val INSIGHT_CARD = "insightCard"
 
-    val ALL = listOf(WORKSPACES, PRODUCT_CATEGORIES, ORDERS, PRODUCTS, REAL_TIME_STATISTICS, HISTORY_STATISTICS)
+    val ALL = listOf(WORKSPACES, PRODUCT_CATEGORIES, ORDERS, PRODUCTS, REAL_TIME_STATISTICS, HISTORY_STATISTICS, INSIGHT_CARD)
 }
