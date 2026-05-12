@@ -94,3 +94,16 @@ management:
 kio-school:
   og:
     fallback-image-url: "https://kio-school.com/preview.png"
+
+kioschool:
+  insight:
+    threshold-percentile: 80
+    cohort:
+      bucket-edges: [3, 6, 10]
+      min-size: 5
+    milestone:
+      revenue-steps: [1000000, 3000000, 5000000, 10000000]
+      table-steps: [100, 200, 500]
+      order-steps: [100, 300, 500]
+    donation:
+      toss-url: ${KIO_DONATION_TOSS_URL:https://toss.me/kioschool}
