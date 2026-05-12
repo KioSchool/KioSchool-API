@@ -46,6 +46,18 @@ data class SuperAdminDashboardDto(
         val hadFirstOrder: Long
     )
 
+    data class DistributionBucket(
+        val label: String,
+        val count: Int
+    )
+
+    data class OnboardingTimeStats(
+        val averageMinutes: Double,
+        val medianMinutes: Double,
+        val neverCreatedCount: Long,
+        val distribution: List<DistributionBucket>
+    )
+
     data class Insights(
         val dailyLast30Days: List<DailyPoint>,
         val activeWorkspacesLast7Days: Long,
@@ -54,6 +66,7 @@ data class SuperAdminDashboardDto(
         val cancelledOrdersLast30Days: Long,
         val totalOrdersForCancelRate: Long,
         val topWorkspaces: List<WorkspaceRankItem>,
-        val funnel: Funnel
+        val funnel: Funnel,
+        val onboardingTimeStats: OnboardingTimeStats
     )
 }

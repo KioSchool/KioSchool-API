@@ -1,21 +1,21 @@
 package com.kioschool.kioschoolapi.global.schedule
 
+import com.kioschool.kioschoolapi.domain.insight.service.DailyInsightCardGenerationService
 import com.kioschool.kioschoolapi.domain.order.entity.GhostType
 import com.kioschool.kioschoolapi.domain.order.repository.OrderSessionRepository
 import com.kioschool.kioschoolapi.domain.order.service.OrderService
-import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceTableRepository
-import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepository
-import com.kioschool.kioschoolapi.domain.statistics.service.StatisticsCalculator
 import com.kioschool.kioschoolapi.domain.statistics.repository.DailyOrderStatisticRepository
+import com.kioschool.kioschoolapi.domain.statistics.service.StatisticsCalculator
+import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepository
+import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceTableRepository
+import com.kioschool.kioschoolapi.global.common.enums.OrderStatus
 import jakarta.transaction.Transactional
-import org.springframework.context.annotation.Profile
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
-import com.kioschool.kioschoolapi.global.common.enums.OrderStatus
 
 @Component
 class Scheduler(
@@ -24,7 +24,8 @@ class Scheduler(
     private val workspaceTableRepository: WorkspaceTableRepository,
     private val workspaceRepository: WorkspaceRepository,
     private val statisticsCalculator: StatisticsCalculator,
-    private val dailyOrderStatisticRepository: DailyOrderStatisticRepository
+    private val dailyOrderStatisticRepository: DailyOrderStatisticRepository,
+    private val dailyInsightCardGenerationService: DailyInsightCardGenerationService
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -87,6 +88,20 @@ class Scheduler(
         }
     }
 
+    @Scheduled(cron = "0 10 9 * * *", zone = "Asia/Seoul")
+    fun generateDailyInsightCards() {
+        val maxRetries = 3
+        repeat(maxRetries) { attempt ->
+            try {
+                dailyInsightCardGenerationService.generateForYesterday()
+                return
+            } catch (e: Exception) {
+                log.warn("generateDailyInsightCards attempt ${attempt + 1}/$maxRetries failed: ${e.message}")
+            }
+        }
+        log.error("generateDailyInsightCards failed after $maxRetries attempts")
+    }
+
     @Transactional
     @Scheduled(cron = "0 5 9 * * *", zone = "Asia/Seoul")
     fun generateDailyStatistics() {
@@ -94,12 +109,19 @@ class Scheduler(
         val workspaces = workspaceRepository.findAll()
 
         workspaces.forEach { workspace ->
-            if (dailyOrderStatisticRepository.findByWorkspaceIdAndReferenceDate(workspace.id, referenceDate).isEmpty) {
+            if (dailyOrderStatisticRepository.findByWorkspaceIdAndReferenceDate(
+                    workspace.id,
+                    referenceDate
+                ).isEmpty
+            ) {
                 try {
                     val statistic = statisticsCalculator.calculate(workspace.id, referenceDate)
                     dailyOrderStatisticRepository.save(statistic)
                 } catch (e: Exception) {
-                    log.error("Failed to generate daily statistics for workspace ${workspace.id}", e)
+                    log.error(
+                        "Failed to generate daily statistics for workspace ${workspace.id}",
+                        e
+                    )
                 }
             }
         }

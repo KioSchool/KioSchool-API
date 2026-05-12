@@ -22,4 +22,7 @@ interface WorkspaceRepository : JpaRepository<Workspace, Long> {
 
     @Query("SELECT COUNT(DISTINCT w.id) FROM Workspace w WHERE SIZE(w.members) > 0")
     fun countByMembersNotEmpty(): Long
+
+    @Query("SELECT u.createdAt, MIN(w.createdAt) FROM Workspace w JOIN w.owner u GROUP BY u.id, u.createdAt")
+    fun findUserRegistrationAndFirstWorkspaceCreatedAt(): List<Array<Any>>
 }
