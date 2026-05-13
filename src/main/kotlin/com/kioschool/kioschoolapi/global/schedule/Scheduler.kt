@@ -93,7 +93,7 @@ class Scheduler(
         val maxRetries = 3
         repeat(maxRetries) { attempt ->
             try {
-                dailyInsightCardGenerationService.generateForYesterday()
+                dailyInsightCardGenerationService.generateForDate(LocalDate.now().minusDays(1))
                 return
             } catch (e: Exception) {
                 log.warn("generateDailyInsightCards attempt ${attempt + 1}/$maxRetries failed: ${e.message}")
