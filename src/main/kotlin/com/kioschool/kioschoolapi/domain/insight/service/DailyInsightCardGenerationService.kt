@@ -62,10 +62,6 @@ class DailyInsightCardGenerationService(
         discordService.sendInsightCardSummary(referenceDate, successCount, failedWorkspaceIds)
     }
 
-    fun generateForYesterday() {
-        generateForDate(LocalDate.now().minusDays(1))
-    }
-
     private fun generateOne(
         stat: DailyOrderStatistic,
         referenceDate: LocalDate,
