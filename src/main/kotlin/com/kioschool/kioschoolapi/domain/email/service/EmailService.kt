@@ -23,7 +23,7 @@ import java.util.*
 
 @Service
 class EmailService(
-    @Value("\${spring.mail.username}")
+    @Value("\${spring.mail.from}")
     private val fromAddress: String,
     private val javaMailSender: JavaMailSender,
     private val emailCodeRepository: EmailCodeRepository,

@@ -31,10 +31,11 @@ spring:
   thymeleaf:
     enabled: false
   mail:
-    host: smtp.migadu.com
+    host: smtp.resend.com
     port: 465
-    username: "${MAIL_USERNAME}"
+    username: resend
     password: "${MAIL_PASSWORD}"
+    from: "${MAIL_FROM}"
     properties:
       mail:
         smtp:
