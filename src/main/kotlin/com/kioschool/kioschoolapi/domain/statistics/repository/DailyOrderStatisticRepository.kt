@@ -45,4 +45,19 @@ interface DailyOrderStatisticRepository : JpaRepository<DailyOrderStatistic, Lon
 
     @Query("SELECT COALESCE(SUM(d.totalOrders), 0) FROM DailyOrderStatistic d WHERE d.referenceDate >= :since AND d.workspace.id = :workspaceId")
     fun sumTotalOrdersSinceByWorkspace(@Param("since") since: LocalDate, @Param("workspaceId") workspaceId: Long): Long
+
+    @Query("""
+        SELECT d FROM DailyOrderStatistic d
+        JOIN FETCH d.workspace w
+        JOIN FETCH w.owner o
+        WHERE YEAR(d.referenceDate) = :year
+        AND MONTH(d.referenceDate) = :month
+        AND d.totalOrders >= :minOrders
+        ORDER BY d.referenceDate ASC
+    """)
+    fun findByYearAndMonthWithMinOrders(
+        @Param("year") year: Int,
+        @Param("month") month: Int,
+        @Param("minOrders") minOrders: Int
+    ): List<DailyOrderStatistic>
 }

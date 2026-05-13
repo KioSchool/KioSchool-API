@@ -1,11 +1,15 @@
 package com.kioschool.kioschoolapi.domain.dashboard.facade
 
+import com.kioschool.kioschoolapi.domain.dashboard.dto.FestivalCalendarDto
 import com.kioschool.kioschoolapi.domain.dashboard.dto.SuperAdminDashboardDto
+import com.kioschool.kioschoolapi.domain.email.repository.EmailDomainRepository
 import com.kioschool.kioschoolapi.domain.order.repository.OrderRepository
 import com.kioschool.kioschoolapi.domain.statistics.repository.DailyOrderStatisticRepository
 import com.kioschool.kioschoolapi.domain.user.repository.UserRepository
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepository
+import com.kioschool.kioschoolapi.global.cache.constant.CacheNames
 import com.kioschool.kioschoolapi.global.common.enums.OrderStatus
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Component
 import java.time.LocalDate
@@ -17,7 +21,8 @@ class SuperAdminDashboardFacade(
     private val userRepository: UserRepository,
     private val workspaceRepository: WorkspaceRepository,
     private val dailyOrderStatisticRepository: DailyOrderStatisticRepository,
-    private val orderRepository: OrderRepository
+    private val orderRepository: OrderRepository,
+    private val emailDomainRepository: EmailDomainRepository
 ) {
     fun getDashboard(): SuperAdminDashboardDto {
         val now = LocalDateTime.now()
@@ -160,8 +165,91 @@ class SuperAdminDashboardFacade(
         )
     }
 
+    @Cacheable(cacheNames = ["${CacheNames.FESTIVAL_CALENDAR}#1h"], key = "#year + '-' + #month")
+    fun getFestivalCalendar(year: Int, month: Int): FestivalCalendarDto {
+        val records = dailyOrderStatisticRepository.findByYearAndMonthWithMinOrders(year, month, FESTIVAL_MIN_ORDERS)
+
+        val allEmailDomains = emailDomainRepository.findAll().associateBy { it.domain }
+        val dateFormatter = DateTimeFormatter.ISO_LOCAL_DATE
+
+        fun resolveUniversity(email: String): String {
+            val domain = email.substringAfter("@")
+            return allEmailDomains[domain]?.name ?: domain
+        }
+
+        val calendar = records
+            .groupBy { it.referenceDate.format(dateFormatter) }
+            .mapValues { (_, dayRecords) ->
+                dayRecords.map { stat ->
+                    val university = resolveUniversity(stat.workspace.owner.email)
+                    val peakHour = stat.salesByHour.maxByOrNull { it.orderCount }?.hour
+                    FestivalCalendarDto.FestivalWorkspace(
+                        workspaceId = stat.workspace.id,
+                        workspaceName = stat.workspace.name,
+                        universityName = university,
+                        totalOrders = stat.totalOrders,
+                        totalRevenue = stat.totalRevenue,
+                        averageOrderAmount = stat.averageOrderAmount,
+                        tableTurnoverRate = stat.tableTurnoverRate,
+                        averageStayTimeMinutes = stat.averageStayTimeMinutes,
+                        peakHour = peakHour
+                    )
+                }.sortedByDescending { it.totalOrders }
+            }
+
+        val busiestDay = calendar.maxByOrNull { (_, workspaces) -> workspaces.sumOf { it.totalOrders } }?.key
+
+        val universityBreakdown = records
+            .groupBy { resolveUniversity(it.workspace.owner.email) }
+            .map { (university, uniRecords) ->
+                FestivalCalendarDto.UniversityStats(
+                    universityName = university,
+                    festivalDays = uniRecords.map { it.referenceDate }.toSet().size,
+                    totalOrders = uniRecords.sumOf { it.totalOrders.toLong() },
+                    totalRevenue = uniRecords.sumOf { it.totalRevenue }
+                )
+            }
+            .sortedByDescending { it.totalOrders }
+
+        val workspaceRanking = records
+            .groupBy { it.workspace.id }
+            .map { (_, wsRecords) ->
+                val first = wsRecords.first()
+                val university = resolveUniversity(first.workspace.owner.email)
+                val totalOrders = wsRecords.sumOf { it.totalOrders.toLong() }
+                val totalRevenue = wsRecords.sumOf { it.totalRevenue }
+                FestivalCalendarDto.WorkspaceRankItem(
+                    workspaceId = first.workspace.id,
+                    workspaceName = first.workspace.name,
+                    universityName = university,
+                    festivalDays = wsRecords.size,
+                    totalOrders = totalOrders,
+                    totalRevenue = totalRevenue,
+                    averageOrderAmount = if (totalOrders > 0) (totalRevenue / totalOrders).toInt() else 0
+                )
+            }
+            .sortedByDescending { it.totalOrders }
+
+        val monthSummary = FestivalCalendarDto.MonthSummary(
+            totalFestivalDays = calendar.size,
+            uniqueUniversities = universityBreakdown.size,
+            totalOrders = records.sumOf { it.totalOrders.toLong() },
+            totalRevenue = records.sumOf { it.totalRevenue },
+            busiestDay = busiestDay
+        )
+
+        return FestivalCalendarDto(
+            monthSummary = monthSummary,
+            universityBreakdown = universityBreakdown,
+            workspaceRanking = workspaceRanking,
+            calendar = calendar
+        )
+    }
+
     companion object {
         // Triple: label, minMinutes (inclusive), maxMinutes (exclusive)
+        private const val FESTIVAL_MIN_ORDERS = 15
+
         private val BUCKET_DEFINITIONS = listOf(
             Triple("10분 미만", 0.0, 10.0),
             Triple("10~30분", 10.0, 30.0),
