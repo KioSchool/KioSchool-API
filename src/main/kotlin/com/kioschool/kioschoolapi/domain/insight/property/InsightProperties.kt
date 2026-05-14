@@ -15,8 +15,10 @@ class InsightProperties {
         var minSize: Int = 5
     }
 
+    var minOrderCount: Int = 15
+
     class Milestone {
-        var revenueSteps: List<Long> = listOf(1_000_000, 3_000_000, 5_000_000, 10_000_000)
+        var revenueStepSize: Long = 1_000_000
         var tableSteps: List<Int> = listOf(100, 200, 500)
         var orderSteps: List<Int> = listOf(100, 300, 500)
     }

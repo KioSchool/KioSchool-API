@@ -26,8 +26,9 @@ class RevenueMilestoneMetric(
     override fun supports(stat: DailyOrderStatistic, cohort: CohortContext): Boolean = true
 
     override fun evaluate(stat: DailyOrderStatistic, cohort: CohortContext): MetricResult? {
-        val reached = properties.milestone.revenueSteps.filter { stat.totalRevenue >= it }.maxOrNull()
-            ?: return null
+        val stepSize = properties.milestone.revenueStepSize
+        val reached = (stat.totalRevenue / stepSize) * stepSize
+        if (reached <= 0) return null
         return MetricResult(
             metricKey = key,
             percentile = null,
