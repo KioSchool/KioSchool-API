@@ -1,5 +1,6 @@
 package com.kioschool.kioschoolapi.domain.statistics.dto
 
+import com.kioschool.kioschoolapi.domain.statistics.entity.DailyOrderStatistic
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -34,7 +35,10 @@ data class DailyOrderStatisticResponse(
     val lastUpdated: LocalDateTime
 ) {
     companion object {
-        fun fromEntity(entity: com.kioschool.kioschoolapi.domain.statistics.entity.DailyOrderStatistic, isRealTime: Boolean): DailyOrderStatisticResponse {
+        fun fromEntity(
+            entity: DailyOrderStatistic,
+            isRealTime: Boolean
+        ): DailyOrderStatisticResponse {
             return DailyOrderStatisticResponse(
                 referenceDate = entity.referenceDate,
                 totalSalesVolume = entity.totalSalesVolume,
@@ -48,7 +52,7 @@ data class DailyOrderStatisticResponse(
                 salesByHour = entity.salesByHour,
                 popularProducts = entity.popularProducts,
                 isRealTime = isRealTime,
-                lastUpdated = entity.updatedAt ?: LocalDateTime.now()
+                lastUpdated = if (entity.updatedAt == LocalDateTime.MIN) LocalDateTime.now() else entity.updatedAt!!
             )
         }
     }
