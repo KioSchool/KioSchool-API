@@ -13,7 +13,7 @@ import io.mockk.mockk
 class RevenueMilestoneMetricTest : DescribeSpec({
     val properties = InsightProperties().apply {
         milestone = InsightProperties.Milestone().apply {
-            revenueSteps = listOf(1_000_000L, 3_000_000L, 5_000_000L, 10_000_000L)
+            revenueStepSize = 1_000_000L
         }
     }
     val sut = RevenueMilestoneMetric(properties)
@@ -27,17 +27,24 @@ class RevenueMilestoneMetricTest : DescribeSpec({
     val cohort = CohortContext(bucket = TableCountBucket.S, peers = emptyList())
 
     describe("evaluate") {
-        it("returns highest reached step when revenue exceeds multiple steps") {
-            val self = mockStat(totalRevenue = 6_000_000L)
+        it("returns floor-rounded step for revenue of 6_500_000") {
+            val self = mockStat(totalRevenue = 6_500_000L)
 
             val result = sut.evaluate(self, cohort)
 
             result!!.metricKey shouldBe "revenue-milestone"
-            result.absoluteValue shouldBe 6_000_000L
-            // highest step <= 6_000_000 is 5_000_000
-            result.milestoneStep shouldBe 5_000_000L
+            result.absoluteValue shouldBe 6_500_000L
+            result.milestoneStep shouldBe 6_000_000L
             result.percentile.shouldBeNull()
             result.cohortAverageRatio.shouldBeNull()
+        }
+
+        it("returns exact step when revenue is exactly on a boundary") {
+            val self = mockStat(totalRevenue = 2_000_000L)
+
+            val result = sut.evaluate(self, cohort)
+
+            result!!.milestoneStep shouldBe 2_000_000L
         }
 
         it("returns null when revenue is below first step") {

@@ -46,6 +46,11 @@ class DailyInsightCardGenerationService(
         stats.forEach { stat ->
             val workspaceId = stat.workspace.id
             try {
+                if (stat.totalOrders < properties.minOrderCount) {
+                    logger.debug("Order count below threshold; skipping. workspaceId={}, totalOrders={}", workspaceId, stat.totalOrders)
+                    return@forEach
+                }
+
                 if (cardRepository.findByWorkspaceIdAndReferenceDate(workspaceId, referenceDate).isPresent) {
                     logger.debug("Insight card already exists; skipping. workspaceId={}, referenceDate={}", workspaceId, referenceDate)
                     return@forEach
