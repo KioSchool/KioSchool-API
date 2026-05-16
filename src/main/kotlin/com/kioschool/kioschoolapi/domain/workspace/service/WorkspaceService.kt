@@ -20,6 +20,7 @@ import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
+import java.time.LocalDateTime
 import java.util.*
 
 @Service
@@ -33,10 +34,11 @@ class WorkspaceService(
     val userService: UserService,
     val s3Service: S3Service
 ) {
-    fun getAllWorkspaces(name: String?, page: Int, size: Int): Page<Workspace> {
+    fun getAllWorkspaces(name: String?, page: Int, size: Int, updatedAfter: LocalDateTime? = null): Page<Workspace> {
         return customWorkspaceRepository.findAllByCondition(
             name,
-            PageRequest.of(page, size)
+            PageRequest.of(page, size),
+            updatedAfter
         )
     }
 
