@@ -8,7 +8,9 @@ import com.kioschool.kioschoolapi.domain.workspace.facade.WorkspaceFacade
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.data.domain.Page
+import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.web.bind.annotation.*
+import java.time.LocalDateTime
 
 @Tag(name = "Super Admin Workspace Controller")
 @RestController
@@ -21,9 +23,10 @@ class SuperAdminWorkspaceController(
     fun getWorkspaces(
         @RequestParam(required = false) name: String?,
         @RequestParam page: Int,
-        @RequestParam size: Int
+        @RequestParam size: Int,
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) updatedAfter: LocalDateTime?
     ): Page<WorkspaceDto> {
-        return workspaceFacade.getAllWorkspaces(name, page, size)
+        return workspaceFacade.getAllWorkspaces(name, page, size, updatedAfter)
     }
 
     @Operation(

@@ -14,6 +14,7 @@ import com.kioschool.kioschoolapi.global.discord.service.DiscordService
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDateTime
 import org.springframework.web.multipart.MultipartFile
 
 @Component
@@ -25,8 +26,8 @@ class WorkspaceFacade(
     val orderSessionRepository: OrderSessionRepository,
     val dailyOrderStatisticRepository: DailyOrderStatisticRepository
 ) {
-    fun getAllWorkspaces(name: String?, page: Int, size: Int) =
-        workspaceService.getAllWorkspaces(name, page, size).map { WorkspaceDto.of(it) }
+    fun getAllWorkspaces(name: String?, page: Int, size: Int, updatedAfter: LocalDateTime? = null) =
+        workspaceService.getAllWorkspaces(name, page, size, updatedAfter).map { WorkspaceDto.of(it) }
 
     @Cacheable(cacheNames = [CacheNames.WORKSPACES], key = "#workspaceId")
     fun getWorkspace(workspaceId: Long): WorkspaceDto {
