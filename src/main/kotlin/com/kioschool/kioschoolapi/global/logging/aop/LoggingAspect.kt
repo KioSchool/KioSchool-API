@@ -9,9 +9,11 @@ import org.aspectj.lang.annotation.Aspect
 import org.aspectj.lang.annotation.Pointcut
 import org.aspectj.lang.reflect.MethodSignature
 import org.slf4j.LoggerFactory
+import org.slf4j.MDC
 import org.springframework.stereotype.Component
 import org.springframework.util.StopWatch
 import org.springframework.web.multipart.MultipartFile
+import java.util.UUID
 import kotlin.coroutines.Continuation
 
 @Aspect
@@ -44,13 +46,17 @@ class LoggingAspect(private val objectMapper: ObjectMapper) {
 
     // 일반 함수용 처리
     private fun proceedNormal(joinPoint: ProceedingJoinPoint): Any? {
+        val requestId = UUID.randomUUID().toString().substring(0, 8)
+        MDC.put("requestId", requestId)
+
         val stopWatch = StopWatch().apply { start() }
         val className = joinPoint.signature.declaringTypeName
         val methodName = joinPoint.signature.name
         val filteredArgs = filterWebObjects(joinPoint.args)
 
         log.info(
-            "--> {}#{}() called with args: {}",
+            "--> [{}] {}#{}() called with args: {}",
+            requestId,
             className,
             methodName,
             safeSerialize(filteredArgs)
@@ -59,48 +65,41 @@ class LoggingAspect(private val objectMapper: ObjectMapper) {
         return try {
             val result = joinPoint.proceed()
             stopWatch.stop()
-            log.info(
-                "<-- {}#{}() returned: {} ({}ms)",
-                className,
-                methodName,
-                safeSerialize(filterWebObjects(result)),
-                stopWatch.totalTimeMillis
-            )
+            log.info("<-- [{}] {}#{}() ({}ms)", requestId, className, methodName, stopWatch.totalTimeMillis)
             result
         } catch (e: Exception) {
-            log.error("<-- {}#{}() threw exception: {}", className, methodName, e.message)
+            log.error("<-- [{}] {}#{}() threw exception: {}", requestId, className, methodName, e.message)
             throw e
+        } finally {
+            MDC.remove("requestId")
         }
     }
 
-    // suspend 함수용 처리 (Mono를 이용해 비동기 완료 시점 캡처)
+    // suspend 함수용 처리
     private fun proceedSuspend(joinPoint: ProceedingJoinPoint): Any? {
-        StopWatch().apply { start() }
+        val requestId = UUID.randomUUID().toString().substring(0, 8)
+        MDC.put("requestId", requestId)
+
         val className = joinPoint.signature.declaringTypeName
         val methodName = joinPoint.signature.name
-
-        // Continuation을 제외한 인자만 로그에 남김
         val filteredArgs =
             filterWebObjects(joinPoint.args.take(joinPoint.args.size - 1).toTypedArray())
+
         log.info(
-            "--> [SUSPEND] {}#{}() called with args: {}",
+            "--> [SUSPEND] [{}] {}#{}() called with args: {}",
+            requestId,
             className,
             methodName,
             safeSerialize(filteredArgs)
         )
 
-        // Spring MVC에서 suspend 함수는 내부적으로 Mono/Flux 기반으로 동작하므로 proceed()를 그대로 반환
-        // 단, 로그를 위해 실제 결과를 기다리고 싶다면 Webflux의 Mono로 브릿징이 필요합니다.
-        // 현재 MVC의 suspend 컨트롤러는 Spring이 알아서 결과를 unwrap하므로,
-        // AOP 수준에서 완벽한 '결과값 로그'를 찍으려면 아래와 같이 리턴값을 그대로 넘겨줘야 합니다.
         return try {
-            val result = joinPoint.proceed()
-            // 주의: 여기서 result는 COROUTINE_SUSPENDED일 확률이 높음
-            // 따라서 finally에서 로그를 찍으면 '작업 완료' 시점이 아님을 인지해야 합니다.
-            result
+            joinPoint.proceed()
         } catch (e: Exception) {
-            log.error("<-- [SUSPEND] {}#{}() threw exception: {}", className, methodName, e.message)
+            log.error("<-- [SUSPEND] [{}] {}#{}() threw exception: {}", requestId, className, methodName, e.message)
             throw e
+        } finally {
+            MDC.remove("requestId")
         }
     }
 
