@@ -50,7 +50,7 @@ class LoggingAspect(private val objectMapper: ObjectMapper) {
         MDC.put("requestId", requestId)
 
         val stopWatch = StopWatch().apply { start() }
-        val className = joinPoint.signature.declaringTypeName
+        val className = joinPoint.signature.declaringType.simpleName
         val methodName = joinPoint.signature.name
         val filteredArgs = filterWebObjects(joinPoint.args)
 
@@ -80,7 +80,7 @@ class LoggingAspect(private val objectMapper: ObjectMapper) {
         val requestId = UUID.randomUUID().toString().substring(0, 8)
         MDC.put("requestId", requestId)
 
-        val className = joinPoint.signature.declaringTypeName
+        val className = joinPoint.signature.declaringType.simpleName
         val methodName = joinPoint.signature.name
         val filteredArgs =
             filterWebObjects(joinPoint.args.take(joinPoint.args.size - 1).toTypedArray())
