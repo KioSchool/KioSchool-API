@@ -12,6 +12,8 @@ import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 import org.springframework.stereotype.Component
 import org.springframework.util.StopWatch
+import org.springframework.web.context.request.RequestContextHolder
+import org.springframework.web.context.request.ServletRequestAttributes
 import org.springframework.web.multipart.MultipartFile
 import java.util.UUID
 import kotlin.coroutines.Continuation
@@ -68,11 +70,13 @@ class LoggingAspect(private val objectMapper: ObjectMapper) {
             log.info("<-- [{}] {}#{}() ({}ms)", requestId, className, methodName, stopWatch.totalTimeMillis)
             result
         } catch (e: Exception) {
+            val httpInfo = resolveHttpInfo()
             log.error(
-                "<-- [{}] {}#{}() threw {}: {}",
+                "<-- [{}] {}#{}() threw {}: {} | {} {}\n{}",
                 requestId, className, methodName,
                 e.javaClass.simpleName, e.message,
-                e
+                httpInfo.first, httpInfo.second,
+                formatStackTrace(e)
             )
             throw e
         } finally {
@@ -101,16 +105,34 @@ class LoggingAspect(private val objectMapper: ObjectMapper) {
         return try {
             joinPoint.proceed()
         } catch (e: Exception) {
+            val httpInfo = resolveHttpInfo()
             log.error(
-                "<-- [SUSPEND] [{}] {}#{}() threw {}: {}",
+                "<-- [SUSPEND] [{}] {}#{}() threw {}: {} | {} {}\n{}",
                 requestId, className, methodName,
                 e.javaClass.simpleName, e.message,
-                e
+                httpInfo.first, httpInfo.second,
+                formatStackTrace(e)
             )
             throw e
         } finally {
             MDC.remove("requestId")
         }
+    }
+
+    private fun resolveHttpInfo(): Pair<String, String> {
+        val request = (RequestContextHolder.getRequestAttributes() as? ServletRequestAttributes)?.request
+        return Pair(request?.method ?: "UNKNOWN", request?.requestURI ?: "UNKNOWN")
+    }
+
+    private fun formatStackTrace(e: Exception, maxLines: Int = 10): String {
+        val lines = mutableListOf<String>()
+        e.stackTrace.take(maxLines).forEach { lines.add("\tat $it") }
+        if (e.stackTrace.size > maxLines) lines.add("\t... ${e.stackTrace.size - maxLines} more")
+        e.cause?.let { cause ->
+            lines.add("Caused by: $cause")
+            cause.stackTrace.take(3).forEach { lines.add("\tat $it") }
+        }
+        return lines.joinToString("\n")
     }
 
     private fun safeSerialize(obj: Any?): String {
