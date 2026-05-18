@@ -27,6 +27,7 @@ management:
     metrics:
       export:
         enabled: true
+        step: 2m
   endpoints:
     web:
       cors:
