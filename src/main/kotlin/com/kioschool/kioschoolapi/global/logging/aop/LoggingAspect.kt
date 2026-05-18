@@ -67,7 +67,12 @@ class LoggingAspect(private val objectMapper: ObjectMapper) {
         return try {
             val result = joinPoint.proceed()
             stopWatch.stop()
-            log.info("<-- [{}] {}#{}() ({}ms)", requestId, className, methodName, stopWatch.totalTimeMillis)
+            log.info(
+                "<-- [{}] {}#{}() returned: {} ({}ms)",
+                requestId, className, methodName,
+                safeSerialize(filterWebObjects(result)),
+                stopWatch.totalTimeMillis
+            )
             result
         } catch (e: Exception) {
             val httpInfo = resolveHttpInfo()
