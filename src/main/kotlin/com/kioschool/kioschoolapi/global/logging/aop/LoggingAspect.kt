@@ -68,7 +68,12 @@ class LoggingAspect(private val objectMapper: ObjectMapper) {
             log.info("<-- [{}] {}#{}() ({}ms)", requestId, className, methodName, stopWatch.totalTimeMillis)
             result
         } catch (e: Exception) {
-            log.error("<-- [{}] {}#{}() threw exception: {}", requestId, className, methodName, e.message)
+            log.error(
+                "<-- [{}] {}#{}() threw {}: {}",
+                requestId, className, methodName,
+                e.javaClass.simpleName, e.message,
+                e
+            )
             throw e
         } finally {
             MDC.remove("requestId")
@@ -96,7 +101,12 @@ class LoggingAspect(private val objectMapper: ObjectMapper) {
         return try {
             joinPoint.proceed()
         } catch (e: Exception) {
-            log.error("<-- [SUSPEND] [{}] {}#{}() threw exception: {}", requestId, className, methodName, e.message)
+            log.error(
+                "<-- [SUSPEND] [{}] {}#{}() threw {}: {}",
+                requestId, className, methodName,
+                e.javaClass.simpleName, e.message,
+                e
+            )
             throw e
         } finally {
             MDC.remove("requestId")
