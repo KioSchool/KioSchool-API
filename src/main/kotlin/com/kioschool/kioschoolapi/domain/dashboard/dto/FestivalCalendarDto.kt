@@ -32,6 +32,7 @@ data class FestivalCalendarDto(
     )
 
     data class FestivalWorkspace(
+        val statisticId: Long,
         val workspaceId: Long,
         val workspaceName: String,
         val universityName: String,
@@ -40,6 +41,7 @@ data class FestivalCalendarDto(
         val averageOrderAmount: Int,
         val tableTurnoverRate: Double,
         val averageStayTimeMinutes: Double,
-        val peakHour: Int?
+        val peakHour: Int?,
+        val excluded: Boolean
     )
 }
