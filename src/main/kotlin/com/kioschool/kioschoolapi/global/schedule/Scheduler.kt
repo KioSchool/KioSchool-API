@@ -116,6 +116,9 @@ class Scheduler(
             ) {
                 try {
                     val statistic = statisticsCalculator.calculate(workspace.id, referenceDate)
+                    if (statistic.totalOrders < FESTIVAL_CALENDAR_MIN_ORDERS) {
+                        statistic.excludedFromCalendar = true
+                    }
                     dailyOrderStatisticRepository.save(statistic)
                 } catch (e: Exception) {
                     log.error(
@@ -125,6 +128,10 @@ class Scheduler(
                 }
             }
         }
+    }
+
+    companion object {
+        private const val FESTIVAL_CALENDAR_MIN_ORDERS = 15
     }
 }
 
