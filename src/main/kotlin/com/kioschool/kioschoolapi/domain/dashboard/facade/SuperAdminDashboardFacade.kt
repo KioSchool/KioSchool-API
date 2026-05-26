@@ -9,6 +9,7 @@ import com.kioschool.kioschoolapi.domain.user.repository.UserRepository
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepository
 import com.kioschool.kioschoolapi.global.cache.constant.CacheNames
 import com.kioschool.kioschoolapi.global.common.enums.OrderStatus
+import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Component
@@ -165,9 +166,18 @@ class SuperAdminDashboardFacade(
         )
     }
 
+    @CacheEvict(cacheNames = ["${CacheNames.FESTIVAL_CALENDAR}#1h"], allEntries = true)
+    fun setFestivalCalendarExclusion(statisticId: Long, excluded: Boolean) {
+        val stat = dailyOrderStatisticRepository.findById(statisticId)
+            .orElseThrow { IllegalArgumentException("통계 데이터를 찾을 수 없습니다.") }
+        stat.excludedFromCalendar = excluded
+        dailyOrderStatisticRepository.save(stat)
+    }
+
     @Cacheable(cacheNames = ["${CacheNames.FESTIVAL_CALENDAR}#1h"], key = "#year + '-' + #month")
     fun getFestivalCalendar(year: Int, month: Int): FestivalCalendarDto {
-        val records = dailyOrderStatisticRepository.findByYearAndMonthWithMinOrders(year, month, FESTIVAL_MIN_ORDERS)
+        val records = dailyOrderStatisticRepository.findByYearAndMonth(year, month)
+        val activeRecords = records.filter { !it.excludedFromCalendar }
 
         val allEmailDomains = emailDomainRepository.findAll().associateBy { it.domain }
         val dateFormatter = DateTimeFormatter.ISO_LOCAL_DATE
@@ -184,6 +194,7 @@ class SuperAdminDashboardFacade(
                     val university = resolveUniversity(stat.workspace.owner.email)
                     val peakHour = stat.salesByHour.maxByOrNull { it.orderCount }?.hour
                     FestivalCalendarDto.FestivalWorkspace(
+                        statisticId = stat.id,
                         workspaceId = stat.workspace.id,
                         workspaceName = stat.workspace.name,
                         universityName = university,
@@ -192,14 +203,18 @@ class SuperAdminDashboardFacade(
                         averageOrderAmount = stat.averageOrderAmount,
                         tableTurnoverRate = stat.tableTurnoverRate,
                         averageStayTimeMinutes = stat.averageStayTimeMinutes,
-                        peakHour = peakHour
+                        peakHour = peakHour,
+                        excluded = stat.excludedFromCalendar
                     )
-                }.sortedByDescending { it.totalOrders }
+                }.sortedWith(compareBy({ it.excluded }, { -it.totalOrders }))
             }
 
-        val busiestDay = calendar.maxByOrNull { (_, workspaces) -> workspaces.sumOf { it.totalOrders } }?.key
+        val busiestDay = calendar
+            .mapValues { (_, workspaces) -> workspaces.filter { !it.excluded }.sumOf { it.totalOrders } }
+            .filter { (_, orders) -> orders > 0 }
+            .maxByOrNull { (_, orders) -> orders }?.key
 
-        val universityBreakdown = records
+        val universityBreakdown = activeRecords
             .groupBy { resolveUniversity(it.workspace.owner.email) }
             .map { (university, uniRecords) ->
                 FestivalCalendarDto.UniversityStats(
@@ -211,7 +226,7 @@ class SuperAdminDashboardFacade(
             }
             .sortedByDescending { it.totalOrders }
 
-        val workspaceRanking = records
+        val workspaceRanking = activeRecords
             .groupBy { it.workspace.id }
             .map { (_, wsRecords) ->
                 val first = wsRecords.first()
@@ -230,11 +245,13 @@ class SuperAdminDashboardFacade(
             }
             .sortedByDescending { it.totalOrders }
 
+        val activeCalendar = calendar.filterValues { workspaces -> workspaces.any { !it.excluded } }
+
         val monthSummary = FestivalCalendarDto.MonthSummary(
-            totalFestivalDays = calendar.size,
+            totalFestivalDays = activeCalendar.size,
             uniqueUniversities = universityBreakdown.size,
-            totalOrders = records.sumOf { it.totalOrders.toLong() },
-            totalRevenue = records.sumOf { it.totalRevenue },
+            totalOrders = activeRecords.sumOf { it.totalOrders.toLong() },
+            totalRevenue = activeRecords.sumOf { it.totalRevenue },
             busiestDay = busiestDay
         )
 
@@ -248,8 +265,6 @@ class SuperAdminDashboardFacade(
 
     companion object {
         // Triple: label, minMinutes (inclusive), maxMinutes (exclusive)
-        private const val FESTIVAL_MIN_ORDERS = 15
-
         private val BUCKET_DEFINITIONS = listOf(
             Triple("10분 미만", 0.0, 10.0),
             Triple("10~30분", 10.0, 30.0),

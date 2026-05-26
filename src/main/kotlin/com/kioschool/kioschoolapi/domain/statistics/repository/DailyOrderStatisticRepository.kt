@@ -2,6 +2,7 @@ package com.kioschool.kioschoolapi.domain.statistics.repository
 
 import com.kioschool.kioschoolapi.domain.statistics.entity.DailyOrderStatistic
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
@@ -52,12 +53,15 @@ interface DailyOrderStatisticRepository : JpaRepository<DailyOrderStatistic, Lon
         JOIN FETCH w.owner o
         WHERE YEAR(d.referenceDate) = :year
         AND MONTH(d.referenceDate) = :month
-        AND d.totalOrders >= :minOrders
+        AND d.totalOrders > 0
         ORDER BY d.referenceDate ASC
     """)
-    fun findByYearAndMonthWithMinOrders(
+    fun findByYearAndMonth(
         @Param("year") year: Int,
-        @Param("month") month: Int,
-        @Param("minOrders") minOrders: Int
+        @Param("month") month: Int
     ): List<DailyOrderStatistic>
+
+    @Modifying
+    @Query("UPDATE DailyOrderStatistic d SET d.excludedFromCalendar = true WHERE d.totalOrders > 0 AND d.totalOrders < :minOrders")
+    fun excludeAllByTotalOrdersLessThan(@Param("minOrders") minOrders: Int): Int
 }

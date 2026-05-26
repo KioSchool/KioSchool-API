@@ -36,5 +36,8 @@ class DailyOrderStatistic(
 
     @Convert(converter = PopularProductsConverter::class)
     @Column(columnDefinition = "TEXT")
-    val popularProducts: PopularProducts
+    val popularProducts: PopularProducts,
+
+    @Column(columnDefinition = "boolean default false")
+    var excludedFromCalendar: Boolean = false
 ) : BaseEntity()

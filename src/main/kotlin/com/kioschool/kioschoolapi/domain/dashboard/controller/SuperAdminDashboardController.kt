@@ -6,6 +6,8 @@ import com.kioschool.kioschoolapi.domain.dashboard.facade.SuperAdminDashboardFac
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
@@ -27,7 +29,7 @@ class SuperAdminDashboardController(
 
     @Operation(
         summary = "축제 달력",
-        description = "주문 15건 이상인 주점을 기준으로 월별 축제 운영 현황을 달력 형태로 조회합니다. 대학교별 통계 및 주점별 상세 지표를 포함합니다."
+        description = "월별 축제 운영 현황을 달력 형태로 조회합니다. 대학교별 통계 및 주점별 상세 지표를 포함합니다."
     )
     @GetMapping("/workspaces/festival-calendar")
     fun getFestivalCalendar(
@@ -35,5 +37,17 @@ class SuperAdminDashboardController(
         @RequestParam month: Int
     ): FestivalCalendarDto {
         return superAdminDashboardFacade.getFestivalCalendar(year, month)
+    }
+
+    @Operation(
+        summary = "축제 달력 항목 제외/복원",
+        description = "특정 날짜의 주점 통계를 달력에서 제외하거나 다시 포함시킵니다."
+    )
+    @PutMapping("/workspaces/festival-calendar/{statisticId}/excluded")
+    fun setFestivalCalendarExclusion(
+        @PathVariable statisticId: Long,
+        @RequestParam excluded: Boolean
+    ) {
+        superAdminDashboardFacade.setFestivalCalendarExclusion(statisticId, excluded)
     }
 }
