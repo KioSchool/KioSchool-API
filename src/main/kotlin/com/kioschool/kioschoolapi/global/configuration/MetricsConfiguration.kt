@@ -9,9 +9,7 @@ class MetricsConfiguration {
 
     private val allowedPrefixes = listOf(
         "http.server.requests",
-        "jvm.memory",
         "jvm.gc",
-        "system.cpu",
         "hikaricp.connections"
     )
 
