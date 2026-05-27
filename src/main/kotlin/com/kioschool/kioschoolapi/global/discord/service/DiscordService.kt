@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service
 class DiscordService(
     @Value("\${discord.webhook-url}")
     private val webhookUrl: String,
+    @Value("\${kioschool.base-url}")
+    private val baseUrl: String,
     private val discordApi: DiscordApi
 ) {
     @Async
@@ -33,6 +35,7 @@ class DiscordService(
             |워크스페이스 ID: ${workspace.id}
             |워크스페이스 이름: ${workspace.name}
             |워크스페이스 생성자: ${workspace.owner.name}
+            |바로가기: $baseUrl/admin/workspace/${workspace.id}
             """.trimMargin()
 
         send(message)
