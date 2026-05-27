@@ -162,7 +162,7 @@ class UserFacadeTest : DescribeSpec({
             val email = "test@test.com"
             val response = MockHttpServletResponse()
 
-            every { userService.validateLoginId(loginId) } throws RegisterException()
+            every { userService.validateLoginId(loginId) } throws RegisterException(RegisterException.Reason.DUPLICATE_LOGIN_ID)
 
             assertThrows<RegisterException> {
                 sut.register(response, loginId, loginPassword, name, email)
@@ -184,7 +184,7 @@ class UserFacadeTest : DescribeSpec({
             val response = MockHttpServletResponse()
 
             every { userService.validateLoginId(loginId) } just Runs
-            every { userService.validateEmail(email) } throws RegisterException()
+            every { userService.validateEmail(email) } throws RegisterException(RegisterException.Reason.DUPLICATE_EMAIL)
 
             assertThrows<RegisterException> {
                 sut.register(response, loginId, loginPassword, name, email)

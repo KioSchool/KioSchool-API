@@ -45,7 +45,7 @@ class UserService(
     }
 
     fun validateLoginId(loginId: String) {
-        if (isDuplicateLoginId(loginId)) throw RegisterException()
+        if (isDuplicateLoginId(loginId)) throw RegisterException(RegisterException.Reason.DUPLICATE_LOGIN_ID)
     }
 
     fun validateEmail(email: String) {
@@ -58,11 +58,11 @@ class UserService(
     }
 
     private fun checkIsEmailVerified(email: String) {
-        if (!emailService.isRegisterEmailVerified(email)) throw RegisterException()
+        if (!emailService.isRegisterEmailVerified(email)) throw RegisterException(RegisterException.Reason.EMAIL_NOT_VERIFIED)
     }
 
     private fun checkIsEmailDuplicate(email: String) {
-        if (isDuplicateEmail(email)) throw RegisterException()
+        if (isDuplicateEmail(email)) throw RegisterException(RegisterException.Reason.DUPLICATE_EMAIL)
     }
 
     private fun isDuplicateEmail(email: String): Boolean {
