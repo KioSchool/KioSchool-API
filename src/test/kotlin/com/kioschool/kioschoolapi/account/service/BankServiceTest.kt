@@ -104,6 +104,78 @@ class BankServiceTest : DescribeSpec({
         }
     }
 
+    describe("updateTossName") {
+        it("should update tossName and return bank") {
+            val id = 1L
+            val tossName = "NH농협은행"
+            val bank = SampleEntity.bank
+
+            every { bankRepository.findById(id) } returns Optional.of(bank)
+
+            sut.updateTossName(id, tossName)
+
+            assert(bank.tossName == tossName)
+            verify { bankRepository.findById(id) }
+        }
+
+        it("should throw BankNotFoundException when bank is not found") {
+            val id = 1L
+
+            every { bankRepository.findById(id) } returns Optional.empty()
+
+            assertThrows<BankNotFoundException> {
+                sut.updateTossName(id, "NH농협은행")
+            }
+        }
+    }
+
+    describe("deleteTossName") {
+        it("should set tossName to null and return bank") {
+            val id = 1L
+            val bank = SampleEntity.bank.apply { tossName = "NH농협은행" }
+
+            every { bankRepository.findById(id) } returns Optional.of(bank)
+
+            sut.deleteTossName(id)
+
+            assert(bank.tossName == null)
+            verify { bankRepository.findById(id) }
+        }
+
+        it("should throw BankNotFoundException when bank is not found") {
+            val id = 1L
+
+            every { bankRepository.findById(id) } returns Optional.empty()
+
+            assertThrows<BankNotFoundException> {
+                sut.deleteTossName(id)
+            }
+        }
+    }
+
+    describe("fillTossNameIfAbsent") {
+        it("should fill tossName and call save when tossName is null") {
+            val bank = SampleEntity.bank.apply { tossName = null }
+            val tossName = "카카오뱅크"
+
+            every { bankRepository.save(bank) } returns bank
+
+            sut.fillTossNameIfAbsent(bank, tossName)
+
+            assert(bank.tossName == tossName)
+            verify { bankRepository.save(bank) }
+        }
+
+        it("should not call save when tossName is already set") {
+            val bank = SampleEntity.bank.apply { tossName = "카카오뱅크" }
+
+            sut.fillTossNameIfAbsent(bank, "다른뱅크")
+
+            assert(bank.tossName == "카카오뱅크")
+            verify(exactly = 0) { bankRepository.save(any()) }
+        }
+    }
+
     describe("getBank") {
         it("should call bankRepository.findById") {
             val bankId = 1L

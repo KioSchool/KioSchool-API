@@ -25,10 +25,31 @@ class BankService(
     }
 
     @Transactional
+    fun updateTossName(id: Long, tossName: String): Bank {
+        val bank = bankRepository.findById(id).orElseThrow { BankNotFoundException() }
+        bank.tossName = tossName
+        return bank
+    }
+
+    @Transactional
+    fun deleteTossName(id: Long): Bank {
+        val bank = bankRepository.findById(id).orElseThrow { BankNotFoundException() }
+        bank.tossName = null
+        return bank
+    }
+
+    @Transactional
     fun deleteBank(id: Long): Bank {
         val bank = bankRepository.findById(id).orElseThrow { BankNotFoundException() }
         bankRepository.delete(bank)
         return bank
+    }
+
+    @Transactional
+    fun fillTossNameIfAbsent(bank: Bank, tossName: String) {
+        if (bank.tossName != null) return
+        bank.tossName = tossName
+        bankRepository.save(bank)
     }
 
     fun getAllBanks(): List<Bank> {

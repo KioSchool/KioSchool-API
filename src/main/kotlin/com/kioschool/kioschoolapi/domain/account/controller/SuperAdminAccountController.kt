@@ -4,6 +4,7 @@ import com.kioschool.kioschoolapi.domain.account.dto.common.AccountConnectionSta
 import com.kioschool.kioschoolapi.domain.account.dto.common.BankDto
 import com.kioschool.kioschoolapi.domain.account.dto.request.AddBankRequestBody
 import com.kioschool.kioschoolapi.domain.account.dto.request.DeleteBankRequestBody
+import com.kioschool.kioschoolapi.domain.account.dto.request.UpdateBankTossNameRequestBody
 import com.kioschool.kioschoolapi.domain.account.facade.AccountFacade
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -41,6 +42,23 @@ class SuperAdminAccountController(
         @RequestBody body: DeleteBankRequestBody
     ): BankDto {
         return accountFacade.deleteBank(body.id)
+    }
+
+    @Operation(summary = "토스 명칭 설정", description = "은행의 토스 딥링크용 명칭을 설정합니다.")
+    @PutMapping("/bank/{id}/toss-name")
+    fun updateBankTossName(
+        @PathVariable id: Long,
+        @RequestBody body: UpdateBankTossNameRequestBody
+    ): BankDto {
+        return accountFacade.updateBankTossName(id, body.tossName)
+    }
+
+    @Operation(summary = "토스 명칭 삭제", description = "은행의 토스 딥링크용 명칭을 삭제합니다.")
+    @DeleteMapping("/bank/{id}/toss-name")
+    fun deleteBankTossName(
+        @PathVariable id: Long
+    ): BankDto {
+        return accountFacade.deleteBankTossName(id)
     }
 
     @Operation(

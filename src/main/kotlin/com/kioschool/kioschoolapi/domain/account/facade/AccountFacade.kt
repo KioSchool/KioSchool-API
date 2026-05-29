@@ -2,6 +2,7 @@ package com.kioschool.kioschoolapi.domain.account.facade
 
 import com.kioschool.kioschoolapi.domain.account.dto.common.AccountConnectionStatusDto
 import com.kioschool.kioschoolapi.domain.account.dto.common.BankDto
+import com.kioschool.kioschoolapi.domain.account.exception.BankTossNameNotFoundException
 import com.kioschool.kioschoolapi.domain.account.service.AccountService
 import com.kioschool.kioschoolapi.domain.account.service.BankService
 import com.kioschool.kioschoolapi.domain.user.dto.common.UserDto
@@ -33,6 +34,14 @@ class AccountFacade(
         return BankDto.of(bankService.addBank(name, code))
     }
 
+    fun updateBankTossName(id: Long, tossName: String): BankDto {
+        return BankDto.of(bankService.updateTossName(id, tossName))
+    }
+
+    fun deleteBankTossName(id: Long): BankDto {
+        return BankDto.of(bankService.deleteTossName(id))
+    }
+
     fun deleteBank(id: Long): BankDto {
         return BankDto.of(bankService.deleteBank(id))
     }
@@ -55,6 +64,21 @@ class AccountFacade(
         val user = userService.getUser(username)
         tossService.validateAccountUrl(user, accountUrl)
         user.account?.tossAccountUrl = tossService.removeAmountQueryFromAccountUrl(accountUrl)
+
+        val bank = user.account?.bank
+        if (bank != null) {
+            tossService.extractBankNameFromUrl(accountUrl)
+                ?.let { bankService.fillTossNameIfAbsent(bank, it) }
+        }
+
+        return UserDto.of(userService.saveUser(user))
+    }
+
+    fun registerTossAccountAuto(username: String): UserDto {
+        val user = userService.getUser(username)
+        val account = user.account ?: throw IllegalStateException("계좌가 등록되어 있지 않습니다.")
+        val tossName = account.bank.tossName ?: throw BankTossNameNotFoundException()
+        account.tossAccountUrl = tossService.generateTossAccountUrl(tossName, account.accountNumber)
         return UserDto.of(userService.saveUser(user))
     }
 
