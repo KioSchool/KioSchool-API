@@ -25,6 +25,8 @@ data class FestivalCalendarDto(
         val workspaceId: Long,
         val workspaceName: String,
         val universityName: String,
+        val ownerName: String,
+        val ownerEmail: String,
         val festivalDays: Int,
         val totalOrders: Long,
         val totalRevenue: Long,
