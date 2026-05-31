@@ -69,4 +69,15 @@ class AdminAccountController(
         )
     }
 
+    @Operation(
+        summary = "토스 계좌 URL 자동 생성",
+        description = "등록된 계좌의 은행 토스 명칭을 이용해 토스 URL을 자동으로 생성합니다. QR 없이 등록 가능한 은행에 한합니다."
+    )
+    @PostMapping("/toss-account/auto")
+    fun registerTossAccountAuto(
+        @AdminUsername username: String
+    ): UserDto {
+        return accountFacade.registerTossAccountAuto(username)
+    }
+
 }

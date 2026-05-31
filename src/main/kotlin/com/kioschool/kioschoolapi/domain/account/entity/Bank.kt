@@ -8,5 +8,6 @@ import jakarta.persistence.Table
 @Table(name = "bank", schema = "PUBLIC")
 class Bank(
     val name: String,
-    val code: String
+    val code: String,
+    var tossName: String? = null
 ) : BaseEntity()

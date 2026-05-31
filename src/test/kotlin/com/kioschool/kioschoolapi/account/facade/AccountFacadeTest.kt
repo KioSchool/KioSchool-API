@@ -1,5 +1,6 @@
 package com.kioschool.kioschoolapi.account.facade
 
+import com.kioschool.kioschoolapi.domain.account.exception.BankTossNameNotFoundException
 import com.kioschool.kioschoolapi.domain.account.exception.IncorrectAccountHolderException
 import com.kioschool.kioschoolapi.domain.account.facade.AccountFacade
 import com.kioschool.kioschoolapi.domain.account.service.AccountService
@@ -198,6 +199,7 @@ class AccountFacadeTest : DescribeSpec({
             every { userService.getUser(username) } returns SampleEntity.user
             every { tossService.validateAccountUrl(SampleEntity.user, accountUrl) } returns Unit
             every { tossService.removeAmountQueryFromAccountUrl(accountUrl) } returns "removedUrl"
+            every { tossService.extractBankNameFromUrl(accountUrl) } returns null
             every { userService.saveUser(any()) } returns SampleEntity.user.apply {
                 this.account = SampleEntity.account
             }
@@ -211,16 +213,53 @@ class AccountFacadeTest : DescribeSpec({
             verify { userService.saveUser(any()) }
         }
 
-        it("should throw DifferentAccountNumberException when account holder is incorrect") {
+        it("should auto-fill bank tossName when bank has no tossName") {
+            val username = "username"
+            val accountUrl = "supertoss://send?bank=%EC%B9%B4%EC%B9%B4%EC%98%A4%EB%B1%85%ED%81%AC&accountNo=3333280467267&origin=qr"
+            val userWithAccount = SampleEntity.user.apply {
+                this.account = SampleEntity.account.apply { bank.tossName = null }
+            }
+
+            every { userService.getUser(username) } returns userWithAccount
+            every { tossService.validateAccountUrl(userWithAccount, accountUrl) } returns Unit
+            every { tossService.removeAmountQueryFromAccountUrl(accountUrl) } returns accountUrl
+            every { tossService.extractBankNameFromUrl(accountUrl) } returns "카카오뱅크"
+            every { bankService.fillTossNameIfAbsent(SampleEntity.bank, "카카오뱅크") } just Runs
+            every { userService.saveUser(any()) } returns userWithAccount
+
+            sut.registerTossAccount(username, accountUrl)
+
+            verify { tossService.extractBankNameFromUrl(accountUrl) }
+            verify { bankService.fillTossNameIfAbsent(SampleEntity.bank, "카카오뱅크") }
+        }
+
+        it("should call fillTossNameIfAbsent even when bank already has tossName") {
+            val username = "username"
+            val accountUrl = "supertoss://send?bank=%EC%B9%B4%EC%B9%B4%EC%98%A4%EB%B1%85%ED%81%AC&accountNo=3333280467267&origin=qr"
+            val userWithAccount = SampleEntity.user.apply {
+                this.account = SampleEntity.account.apply { bank.tossName = "카카오뱅크" }
+            }
+
+            every { userService.getUser(username) } returns userWithAccount
+            every { tossService.validateAccountUrl(userWithAccount, accountUrl) } returns Unit
+            every { tossService.removeAmountQueryFromAccountUrl(accountUrl) } returns accountUrl
+            every { tossService.extractBankNameFromUrl(accountUrl) } returns "카카오뱅크"
+            every { bankService.fillTossNameIfAbsent(SampleEntity.bank, "카카오뱅크") } just Runs
+            every { userService.saveUser(any()) } returns userWithAccount
+
+            sut.registerTossAccount(username, accountUrl)
+
+            // fillTossNameIfAbsent는 항상 호출되며, 내부에서 tossName 유무를 판단함
+            verify { bankService.fillTossNameIfAbsent(SampleEntity.bank, "카카오뱅크") }
+        }
+
+        it("should throw DifferentAccountNumberException when account number does not match") {
             val username = "username"
             val accountUrl = "accountUrl"
 
             every { userService.getUser(username) } returns SampleEntity.user
             every {
-                tossService.validateAccountUrl(
-                    SampleEntity.user,
-                    accountUrl
-                )
+                tossService.validateAccountUrl(SampleEntity.user, accountUrl)
             } throws DifferentAccountNumberException()
 
             assertThrows<DifferentAccountNumberException> {
@@ -230,6 +269,84 @@ class AccountFacadeTest : DescribeSpec({
             verify { userService.getUser(username) }
             verify { tossService.validateAccountUrl(SampleEntity.user, accountUrl) }
             verify(exactly = 0) { userService.saveUser(SampleEntity.user) }
+        }
+    }
+
+    describe("registerTossAccountAuto") {
+        it("should generate and save toss url when bank has tossName") {
+            val username = "username"
+            val userWithAccount = SampleEntity.user.apply {
+                this.account = SampleEntity.account.apply {
+                    bank.tossName = "카카오뱅크"
+                    accountNumber = "3333280467267"
+                }
+            }
+            val generatedUrl = "supertoss://send?bank=%EC%B9%B4%EC%B9%B4%EC%98%A4%EB%B1%85%ED%81%AC&accountNo=3333280467267&origin=qr"
+
+            every { userService.getUser(username) } returns userWithAccount
+            every { tossService.generateTossAccountUrl("카카오뱅크", "3333280467267") } returns generatedUrl
+            every { userService.saveUser(any()) } returns userWithAccount
+
+            sut.registerTossAccountAuto(username)
+
+            assert(userWithAccount.account?.tossAccountUrl == generatedUrl)
+            verify { tossService.generateTossAccountUrl("카카오뱅크", "3333280467267") }
+            verify { userService.saveUser(any()) }
+        }
+
+        it("should throw BankTossNameNotFoundException when bank has no tossName") {
+            val username = "username"
+            val userWithAccount = SampleEntity.user.apply {
+                this.account = SampleEntity.account.apply { bank.tossName = null }
+            }
+
+            every { userService.getUser(username) } returns userWithAccount
+
+            assertThrows<BankTossNameNotFoundException> {
+                sut.registerTossAccountAuto(username)
+            }
+
+            verify(exactly = 0) { tossService.generateTossAccountUrl(any(), any()) }
+            verify(exactly = 0) { userService.saveUser(any()) }
+        }
+
+        it("should throw IllegalStateException when account is not registered") {
+            val username = "username"
+            val userWithoutAccount = SampleEntity.user.apply { this.account = null }
+
+            every { userService.getUser(username) } returns userWithoutAccount
+
+            assertThrows<IllegalStateException> {
+                sut.registerTossAccountAuto(username)
+            }
+
+            verify(exactly = 0) { tossService.generateTossAccountUrl(any(), any()) }
+            verify(exactly = 0) { userService.saveUser(any()) }
+        }
+    }
+
+    describe("updateBankTossName") {
+        it("should call bankService.updateTossName") {
+            val id = 1L
+            val tossName = "NH농협은행"
+
+            every { bankService.updateTossName(id, tossName) } returns SampleEntity.bank
+
+            sut.updateBankTossName(id, tossName)
+
+            verify { bankService.updateTossName(id, tossName) }
+        }
+    }
+
+    describe("deleteBankTossName") {
+        it("should call bankService.deleteTossName") {
+            val id = 1L
+
+            every { bankService.deleteTossName(id) } returns SampleEntity.bank
+
+            sut.deleteBankTossName(id)
+
+            verify { bankService.deleteTossName(id) }
         }
     }
 
