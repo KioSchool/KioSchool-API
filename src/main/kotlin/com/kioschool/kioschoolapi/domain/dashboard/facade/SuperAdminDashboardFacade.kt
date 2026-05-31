@@ -230,13 +230,16 @@ class SuperAdminDashboardFacade(
             .groupBy { it.workspace.id }
             .map { (_, wsRecords) ->
                 val first = wsRecords.first()
-                val university = resolveUniversity(first.workspace.owner.email)
+                val owner = first.workspace.owner
+                val university = resolveUniversity(owner.email)
                 val totalOrders = wsRecords.sumOf { it.totalOrders.toLong() }
                 val totalRevenue = wsRecords.sumOf { it.totalRevenue }
                 FestivalCalendarDto.WorkspaceRankItem(
                     workspaceId = first.workspace.id,
                     workspaceName = first.workspace.name,
                     universityName = university,
+                    ownerName = owner.name,
+                    ownerEmail = owner.email,
                     festivalDays = wsRecords.size,
                     totalOrders = totalOrders,
                     totalRevenue = totalRevenue,
