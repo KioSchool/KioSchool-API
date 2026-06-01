@@ -29,7 +29,7 @@ management:
   stackdriver:
     metrics:
       export:
-        enabled: true
+        enabled: false
   endpoints:
     web:
       cors:
