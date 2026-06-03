@@ -1,6 +1,6 @@
 package com.kioschool.kioschoolapi.global.websocket.dto
 
 data class RedisPubSubMessage(
-    val destination: String,
+    val workspaceId: Long,
     val payload: Message
 )
