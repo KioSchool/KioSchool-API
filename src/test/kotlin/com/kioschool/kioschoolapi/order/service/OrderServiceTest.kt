@@ -36,17 +36,6 @@ class OrderServiceTest : DescribeSpec({
         eventPublisher
     )
 
-    beforeTest {
-        mockkObject(repository)
-        mockkObject(workspaceService)
-        mockkObject(customOrderRepository)
-        mockkObject(orderRedisRepository)
-        mockkObject(orderProductRepository)
-        mockkObject(orderSessionRepository)
-        mockkObject(customOrderSessionRepository)
-        mockkObject(eventPublisher)
-    }
-
     afterTest {
         clearAllMocks()
     }
