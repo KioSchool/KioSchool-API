@@ -57,6 +57,8 @@ class DiscordService(
         successCount: Int,
         failedWorkspaceIds: List<Long>
     ) {
+        if (successCount == 0 && failedWorkspaceIds.isEmpty()) return
+
         val failedSection = if (failedWorkspaceIds.isEmpty()) "없음"
         else failedWorkspaceIds.joinToString(", ")
 
