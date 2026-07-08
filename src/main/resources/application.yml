@@ -18,13 +18,15 @@ spring:
       maximum-pool-size: 10 # 고정 풀 크기 권장 (CPU 코어수, DB 스펙에 맞춰 조절)
       minimum-idle: 10 # 서버리스가 아닌 오라클 VM(항상 켜져있음)이므로 10개 풀을 항상 유지하여 acquire 지연 제거!
       # idle-timeout: 10000 (minimum-idle과 maximum-pool-size가 동일한 고정 풀에서는 idle-timeout 설정이 무시되므로 삭제)
-      max-lifetime: 540000 
-      keepalive-time: 60000 
+      max-lifetime: 540000
+      keepalive-time: 60000
       connection-timeout: 3000 # 커넥션 타임아웃은 일반적인 수준(3초)으로 살짝 여유있게 조정
+      leak-detection-threshold: 20000 # 20초 이상 반납 안 된 커넥션의 대여 스택트레이스를 WARN 로그로 남겨 누수 지점을 추적
     driver-class-name: org.postgresql.Driver
   liquibase:
     change-log: classpath:db/changelog-master.yaml
   jpa:
+    open-in-view: false # OSIV 비활성화: JSON API라 뷰 렌더링이 없고, async/SSE 요청이 커넥션을 오래 붙잡는 위험을 제거
     properties:
       hibernate:
         default_batch_fetch_size: 100
