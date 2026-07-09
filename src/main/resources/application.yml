@@ -46,11 +46,6 @@ spring:
           auth: true
           ssl:
             enable: true
-logging:
-  level:
-    # 커넥션 풀 고갈 진단용: 30초마다 'Pool stats (active/idle/waiting)', 타임아웃 시 'Timeout failure stats'를 로그로 남김.
-    # leak-detection-threshold와 함께 재발 시 원인 확정용. 동작 변경 없음(로그만).
-    com.zaxxer.hikari.pool.HikariPool: DEBUG
 jwt:
   secret-key: "${JWT_SECRET_KEY}"
 cloud:
