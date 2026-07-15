@@ -13,12 +13,14 @@ import com.kioschool.kioschoolapi.global.cache.annotation.OrderProductUpdateEven
 import com.kioschool.kioschoolapi.global.cache.annotation.OrderUpdateEvent
 import com.kioschool.kioschoolapi.global.common.enums.OrderStatus
 import com.kioschool.kioschoolapi.global.common.enums.WebsocketType
+import com.kioschool.kioschoolapi.global.websocket.service.CustomWebSocketService
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 
 @Service
 class OrderService(
     private val orderRepository: OrderRepository,
+    private val websocketService: CustomWebSocketService,
     private val customOrderRepository: CustomOrderRepository,
     private val orderRedisRepository: OrderRedisRepository,
     private val orderProductRepository: OrderProductRepository,

@@ -1,19 +1,19 @@
 package com.kioschool.kioschoolapi.global.websocket.redis
 
-import com.kioschool.kioschoolapi.global.sse.SseEmitterService
 import com.kioschool.kioschoolapi.global.websocket.dto.RedisPubSubMessage
-import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.data.redis.connection.Message
 import org.springframework.data.redis.connection.MessageListener
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.data.redis.listener.ChannelTopic
 import org.springframework.data.redis.listener.RedisMessageListenerContainer
+import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.stereotype.Service
+import org.slf4j.LoggerFactory
 
 @Service
 class RedisSubscriber(
-    private val sseEmitterService: SseEmitterService,
+    private val messagingTemplate: SimpMessagingTemplate,
     private val redisMessageListenerContainer: RedisMessageListenerContainer,
     private val channelTopic: ChannelTopic,
     @Qualifier("redisPubSubTemplate")
@@ -30,7 +30,7 @@ class RedisSubscriber(
         try {
             val pubSubMessage =
                 redisTemplate.valueSerializer.deserialize(message.body) as RedisPubSubMessage
-            sseEmitterService.sendToWorkspace(pubSubMessage.workspaceId, pubSubMessage.payload)
+            messagingTemplate.convertAndSend(pubSubMessage.destination, pubSubMessage.payload)
         } catch (e: Exception) {
             log.error("Redis Subscriber Error: {}", e.message, e)
         }
