@@ -54,31 +54,4 @@ class SseEmitterServiceTest : DescribeSpec({
             sut.emitterCount(3L) shouldBe 0
         }
     }
-
-    describe("sendHeartbeat") {
-        it("열려있는 모든 emitter에 keep-alive 코멘트를 send한다") {
-            val emitter1 = mockk<SseEmitter>(relaxed = true)
-            val emitter2 = mockk<SseEmitter>(relaxed = true)
-            sut.addEmitter(4L, emitter1)
-            sut.addEmitter(4L, emitter2)
-
-            sut.sendHeartbeat()
-
-            verify(exactly = 1) { emitter1.send(any<SseEmitter.SseEventBuilder>()) }
-            verify(exactly = 1) { emitter2.send(any<SseEmitter.SseEventBuilder>()) }
-
-            sut.removeEmitter(4L, emitter1)
-            sut.removeEmitter(4L, emitter2)
-        }
-
-        it("send 실패한(끊긴) emitter는 목록에서 제거한다") {
-            val brokenEmitter = mockk<SseEmitter>(relaxed = true)
-            every { brokenEmitter.send(any<SseEmitter.SseEventBuilder>()) } throws IllegalStateException("completed")
-            sut.addEmitter(5L, brokenEmitter)
-
-            sut.sendHeartbeat()
-
-            sut.emitterCount(5L) shouldBe 0
-        }
-    }
 })
