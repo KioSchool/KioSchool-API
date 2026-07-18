@@ -14,6 +14,7 @@ import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.global.cache.constant.CacheNames
 import com.kioschool.kioschoolapi.global.common.enums.OrderStatus
 import com.kioschool.kioschoolapi.global.common.enums.WebsocketType
+import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
@@ -28,6 +29,8 @@ class OrderFacade(
     private val workspaceService: WorkspaceService,
     private val productService: ProductService
 ) {
+    private val log = LoggerFactory.getLogger(javaClass)
+
     @Transactional
     fun createOrder(
         workspaceId: Long,
@@ -80,6 +83,34 @@ class OrderFacade(
     @Cacheable(cacheNames = [CacheNames.ORDERS], key = "#orderId")
     fun getOrder(orderId: Long): OrderDto {
         return OrderDto.of(orderService.getOrder(orderId))
+    }
+
+    fun getSessionOrders(
+        workspaceId: Long,
+        tableHash: String,
+        orderId: Long
+    ): List<OrderDto> {
+        val workspace = workspaceService.getWorkspace(workspaceId)
+        val table = workspaceService.getWorkspaceTableByHash(workspace, tableHash)
+        val currentSession = table.orderSession ?: return emptyList()
+
+        val order = orderService.getOrderOrNull(orderId) ?: return emptyList()
+
+        if (order.orderSession?.id != currentSession.id) {
+            log.warn(
+                "Session orders access denied: orderId={} does not belong to the current session. workspaceId={}, tableNumber={}, currentSessionId={}, orderSessionId={}",
+                orderId,
+                workspaceId,
+                table.tableNumber,
+                currentSession.id,
+                order.orderSession?.id
+            )
+            return emptyList()
+        }
+
+        return orderService.getAllOrdersByOrderSession(currentSession)
+            .sortedBy { it.id }
+            .map { OrderDto.of(it) }
     }
 
     fun getOrdersByCondition(

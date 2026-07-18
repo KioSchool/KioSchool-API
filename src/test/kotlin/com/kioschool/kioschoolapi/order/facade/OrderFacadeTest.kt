@@ -184,6 +184,80 @@ class OrderFacadeTest : DescribeSpec({
         }
     }
 
+    describe("getSessionOrders") {
+        val workspaceId = 1L
+        val tableHash = "testHash"
+
+        it("should return orders of the current session when the order belongs to it") {
+            val orderId = SampleEntity.order1s1.id
+
+            every { workspaceService.getWorkspace(workspaceId) } returns SampleEntity.workspace
+            every {
+                workspaceService.getWorkspaceTableByHash(SampleEntity.workspace, tableHash)
+            } returns SampleEntity.workspaceTable.apply { orderSession = SampleEntity.testSession1 }
+            every { orderService.getOrderOrNull(orderId) } returns SampleEntity.order1s1
+            every {
+                orderService.getAllOrdersByOrderSession(SampleEntity.testSession1)
+            } returns listOf(SampleEntity.order2s1, SampleEntity.order1s1)
+
+            val result = sut.getSessionOrders(workspaceId, tableHash, orderId)
+
+            assert(result.size == 2)
+            assert(result.map { it.id } == listOf(SampleEntity.order1s1.id, SampleEntity.order2s1.id))
+
+            verify { orderService.getOrderOrNull(orderId) }
+            verify { orderService.getAllOrdersByOrderSession(SampleEntity.testSession1) }
+        }
+
+        it("should return empty list when the order belongs to a different session") {
+            val orderId = SampleEntity.order1s1.id
+
+            every { workspaceService.getWorkspace(workspaceId) } returns SampleEntity.workspace
+            every {
+                workspaceService.getWorkspaceTableByHash(SampleEntity.workspace, tableHash)
+            } returns SampleEntity.workspaceTable.apply { orderSession = SampleEntity.testSession2 }
+            every { orderService.getOrderOrNull(orderId) } returns SampleEntity.order1s1
+
+            val result = sut.getSessionOrders(workspaceId, tableHash, orderId)
+
+            assert(result.isEmpty())
+
+            verify(exactly = 0) { orderService.getAllOrdersByOrderSession(any()) }
+        }
+
+        it("should return empty list when the table has no active session") {
+            val orderId = SampleEntity.order1s1.id
+
+            every { workspaceService.getWorkspace(workspaceId) } returns SampleEntity.workspace
+            every {
+                workspaceService.getWorkspaceTableByHash(SampleEntity.workspace, tableHash)
+            } returns SampleEntity.workspaceTable.apply { orderSession = null }
+
+            val result = sut.getSessionOrders(workspaceId, tableHash, orderId)
+
+            assert(result.isEmpty())
+
+            verify(exactly = 0) { orderService.getOrderOrNull(any()) }
+            verify(exactly = 0) { orderService.getAllOrdersByOrderSession(any()) }
+        }
+
+        it("should return empty list when the order does not exist") {
+            val orderId = 999L
+
+            every { workspaceService.getWorkspace(workspaceId) } returns SampleEntity.workspace
+            every {
+                workspaceService.getWorkspaceTableByHash(SampleEntity.workspace, tableHash)
+            } returns SampleEntity.workspaceTable.apply { orderSession = SampleEntity.testSession1 }
+            every { orderService.getOrderOrNull(orderId) } returns null
+
+            val result = sut.getSessionOrders(workspaceId, tableHash, orderId)
+
+            assert(result.isEmpty())
+
+            verify(exactly = 0) { orderService.getAllOrdersByOrderSession(any()) }
+        }
+    }
+
     describe("getOrdersByCondition") {
         it("should call workspaceService.checkAccessible and orderService.getAllOrdersByCondition with parsed parameters") {
             val username = "test"
