@@ -2,14 +2,12 @@ package com.kioschool.kioschoolapi.user.service
 
 import com.kioschool.kioschoolapi.domain.email.service.EmailService
 import com.kioschool.kioschoolapi.domain.user.entity.User
-import com.kioschool.kioschoolapi.domain.user.exception.LoginFailedException
-import com.kioschool.kioschoolapi.domain.user.exception.NoPermissionException
-import com.kioschool.kioschoolapi.domain.user.exception.RegisterException
-import com.kioschool.kioschoolapi.domain.user.exception.UserNotFoundException
 import com.kioschool.kioschoolapi.domain.user.repository.UserRepository
 import com.kioschool.kioschoolapi.domain.user.service.UserService
 import com.kioschool.kioschoolapi.factory.SampleEntity
 import com.kioschool.kioschoolapi.global.common.enums.UserRole
+import com.kioschool.kioschoolapi.global.error.ErrorCode
+import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
@@ -40,7 +38,7 @@ class UserServiceTest : DescribeSpec({
     }
 
     describe("checkPassword") {
-        it("should throw LoginFailedException when password is not matched") {
+        it("should throw CustomException(LOGIN_FAILED) when password is not matched") {
             // Given
             val user = User(
                 loginId = "test",
@@ -57,12 +55,13 @@ class UserServiceTest : DescribeSpec({
             every { passwordEncoder.matches(loginPassword, user.loginPassword) } returns false
 
             // Act & Assert
-            shouldThrow<LoginFailedException> {
+            val ex = shouldThrow<CustomException> {
                 sut.checkPassword(user, loginPassword)
             }
+            ex.errorCode shouldBe ErrorCode.LOGIN_FAILED
         }
 
-        it("should not throw LoginFailedException when password is matched") {
+        it("should not throw CustomException(LOGIN_FAILED) when password is matched") {
             // Given
             val user = User(
                 loginId = "test",
@@ -118,19 +117,20 @@ class UserServiceTest : DescribeSpec({
     }
 
     describe("validateLoginId") {
-        it("should throw RegisterException when loginId is duplicated") {
+        it("should throw CustomException(DUPLICATE_LOGIN_ID) when loginId is duplicated") {
             val loginId = "test"
 
             // Mock
             every { repository.findByLoginId(loginId) } returns SampleEntity.user
 
             // Act & Assert
-            shouldThrow<RegisterException> {
+            val ex = shouldThrow<CustomException> {
                 sut.validateLoginId(loginId)
             }
+            ex.errorCode shouldBe ErrorCode.DUPLICATE_LOGIN_ID
         }
 
-        it("should not throw RegisterException when loginId is not duplicated") {
+        it("should not throw CustomException(DUPLICATE_LOGIN_ID) when loginId is not duplicated") {
             val loginId = "test"
 
             // Mock
@@ -142,22 +142,23 @@ class UserServiceTest : DescribeSpec({
     }
 
     describe("validateEmail") {
-        it("should throw RegisterException when email is not verified") {
+        it("should throw CustomException(EMAIL_NOT_VERIFIED) when email is not verified") {
             val email = "test@test.com"
 
             // Mock
             every { emailService.isRegisterEmailVerified(email) } returns false
 
             // Act & Assert
-            shouldThrow<RegisterException> {
+            val ex = shouldThrow<CustomException> {
                 sut.validateEmail(email)
             }
+            ex.errorCode shouldBe ErrorCode.EMAIL_NOT_VERIFIED
 
             verify { emailService.isRegisterEmailVerified(email) }
             verify(exactly = 0) { repository.findByEmail(email) }
         }
 
-        it("should throw RegisterException when email is duplicated") {
+        it("should throw CustomException(DUPLICATE_EMAIL) when email is duplicated") {
             val email = "test@test.com"
 
             // Mock
@@ -165,15 +166,16 @@ class UserServiceTest : DescribeSpec({
             every { repository.findByEmail(email) } returns SampleEntity.user
 
             // Act & Assert
-            shouldThrow<RegisterException> {
+            val ex = shouldThrow<CustomException> {
                 sut.validateEmail(email)
             }
+            ex.errorCode shouldBe ErrorCode.DUPLICATE_EMAIL
 
             verify { emailService.isRegisterEmailVerified(email) }
             verify { repository.findByEmail(email) }
         }
 
-        it("should not throw RegisterException when email is verified and not duplicated") {
+        it("should not throw CustomException when email is verified and not duplicated") {
             val email = "test@test.com"
 
             // Mock
@@ -221,16 +223,17 @@ class UserServiceTest : DescribeSpec({
             sut.getUser(loginId) shouldBe SampleEntity.user
         }
 
-        it("should throw UserNotFoundException when user does not exist") {
+        it("should throw CustomException(USER_NOT_FOUND) when user does not exist") {
             val loginId = "test"
 
             // Mock
             every { repository.findByLoginId(loginId) } returns null
 
             // Act & Assert
-            shouldThrow<UserNotFoundException> {
+            val ex = shouldThrow<CustomException> {
                 sut.getUser(loginId)
             }
+            ex.errorCode shouldBe ErrorCode.USER_NOT_FOUND
         }
     }
 
@@ -247,16 +250,17 @@ class UserServiceTest : DescribeSpec({
             verify { repository.findByEmail(email) }
         }
 
-        it("should throw UserNotFoundException when user does not exist") {
+        it("should throw CustomException(USER_NOT_FOUND) when user does not exist") {
             val email = "test@test.com"
 
             // Mock
             every { repository.findByEmail(email) } returns null
 
             // Act & Assert
-            shouldThrow<UserNotFoundException> {
+            val ex = shouldThrow<CustomException> {
                 sut.getUserByEmail(email)
             }
+            ex.errorCode shouldBe ErrorCode.USER_NOT_FOUND
         }
     }
 
@@ -336,9 +340,10 @@ class UserServiceTest : DescribeSpec({
             user.role = UserRole.ADMIN
 
             // Act & Assert
-            shouldThrow<NoPermissionException> {
+            val ex = shouldThrow<CustomException> {
                 sut.checkHasSuperAdminPermission(user)
             }
+            ex.errorCode shouldBe ErrorCode.NO_PERMISSION
         }
     }
 
@@ -361,16 +366,17 @@ class UserServiceTest : DescribeSpec({
             sut.checkEmailAddress(user, email)
         }
 
-        it("should throw UserNotFoundException when email is not matched") {
+        it("should throw CustomException(USER_NOT_FOUND) when email is not matched") {
             val email = "test@test.com"
             val wrongEmail = "wrong@wrong.com"
             val user = SampleEntity.user
             user.email = email
 
             // Act & Assert
-            shouldThrow<UserNotFoundException> {
+            val ex = shouldThrow<CustomException> {
                 sut.checkEmailAddress(user, wrongEmail)
             }
+            ex.errorCode shouldBe ErrorCode.USER_NOT_FOUND
         }
     }
 

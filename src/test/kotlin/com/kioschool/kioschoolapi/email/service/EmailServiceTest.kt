@@ -7,11 +7,13 @@ import com.kioschool.kioschoolapi.domain.email.exception.NotVerifiedEmailDomainE
 import com.kioschool.kioschoolapi.domain.email.repository.EmailCodeRepository
 import com.kioschool.kioschoolapi.domain.email.repository.EmailDomainRepository
 import com.kioschool.kioschoolapi.domain.email.service.EmailService
-import com.kioschool.kioschoolapi.domain.user.exception.UserNotFoundException
 import com.kioschool.kioschoolapi.factory.SampleEntity
+import com.kioschool.kioschoolapi.global.error.ErrorCode
+import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import io.kotest.core.spec.style.DescribeSpec
 import io.mockk.*
 import jakarta.mail.internet.MimeMessage
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.assertThrows
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
@@ -264,7 +266,7 @@ class EmailServiceTest : DescribeSpec({
             assert(result == emailCode.email)
         }
 
-        it("should throw UserNotFoundException if emailCode is not exists") {
+        it("should throw CustomException(USER_NOT_FOUND) if emailCode is not exists") {
             val code = "123456"
 
             every {
@@ -274,9 +276,10 @@ class EmailServiceTest : DescribeSpec({
                 )
             } returns null
 
-            assertThrows<UserNotFoundException> {
+            val ex = assertThrows<CustomException> {
                 sut.getEmailByCode(code)
             }
+            assertEquals(ErrorCode.USER_NOT_FOUND, ex.errorCode)
         }
     }
 

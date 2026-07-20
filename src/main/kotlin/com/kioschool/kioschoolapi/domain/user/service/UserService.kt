@@ -2,12 +2,10 @@ package com.kioschool.kioschoolapi.domain.user.service
 
 import com.kioschool.kioschoolapi.domain.email.service.EmailService
 import com.kioschool.kioschoolapi.domain.user.entity.User
-import com.kioschool.kioschoolapi.domain.user.exception.LoginFailedException
-import com.kioschool.kioschoolapi.domain.user.exception.NoPermissionException
-import com.kioschool.kioschoolapi.domain.user.exception.RegisterException
-import com.kioschool.kioschoolapi.domain.user.exception.UserNotFoundException
 import com.kioschool.kioschoolapi.domain.user.repository.UserRepository
 import com.kioschool.kioschoolapi.global.common.enums.UserRole
+import com.kioschool.kioschoolapi.global.error.ErrorCode
+import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -24,7 +22,7 @@ class UserService(
                 loginPassword,
                 user.loginPassword
             )
-        ) throw LoginFailedException()
+        ) throw CustomException(ErrorCode.LOGIN_FAILED)
     }
 
     fun saveUser(user: User): User {
@@ -45,7 +43,7 @@ class UserService(
     }
 
     fun validateLoginId(loginId: String) {
-        if (isDuplicateLoginId(loginId)) throw RegisterException(RegisterException.Reason.DUPLICATE_LOGIN_ID)
+        if (isDuplicateLoginId(loginId)) throw CustomException(ErrorCode.DUPLICATE_LOGIN_ID)
     }
 
     fun validateEmail(email: String) {
@@ -58,11 +56,11 @@ class UserService(
     }
 
     private fun checkIsEmailVerified(email: String) {
-        if (!emailService.isRegisterEmailVerified(email)) throw RegisterException(RegisterException.Reason.EMAIL_NOT_VERIFIED)
+        if (!emailService.isRegisterEmailVerified(email)) throw CustomException(ErrorCode.EMAIL_NOT_VERIFIED)
     }
 
     private fun checkIsEmailDuplicate(email: String) {
-        if (isDuplicateEmail(email)) throw RegisterException(RegisterException.Reason.DUPLICATE_EMAIL)
+        if (isDuplicateEmail(email)) throw CustomException(ErrorCode.DUPLICATE_EMAIL)
     }
 
     private fun isDuplicateEmail(email: String): Boolean {
@@ -70,11 +68,11 @@ class UserService(
     }
 
     fun getUser(loginId: String): User {
-        return userRepository.findByLoginId(loginId) ?: throw UserNotFoundException()
+        return userRepository.findByLoginId(loginId) ?: throw CustomException(ErrorCode.USER_NOT_FOUND)
     }
 
     fun getUserByEmail(email: String): User {
-        return userRepository.findByEmail(email) ?: throw UserNotFoundException()
+        return userRepository.findByEmail(email) ?: throw CustomException(ErrorCode.USER_NOT_FOUND)
     }
 
     fun getAllUsers(name: String?, page: Int, size: Int): Page<User> {
@@ -93,7 +91,7 @@ class UserService(
     }
 
     fun checkHasSuperAdminPermission(user: User) {
-        if (user.role != UserRole.SUPER_ADMIN) throw NoPermissionException()
+        if (user.role != UserRole.SUPER_ADMIN) throw CustomException(ErrorCode.NO_PERMISSION)
     }
 
     fun removeAmountQueryFromAccountUrl(accountUrl: String): String {
@@ -101,7 +99,7 @@ class UserService(
     }
 
     fun checkEmailAddress(user: User, email: String) {
-        if (user.email != email) throw UserNotFoundException()
+        if (user.email != email) throw CustomException(ErrorCode.USER_NOT_FOUND)
     }
 
     fun deleteUser(user: User): User {

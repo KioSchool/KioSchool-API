@@ -8,7 +8,8 @@ import com.kioschool.kioschoolapi.domain.email.exception.EmailSendFailureExcepti
 import com.kioschool.kioschoolapi.domain.email.exception.NotVerifiedEmailDomainException
 import com.kioschool.kioschoolapi.domain.email.repository.EmailCodeRepository
 import com.kioschool.kioschoolapi.domain.email.repository.EmailDomainRepository
-import com.kioschool.kioschoolapi.domain.user.exception.UserNotFoundException
+import com.kioschool.kioschoolapi.global.error.ErrorCode
+import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import jakarta.transaction.Transactional
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -96,7 +97,7 @@ class EmailService(
     fun getEmailByCode(code: String): String {
         val emailCode =
             emailCodeRepository.findByCodeAndKind(code, EmailKind.RESET_PASSWORD)
-                ?: throw UserNotFoundException()
+                ?: throw CustomException(ErrorCode.USER_NOT_FOUND)
         return emailCode.email
     }
 
