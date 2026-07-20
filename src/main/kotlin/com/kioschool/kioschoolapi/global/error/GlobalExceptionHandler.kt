@@ -3,6 +3,7 @@ package com.kioschool.kioschoolapi.global.error
 import com.kioschool.kioschoolapi.global.error.dto.ErrorResponse
 import com.kioschool.kioschoolapi.global.error.dto.FieldErrorDetail
 import com.kioschool.kioschoolapi.global.error.exception.CustomException
+import com.kioschool.kioschoolapi.global.logging.annotation.Masked
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.ConstraintViolationException
 import org.slf4j.LoggerFactory
@@ -43,7 +44,12 @@ class GlobalExceptionHandler : ResponseEntityExceptionHandler() {
         request: HttpServletRequest,
     ): ResponseEntity<ErrorResponse> {
         val errors = ex.constraintViolations.map {
-            FieldErrorDetail(it.propertyPath.toString(), it.invalidValue?.toString(), it.message)
+            val masked = isMaskedField(it.rootBeanClass, it.propertyPath.toString())
+            FieldErrorDetail(
+                field = it.propertyPath.toString(),
+                value = if (masked) null else it.invalidValue?.toString(),
+                reason = it.message,
+            )
         }
         log.warn("Constraint violation at {}: {}", request.requestURI, errors)
         return ResponseEntity.status(ErrorCode.INVALID_INPUT.status)
@@ -61,15 +67,21 @@ class GlobalExceptionHandler : ResponseEntityExceptionHandler() {
     }
 
     // @Valid body validation failure → field-level errors[]
+    // public (widened from protected) so unit tests can invoke it directly.
     public override fun handleMethodArgumentNotValid(
         ex: MethodArgumentNotValidException,
         headers: HttpHeaders,
         status: HttpStatusCode,
         request: WebRequest,
     ): ResponseEntity<Any>? {
-        val path = (request as? ServletWebRequest)?.request?.requestURI ?: ""
+        val path = request.servletPath()
+        val targetClass = ex.bindingResult.target?.javaClass
         val errors = ex.bindingResult.fieldErrors.map {
-            FieldErrorDetail(it.field, it.rejectedValue?.toString(), it.defaultMessage)
+            FieldErrorDetail(
+                field = it.field,
+                value = if (isMaskedField(targetClass, it.field)) null else it.rejectedValue?.toString(),
+                reason = it.defaultMessage,
+            )
         }
         log.warn("Validation failed at {}: {}", path, errors)
         return ResponseEntity.status(ErrorCode.INVALID_INPUT.status)
@@ -78,6 +90,7 @@ class GlobalExceptionHandler : ResponseEntityExceptionHandler() {
 
     // All other Spring MVC framework exceptions (method not supported, media type,
     // unreadable body, missing param, ...) → preserve status, code = HTTP status name
+    // public (widened from protected) so unit tests can invoke it directly.
     public override fun handleExceptionInternal(
         ex: Exception,
         body: Any?,
@@ -85,10 +98,14 @@ class GlobalExceptionHandler : ResponseEntityExceptionHandler() {
         statusCode: HttpStatusCode,
         request: WebRequest,
     ): ResponseEntity<Any>? {
-        val path = (request as? ServletWebRequest)?.request?.requestURI ?: ""
+        val path = request.servletPath()
         val resolved = HttpStatus.resolve(statusCode.value())
         val code = resolved?.name ?: "ERROR"
-        log.warn("Framework exception [{}] at {}: {}", code, path, ex.message)
+        if (statusCode.is5xxServerError) {
+            log.error("Framework exception [{}] at {}", code, path, ex)
+        } else {
+            log.warn("Framework exception [{}] at {}: {}", code, path, ex.message)
+        }
         val errorResponse = ErrorResponse(
             code = code,
             message = resolved?.reasonPhrase ?: "error",
@@ -98,4 +115,15 @@ class GlobalExceptionHandler : ResponseEntityExceptionHandler() {
         )
         return ResponseEntity.status(statusCode).headers(headers).body(errorResponse)
     }
+
+    private fun isMaskedField(targetClass: Class<*>?, fieldPath: String): Boolean {
+        targetClass ?: return false
+        val fieldName = fieldPath.substringAfterLast('.')
+        return runCatching {
+            targetClass.getDeclaredField(fieldName).isAnnotationPresent(Masked::class.java)
+        }.getOrDefault(false)
+    }
+
+    private fun WebRequest.servletPath(): String =
+        (this as? ServletWebRequest)?.request?.requestURI ?: ""
 }
