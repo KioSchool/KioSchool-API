@@ -12,7 +12,7 @@ class CustomUserDetailService(
     val userRepository: UserRepository
 ) : UserDetailsService {
     override fun loadUserByUsername(username: String?): UserDetails {
-        val user = userRepository.findByLoginId(username!!)
+        val user = username?.let { userRepository.findByLoginId(it) }
             ?: throw CustomException(ErrorCode.INVALID_JWT)
         return CustomUserDetails(user)
     }

@@ -17,6 +17,7 @@ class JwtAuthenticationFilter(
     private val handlerExceptionResolver: HandlerExceptionResolver,
 ) : OncePerRequestFilter() {
 
+    // public (widened from protected) so unit tests can invoke it directly.
     public override fun doFilterInternal(
         request: HttpServletRequest,
         response: HttpServletResponse,
@@ -31,6 +32,7 @@ class JwtAuthenticationFilter(
         } catch (e: CustomException) {
             SecurityContextHolder.clearContext()
             handlerExceptionResolver.resolveException(request, response, null, e)
+                ?: throw e
             return
         }
 
