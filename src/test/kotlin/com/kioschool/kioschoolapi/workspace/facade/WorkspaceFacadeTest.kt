@@ -1,6 +1,5 @@
 package com.kioschool.kioschoolapi.workspace.facade
 
-import com.kioschool.kioschoolapi.domain.user.exception.UserNotFoundException
 import com.kioschool.kioschoolapi.domain.user.service.UserService
 import com.kioschool.kioschoolapi.domain.workspace.exception.NoPermissionToCreateWorkspaceException
 import com.kioschool.kioschoolapi.domain.workspace.exception.NoPermissionToInviteException
@@ -13,8 +12,11 @@ import com.kioschool.kioschoolapi.domain.order.repository.OrderSessionRepository
 import com.kioschool.kioschoolapi.domain.statistics.repository.DailyOrderStatisticRepository
 import com.kioschool.kioschoolapi.factory.SampleEntity
 import com.kioschool.kioschoolapi.global.discord.service.DiscordService
+import com.kioschool.kioschoolapi.global.error.ErrorCode
+import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import io.kotest.core.spec.style.DescribeSpec
 import io.mockk.*
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.assertThrows
 import org.springframework.web.multipart.MultipartFile
 
@@ -71,13 +73,14 @@ class WorkspaceFacadeTest : DescribeSpec({
             verify { userService.getUser(username) }
         }
 
-        it("should throw UserNotFoundException when user not found") {
+        it("should throw CustomException(USER_NOT_FOUND) when user not found") {
             val username = "username"
-            every { userService.getUser(username) } throws UserNotFoundException()
+            every { userService.getUser(username) } throws CustomException(ErrorCode.USER_NOT_FOUND)
 
-            assertThrows<UserNotFoundException> {
+            val ex = assertThrows<CustomException> {
                 sut.getWorkspaces(username)
             }
+            assertEquals(ErrorCode.USER_NOT_FOUND, ex.errorCode)
 
             verify { userService.getUser(username) }
         }
@@ -124,16 +127,17 @@ class WorkspaceFacadeTest : DescribeSpec({
             verify { discordService.sendWorkspaceCreate(workspace) }
         }
 
-        it("should throw UserNotFoundException when user not found") {
+        it("should throw CustomException(USER_NOT_FOUND) when user not found") {
             val username = "username"
             val name = "name"
             val description = "description"
 
-            every { userService.getUser(username) } throws UserNotFoundException()
+            every { userService.getUser(username) } throws CustomException(ErrorCode.USER_NOT_FOUND)
 
-            assertThrows<UserNotFoundException> {
+            val ex = assertThrows<CustomException> {
                 sut.createWorkspace(username, name, description)
             }
+            assertEquals(ErrorCode.USER_NOT_FOUND, ex.errorCode)
 
             verify { userService.getUser(username) }
             verify(exactly = 0) { workspaceService.checkCanCreateWorkspace(any()) }
@@ -189,16 +193,17 @@ class WorkspaceFacadeTest : DescribeSpec({
             verify { workspaceService.inviteUserToWorkspace(workspace, user) }
         }
 
-        it("should throw UserNotFoundException when host user not found") {
+        it("should throw CustomException(USER_NOT_FOUND) when host user not found") {
             val hostUserName = "hostUserName"
             val workspaceId = 1L
             val userLoginId = "userLoginId"
 
-            every { userService.getUser(hostUserName) } throws UserNotFoundException()
+            every { userService.getUser(hostUserName) } throws CustomException(ErrorCode.USER_NOT_FOUND)
 
-            assertThrows<UserNotFoundException> {
+            val ex = assertThrows<CustomException> {
                 sut.inviteWorkspace(hostUserName, workspaceId, userLoginId)
             }
+            assertEquals(ErrorCode.USER_NOT_FOUND, ex.errorCode)
 
             verify(exactly = 1) { userService.getUser(hostUserName) }
             verify(exactly = 0) { workspaceService.getWorkspace(any()) }
@@ -255,15 +260,16 @@ class WorkspaceFacadeTest : DescribeSpec({
             verify { workspaceService.addUserToWorkspace(workspace, user) }
         }
 
-        it("should throw UserNotFoundException when user not found") {
+        it("should throw CustomException(USER_NOT_FOUND) when user not found") {
             val username = "username"
             val workspaceId = 1L
 
-            every { userService.getUser(username) } throws UserNotFoundException()
+            every { userService.getUser(username) } throws CustomException(ErrorCode.USER_NOT_FOUND)
 
-            assertThrows<UserNotFoundException> {
+            val ex = assertThrows<CustomException> {
                 sut.joinWorkspace(username, workspaceId)
             }
+            assertEquals(ErrorCode.USER_NOT_FOUND, ex.errorCode)
 
             verify { userService.getUser(username) }
             verify(exactly = 0) { workspaceService.getWorkspace(any()) }
@@ -317,15 +323,16 @@ class WorkspaceFacadeTest : DescribeSpec({
             verify { workspaceService.removeUserFromWorkspace(workspace, user) }
         }
 
-        it("should throw UserNotFoundException when user not found") {
+        it("should throw CustomException(USER_NOT_FOUND) when user not found") {
             val username = "username"
             val workspaceId = 1L
 
-            every { userService.getUser(username) } throws UserNotFoundException()
+            every { userService.getUser(username) } throws CustomException(ErrorCode.USER_NOT_FOUND)
 
-            assertThrows<UserNotFoundException> {
+            val ex = assertThrows<CustomException> {
                 sut.leaveWorkspace(username, workspaceId)
             }
+            assertEquals(ErrorCode.USER_NOT_FOUND, ex.errorCode)
 
             verify { userService.getUser(username) }
             verify(exactly = 0) { workspaceService.getWorkspace(any()) }
@@ -358,16 +365,17 @@ class WorkspaceFacadeTest : DescribeSpec({
             verify { workspaceService.updateWorkspaceTables(workspace) }
         }
 
-        it("should throw UserNotFoundException when user not found") {
+        it("should throw CustomException(USER_NOT_FOUND) when user not found") {
             val username = "username"
             val workspaceId = 1L
             val tableCount = 10
 
-            every { userService.getUser(username) } throws UserNotFoundException()
+            every { userService.getUser(username) } throws CustomException(ErrorCode.USER_NOT_FOUND)
 
-            assertThrows<UserNotFoundException> {
+            val ex = assertThrows<CustomException> {
                 sut.updateTableCount(username, workspaceId, tableCount)
             }
+            assertEquals(ErrorCode.USER_NOT_FOUND, ex.errorCode)
 
             verify { userService.getUser(username) }
             verify(exactly = 0) { workspaceService.getWorkspace(any()) }
@@ -433,16 +441,16 @@ class WorkspaceFacadeTest : DescribeSpec({
             verify { workspaceService.saveWorkspace(workspace) }
         }
 
-        it("should throw UserNotFoundException when user not found") {
+        it("should throw CustomException(USER_NOT_FOUND) when user not found") {
             val username = "username"
             val workspaceId = 1L
             val name = "name"
             val description = "description"
             val notice = "notice"
 
-            every { userService.getUser(username) } throws UserNotFoundException()
+            every { userService.getUser(username) } throws CustomException(ErrorCode.USER_NOT_FOUND)
 
-            assertThrows<UserNotFoundException> {
+            val ex = assertThrows<CustomException> {
                 sut.updateWorkspaceInfo(
                     username,
                     workspaceId,
@@ -451,6 +459,7 @@ class WorkspaceFacadeTest : DescribeSpec({
                     notice,
                 )
             }
+            assertEquals(ErrorCode.USER_NOT_FOUND, ex.errorCode)
 
             verify { userService.getUser(username) }
             verify(exactly = 0) { workspaceService.getWorkspace(any()) }
@@ -585,16 +594,16 @@ class WorkspaceFacadeTest : DescribeSpec({
             verify { workspaceService.saveWorkspaceImages(workspace, imageFiles) }
         }
 
-        it("should throw UserNotFoundException when user not found") {
+        it("should throw CustomException(USER_NOT_FOUND) when user not found") {
             val username = "username"
             val workspaceId = 1L
             val imageIds = listOf(1L, 2L, 3L)
             val imageFiles =
                 listOf(mockk<MultipartFile>(), mockk<MultipartFile>(), mockk<MultipartFile>())
 
-            every { userService.getUser(username) } throws UserNotFoundException()
+            every { userService.getUser(username) } throws CustomException(ErrorCode.USER_NOT_FOUND)
 
-            assertThrows<UserNotFoundException> {
+            val ex = assertThrows<CustomException> {
                 sut.updateWorkspaceImage(
                     username,
                     workspaceId,
@@ -602,6 +611,7 @@ class WorkspaceFacadeTest : DescribeSpec({
                     imageFiles
                 )
             }
+            assertEquals(ErrorCode.USER_NOT_FOUND, ex.errorCode)
 
             verify { userService.getUser(username) }
             verify(exactly = 0) { workspaceService.getWorkspace(any()) }
