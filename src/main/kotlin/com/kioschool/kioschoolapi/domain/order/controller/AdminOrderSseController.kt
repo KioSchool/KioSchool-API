@@ -1,7 +1,8 @@
 package com.kioschool.kioschoolapi.domain.order.controller
 
-import com.kioschool.kioschoolapi.domain.workspace.exception.WorkspaceInaccessibleException
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
+import com.kioschool.kioschoolapi.global.error.ErrorCode
+import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import com.kioschool.kioschoolapi.global.security.annotation.AdminUsername
 import com.kioschool.kioschoolapi.global.sse.SseEmitterService
 import io.swagger.v3.oas.annotations.Operation
@@ -26,7 +27,7 @@ class AdminOrderSseController(
         @AdminUsername username: String,
         @PathVariable workspaceId: Long,
     ): SseEmitter {
-        if (!workspaceService.isAccessible(username, workspaceId)) throw WorkspaceInaccessibleException()
+        if (!workspaceService.isAccessible(username, workspaceId)) throw CustomException(ErrorCode.WORKSPACE_INACCESSIBLE)
 
         val emitter = SseEmitter(Long.MAX_VALUE)
         sseEmitterService.addEmitter(workspaceId, emitter)
