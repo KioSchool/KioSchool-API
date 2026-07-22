@@ -1,9 +1,6 @@
 package com.kioschool.kioschoolapi.product.service
 
 import com.kioschool.kioschoolapi.domain.product.entity.Product
-import com.kioschool.kioschoolapi.domain.product.exception.CanNotDeleteUsingProductCategoryException
-import com.kioschool.kioschoolapi.domain.product.exception.NotFoundProductException
-import com.kioschool.kioschoolapi.domain.product.exception.NotSellableProductException
 import com.kioschool.kioschoolapi.domain.product.repository.CustomProductRepository
 import com.kioschool.kioschoolapi.domain.product.repository.ProductCategoryRepository
 import com.kioschool.kioschoolapi.domain.product.repository.ProductRepository
@@ -11,6 +8,8 @@ import com.kioschool.kioschoolapi.domain.product.service.ProductService
 import com.kioschool.kioschoolapi.factory.SampleEntity
 import com.kioschool.kioschoolapi.global.aws.S3Service
 import com.kioschool.kioschoolapi.global.common.enums.ProductStatus
+import com.kioschool.kioschoolapi.global.error.ErrorCode
+import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
@@ -229,7 +228,7 @@ class ProductServiceTest : DescribeSpec({
     }
 
     describe("checkProductCategoryDeletable") {
-        it("should throw CanNotDeleteUsingProductCategoryException if productCategory is used by product") {
+        it("should throw CustomException if productCategory is used by product") {
             val workspaceId = 1L
             val productCategoryId = 1L
 
@@ -242,12 +241,13 @@ class ProductServiceTest : DescribeSpec({
             } returns 1L
 
             // Act and Assert
-            shouldThrow<CanNotDeleteUsingProductCategoryException> {
+            val ex = shouldThrow<CustomException> {
                 sut.checkProductCategoryDeletable(workspaceId, productCategoryId)
             }
+            ex.errorCode shouldBe ErrorCode.CANNOT_DELETE_USING_PRODUCT_CATEGORY
         }
 
-        it("should not throw CanNotDeleteUsingProductCategoryException if productCategory is not used by product") {
+        it("should not throw CustomException if productCategory is not used by product") {
             val workspaceId = 1L
             val productCategoryId = 1L
 
@@ -305,7 +305,7 @@ class ProductServiceTest : DescribeSpec({
             }
         }
 
-        it("should throw NotFoundProductException if product is not found") {
+        it("should throw CustomException if product is not found") {
             val workspaceId = 1L
             val productIds = listOf(1L, 2L)
 
@@ -318,9 +318,10 @@ class ProductServiceTest : DescribeSpec({
             } returns emptyList()
 
             // Act and Assert
-            shouldThrow<NotFoundProductException> {
+            val ex = shouldThrow<CustomException> {
                 sut.validateProducts(workspaceId, productIds)
             }
+            ex.errorCode shouldBe ErrorCode.NOT_FOUND_PRODUCT
 
             verify {
                 repository.findAllByIdInAndWorkspaceId(
@@ -330,7 +331,7 @@ class ProductServiceTest : DescribeSpec({
             }
         }
 
-        it("should throw NotSellableProductException if product status is not SELLING") {
+        it("should throw CustomException if product status is not SELLING") {
             val workspaceId = 1L
             val productIds = listOf(1L, 2L)
 
@@ -346,9 +347,10 @@ class ProductServiceTest : DescribeSpec({
             )
 
             // Act and Assert
-            shouldThrow<NotSellableProductException> {
+            val ex = shouldThrow<CustomException> {
                 sut.validateProducts(workspaceId, productIds)
             }
+            ex.errorCode shouldBe ErrorCode.NOT_SELLABLE_PRODUCT
 
             verify {
                 repository.findAllByIdInAndWorkspaceId(

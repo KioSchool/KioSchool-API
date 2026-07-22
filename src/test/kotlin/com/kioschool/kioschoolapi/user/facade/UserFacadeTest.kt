@@ -1,6 +1,5 @@
 package com.kioschool.kioschoolapi.user.facade
 
-import com.kioschool.kioschoolapi.domain.email.exception.NotVerifiedEmailDomainException
 import com.kioschool.kioschoolapi.domain.email.service.EmailService
 import com.kioschool.kioschoolapi.domain.user.facade.UserFacade
 import com.kioschool.kioschoolapi.domain.user.service.UserService
@@ -254,14 +253,15 @@ class UserFacadeTest : DescribeSpec({
             verify { emailService.createOrUpdateRegisterEmailCode(email, code) }
         }
 
-        it("should throw NotVerifiedEmailDomainException when email domain is not verified") {
+        it("should throw CustomException when email domain is not verified") {
             val email = "test@test.com"
 
-            every { emailService.validateEmailDomainVerified(email) } throws NotVerifiedEmailDomainException()
+            every { emailService.validateEmailDomainVerified(email) } throws CustomException(ErrorCode.NOT_VERIFIED_EMAIL_DOMAIN)
 
-            assertThrows<NotVerifiedEmailDomainException> {
+            val ex = assertThrows<CustomException> {
                 sut.sendRegisterEmail(email)
             }
+            assertEquals(ErrorCode.NOT_VERIFIED_EMAIL_DOMAIN, ex.errorCode)
 
             verify { emailService.validateEmailDomainVerified(email) }
             verify(exactly = 0) { emailService.generateRegisterCode() }

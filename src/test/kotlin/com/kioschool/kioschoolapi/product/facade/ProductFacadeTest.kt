@@ -1,7 +1,6 @@
 package com.kioschool.kioschoolapi.product.facade
 
 import com.kioschool.kioschoolapi.domain.product.entity.ProductCategory
-import com.kioschool.kioschoolapi.domain.product.exception.CanNotDeleteUsingProductCategoryException
 import com.kioschool.kioschoolapi.domain.product.facade.ProductFacade
 import com.kioschool.kioschoolapi.domain.product.service.ProductService
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
@@ -574,7 +573,7 @@ class ProductFacadeTest : DescribeSpec({
             verify(exactly = 0) { productService.deleteProductCategory(any()) }
         }
 
-        it("should throw CanNotDeleteUsingProductCategoryException if product category is not deletable") {
+        it("should throw CustomException if product category is not deletable") {
             val username = "username"
             val workspaceId = 2L
             val productCategoryId = 1L
@@ -591,11 +590,12 @@ class ProductFacadeTest : DescribeSpec({
                     workspaceId,
                     productCategoryId
                 )
-            } throws CanNotDeleteUsingProductCategoryException()
+            } throws CustomException(ErrorCode.CANNOT_DELETE_USING_PRODUCT_CATEGORY)
 
-            assertThrows<CanNotDeleteUsingProductCategoryException> {
+            val ex = assertThrows<CustomException> {
                 sut.deleteProductCategory(username, workspaceId, productCategoryId)
             }
+            assertEquals(ErrorCode.CANNOT_DELETE_USING_PRODUCT_CATEGORY, ex.errorCode)
 
             verify { productService.getProductCategory(productCategoryId) }
             verify { workspaceService.checkAccessible(username, productCategory.workspace.id) }
