@@ -2,8 +2,9 @@ package com.kioschool.kioschoolapi.domain.order.controller
 
 import com.kioschool.kioschoolapi.domain.order.dto.common.OrderDto
 import com.kioschool.kioschoolapi.domain.order.dto.request.CreateOrderRequestBody
-import com.kioschool.kioschoolapi.domain.order.exception.TableHashIsNullException
 import com.kioschool.kioschoolapi.domain.order.facade.OrderFacade
+import com.kioschool.kioschoolapi.global.error.ErrorCode
+import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.web.bind.annotation.*
@@ -20,7 +21,7 @@ class OrderController(
         @RequestBody body: CreateOrderRequestBody
     ): OrderDto {
         if (body.tableHash == null) {
-            throw TableHashIsNullException()
+            throw CustomException(ErrorCode.TABLE_HASH_IS_NULL)
         }
 
         return orderFacade.createOrder(

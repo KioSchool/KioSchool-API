@@ -2,9 +2,6 @@ package com.kioschool.kioschoolapi.domain.product.service
 
 import com.kioschool.kioschoolapi.domain.product.entity.Product
 import com.kioschool.kioschoolapi.domain.product.entity.ProductCategory
-import com.kioschool.kioschoolapi.domain.product.exception.CanNotDeleteUsingProductCategoryException
-import com.kioschool.kioschoolapi.domain.product.exception.NotFoundProductException
-import com.kioschool.kioschoolapi.domain.product.exception.NotSellableProductException
 import com.kioschool.kioschoolapi.domain.product.repository.CustomProductRepository
 import com.kioschool.kioschoolapi.domain.product.repository.ProductCategoryRepository
 import com.kioschool.kioschoolapi.domain.product.repository.ProductRepository
@@ -122,7 +119,7 @@ class ProductService(
                 workspaceId,
                 productCategoryId
             )
-        ) throw CanNotDeleteUsingProductCategoryException()
+        ) throw CustomException(ErrorCode.CANNOT_DELETE_USING_PRODUCT_CATEGORY)
 
     }
 
@@ -146,10 +143,10 @@ class ProductService(
     ) {
         val products = productRepository.findAllByIdInAndWorkspaceId(productIds, workspaceId)
         if (products.size != productIds.size) {
-            throw NotFoundProductException()
+            throw CustomException(ErrorCode.NOT_FOUND_PRODUCT)
         }
         if (products.any { it.status != ProductStatus.SELLING }) {
-            throw NotSellableProductException()
+            throw CustomException(ErrorCode.NOT_SELLABLE_PRODUCT)
         }
     }
 }

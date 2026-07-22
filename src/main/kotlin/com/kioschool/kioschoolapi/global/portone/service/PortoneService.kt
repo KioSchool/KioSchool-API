@@ -1,6 +1,7 @@
 package com.kioschool.kioschoolapi.global.portone.service
 
-import com.kioschool.kioschoolapi.domain.account.exception.IncorrectAccountHolderException
+import com.kioschool.kioschoolapi.global.error.ErrorCode
+import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import com.kioschool.kioschoolapi.global.portone.api.PortoneApi
 import com.kioschool.kioschoolapi.global.portone.dto.GetTokenRequest
 import org.springframework.beans.factory.annotation.Value
@@ -27,11 +28,11 @@ class PortoneService(
         val realAccountHolder = body?.response?.bank_holder
 
         if (body == null || body.code != 0 || realAccountHolder.isNullOrBlank()) {
-            throw IncorrectAccountHolderException()
+            throw CustomException(ErrorCode.INCORRECT_ACCOUNT_HOLDER)
         }
 
         if (!accountHolder.startsWith(realAccountHolder)) {
-            throw IncorrectAccountHolderException()
+            throw CustomException(ErrorCode.INCORRECT_ACCOUNT_HOLDER)
         }
     }
 }

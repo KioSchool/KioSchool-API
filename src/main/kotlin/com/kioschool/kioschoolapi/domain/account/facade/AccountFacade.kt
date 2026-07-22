@@ -2,12 +2,13 @@ package com.kioschool.kioschoolapi.domain.account.facade
 
 import com.kioschool.kioschoolapi.domain.account.dto.common.AccountConnectionStatusDto
 import com.kioschool.kioschoolapi.domain.account.dto.common.BankDto
-import com.kioschool.kioschoolapi.domain.account.exception.BankTossNameNotFoundException
 import com.kioschool.kioschoolapi.domain.account.service.AccountService
 import com.kioschool.kioschoolapi.domain.account.service.BankService
 import com.kioschool.kioschoolapi.domain.user.dto.common.UserDto
 import com.kioschool.kioschoolapi.domain.user.repository.UserRepository
 import com.kioschool.kioschoolapi.domain.user.service.UserService
+import com.kioschool.kioschoolapi.global.error.ErrorCode
+import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import com.kioschool.kioschoolapi.global.portone.service.PortoneService
 import com.kioschool.kioschoolapi.global.toss.service.TossService
 import org.springframework.data.domain.Page
@@ -77,7 +78,7 @@ class AccountFacade(
     fun registerTossAccountAuto(username: String): UserDto {
         val user = userService.getUser(username)
         val account = user.account ?: throw IllegalStateException("계좌가 등록되어 있지 않습니다.")
-        val tossName = account.bank.tossName ?: throw BankTossNameNotFoundException()
+        val tossName = account.bank.tossName ?: throw CustomException(ErrorCode.BANK_TOSS_NAME_NOT_FOUND)
         account.tossAccountUrl = tossService.generateTossAccountUrl(tossName, account.accountNumber)
         return UserDto.of(userService.saveUser(user))
     }

@@ -3,9 +3,6 @@ package com.kioschool.kioschoolapi.domain.email.service
 import com.kioschool.kioschoolapi.domain.email.entity.EmailCode
 import com.kioschool.kioschoolapi.domain.email.entity.EmailDomain
 import com.kioschool.kioschoolapi.domain.email.enum.EmailKind
-import com.kioschool.kioschoolapi.domain.email.exception.DuplicatedEmailDomainException
-import com.kioschool.kioschoolapi.domain.email.exception.EmailSendFailureException
-import com.kioschool.kioschoolapi.domain.email.exception.NotVerifiedEmailDomainException
 import com.kioschool.kioschoolapi.domain.email.repository.EmailCodeRepository
 import com.kioschool.kioschoolapi.domain.email.repository.EmailDomainRepository
 import com.kioschool.kioschoolapi.global.error.ErrorCode
@@ -44,7 +41,7 @@ class EmailService(
     }
 
     fun validateEmailDomainVerified(emailAddress: String) {
-        if (!isEmailDomainVerified(emailAddress)) throw NotVerifiedEmailDomainException()
+        if (!isEmailDomainVerified(emailAddress)) throw CustomException(ErrorCode.NOT_VERIFIED_EMAIL_DOMAIN)
     }
 
     @Async
@@ -62,7 +59,7 @@ class EmailService(
             javaMailSender.send(message)
         } catch (e: Exception) {
             log.error("Failed to send email to {}", address, e)
-            throw EmailSendFailureException(e)
+            throw CustomException(ErrorCode.EMAIL_SEND_FAILURE, cause = e)
         }
     }
 
@@ -138,7 +135,7 @@ class EmailService(
     }
 
     fun validateEmailDomainDuplicate(domain: String) {
-        if (isEmailDomainDuplicate(domain)) throw DuplicatedEmailDomainException()
+        if (isEmailDomainDuplicate(domain)) throw CustomException(ErrorCode.DUPLICATE_EMAIL_DOMAIN)
     }
 
     private fun isEmailDomainDuplicate(domain: String): Boolean {

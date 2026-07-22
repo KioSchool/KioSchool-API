@@ -2,8 +2,6 @@ package com.kioschool.kioschoolapi.order.facade
 
 import com.kioschool.kioschoolapi.domain.order.dto.request.OrderProductRequestBody
 import com.kioschool.kioschoolapi.domain.order.entity.Order
-import com.kioschool.kioschoolapi.domain.order.exception.NoOrderSessionException
-import com.kioschool.kioschoolapi.domain.order.exception.OrderSessionAlreadyExistException
 import com.kioschool.kioschoolapi.domain.order.facade.OrderFacade
 import com.kioschool.kioschoolapi.domain.order.service.OrderService
 import com.kioschool.kioschoolapi.domain.product.service.ProductService
@@ -143,7 +141,7 @@ class OrderFacadeTest : DescribeSpec({
             }
         }
 
-        it("should throw NoOrderSessionException when no order session exists for the table") {
+        it("should throw CustomException when no order session exists for the table") {
             val workspaceId = 1L
             val tableNumber = 1
             val customerName = "customer"
@@ -159,9 +157,10 @@ class OrderFacadeTest : DescribeSpec({
                 )
             } returns SampleEntity.workspaceTable.apply { orderSession = null }
 
-            assertThrows<NoOrderSessionException> {
+            val ex = assertThrows<CustomException> {
                 sut.createOrder(workspaceId, "dummy_hash", customerName, rawOrderProducts)
             }
+            assertEquals(ErrorCode.NO_ORDER_SESSION, ex.errorCode)
 
             verify { workspaceService.getWorkspace(workspaceId) }
             verify { workspaceService.getWorkspaceTableByHash(SampleEntity.workspace, "dummy_hash") }
@@ -837,7 +836,7 @@ class OrderFacadeTest : DescribeSpec({
             verify { workspaceService.saveWorkspaceTable(any()) }
         }
 
-        it("should throw OrderSessionAlreadyExistException when order session already exists") {
+        it("should throw CustomException when order session already exists") {
             val username = "test"
             val workspaceId = 1L
             val tableNumber = 1
@@ -851,9 +850,10 @@ class OrderFacadeTest : DescribeSpec({
                 )
             } returns SampleEntity.workspaceTable.apply { orderSession = SampleEntity.orderSession }
 
-            assertThrows<OrderSessionAlreadyExistException> {
+            val ex = assertThrows<CustomException> {
                 sut.startOrderSession(username, workspaceId, tableNumber)
             }
+            assertEquals(ErrorCode.ORDER_SESSION_ALREADY_EXIST, ex.errorCode)
 
             verify { workspaceService.checkAccessible(username, workspaceId) }
             verify { workspaceService.getWorkspace(workspaceId) }
@@ -902,7 +902,7 @@ class OrderFacadeTest : DescribeSpec({
     }
 
     describe("endOrderSession") {
-        it("should throw EmptyOrderSessionException when order session has no valid orders and isGhost is null") {
+        it("should throw CustomException when order session has no valid orders and isGhost is null") {
             val username = "test"
             val workspaceId = 1L
             val tableNumber = 1
@@ -920,9 +920,10 @@ class OrderFacadeTest : DescribeSpec({
             every { orderService.getOrderSession(orderSessionId) } returns SampleEntity.orderSession
             every { orderService.getAllOrdersByOrderSession(any()) } returns emptyList()
 
-            assertThrows<com.kioschool.kioschoolapi.domain.order.exception.EmptyOrderSessionException> {
+            val ex = assertThrows<CustomException> {
                 sut.endOrderSession(username, workspaceId, tableNumber, orderSessionId)
             }
+            assertEquals(ErrorCode.EMPTY_ORDER_SESSION, ex.errorCode)
 
             verify { workspaceService.checkAccessible(username, workspaceId) }
             verify { workspaceService.getWorkspace(workspaceId) }
