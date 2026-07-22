@@ -9,13 +9,14 @@ import com.kioschool.kioschoolapi.domain.product.repository.CustomProductReposit
 import com.kioschool.kioschoolapi.domain.product.repository.ProductCategoryRepository
 import com.kioschool.kioschoolapi.domain.product.repository.ProductRepository
 import com.kioschool.kioschoolapi.domain.workspace.entity.Workspace
-import com.kioschool.kioschoolapi.domain.workspace.exception.WorkspaceInaccessibleException
 import com.kioschool.kioschoolapi.global.aws.S3Service
 import com.kioschool.kioschoolapi.global.cache.annotation.ProductCategoriesUpdateEvent
 import com.kioschool.kioschoolapi.global.cache.annotation.ProductCategoryUpdateEvent
 import com.kioschool.kioschoolapi.global.cache.annotation.ProductUpdateEvent
 import com.kioschool.kioschoolapi.global.cache.annotation.ProductsUpdateEvent
 import com.kioschool.kioschoolapi.global.common.enums.ProductStatus
+import com.kioschool.kioschoolapi.global.error.ErrorCode
+import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import jakarta.transaction.Transactional
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
@@ -81,7 +82,7 @@ class ProductService(
                 workspace = workspace,
                 productCategory = productCategoryId?.let {
                     val productCategory = productCategoryRepository.findById(it).orElseThrow()
-                    if (productCategory.workspace.id != workspace.id) throw WorkspaceInaccessibleException()
+                    if (productCategory.workspace.id != workspace.id) throw CustomException(ErrorCode.WORKSPACE_INACCESSIBLE)
                     productCategory
                 }
             )

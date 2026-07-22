@@ -4,13 +4,15 @@ import com.kioschool.kioschoolapi.domain.product.entity.ProductCategory
 import com.kioschool.kioschoolapi.domain.product.exception.CanNotDeleteUsingProductCategoryException
 import com.kioschool.kioschoolapi.domain.product.facade.ProductFacade
 import com.kioschool.kioschoolapi.domain.product.service.ProductService
-import com.kioschool.kioschoolapi.domain.workspace.exception.WorkspaceInaccessibleException
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.factory.SampleEntity
 import com.kioschool.kioschoolapi.global.aws.S3Service
 import com.kioschool.kioschoolapi.global.common.enums.ProductStatus
+import com.kioschool.kioschoolapi.global.error.ErrorCode
+import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import io.kotest.core.spec.style.DescribeSpec
 import io.mockk.*
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.assertThrows
 import org.springframework.web.multipart.MultipartFile
 
@@ -45,7 +47,7 @@ class ProductFacadeTest : DescribeSpec({
             verify { workspaceService.checkAccessible(username, product.workspace.id) }
         }
 
-        it("should throw WorkspaceInaccessibleException") {
+        it("should throw CustomException(WORKSPACE_INACCESSIBLE)") {
             val username = "username"
             val productId = 1L
             val product = SampleEntity.product
@@ -55,11 +57,12 @@ class ProductFacadeTest : DescribeSpec({
                     username,
                     product.workspace.id
                 )
-            } throws WorkspaceInaccessibleException()
+            } throws CustomException(ErrorCode.WORKSPACE_INACCESSIBLE)
 
-            assertThrows<WorkspaceInaccessibleException> {
+            val ex = assertThrows<CustomException> {
                 sut.getProduct(username, productId)
             }
+            assertEquals(ErrorCode.WORKSPACE_INACCESSIBLE, ex.errorCode)
 
             verify { productService.getProduct(productId) }
             verify { workspaceService.checkAccessible(username, product.workspace.id) }
@@ -80,7 +83,7 @@ class ProductFacadeTest : DescribeSpec({
             verify { productService.getAllProductsByCondition(workspaceId) }
         }
 
-        it("should throw WorkspaceInaccessibleException") {
+        it("should throw CustomException(WORKSPACE_INACCESSIBLE)") {
             val username = "username"
             val workspaceId = 1L
             every {
@@ -88,11 +91,12 @@ class ProductFacadeTest : DescribeSpec({
                     username,
                     workspaceId
                 )
-            } throws WorkspaceInaccessibleException()
+            } throws CustomException(ErrorCode.WORKSPACE_INACCESSIBLE)
 
-            assertThrows<WorkspaceInaccessibleException> {
+            val ex = assertThrows<CustomException> {
                 sut.getProducts(username, workspaceId)
             }
+            assertEquals(ErrorCode.WORKSPACE_INACCESSIBLE, ex.errorCode)
 
             verify { workspaceService.checkAccessible(username, workspaceId) }
             verify(exactly = 0) { productService.getAllProductsByCondition(workspaceId) }
@@ -143,7 +147,7 @@ class ProductFacadeTest : DescribeSpec({
             verify { productService.getAllProductCategories(workspaceId) }
         }
 
-        it("should throw WorkspaceInaccessibleException") {
+        it("should throw CustomException(WORKSPACE_INACCESSIBLE)") {
             val username = "username"
             val workspaceId = 1L
             every {
@@ -151,11 +155,12 @@ class ProductFacadeTest : DescribeSpec({
                     username,
                     workspaceId
                 )
-            } throws WorkspaceInaccessibleException()
+            } throws CustomException(ErrorCode.WORKSPACE_INACCESSIBLE)
 
-            assertThrows<WorkspaceInaccessibleException> {
+            val ex = assertThrows<CustomException> {
                 sut.getProductCategories(username, workspaceId)
             }
+            assertEquals(ErrorCode.WORKSPACE_INACCESSIBLE, ex.errorCode)
 
             verify { workspaceService.checkAccessible(username, workspaceId) }
             verify(exactly = 0) { productService.getAllProductCategories(workspaceId) }
@@ -216,7 +221,7 @@ class ProductFacadeTest : DescribeSpec({
             verify { productService.saveProduct(product) }
         }
 
-        it("should throw WorkspaceInaccessibleException") {
+        it("should throw CustomException(WORKSPACE_INACCESSIBLE)") {
             val username = "username"
             val workspaceId = 1L
             val name = "name"
@@ -231,9 +236,9 @@ class ProductFacadeTest : DescribeSpec({
                     username,
                     workspaceId
                 )
-            } throws WorkspaceInaccessibleException()
+            } throws CustomException(ErrorCode.WORKSPACE_INACCESSIBLE)
 
-            assertThrows<WorkspaceInaccessibleException> {
+            val ex = assertThrows<CustomException> {
                 sut.createProduct(
                     username,
                     workspaceId,
@@ -244,6 +249,7 @@ class ProductFacadeTest : DescribeSpec({
                     file
                 )
             }
+            assertEquals(ErrorCode.WORKSPACE_INACCESSIBLE, ex.errorCode)
 
             verify { workspaceService.checkAccessible(username, workspaceId) }
             verify(exactly = 0) { workspaceService.getWorkspace(workspaceId) }
@@ -354,7 +360,7 @@ class ProductFacadeTest : DescribeSpec({
             verify { productService.saveProduct(product) }
         }
 
-        it("should throw WorkspaceInaccessibleException if workspace is inaccessible") {
+        it("should throw CustomException(WORKSPACE_INACCESSIBLE) if workspace is inaccessible") {
             val username = "username"
             val workspaceId = 1L
             val productId = 1L
@@ -371,9 +377,9 @@ class ProductFacadeTest : DescribeSpec({
                     username,
                     workspace.id
                 )
-            } throws WorkspaceInaccessibleException()
+            } throws CustomException(ErrorCode.WORKSPACE_INACCESSIBLE)
 
-            assertThrows<WorkspaceInaccessibleException> {
+            val ex = assertThrows<CustomException> {
                 sut.updateProduct(
                     username,
                     workspaceId,
@@ -385,6 +391,7 @@ class ProductFacadeTest : DescribeSpec({
                     file
                 )
             }
+            assertEquals(ErrorCode.WORKSPACE_INACCESSIBLE, ex.errorCode)
 
             verify { productService.getProduct(productId) }
             verify { workspaceService.checkAccessible(username, workspace.id) }
@@ -394,7 +401,7 @@ class ProductFacadeTest : DescribeSpec({
             verify(exactly = 0) { productService.saveProduct(any()) }
         }
 
-        it("should throw WorkspaceInaccessibleException if product category is in another workspace") {
+        it("should throw CustomException(WORKSPACE_INACCESSIBLE) if product category is in another workspace") {
             val username = "username"
             val workspaceId = 2L
             val productId = 1L
@@ -410,7 +417,7 @@ class ProductFacadeTest : DescribeSpec({
             every { productService.getImageUrl(workspace.id, product.id, file) } returns null
             every { productService.getProductCategory(productCategoryId) } returns SampleEntity.productCategory
 
-            assertThrows<WorkspaceInaccessibleException> {
+            val ex = assertThrows<CustomException> {
                 sut.updateProduct(
                     username,
                     workspaceId,
@@ -422,6 +429,7 @@ class ProductFacadeTest : DescribeSpec({
                     file
                 )
             }
+            assertEquals(ErrorCode.WORKSPACE_INACCESSIBLE, ex.errorCode)
 
             verify { productService.getProduct(productId) }
             verify { workspaceService.checkAccessible(username, workspace.id) }
@@ -448,7 +456,7 @@ class ProductFacadeTest : DescribeSpec({
             verify { productService.deleteProduct(product) }
         }
 
-        it("should throw WorkspaceInaccessibleException") {
+        it("should throw CustomException(WORKSPACE_INACCESSIBLE)") {
             val username = "username"
             val productId = 1L
             val product = SampleEntity.product
@@ -458,11 +466,12 @@ class ProductFacadeTest : DescribeSpec({
                     username,
                     product.workspace.id
                 )
-            } throws WorkspaceInaccessibleException()
+            } throws CustomException(ErrorCode.WORKSPACE_INACCESSIBLE)
 
-            assertThrows<WorkspaceInaccessibleException> {
+            val ex = assertThrows<CustomException> {
                 sut.deleteProduct(username, productId)
             }
+            assertEquals(ErrorCode.WORKSPACE_INACCESSIBLE, ex.errorCode)
 
             verify { productService.getProduct(productId) }
             verify { workspaceService.checkAccessible(username, product.workspace.id) }
@@ -490,7 +499,7 @@ class ProductFacadeTest : DescribeSpec({
             verify { productService.saveProductCategory(any<ProductCategory>()) }
         }
 
-        it("should throw WorkspaceInaccessibleException") {
+        it("should throw CustomException(WORKSPACE_INACCESSIBLE)") {
             val username = "username"
             val workspaceId = 1L
             val name = "name"
@@ -499,11 +508,12 @@ class ProductFacadeTest : DescribeSpec({
                     username,
                     workspaceId
                 )
-            } throws WorkspaceInaccessibleException()
+            } throws CustomException(ErrorCode.WORKSPACE_INACCESSIBLE)
 
-            assertThrows<WorkspaceInaccessibleException> {
+            val ex = assertThrows<CustomException> {
                 sut.createProductCategory(username, workspaceId, name)
             }
+            assertEquals(ErrorCode.WORKSPACE_INACCESSIBLE, ex.errorCode)
 
             verify { workspaceService.checkAccessible(username, workspaceId) }
             verify(exactly = 0) { workspaceService.getWorkspace(any()) }
@@ -540,7 +550,7 @@ class ProductFacadeTest : DescribeSpec({
             verify { productService.deleteProductCategory(productCategory) }
         }
 
-        it("should throw WorkspaceInaccessibleException") {
+        it("should throw CustomException(WORKSPACE_INACCESSIBLE)") {
             val username = "username"
             val workspaceId = 1L
             val productCategoryId = 1L
@@ -551,11 +561,12 @@ class ProductFacadeTest : DescribeSpec({
                     username,
                     productCategory.workspace.id
                 )
-            } throws WorkspaceInaccessibleException()
+            } throws CustomException(ErrorCode.WORKSPACE_INACCESSIBLE)
 
-            assertThrows<WorkspaceInaccessibleException> {
+            val ex = assertThrows<CustomException> {
                 sut.deleteProductCategory(username, workspaceId, productCategoryId)
             }
+            assertEquals(ErrorCode.WORKSPACE_INACCESSIBLE, ex.errorCode)
 
             verify { productService.getProductCategory(productCategoryId) }
             verify { workspaceService.checkAccessible(username, productCategory.workspace.id) }
@@ -616,7 +627,7 @@ class ProductFacadeTest : DescribeSpec({
             verify { productService.saveProductCategories(productCategories) }
         }
 
-        it("should throw WorkspaceInaccessibleException") {
+        it("should throw CustomException(WORKSPACE_INACCESSIBLE)") {
             val username = "username"
             val workspaceId = 1L
             val productCategoryIds = listOf(1L, 2L, 3L)
@@ -625,11 +636,12 @@ class ProductFacadeTest : DescribeSpec({
                     username,
                     workspaceId
                 )
-            } throws WorkspaceInaccessibleException()
+            } throws CustomException(ErrorCode.WORKSPACE_INACCESSIBLE)
 
-            assertThrows<WorkspaceInaccessibleException> {
+            val ex = assertThrows<CustomException> {
                 sut.sortProductCategories(username, workspaceId, productCategoryIds)
             }
+            assertEquals(ErrorCode.WORKSPACE_INACCESSIBLE, ex.errorCode)
 
             verify { workspaceService.checkAccessible(username, workspaceId) }
             verify(exactly = 0) { productService.getProductCategories(any()) }
@@ -658,7 +670,7 @@ class ProductFacadeTest : DescribeSpec({
             verify { productService.saveProduct(product) }
         }
 
-        it("should throw WorkspaceInaccessibleException") {
+        it("should throw CustomException(WORKSPACE_INACCESSIBLE)") {
             val username = "username"
             val workspaceId = 1L
             val productId = 1L
@@ -670,11 +682,12 @@ class ProductFacadeTest : DescribeSpec({
                     username,
                     workspaceId
                 )
-            } throws WorkspaceInaccessibleException()
+            } throws CustomException(ErrorCode.WORKSPACE_INACCESSIBLE)
 
-            assertThrows<WorkspaceInaccessibleException> {
+            val ex = assertThrows<CustomException> {
                 sut.updateProductStatus(username, workspaceId, productId, status)
             }
+            assertEquals(ErrorCode.WORKSPACE_INACCESSIBLE, ex.errorCode)
 
             verify { productService.getProduct(productId) }
             verify { workspaceService.checkAccessible(username, workspaceId) }
