@@ -3,6 +3,8 @@ package com.kioschool.kioschoolapi.global.configuration
 import com.kioschool.kioschoolapi.global.common.enums.UserRole
 import com.kioschool.kioschoolapi.global.security.JwtAuthenticationFilter
 import com.kioschool.kioschoolapi.global.security.JwtProvider
+import com.kioschool.kioschoolapi.global.security.handler.CustomAccessDeniedHandler
+import com.kioschool.kioschoolapi.global.security.handler.CustomAuthenticationEntryPoint
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
@@ -25,6 +27,8 @@ class SecurityConfiguration(
     private val jwtProvider: JwtProvider,
     @Qualifier("handlerExceptionResolver")
     private val handlerExceptionResolver: HandlerExceptionResolver,
+    private val authenticationEntryPoint: CustomAuthenticationEntryPoint,
+    private val accessDeniedHandler: CustomAccessDeniedHandler,
 ) {
 
     @Bean
@@ -44,6 +48,10 @@ class SecurityConfiguration(
                     .hasAnyAuthority(UserRole.SUPER_ADMIN.name, UserRole.ADMIN.name)
             }
             .authorizeHttpRequests { it.requestMatchers("/**").permitAll() }
+            .exceptionHandling {
+                it.authenticationEntryPoint(authenticationEntryPoint)
+                it.accessDeniedHandler(accessDeniedHandler)
+            }
             .addFilterBefore(
                 JwtAuthenticationFilter(allowedOrigins, jwtProvider, handlerExceptionResolver),
                 UsernamePasswordAuthenticationFilter::class.java
