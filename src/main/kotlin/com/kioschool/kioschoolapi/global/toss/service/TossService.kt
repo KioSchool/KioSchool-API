@@ -1,7 +1,8 @@
 package com.kioschool.kioschoolapi.global.toss.service
 
 import com.kioschool.kioschoolapi.domain.user.entity.User
-import com.kioschool.kioschoolapi.global.toss.exception.DifferentAccountNumberException
+import com.kioschool.kioschoolapi.global.error.ErrorCode
+import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import org.springframework.stereotype.Service
 import java.net.URLDecoder
 import java.net.URLEncoder
@@ -35,7 +36,7 @@ class TossService {
         val userAccountNumber = user.account?.accountNumber
 
         if (tossAccountNumber != userAccountNumber) {
-            throw DifferentAccountNumberException()
+            throw CustomException(ErrorCode.DIFFERENT_ACCOUNT_NUMBER)
         }
     }
 }

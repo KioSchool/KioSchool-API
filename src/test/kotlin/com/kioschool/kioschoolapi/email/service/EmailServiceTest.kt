@@ -1,17 +1,16 @@
 package com.kioschool.kioschoolapi.email.service
 
 import com.kioschool.kioschoolapi.domain.email.enum.EmailKind
-import com.kioschool.kioschoolapi.domain.email.exception.DuplicatedEmailDomainException
-import com.kioschool.kioschoolapi.domain.email.exception.EmailSendFailureException
-import com.kioschool.kioschoolapi.domain.email.exception.NotVerifiedEmailDomainException
 import com.kioschool.kioschoolapi.domain.email.repository.EmailCodeRepository
 import com.kioschool.kioschoolapi.domain.email.repository.EmailDomainRepository
 import com.kioschool.kioschoolapi.domain.email.service.EmailService
-import com.kioschool.kioschoolapi.domain.user.exception.UserNotFoundException
 import com.kioschool.kioschoolapi.factory.SampleEntity
+import com.kioschool.kioschoolapi.global.error.ErrorCode
+import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import io.kotest.core.spec.style.DescribeSpec
 import io.mockk.*
 import jakarta.mail.internet.MimeMessage
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.assertThrows
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
@@ -84,17 +83,18 @@ class EmailServiceTest : DescribeSpec({
     }
 
     describe("validateEmailDomain") {
-        it("should throw NotVerifiedEmailDomainException if email domain is not verified") {
+        it("should throw CustomException if email domain is not verified") {
             val emailAddress = "test@test.com"
 
             every { emailDomainRepository.findByDomain(any()) } returns null
 
-            assertThrows<NotVerifiedEmailDomainException> {
+            val ex = assertThrows<CustomException> {
                 sut.validateEmailDomainVerified(emailAddress)
             }
+            assertEquals(ErrorCode.NOT_VERIFIED_EMAIL_DOMAIN, ex.errorCode)
         }
 
-        it("should not throw NotVerifiedEmailDomainException if email domain is verified") {
+        it("should not throw CustomException if email domain is verified") {
             val emailAddress = "test@test.com"
 
             every { emailDomainRepository.findByDomain(any()) } returns SampleEntity.emailDomain
@@ -264,7 +264,7 @@ class EmailServiceTest : DescribeSpec({
             assert(result == emailCode.email)
         }
 
-        it("should throw UserNotFoundException if emailCode is not exists") {
+        it("should throw CustomException(USER_NOT_FOUND) if emailCode is not exists") {
             val code = "123456"
 
             every {
@@ -274,9 +274,10 @@ class EmailServiceTest : DescribeSpec({
                 )
             } returns null
 
-            assertThrows<UserNotFoundException> {
+            val ex = assertThrows<CustomException> {
                 sut.getEmailByCode(code)
             }
+            assertEquals(ErrorCode.USER_NOT_FOUND, ex.errorCode)
         }
     }
 
@@ -405,7 +406,7 @@ class EmailServiceTest : DescribeSpec({
     }
 
     describe("validateEmailDomainDuplicate") {
-        it("should not throw DuplicatedEmailDomainException if email domain is not duplicated") {
+        it("should not throw CustomException if email domain is not duplicated") {
             val domain = SampleEntity.emailDomain.domain
 
             every { emailDomainRepository.findByDomain(domain) } returns null
@@ -413,14 +414,15 @@ class EmailServiceTest : DescribeSpec({
             sut.validateEmailDomainDuplicate(domain)
         }
 
-        it("should throw DuplicatedEmailDomainException if email domain is duplicated") {
+        it("should throw CustomException if email domain is duplicated") {
             val domain = SampleEntity.emailDomain.domain
 
             every { emailDomainRepository.findByDomain(domain) } returns SampleEntity.emailDomain
 
-            assertThrows<DuplicatedEmailDomainException> {
+            val ex = assertThrows<CustomException> {
                 sut.validateEmailDomainDuplicate(domain)
             }
+            assertEquals(ErrorCode.DUPLICATE_EMAIL_DOMAIN, ex.errorCode)
         }
     }
 
@@ -478,7 +480,7 @@ class EmailServiceTest : DescribeSpec({
             verify { javaMailSender.send(any<MimeMessage>()) }
         }
 
-        it("should throw EmailSendFailureException when javaMailSender.send fails") {
+        it("should throw CustomException when javaMailSender.send fails") {
             val address = "test@test.com"
             val subject = "subject"
             val text = "text"
@@ -486,9 +488,10 @@ class EmailServiceTest : DescribeSpec({
             every { javaMailSender.createMimeMessage() } returns mockk(relaxed = true)
             every { javaMailSender.send(any<MimeMessage>()) } throws Exception()
 
-            assertThrows<EmailSendFailureException> {
+            val ex = assertThrows<CustomException> {
                 sut.sendEmail(address, subject, text)
             }
+            assertEquals(ErrorCode.EMAIL_SEND_FAILURE, ex.errorCode)
         }
     }
 })

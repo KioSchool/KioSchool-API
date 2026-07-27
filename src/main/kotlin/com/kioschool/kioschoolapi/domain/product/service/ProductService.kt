@@ -2,20 +2,18 @@ package com.kioschool.kioschoolapi.domain.product.service
 
 import com.kioschool.kioschoolapi.domain.product.entity.Product
 import com.kioschool.kioschoolapi.domain.product.entity.ProductCategory
-import com.kioschool.kioschoolapi.domain.product.exception.CanNotDeleteUsingProductCategoryException
-import com.kioschool.kioschoolapi.domain.product.exception.NotFoundProductException
-import com.kioschool.kioschoolapi.domain.product.exception.NotSellableProductException
 import com.kioschool.kioschoolapi.domain.product.repository.CustomProductRepository
 import com.kioschool.kioschoolapi.domain.product.repository.ProductCategoryRepository
 import com.kioschool.kioschoolapi.domain.product.repository.ProductRepository
 import com.kioschool.kioschoolapi.domain.workspace.entity.Workspace
-import com.kioschool.kioschoolapi.domain.workspace.exception.WorkspaceInaccessibleException
 import com.kioschool.kioschoolapi.global.aws.S3Service
 import com.kioschool.kioschoolapi.global.cache.annotation.ProductCategoriesUpdateEvent
 import com.kioschool.kioschoolapi.global.cache.annotation.ProductCategoryUpdateEvent
 import com.kioschool.kioschoolapi.global.cache.annotation.ProductUpdateEvent
 import com.kioschool.kioschoolapi.global.cache.annotation.ProductsUpdateEvent
 import com.kioschool.kioschoolapi.global.common.enums.ProductStatus
+import com.kioschool.kioschoolapi.global.error.ErrorCode
+import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import jakarta.transaction.Transactional
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
@@ -81,7 +79,7 @@ class ProductService(
                 workspace = workspace,
                 productCategory = productCategoryId?.let {
                     val productCategory = productCategoryRepository.findById(it).orElseThrow()
-                    if (productCategory.workspace.id != workspace.id) throw WorkspaceInaccessibleException()
+                    if (productCategory.workspace.id != workspace.id) throw CustomException(ErrorCode.WORKSPACE_INACCESSIBLE)
                     productCategory
                 }
             )
@@ -121,7 +119,7 @@ class ProductService(
                 workspaceId,
                 productCategoryId
             )
-        ) throw CanNotDeleteUsingProductCategoryException()
+        ) throw CustomException(ErrorCode.CANNOT_DELETE_USING_PRODUCT_CATEGORY)
 
     }
 
@@ -145,10 +143,10 @@ class ProductService(
     ) {
         val products = productRepository.findAllByIdInAndWorkspaceId(productIds, workspaceId)
         if (products.size != productIds.size) {
-            throw NotFoundProductException()
+            throw CustomException(ErrorCode.NOT_FOUND_PRODUCT)
         }
         if (products.any { it.status != ProductStatus.SELLING }) {
-            throw NotSellableProductException()
+            throw CustomException(ErrorCode.NOT_SELLABLE_PRODUCT)
         }
     }
 }

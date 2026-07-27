@@ -1,12 +1,14 @@
 package com.kioschool.kioschoolapi.account.service
 
 import com.kioschool.kioschoolapi.domain.account.entity.Bank
-import com.kioschool.kioschoolapi.domain.account.exception.BankNotFoundException
 import com.kioschool.kioschoolapi.domain.account.repository.BankRepository
 import com.kioschool.kioschoolapi.domain.account.service.BankService
 import com.kioschool.kioschoolapi.factory.SampleEntity
+import com.kioschool.kioschoolapi.global.error.ErrorCode
+import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import io.kotest.core.spec.style.DescribeSpec
 import io.mockk.*
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.assertThrows
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
@@ -118,14 +120,15 @@ class BankServiceTest : DescribeSpec({
             verify { bankRepository.findById(id) }
         }
 
-        it("should throw BankNotFoundException when bank is not found") {
+        it("should throw CustomException when bank is not found") {
             val id = 1L
 
             every { bankRepository.findById(id) } returns Optional.empty()
 
-            assertThrows<BankNotFoundException> {
+            val ex = assertThrows<CustomException> {
                 sut.updateTossName(id, "NH농협은행")
             }
+            assertEquals(ErrorCode.BANK_NOT_FOUND, ex.errorCode)
         }
     }
 
@@ -142,14 +145,15 @@ class BankServiceTest : DescribeSpec({
             verify { bankRepository.findById(id) }
         }
 
-        it("should throw BankNotFoundException when bank is not found") {
+        it("should throw CustomException when bank is not found") {
             val id = 1L
 
             every { bankRepository.findById(id) } returns Optional.empty()
 
-            assertThrows<BankNotFoundException> {
+            val ex = assertThrows<CustomException> {
                 sut.deleteTossName(id)
             }
+            assertEquals(ErrorCode.BANK_NOT_FOUND, ex.errorCode)
         }
     }
 
@@ -187,14 +191,15 @@ class BankServiceTest : DescribeSpec({
             verify { bankRepository.findById(bankId) }
         }
 
-        it("should throw BankNotFoundException when bank is not found") {
+        it("should throw CustomException when bank is not found") {
             val bankId = 1L
 
             every { bankRepository.findById(bankId) } returns Optional.empty()
 
-            assertThrows<BankNotFoundException> {
+            val ex = assertThrows<CustomException> {
                 sut.getBank(bankId)
             }
+            assertEquals(ErrorCode.BANK_NOT_FOUND, ex.errorCode)
 
             verify { bankRepository.findById(bankId) }
         }

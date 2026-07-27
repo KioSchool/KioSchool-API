@@ -5,11 +5,12 @@ import com.kioschool.kioschoolapi.domain.product.dto.common.ProductDto
 import com.kioschool.kioschoolapi.domain.product.dto.request.CategoryProductSortInfo
 import com.kioschool.kioschoolapi.domain.product.entity.ProductCategory
 import com.kioschool.kioschoolapi.domain.product.service.ProductService
-import com.kioschool.kioschoolapi.domain.workspace.exception.WorkspaceInaccessibleException
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.global.aws.S3Service
 import com.kioschool.kioschoolapi.global.cache.constant.CacheNames
 import com.kioschool.kioschoolapi.global.common.enums.ProductStatus
+import com.kioschool.kioschoolapi.global.error.ErrorCode
+import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Component
 import org.springframework.web.multipart.MultipartFile
@@ -96,7 +97,7 @@ class ProductFacade(
 
         if (productCategoryId != null) {
             val productCategory = productService.getProductCategory(productCategoryId)
-            if (productCategory.workspace.id != workspaceId) throw WorkspaceInaccessibleException()
+            if (productCategory.workspace.id != workspaceId) throw CustomException(ErrorCode.WORKSPACE_INACCESSIBLE)
             product.productCategory = productCategory
         } else {
             product.productCategory = null
@@ -170,13 +171,13 @@ class ProductFacade(
         val categoryMap = categories.associateBy { it.id }
 
         categories.forEach {
-            if (it.workspace.id != workspaceId) throw WorkspaceInaccessibleException()
+            if (it.workspace.id != workspaceId) throw CustomException(ErrorCode.WORKSPACE_INACCESSIBLE)
         }
 
         val allProductIds = sorts.flatMap { it.productIds }.distinct()
         val products = productService.getProducts(allProductIds)
         products.forEach {
-            if (it.workspace.id != workspaceId) throw WorkspaceInaccessibleException()
+            if (it.workspace.id != workspaceId) throw CustomException(ErrorCode.WORKSPACE_INACCESSIBLE)
         }
         val productMap = products.associateBy { it.id }
 
