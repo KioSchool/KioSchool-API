@@ -1,5 +1,6 @@
 package com.kioschool.kioschoolapi.global.security
 
+import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -8,21 +9,31 @@ import org.springframework.http.HttpMethod
 import org.springframework.http.HttpMethod.OPTIONS
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.filter.OncePerRequestFilter
+import org.springframework.web.servlet.HandlerExceptionResolver
 
 class JwtAuthenticationFilter(
     private val allowedOrigin: String,
-    private val jwtProvider: JwtProvider
+    private val jwtProvider: JwtProvider,
+    private val handlerExceptionResolver: HandlerExceptionResolver,
 ) : OncePerRequestFilter() {
 
-    override fun doFilterInternal(
+    // public (widened from protected) so unit tests can invoke it directly.
+    public override fun doFilterInternal(
         request: HttpServletRequest,
         response: HttpServletResponse,
         filterChain: FilterChain
     ) {
-        val token = jwtProvider.resolveToken(request)
-        if (!token.isNullOrBlank() && jwtProvider.isValidToken(token)) {
-            val authentication = jwtProvider.getAuthentication(token)
-            SecurityContextHolder.getContext().authentication = authentication
+        try {
+            val token = jwtProvider.resolveToken(request)
+            if (!token.isNullOrBlank() && jwtProvider.isValidToken(token)) {
+                val authentication = jwtProvider.getAuthentication(token)
+                SecurityContextHolder.getContext().authentication = authentication
+            }
+        } catch (e: CustomException) {
+            SecurityContextHolder.clearContext()
+            handlerExceptionResolver.resolveException(request, response, null, e)
+                ?: throw e
+            return
         }
 
         filterChain.doFilter(request, response)

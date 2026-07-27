@@ -2,18 +2,18 @@ package com.kioschool.kioschoolapi.order.facade
 
 import com.kioschool.kioschoolapi.domain.order.dto.request.OrderProductRequestBody
 import com.kioschool.kioschoolapi.domain.order.entity.Order
-import com.kioschool.kioschoolapi.domain.order.exception.NoOrderSessionException
-import com.kioschool.kioschoolapi.domain.order.exception.OrderSessionAlreadyExistException
 import com.kioschool.kioschoolapi.domain.order.facade.OrderFacade
 import com.kioschool.kioschoolapi.domain.order.service.OrderService
 import com.kioschool.kioschoolapi.domain.product.service.ProductService
-import com.kioschool.kioschoolapi.domain.workspace.exception.WorkspaceInaccessibleException
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.factory.SampleEntity
 import com.kioschool.kioschoolapi.global.common.enums.OrderStatus
 import com.kioschool.kioschoolapi.global.common.enums.WebsocketType
+import com.kioschool.kioschoolapi.global.error.ErrorCode
+import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import io.kotest.core.spec.style.DescribeSpec
 import io.mockk.*
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.assertThrows
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -141,7 +141,7 @@ class OrderFacadeTest : DescribeSpec({
             }
         }
 
-        it("should throw NoOrderSessionException when no order session exists for the table") {
+        it("should throw CustomException when no order session exists for the table") {
             val workspaceId = 1L
             val tableNumber = 1
             val customerName = "customer"
@@ -157,9 +157,10 @@ class OrderFacadeTest : DescribeSpec({
                 )
             } returns SampleEntity.workspaceTable.apply { orderSession = null }
 
-            assertThrows<NoOrderSessionException> {
+            val ex = assertThrows<CustomException> {
                 sut.createOrder(workspaceId, "dummy_hash", customerName, rawOrderProducts)
             }
+            assertEquals(ErrorCode.NO_ORDER_SESSION, ex.errorCode)
 
             verify { workspaceService.getWorkspace(workspaceId) }
             verify { workspaceService.getWorkspaceTableByHash(SampleEntity.workspace, "dummy_hash") }
@@ -341,7 +342,7 @@ class OrderFacadeTest : DescribeSpec({
             }
         }
 
-        it("should throw WorkspaceInaccessibleException when workspace is not accessible") {
+        it("should throw CustomException(WORKSPACE_INACCESSIBLE) when workspace is not accessible") {
             val username = "test"
             val workspaceId = 1L
             val tableNumber = 1
@@ -351,9 +352,9 @@ class OrderFacadeTest : DescribeSpec({
                     username,
                     workspaceId
                 )
-            } throws WorkspaceInaccessibleException()
+            } throws CustomException(ErrorCode.WORKSPACE_INACCESSIBLE)
 
-            assertThrows<WorkspaceInaccessibleException> {
+            val ex = assertThrows<CustomException> {
                 sut.getOrdersByCondition(
                     username,
                     workspaceId,
@@ -363,6 +364,7 @@ class OrderFacadeTest : DescribeSpec({
                     tableNumber
                 )
             }
+            assertEquals(ErrorCode.WORKSPACE_INACCESSIBLE, ex.errorCode)
 
             verify { workspaceService.checkAccessible(username, workspaceId) }
             verify(exactly = 0) {
@@ -412,7 +414,7 @@ class OrderFacadeTest : DescribeSpec({
             }
         }
 
-        it("should throw WorkspaceInaccessibleException when workspace is not accessible") {
+        it("should throw CustomException(WORKSPACE_INACCESSIBLE) when workspace is not accessible") {
             val workspaceId = 1L
 
             every {
@@ -420,11 +422,12 @@ class OrderFacadeTest : DescribeSpec({
                     "test",
                     workspaceId
                 )
-            } throws WorkspaceInaccessibleException()
+            } throws CustomException(ErrorCode.WORKSPACE_INACCESSIBLE)
 
-            assertThrows<WorkspaceInaccessibleException> {
+            val ex = assertThrows<CustomException> {
                 sut.getRealtimeOrders("test", workspaceId)
             }
+            assertEquals(ErrorCode.WORKSPACE_INACCESSIBLE, ex.errorCode)
 
             verify { workspaceService.checkAccessible("test", workspaceId) }
             verify(exactly = 0) {
@@ -467,7 +470,7 @@ class OrderFacadeTest : DescribeSpec({
             }
         }
 
-        it("should throw WorkspaceInaccessibleException when workspace is not accessible") {
+        it("should throw CustomException(WORKSPACE_INACCESSIBLE) when workspace is not accessible") {
             val orderId = 1L
             val status = OrderStatus.PAID.name
 
@@ -476,11 +479,12 @@ class OrderFacadeTest : DescribeSpec({
                     "test",
                     1L
                 )
-            } throws WorkspaceInaccessibleException()
+            } throws CustomException(ErrorCode.WORKSPACE_INACCESSIBLE)
 
-            assertThrows<WorkspaceInaccessibleException> {
+            val ex = assertThrows<CustomException> {
                 sut.changeOrderStatus("test", 1L, orderId, status)
             }
+            assertEquals(ErrorCode.WORKSPACE_INACCESSIBLE, ex.errorCode)
 
             verify { workspaceService.checkAccessible("test", 1L) }
             verify(exactly = 0) { orderService.getOrder(orderId) }
@@ -580,7 +584,7 @@ class OrderFacadeTest : DescribeSpec({
             verify(exactly = 0) { orderService.getAllOrdersByOrderSessionIds(any()) }
         }
 
-        it("should throw WorkspaceInaccessibleException when workspace is not accessible") {
+        it("should throw CustomException(WORKSPACE_INACCESSIBLE) when workspace is not accessible") {
             val username = "test"
             val workspaceId = 1L
             val startDate = LocalDate.now()
@@ -590,11 +594,12 @@ class OrderFacadeTest : DescribeSpec({
                     username,
                     workspaceId
                 )
-            } throws WorkspaceInaccessibleException()
+            } throws CustomException(ErrorCode.WORKSPACE_INACCESSIBLE)
 
-            assertThrows<WorkspaceInaccessibleException> {
+            val ex = assertThrows<CustomException> {
                 sut.getOrderSessionsByDate(username, workspaceId, startDate, false)
             }
+            assertEquals(ErrorCode.WORKSPACE_INACCESSIBLE, ex.errorCode)
 
             verify { workspaceService.checkAccessible(username, workspaceId) }
             verify(exactly = 0) {
@@ -655,7 +660,7 @@ class OrderFacadeTest : DescribeSpec({
             verify { orderService.saveOrderProductAndSendWebsocketMessage(orderProduct) }
         }
 
-        it("should throw WorkspaceInaccessibleException when workspace is not accessible") {
+        it("should throw CustomException(WORKSPACE_INACCESSIBLE) when workspace is not accessible") {
             val orderProductId = 1L
             val servedCount = 1
 
@@ -664,11 +669,12 @@ class OrderFacadeTest : DescribeSpec({
                     "test",
                     1L
                 )
-            } throws WorkspaceInaccessibleException()
+            } throws CustomException(ErrorCode.WORKSPACE_INACCESSIBLE)
 
-            assertThrows<WorkspaceInaccessibleException> {
+            val ex = assertThrows<CustomException> {
                 sut.changeOrderProductServedCount("test", 1L, orderProductId, servedCount)
             }
+            assertEquals(ErrorCode.WORKSPACE_INACCESSIBLE, ex.errorCode)
 
             verify { workspaceService.checkAccessible("test", 1L) }
             verify(exactly = 0) { orderService.getOrderProduct(orderProductId) }
@@ -687,17 +693,18 @@ class OrderFacadeTest : DescribeSpec({
             verify { orderService.resetOrderNumber(1L) }
         }
 
-        it("should throw WorkspaceInaccessibleException when workspace is not accessible") {
+        it("should throw CustomException(WORKSPACE_INACCESSIBLE) when workspace is not accessible") {
             every {
                 workspaceService.checkAccessible(
                     "test",
                     1L
                 )
-            } throws WorkspaceInaccessibleException()
+            } throws CustomException(ErrorCode.WORKSPACE_INACCESSIBLE)
 
-            assertThrows<WorkspaceInaccessibleException> {
+            val ex = assertThrows<CustomException> {
                 sut.resetOrderNumber("test", 1L)
             }
+            assertEquals(ErrorCode.WORKSPACE_INACCESSIBLE, ex.errorCode)
 
             verify { workspaceService.checkAccessible("test", 1L) }
             verify(exactly = 0) { orderService.resetOrderNumber(1L) }
@@ -829,7 +836,7 @@ class OrderFacadeTest : DescribeSpec({
             verify { workspaceService.saveWorkspaceTable(any()) }
         }
 
-        it("should throw OrderSessionAlreadyExistException when order session already exists") {
+        it("should throw CustomException when order session already exists") {
             val username = "test"
             val workspaceId = 1L
             val tableNumber = 1
@@ -843,9 +850,10 @@ class OrderFacadeTest : DescribeSpec({
                 )
             } returns SampleEntity.workspaceTable.apply { orderSession = SampleEntity.orderSession }
 
-            assertThrows<OrderSessionAlreadyExistException> {
+            val ex = assertThrows<CustomException> {
                 sut.startOrderSession(username, workspaceId, tableNumber)
             }
+            assertEquals(ErrorCode.ORDER_SESSION_ALREADY_EXIST, ex.errorCode)
 
             verify { workspaceService.checkAccessible(username, workspaceId) }
             verify { workspaceService.getWorkspace(workspaceId) }
@@ -894,7 +902,7 @@ class OrderFacadeTest : DescribeSpec({
     }
 
     describe("endOrderSession") {
-        it("should throw EmptyOrderSessionException when order session has no valid orders and isGhost is null") {
+        it("should throw CustomException when order session has no valid orders and isGhost is null") {
             val username = "test"
             val workspaceId = 1L
             val tableNumber = 1
@@ -912,9 +920,10 @@ class OrderFacadeTest : DescribeSpec({
             every { orderService.getOrderSession(orderSessionId) } returns SampleEntity.orderSession
             every { orderService.getAllOrdersByOrderSession(any()) } returns emptyList()
 
-            assertThrows<com.kioschool.kioschoolapi.domain.order.exception.EmptyOrderSessionException> {
+            val ex = assertThrows<CustomException> {
                 sut.endOrderSession(username, workspaceId, tableNumber, orderSessionId)
             }
+            assertEquals(ErrorCode.EMPTY_ORDER_SESSION, ex.errorCode)
 
             verify { workspaceService.checkAccessible(username, workspaceId) }
             verify { workspaceService.getWorkspace(workspaceId) }

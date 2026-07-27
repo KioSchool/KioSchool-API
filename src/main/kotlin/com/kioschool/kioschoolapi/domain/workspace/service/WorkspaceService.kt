@@ -3,7 +3,6 @@ package com.kioschool.kioschoolapi.domain.workspace.service
 import com.kioschool.kioschoolapi.domain.user.entity.User
 import com.kioschool.kioschoolapi.domain.user.service.UserService
 import com.kioschool.kioschoolapi.domain.workspace.entity.*
-import com.kioschool.kioschoolapi.domain.workspace.exception.*
 import com.kioschool.kioschoolapi.domain.workspace.repository.CustomWorkspaceRepository
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceMemberRepository
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepository
@@ -12,6 +11,8 @@ import com.kioschool.kioschoolapi.global.aws.S3Service
 import com.kioschool.kioschoolapi.global.cache.annotation.WorkspaceUpdateEvent
 import org.springframework.data.repository.findByIdOrNull
 import com.kioschool.kioschoolapi.global.common.enums.UserRole
+import com.kioschool.kioschoolapi.global.error.ErrorCode
+import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import com.kioschool.kioschoolapi.global.security.CustomUserDetails
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.Page
@@ -43,7 +44,7 @@ class WorkspaceService(
     }
 
     fun checkCanCreateWorkspace(user: User) {
-        if (user.account == null) throw NoPermissionToCreateWorkspaceException()
+        if (user.account == null) throw CustomException(ErrorCode.NO_PERMISSION_TO_CREATE_WORKSPACE)
     }
 
     fun saveNewWorkspace(user: User, name: String, description: String): Workspace {
@@ -65,7 +66,7 @@ class WorkspaceService(
     }
 
     fun checkCanJoinWorkspace(user: User, workspace: Workspace) {
-        if (workspace.invitations.none { it.user == user }) throw NoPermissionToJoinWorkspaceException()
+        if (workspace.invitations.none { it.user == user }) throw CustomException(ErrorCode.NO_PERMISSION_TO_JOIN_WORKSPACE)
     }
 
     fun addUserToWorkspace(workspace: Workspace, user: User) {
@@ -79,7 +80,7 @@ class WorkspaceService(
 
     fun getWorkspace(workspaceId: Long): Workspace {
         return workspaceRepository.findById(workspaceId)
-            .orElseThrow { WorkspaceNotFoundException() }
+            .orElseThrow { CustomException(ErrorCode.WORKSPACE_NOT_FOUND) }
     }
 
     fun findWorkspaceOrNull(workspaceId: Long): Workspace? =
@@ -98,7 +99,7 @@ class WorkspaceService(
     }
 
     fun checkAccessible(username: String, workspaceId: Long) {
-        if (!isAccessible(username, workspaceId)) throw WorkspaceInaccessibleException()
+        if (!isAccessible(username, workspaceId)) throw CustomException(ErrorCode.WORKSPACE_INACCESSIBLE)
     }
 
     fun checkCanAccessWorkspace(user: User, workspace: Workspace) {
@@ -108,12 +109,12 @@ class WorkspaceService(
                 user.loginId
             )
         ) {
-            throw WorkspaceInaccessibleException()
+            throw CustomException(ErrorCode.WORKSPACE_INACCESSIBLE)
         }
     }
 
     fun checkCanInviteWorkspace(user: User, workspace: Workspace) {
-        if (workspace.owner != user) throw NoPermissionToInviteException()
+        if (workspace.owner != user) throw CustomException(ErrorCode.NO_PERMISSION_TO_INVITE)
     }
 
     @Transactional
@@ -213,7 +214,7 @@ class WorkspaceService(
 
     fun getWorkspaceTableByHash(workspace: Workspace, tableHash: String): WorkspaceTable {
         return workspaceTableRepository.findByTableHashAndWorkspace(tableHash, workspace)
-            .orElseThrow { WorkspaceTableNotFoundException() }
+            .orElseThrow { CustomException(ErrorCode.WORKSPACE_TABLE_NOT_FOUND) }
     }
 
     fun deleteWorkspace(workspace: Workspace) {

@@ -1,18 +1,18 @@
 package com.kioschool.kioschoolapi.account.facade
 
-import com.kioschool.kioschoolapi.domain.account.exception.BankTossNameNotFoundException
-import com.kioschool.kioschoolapi.domain.account.exception.IncorrectAccountHolderException
 import com.kioschool.kioschoolapi.domain.account.facade.AccountFacade
 import com.kioschool.kioschoolapi.domain.account.service.AccountService
 import com.kioschool.kioschoolapi.domain.account.service.BankService
 import com.kioschool.kioschoolapi.domain.user.repository.UserRepository
 import com.kioschool.kioschoolapi.domain.user.service.UserService
 import com.kioschool.kioschoolapi.factory.SampleEntity
+import com.kioschool.kioschoolapi.global.error.ErrorCode
+import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import com.kioschool.kioschoolapi.global.portone.service.PortoneService
-import com.kioschool.kioschoolapi.global.toss.exception.DifferentAccountNumberException
 import com.kioschool.kioschoolapi.global.toss.service.TossService
 import io.kotest.core.spec.style.DescribeSpec
 import io.mockk.*
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.assertThrows
 import org.springframework.data.domain.PageImpl
 
@@ -152,7 +152,7 @@ class AccountFacadeTest : DescribeSpec({
             verify { userService.saveUser(any()) }
         }
 
-        it("should throw IncorrectAccountHolderException when account holder is incorrect") {
+        it("should throw CustomException when account holder is incorrect") {
             val username = "username"
             val bankId = 1L
             val accountNumber = "accountNumber"
@@ -165,11 +165,12 @@ class AccountFacadeTest : DescribeSpec({
                     accountNumber,
                     accountHolder
                 )
-            } throws IncorrectAccountHolderException()
+            } throws CustomException(ErrorCode.INCORRECT_ACCOUNT_HOLDER)
 
-            assertThrows<IncorrectAccountHolderException> {
+            val ex = assertThrows<CustomException> {
                 sut.registerAccount(username, bankId, accountNumber, accountHolder)
             }
+            assertEquals(ErrorCode.INCORRECT_ACCOUNT_HOLDER, ex.errorCode)
 
             verify { bankService.getBank(bankId) }
             verify {
@@ -253,18 +254,19 @@ class AccountFacadeTest : DescribeSpec({
             verify { bankService.fillTossNameIfAbsent(SampleEntity.bank, "카카오뱅크") }
         }
 
-        it("should throw DifferentAccountNumberException when account number does not match") {
+        it("should throw CustomException when account number does not match") {
             val username = "username"
             val accountUrl = "accountUrl"
 
             every { userService.getUser(username) } returns SampleEntity.user
             every {
                 tossService.validateAccountUrl(SampleEntity.user, accountUrl)
-            } throws DifferentAccountNumberException()
+            } throws CustomException(ErrorCode.DIFFERENT_ACCOUNT_NUMBER)
 
-            assertThrows<DifferentAccountNumberException> {
+            val ex = assertThrows<CustomException> {
                 sut.registerTossAccount(username, accountUrl)
             }
+            assertEquals(ErrorCode.DIFFERENT_ACCOUNT_NUMBER, ex.errorCode)
 
             verify { userService.getUser(username) }
             verify { tossService.validateAccountUrl(SampleEntity.user, accountUrl) }
@@ -294,7 +296,7 @@ class AccountFacadeTest : DescribeSpec({
             verify { userService.saveUser(any()) }
         }
 
-        it("should throw BankTossNameNotFoundException when bank has no tossName") {
+        it("should throw CustomException when bank has no tossName") {
             val username = "username"
             val userWithAccount = SampleEntity.user.apply {
                 this.account = SampleEntity.account.apply { bank.tossName = null }
@@ -302,9 +304,10 @@ class AccountFacadeTest : DescribeSpec({
 
             every { userService.getUser(username) } returns userWithAccount
 
-            assertThrows<BankTossNameNotFoundException> {
+            val ex = assertThrows<CustomException> {
                 sut.registerTossAccountAuto(username)
             }
+            assertEquals(ErrorCode.BANK_TOSS_NAME_NOT_FOUND, ex.errorCode)
 
             verify(exactly = 0) { tossService.generateTossAccountUrl(any(), any()) }
             verify(exactly = 0) { userService.saveUser(any()) }

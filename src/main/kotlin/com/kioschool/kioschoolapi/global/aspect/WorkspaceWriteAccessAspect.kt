@@ -1,10 +1,11 @@
 package com.kioschool.kioschoolapi.global.aspect
 
-import com.kioschool.kioschoolapi.domain.workspace.exception.SuperAdminWorkspaceReadOnlyException
 import com.kioschool.kioschoolapi.domain.user.facade.UserFacade
 import com.kioschool.kioschoolapi.domain.workspace.facade.WorkspaceFacade
 import com.kioschool.kioschoolapi.global.common.enums.UserRole
 import com.kioschool.kioschoolapi.global.common.interfaces.WorkspaceAware
+import com.kioschool.kioschoolapi.global.error.ErrorCode
+import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import com.kioschool.kioschoolapi.global.security.annotation.AdminUsername
 import org.aspectj.lang.JoinPoint
 import org.aspectj.lang.annotation.Aspect
@@ -71,7 +72,7 @@ class WorkspaceWriteAccessAspect(
                 
                 // Super Admin 본인이 소유(생성)한 워크스페이스가 아닌 경우 예외를 발생 (Read-Only 처리)
                 if (workspaceDto.owner.id != userId) {
-                    throw SuperAdminWorkspaceReadOnlyException()
+                    throw CustomException(ErrorCode.SUPER_ADMIN_WORKSPACE_READ_ONLY)
                 }
             }
         }
