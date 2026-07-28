@@ -9,7 +9,7 @@ spring:
       port: 6379
       password: ${REDIS_PASSWORD}
       ssl:
-        enabled: true
+        enabled: false
 cloud:
   aws:
     s3:
