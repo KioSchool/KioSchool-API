@@ -15,8 +15,8 @@ class RedisPublisher(
     private val channelTopic: ChannelTopic
 ) {
     @Async("taskExecutor")
-    fun publish(workspaceId: Long, message: Message) {
-        val pubSubMessage = RedisPubSubMessage(workspaceId, message)
+    fun publish(destination: String, message: Message) {
+        val pubSubMessage = RedisPubSubMessage(destination, message)
         redisTemplate.convertAndSend(channelTopic.topic, pubSubMessage)
     }
 }

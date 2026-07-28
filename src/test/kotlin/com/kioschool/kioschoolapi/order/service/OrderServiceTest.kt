@@ -10,6 +10,7 @@ import com.kioschool.kioschoolapi.domain.order.service.OrderService
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.factory.SampleEntity
 import com.kioschool.kioschoolapi.global.common.enums.WebsocketType
+import com.kioschool.kioschoolapi.global.websocket.service.CustomWebSocketService
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.*
@@ -19,6 +20,7 @@ import org.springframework.data.domain.Sort
 class OrderServiceTest : DescribeSpec({
     val repository = mockk<OrderRepository>()
     val workspaceService = mockk<WorkspaceService>()
+    val websocketService = mockk<CustomWebSocketService>()
     val customOrderRepository = mockk<CustomOrderRepository>()
     val orderRedisRepository = mockk<OrderRedisRepository>()
     val orderProductRepository = mockk<OrderProductRepository>()
@@ -28,6 +30,7 @@ class OrderServiceTest : DescribeSpec({
 
     val sut = OrderService(
         repository,
+        websocketService,
         customOrderRepository,
         orderRedisRepository,
         orderProductRepository,
@@ -35,6 +38,18 @@ class OrderServiceTest : DescribeSpec({
         customOrderSessionRepository,
         eventPublisher
     )
+
+    beforeTest {
+        mockkObject(repository)
+        mockkObject(workspaceService)
+        mockkObject(websocketService)
+        mockkObject(customOrderRepository)
+        mockkObject(orderRedisRepository)
+        mockkObject(orderProductRepository)
+        mockkObject(orderSessionRepository)
+        mockkObject(customOrderSessionRepository)
+        mockkObject(eventPublisher)
+    }
 
     afterTest {
         clearAllMocks()
