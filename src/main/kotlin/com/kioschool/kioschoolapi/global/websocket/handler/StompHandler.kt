@@ -1,9 +1,9 @@
 package com.kioschool.kioschoolapi.global.websocket.handler
 
-import com.kioschool.kioschoolapi.domain.workspace.exception.WorkspaceInaccessibleException
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
+import com.kioschool.kioschoolapi.global.error.ErrorCode
+import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import com.kioschool.kioschoolapi.global.security.JwtProvider
-import com.kioschool.kioschoolapi.global.security.exception.InvalidJwtException
 import org.springframework.messaging.Message
 import org.springframework.messaging.MessageChannel
 import org.springframework.messaging.simp.stomp.StompCommand
@@ -22,13 +22,13 @@ class StompHandler(
         when (accessor.command) {
             StompCommand.CONNECT -> {
                 val token = sessionAttributes?.get("token") as String
-                if (!jwtProvider.isValidToken(token)) throw InvalidJwtException()
+                if (!jwtProvider.isValidToken(token)) throw CustomException(ErrorCode.INVALID_JWT)
             }
 
             StompCommand.SUBSCRIBE -> {
                 val token = sessionAttributes?.get("token") as String
-                if (!jwtProvider.isValidToken(token)) throw InvalidJwtException()
-                if (!isAccessible(token, accessor)) throw WorkspaceInaccessibleException()
+                if (!jwtProvider.isValidToken(token)) throw CustomException(ErrorCode.INVALID_JWT)
+                if (!isAccessible(token, accessor)) throw CustomException(ErrorCode.WORKSPACE_INACCESSIBLE)
             }
 
             else -> {}
