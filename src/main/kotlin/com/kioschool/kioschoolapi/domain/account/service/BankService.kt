@@ -1,8 +1,9 @@
 package com.kioschool.kioschoolapi.domain.account.service
 
 import com.kioschool.kioschoolapi.domain.account.entity.Bank
-import com.kioschool.kioschoolapi.domain.account.exception.BankNotFoundException
 import com.kioschool.kioschoolapi.domain.account.repository.BankRepository
+import com.kioschool.kioschoolapi.global.error.ErrorCode
+import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import jakarta.transaction.Transactional
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
@@ -26,21 +27,21 @@ class BankService(
 
     @Transactional
     fun updateTossName(id: Long, tossName: String): Bank {
-        val bank = bankRepository.findById(id).orElseThrow { BankNotFoundException() }
+        val bank = bankRepository.findById(id).orElseThrow { CustomException(ErrorCode.BANK_NOT_FOUND) }
         bank.tossName = tossName
         return bank
     }
 
     @Transactional
     fun deleteTossName(id: Long): Bank {
-        val bank = bankRepository.findById(id).orElseThrow { BankNotFoundException() }
+        val bank = bankRepository.findById(id).orElseThrow { CustomException(ErrorCode.BANK_NOT_FOUND) }
         bank.tossName = null
         return bank
     }
 
     @Transactional
     fun deleteBank(id: Long): Bank {
-        val bank = bankRepository.findById(id).orElseThrow { BankNotFoundException() }
+        val bank = bankRepository.findById(id).orElseThrow { CustomException(ErrorCode.BANK_NOT_FOUND) }
         bankRepository.delete(bank)
         return bank
     }
@@ -57,6 +58,6 @@ class BankService(
     }
 
     fun getBank(bankId: Long): Bank {
-        return bankRepository.findById(bankId).orElseThrow { BankNotFoundException() }
+        return bankRepository.findById(bankId).orElseThrow { CustomException(ErrorCode.BANK_NOT_FOUND) }
     }
 }

@@ -1,20 +1,18 @@
 package com.kioschool.kioschoolapi.user.facade
 
-import com.kioschool.kioschoolapi.domain.email.exception.NotVerifiedEmailDomainException
 import com.kioschool.kioschoolapi.domain.email.service.EmailService
-import com.kioschool.kioschoolapi.domain.user.exception.LoginFailedException
-import com.kioschool.kioschoolapi.domain.user.exception.NoPermissionException
-import com.kioschool.kioschoolapi.domain.user.exception.RegisterException
-import com.kioschool.kioschoolapi.domain.user.exception.UserNotFoundException
 import com.kioschool.kioschoolapi.domain.user.facade.UserFacade
 import com.kioschool.kioschoolapi.domain.user.service.UserService
 import com.kioschool.kioschoolapi.factory.SampleEntity
 import com.kioschool.kioschoolapi.global.common.enums.UserRole
 import com.kioschool.kioschoolapi.global.discord.service.DiscordService
+import com.kioschool.kioschoolapi.global.error.ErrorCode
+import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import com.kioschool.kioschoolapi.global.security.JwtProvider
 import com.kioschool.kioschoolapi.global.template.TemplateService
 import io.kotest.core.spec.style.DescribeSpec
 import io.mockk.*
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.assertThrows
 import org.springframework.data.domain.PageImpl
 import org.springframework.mock.web.MockHttpServletResponse
@@ -77,11 +75,12 @@ class UserFacadeTest : DescribeSpec({
             val loginPassword = "test"
             val response = MockHttpServletResponse()
 
-            every { userService.getUser(loginId) } throws UserNotFoundException()
+            every { userService.getUser(loginId) } throws CustomException(ErrorCode.USER_NOT_FOUND)
 
-            assertThrows<UserNotFoundException> {
+            val ex = assertThrows<CustomException> {
                 sut.login(loginId, loginPassword, response)
             }
+            assertEquals(ErrorCode.USER_NOT_FOUND, ex.errorCode)
 
             verify { userService.getUser(loginId) }
             verify(exactly = 0) { userService.checkPassword(any(), any()) }
@@ -95,11 +94,12 @@ class UserFacadeTest : DescribeSpec({
             val user = SampleEntity.user
 
             every { userService.getUser(loginId) } returns user
-            every { userService.checkPassword(user, loginPassword) } throws LoginFailedException()
+            every { userService.checkPassword(user, loginPassword) } throws CustomException(ErrorCode.LOGIN_FAILED)
 
-            assertThrows<LoginFailedException> {
+            val ex = assertThrows<CustomException> {
                 sut.login(loginId, loginPassword, response)
             }
+            assertEquals(ErrorCode.LOGIN_FAILED, ex.errorCode)
 
             verify { userService.getUser(loginId) }
             verify { userService.checkPassword(user, loginPassword) }
@@ -162,11 +162,12 @@ class UserFacadeTest : DescribeSpec({
             val email = "test@test.com"
             val response = MockHttpServletResponse()
 
-            every { userService.validateLoginId(loginId) } throws RegisterException(RegisterException.Reason.DUPLICATE_LOGIN_ID)
+            every { userService.validateLoginId(loginId) } throws CustomException(ErrorCode.DUPLICATE_LOGIN_ID)
 
-            assertThrows<RegisterException> {
+            val ex = assertThrows<CustomException> {
                 sut.register(response, loginId, loginPassword, name, email)
             }
+            assertEquals(ErrorCode.DUPLICATE_LOGIN_ID, ex.errorCode)
 
             verify { userService.validateLoginId(loginId) }
             verify(exactly = 0) { userService.validateEmail(any()) }
@@ -184,11 +185,12 @@ class UserFacadeTest : DescribeSpec({
             val response = MockHttpServletResponse()
 
             every { userService.validateLoginId(loginId) } just Runs
-            every { userService.validateEmail(email) } throws RegisterException(RegisterException.Reason.DUPLICATE_EMAIL)
+            every { userService.validateEmail(email) } throws CustomException(ErrorCode.DUPLICATE_EMAIL)
 
-            assertThrows<RegisterException> {
+            val ex = assertThrows<CustomException> {
                 sut.register(response, loginId, loginPassword, name, email)
             }
+            assertEquals(ErrorCode.DUPLICATE_EMAIL, ex.errorCode)
 
             verify { userService.validateLoginId(loginId) }
             verify { userService.validateEmail(email) }
@@ -251,14 +253,15 @@ class UserFacadeTest : DescribeSpec({
             verify { emailService.createOrUpdateRegisterEmailCode(email, code) }
         }
 
-        it("should throw NotVerifiedEmailDomainException when email domain is not verified") {
+        it("should throw CustomException when email domain is not verified") {
             val email = "test@test.com"
 
-            every { emailService.validateEmailDomainVerified(email) } throws NotVerifiedEmailDomainException()
+            every { emailService.validateEmailDomainVerified(email) } throws CustomException(ErrorCode.NOT_VERIFIED_EMAIL_DOMAIN)
 
-            assertThrows<NotVerifiedEmailDomainException> {
+            val ex = assertThrows<CustomException> {
                 sut.sendRegisterEmail(email)
             }
+            assertEquals(ErrorCode.NOT_VERIFIED_EMAIL_DOMAIN, ex.errorCode)
 
             verify { emailService.validateEmailDomainVerified(email) }
             verify(exactly = 0) { emailService.generateRegisterCode() }
@@ -327,15 +330,16 @@ class UserFacadeTest : DescribeSpec({
             verify { emailService.createOrUpdateResetPasswordEmailCode(email, code) }
         }
 
-        it("should throw UserNotFoundException when user not found") {
+        it("should throw CustomException(USER_NOT_FOUND) when user not found") {
             val loginId = "test"
             val email = "different@email.com"
 
-            every { userService.getUser(loginId) } throws UserNotFoundException()
+            every { userService.getUser(loginId) } throws CustomException(ErrorCode.USER_NOT_FOUND)
 
-            assertThrows<UserNotFoundException> {
+            val ex = assertThrows<CustomException> {
                 sut.sendResetPasswordEmail(loginId, email)
             }
+            assertEquals(ErrorCode.USER_NOT_FOUND, ex.errorCode)
 
             verify { userService.getUser(loginId) }
             verify(exactly = 0) { userService.checkEmailAddress(any(), any()) }
@@ -345,17 +349,18 @@ class UserFacadeTest : DescribeSpec({
             verify(exactly = 0) { emailService.createOrUpdateResetPasswordEmailCode(any(), any()) }
         }
 
-        it("should throw RegisterException when email is different") {
+        it("should throw CustomException(USER_NOT_FOUND) when email is different") {
             val loginId = "test"
             val email = "different@email.com"
             val user = SampleEntity.user
 
             every { userService.getUser(loginId) } returns user
-            every { userService.checkEmailAddress(user, email) } throws UserNotFoundException()
+            every { userService.checkEmailAddress(user, email) } throws CustomException(ErrorCode.USER_NOT_FOUND)
 
-            assertThrows<UserNotFoundException> {
+            val ex = assertThrows<CustomException> {
                 sut.sendResetPasswordEmail(loginId, email)
             }
+            assertEquals(ErrorCode.USER_NOT_FOUND, ex.errorCode)
 
             verify { userService.getUser(loginId) }
             verify { userService.checkEmailAddress(user, email) }
@@ -386,15 +391,16 @@ class UserFacadeTest : DescribeSpec({
             verify { emailService.deleteResetPasswordCode(code) }
         }
 
-        it("should throw UserNotFoundException when email is not found") {
+        it("should throw CustomException(USER_NOT_FOUND) when email is not found") {
             val code = "123456"
             val password = "test"
 
-            every { emailService.getEmailByCode(code) } throws UserNotFoundException()
+            every { emailService.getEmailByCode(code) } throws CustomException(ErrorCode.USER_NOT_FOUND)
 
-            assertThrows<UserNotFoundException> {
+            val ex = assertThrows<CustomException> {
                 sut.resetPassword(code, password)
             }
+            assertEquals(ErrorCode.USER_NOT_FOUND, ex.errorCode)
 
             verify { emailService.getEmailByCode(code) }
             verify(exactly = 0) { userService.getUserByEmail(any()) }
@@ -402,17 +408,18 @@ class UserFacadeTest : DescribeSpec({
             verify(exactly = 0) { emailService.deleteResetPasswordCode(any()) }
         }
 
-        it("should throw UserNotFoundException when user is not found") {
+        it("should throw CustomException(USER_NOT_FOUND) when user is not found") {
             val code = "123456"
             val password = "test"
             val email = "test@test.com"
 
             every { emailService.getEmailByCode(code) } returns email
-            every { userService.getUserByEmail(email) } throws UserNotFoundException()
+            every { userService.getUserByEmail(email) } throws CustomException(ErrorCode.USER_NOT_FOUND)
 
-            assertThrows<UserNotFoundException> {
+            val ex = assertThrows<CustomException> {
                 sut.resetPassword(code, password)
             }
+            assertEquals(ErrorCode.USER_NOT_FOUND, ex.errorCode)
 
             verify { emailService.getEmailByCode(code) }
             verify { userService.getUserByEmail(email) }
@@ -435,14 +442,15 @@ class UserFacadeTest : DescribeSpec({
             verify { userService.getUser(loginId) }
         }
 
-        it("should throw UserNotFoundException when user not found") {
+        it("should throw CustomException(USER_NOT_FOUND) when user not found") {
             val loginId = "test"
 
-            every { userService.getUser(loginId) } throws UserNotFoundException()
+            every { userService.getUser(loginId) } throws CustomException(ErrorCode.USER_NOT_FOUND)
 
-            assertThrows<UserNotFoundException> {
+            val ex = assertThrows<CustomException> {
                 sut.getUser(loginId)
             }
+            assertEquals(ErrorCode.USER_NOT_FOUND, ex.errorCode)
 
             verify { userService.getUser(loginId) }
         }
@@ -464,14 +472,15 @@ class UserFacadeTest : DescribeSpec({
             verify { userService.deleteUser(user) }
         }
 
-        it("should throw UserNotFoundException when user not found") {
+        it("should throw CustomException(USER_NOT_FOUND) when user not found") {
             val loginId = "test"
 
-            every { userService.getUser(loginId) } throws UserNotFoundException()
+            every { userService.getUser(loginId) } throws CustomException(ErrorCode.USER_NOT_FOUND)
 
-            assertThrows<UserNotFoundException> {
+            val ex = assertThrows<CustomException> {
                 sut.deleteUser(loginId)
             }
+            assertEquals(ErrorCode.USER_NOT_FOUND, ex.errorCode)
 
             verify { userService.getUser(loginId) }
             verify(exactly = 0) { userService.deleteUser(any()) }
@@ -501,17 +510,18 @@ class UserFacadeTest : DescribeSpec({
             verify { userService.saveUser(user) }
         }
 
-        it("should throw NoPermissionException when user is not super admin") {
+        it("should throw CustomException(NO_PERMISSION) when user is not super admin") {
             val username = "super admin username"
             val id = "admin username"
             val user = SampleEntity.user
 
             every { userService.getUser(username) } returns user
-            every { userService.checkHasSuperAdminPermission(user) } throws NoPermissionException()
+            every { userService.checkHasSuperAdminPermission(user) } throws CustomException(ErrorCode.NO_PERMISSION)
 
-            assertThrows<NoPermissionException> {
+            val ex = assertThrows<CustomException> {
                 sut.createSuperAdminUser(username, id)
             }
+            assertEquals(ErrorCode.NO_PERMISSION, ex.errorCode)
 
             verify { userService.getUser(username) }
             verify { userService.checkHasSuperAdminPermission(user) }

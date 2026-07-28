@@ -1,11 +1,13 @@
 package com.kioschool.kioschoolapi.email.facade
 
-import com.kioschool.kioschoolapi.domain.email.exception.DuplicatedEmailDomainException
 import com.kioschool.kioschoolapi.domain.email.facade.EmailFacade
 import com.kioschool.kioschoolapi.domain.email.service.EmailService
 import com.kioschool.kioschoolapi.factory.SampleEntity
+import com.kioschool.kioschoolapi.global.error.ErrorCode
+import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import io.kotest.core.spec.style.DescribeSpec
 import io.mockk.*
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.assertThrows
 import org.springframework.data.domain.PageImpl
 
@@ -97,11 +99,12 @@ class EmailFacadeTest : DescribeSpec({
             val name = "name"
             val domain = "domain"
 
-            every { emailService.validateEmailDomainDuplicate(domain) } throws DuplicatedEmailDomainException()
+            every { emailService.validateEmailDomainDuplicate(domain) } throws CustomException(ErrorCode.DUPLICATE_EMAIL_DOMAIN)
 
-            assertThrows<DuplicatedEmailDomainException> {
+            val ex = assertThrows<CustomException> {
                 sut.registerEmailDomain(name, domain)
             }
+            assertEquals(ErrorCode.DUPLICATE_EMAIL_DOMAIN, ex.errorCode)
 
             verify { emailService.validateEmailDomainDuplicate(domain) }
             verify(exactly = 0) { emailService.registerEmailDomain(name, domain) }

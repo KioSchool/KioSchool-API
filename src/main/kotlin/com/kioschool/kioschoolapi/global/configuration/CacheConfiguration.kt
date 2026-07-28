@@ -5,8 +5,11 @@ import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.kioschool.kioschoolapi.global.cache.constant.CacheNames
+import com.kioschool.kioschoolapi.global.cache.handler.RedisCacheErrorHandler
 import org.springframework.cache.CacheManager
+import org.springframework.cache.annotation.CachingConfigurer
 import org.springframework.cache.annotation.EnableCaching
+import org.springframework.cache.interceptor.CacheErrorHandler
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.data.redis.cache.RedisCacheConfiguration
@@ -21,7 +24,10 @@ import java.time.Duration
 
 @EnableCaching
 @Configuration
-class CacheConfiguration {
+class CacheConfiguration : CachingConfigurer {
+
+    // 캐시 계층(Redis) 장애가 요청을 500으로 만들지 않고 원본 조회로 폴백되도록 한다.
+    override fun errorHandler(): CacheErrorHandler = RedisCacheErrorHandler()
 
     class CustomRedisCacheManager(
         cacheWriter: RedisCacheWriter,

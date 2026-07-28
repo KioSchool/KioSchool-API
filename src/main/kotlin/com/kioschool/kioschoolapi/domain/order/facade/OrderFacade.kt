@@ -5,15 +5,15 @@ import com.kioschool.kioschoolapi.domain.order.dto.request.OrderProductRequestBo
 import com.kioschool.kioschoolapi.domain.order.entity.GhostType
 import com.kioschool.kioschoolapi.domain.order.entity.Order
 import com.kioschool.kioschoolapi.domain.order.entity.OrderProduct
-import com.kioschool.kioschoolapi.domain.order.exception.EmptyOrderSessionException
-import com.kioschool.kioschoolapi.domain.order.exception.NoOrderSessionException
-import com.kioschool.kioschoolapi.domain.order.exception.OrderSessionAlreadyExistException
 import com.kioschool.kioschoolapi.domain.order.service.OrderService
 import com.kioschool.kioschoolapi.domain.product.service.ProductService
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.global.cache.constant.CacheNames
 import com.kioschool.kioschoolapi.global.common.enums.OrderStatus
 import com.kioschool.kioschoolapi.global.common.enums.WebsocketType
+import com.kioschool.kioschoolapi.global.error.ErrorCode
+import com.kioschool.kioschoolapi.global.error.exception.CustomException
+import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
@@ -28,6 +28,8 @@ class OrderFacade(
     private val workspaceService: WorkspaceService,
     private val productService: ProductService
 ) {
+    private val log = LoggerFactory.getLogger(javaClass)
+
     @Transactional
     fun createOrder(
         workspaceId: Long,
@@ -38,7 +40,7 @@ class OrderFacade(
         val workspace = workspaceService.getWorkspace(workspaceId)
         val productIds = rawOrderProducts.map { it.productId }
         val table = workspaceService.getWorkspaceTableByHash(workspace, tableHash)
-        val currentOrderSession = table.orderSession ?: throw NoOrderSessionException()
+        val currentOrderSession = table.orderSession ?: throw CustomException(ErrorCode.NO_ORDER_SESSION)
 
         productService.validateProducts(workspaceId, productIds)
 
@@ -80,6 +82,34 @@ class OrderFacade(
     @Cacheable(cacheNames = [CacheNames.ORDERS], key = "#orderId")
     fun getOrder(orderId: Long): OrderDto {
         return OrderDto.of(orderService.getOrder(orderId))
+    }
+
+    fun getSessionOrders(
+        workspaceId: Long,
+        tableHash: String,
+        orderId: Long
+    ): List<OrderDto> {
+        val workspace = workspaceService.getWorkspace(workspaceId)
+        val table = workspaceService.getWorkspaceTableByHash(workspace, tableHash)
+        val currentSession = table.orderSession ?: return emptyList()
+
+        val order = orderService.getOrderOrNull(orderId) ?: return emptyList()
+
+        if (order.orderSession?.id != currentSession.id) {
+            log.warn(
+                "Session orders access denied: orderId={} does not belong to the current session. workspaceId={}, tableNumber={}, currentSessionId={}, orderSessionId={}",
+                orderId,
+                workspaceId,
+                table.tableNumber,
+                currentSession.id,
+                order.orderSession?.id
+            )
+            return emptyList()
+        }
+
+        return orderService.getAllOrdersByOrderSession(currentSession)
+            .sortedBy { it.id }
+            .map { OrderDto.of(it) }
     }
 
     fun getOrdersByCondition(
@@ -260,7 +290,7 @@ class OrderFacade(
         val setting = workspace.workspaceSetting
         val table = workspaceService.getWorkspaceTable(workspace, tableNumber)
 
-        if (table.orderSession != null) throw OrderSessionAlreadyExistException()
+        if (table.orderSession != null) throw CustomException(ErrorCode.ORDER_SESSION_ALREADY_EXIST)
 
         val orderSession = orderService.createOrderSession(workspace, table, setting)
         table.orderSession = orderSession
@@ -287,7 +317,7 @@ class OrderFacade(
         return OrderSessionDto.of(orderService.saveOrderSession(orderSession))
     }
 
-    @Transactional(rollbackFor = [EmptyOrderSessionException::class])
+    @Transactional(rollbackFor = [CustomException::class])
     fun endOrderSession(
         username: String,
         workspaceId: Long,
@@ -312,7 +342,7 @@ class OrderFacade(
 
         if (validOrders.isEmpty()) {
             if (isGhost == null) {
-                throw EmptyOrderSessionException()
+                throw CustomException(ErrorCode.EMPTY_ORDER_SESSION)
             }
             orderSession.ghostType = if (isGhost) GhostType.USER else GhostType.NONE
         } else {

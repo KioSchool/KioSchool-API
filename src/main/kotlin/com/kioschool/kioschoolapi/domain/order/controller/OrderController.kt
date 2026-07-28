@@ -2,8 +2,9 @@ package com.kioschool.kioschoolapi.domain.order.controller
 
 import com.kioschool.kioschoolapi.domain.order.dto.common.OrderDto
 import com.kioschool.kioschoolapi.domain.order.dto.request.CreateOrderRequestBody
-import com.kioschool.kioschoolapi.domain.order.exception.TableHashIsNullException
 import com.kioschool.kioschoolapi.domain.order.facade.OrderFacade
+import com.kioschool.kioschoolapi.global.error.ErrorCode
+import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.web.bind.annotation.*
@@ -20,7 +21,7 @@ class OrderController(
         @RequestBody body: CreateOrderRequestBody
     ): OrderDto {
         if (body.tableHash == null) {
-            throw TableHashIsNullException()
+            throw CustomException(ErrorCode.TABLE_HASH_IS_NULL)
         }
 
         return orderFacade.createOrder(
@@ -37,6 +38,19 @@ class OrderController(
         @RequestParam("orderId") orderId: Long
     ): OrderDto {
         return orderFacade.getOrder(orderId)
+    }
+
+    @Operation(
+        summary = "세션 주문 내역 조회",
+        description = "주문 id가 속한 현재 테이블 세션의 모든 주문을 조회합니다. (이전 주문 내역)"
+    )
+    @GetMapping("/order/session-orders")
+    fun getSessionOrders(
+        @RequestParam("workspaceId") workspaceId: Long,
+        @RequestParam("tableHash") tableHash: String,
+        @RequestParam("orderId") orderId: Long
+    ): List<OrderDto> {
+        return orderFacade.getSessionOrders(workspaceId, tableHash, orderId)
     }
 
     @Operation(summary = "주문 가능 여부 조회", description = "주문 가능 여부를 조회합니다.")

@@ -73,6 +73,10 @@ class OrderService(
         return orderRepository.findWithDetailsById(orderId) ?: throw NoSuchElementException("Order not found")
     }
 
+    fun getOrderOrNull(orderId: Long): Order? {
+        return orderRepository.findWithDetailsById(orderId)
+    }
+
     fun getOrderProduct(orderProductId: Long): OrderProduct {
         return orderProductRepository.findWithOrderById(orderProductId) ?: throw NoSuchElementException()
     }

@@ -2,10 +2,6 @@ package com.kioschool.kioschoolapi.workspace.service
 
 import com.kioschool.kioschoolapi.domain.user.service.UserService
 import com.kioschool.kioschoolapi.domain.workspace.entity.WorkspaceTable
-import com.kioschool.kioschoolapi.domain.workspace.exception.NoPermissionToCreateWorkspaceException
-import com.kioschool.kioschoolapi.domain.workspace.exception.NoPermissionToInviteException
-import com.kioschool.kioschoolapi.domain.workspace.exception.NoPermissionToJoinWorkspaceException
-import com.kioschool.kioschoolapi.domain.workspace.exception.WorkspaceInaccessibleException
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepository
 import com.kioschool.kioschoolapi.domain.workspace.repository.CustomWorkspaceRepository
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceTableRepository
@@ -13,6 +9,8 @@ import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.factory.SampleEntity
 import com.kioschool.kioschoolapi.global.aws.S3Service
 import com.kioschool.kioschoolapi.global.common.enums.UserRole
+import com.kioschool.kioschoolapi.global.error.ErrorCode
+import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
@@ -97,16 +95,17 @@ class WorkspaceServiceTest : DescribeSpec({
     }
 
     describe("checkCanCreateWorkspace") {
-        it("should throw NoPermissionToCreateWorkspaceException when user accountUrl is null") {
+        it("should throw CustomException(NO_PERMISSION_TO_CREATE_WORKSPACE) when user accountUrl is null") {
             val user = SampleEntity.user.apply { account = null }
 
             // Act & Assert
-            shouldThrow<NoPermissionToCreateWorkspaceException> {
+            val ex = shouldThrow<CustomException> {
                 sut.checkCanCreateWorkspace(user)
             }
+            ex.errorCode shouldBe ErrorCode.NO_PERMISSION_TO_CREATE_WORKSPACE
         }
 
-        it("should not throw NoPermissionToCreateWorkspaceException when user accountUrl is not null") {
+        it("should not throw CustomException(NO_PERMISSION_TO_CREATE_WORKSPACE) when user accountUrl is not null") {
             val user = SampleEntity.user.apply { account = SampleEntity.account }
 
             // Act & Assert
@@ -134,18 +133,19 @@ class WorkspaceServiceTest : DescribeSpec({
     }
 
     describe("checkCanJoinWorkspace") {
-        it("should throw NoPermissionToJoinWorkspaceException when user is not invited") {
+        it("should throw CustomException(NO_PERMISSION_TO_JOIN_WORKSPACE) when user is not invited") {
             val user = SampleEntity.user
             val workspace = SampleEntity.workspace
             workspace.invitations.clear()
 
             // Act & Assert
-            shouldThrow<NoPermissionToJoinWorkspaceException> {
+            val ex = shouldThrow<CustomException> {
                 sut.checkCanJoinWorkspace(user, workspace)
             }
+            ex.errorCode shouldBe ErrorCode.NO_PERMISSION_TO_JOIN_WORKSPACE
         }
 
-        it("should not throw NoPermissionToJoinWorkspaceException when user is invited") {
+        it("should not throw CustomException(NO_PERMISSION_TO_JOIN_WORKSPACE) when user is invited") {
             val user = SampleEntity.user
             val workspace = SampleEntity.workspace
             workspace.invitations.add(SampleEntity.workspaceInvitation)
@@ -256,7 +256,7 @@ class WorkspaceServiceTest : DescribeSpec({
     }
 
     describe("checkAccessible") {
-        it("should throw WorkspaceInaccessibleException when user is not a member of workspace and not a super admin") {
+        it("should throw CustomException(WORKSPACE_INACCESSIBLE) when user is not a member of workspace and not a super admin") {
             val username = "test"
             val workspaceId = 1L
             val user = SampleEntity.user.apply { role = UserRole.ADMIN }
@@ -265,16 +265,17 @@ class WorkspaceServiceTest : DescribeSpec({
             every { workspaceMemberRepository.existsByWorkspaceIdAndUserLoginId(workspaceId, username) } returns false
 
             // Act & Assert
-            shouldThrow<WorkspaceInaccessibleException> {
+            val ex = shouldThrow<CustomException> {
                 sut.checkAccessible(username, workspaceId)
             }
+            ex.errorCode shouldBe ErrorCode.WORKSPACE_INACCESSIBLE
 
             // Assert
             verify { userService.getUser(username) }
             verify { workspaceMemberRepository.existsByWorkspaceIdAndUserLoginId(workspaceId, username) }
         }
 
-        it("should not throw WorkspaceInaccessibleException when user is a member of workspace") {
+        it("should not throw CustomException(WORKSPACE_INACCESSIBLE) when user is a member of workspace") {
             val username = "test"
             val workspaceId = 1L
             val user = SampleEntity.user
@@ -290,7 +291,7 @@ class WorkspaceServiceTest : DescribeSpec({
             verify { workspaceMemberRepository.existsByWorkspaceIdAndUserLoginId(workspaceId, username) }
         }
 
-        it("should not throw WorkspaceInaccessibleException when user is a super admin") {
+        it("should not throw CustomException(WORKSPACE_INACCESSIBLE) when user is a super admin") {
             val username = "test"
             val workspaceId = 1L
             val user = SampleEntity.user.apply { role = UserRole.SUPER_ADMIN }
@@ -306,18 +307,19 @@ class WorkspaceServiceTest : DescribeSpec({
     }
 
     describe("checkCanInviteWorkspace") {
-        it("should throw NoPermissionToInviteException when user is not owner of workspace") {
+        it("should throw CustomException(NO_PERMISSION_TO_INVITE) when user is not owner of workspace") {
             val user = SampleEntity.user
             val otherUser = SampleEntity.otherUser
             val inaccessibleWorkspace = SampleEntity.workspace(otherUser)
 
             // Act & Assert
-            shouldThrow<NoPermissionToInviteException> {
+            val ex = shouldThrow<CustomException> {
                 sut.checkCanInviteWorkspace(user, inaccessibleWorkspace)
             }
+            ex.errorCode shouldBe ErrorCode.NO_PERMISSION_TO_INVITE
         }
 
-        it("should not throw NoPermissionToInviteException when user is owner of workspace") {
+        it("should not throw CustomException(NO_PERMISSION_TO_INVITE) when user is owner of workspace") {
             val user = SampleEntity.user
             val workspace = SampleEntity.workspace(user)
 

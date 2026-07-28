@@ -3,12 +3,10 @@ package com.kioschool.kioschoolapi.domain.email.service
 import com.kioschool.kioschoolapi.domain.email.entity.EmailCode
 import com.kioschool.kioschoolapi.domain.email.entity.EmailDomain
 import com.kioschool.kioschoolapi.domain.email.enum.EmailKind
-import com.kioschool.kioschoolapi.domain.email.exception.DuplicatedEmailDomainException
-import com.kioschool.kioschoolapi.domain.email.exception.EmailSendFailureException
-import com.kioschool.kioschoolapi.domain.email.exception.NotVerifiedEmailDomainException
 import com.kioschool.kioschoolapi.domain.email.repository.EmailCodeRepository
 import com.kioschool.kioschoolapi.domain.email.repository.EmailDomainRepository
-import com.kioschool.kioschoolapi.domain.user.exception.UserNotFoundException
+import com.kioschool.kioschoolapi.global.error.ErrorCode
+import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import jakarta.transaction.Transactional
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -43,7 +41,7 @@ class EmailService(
     }
 
     fun validateEmailDomainVerified(emailAddress: String) {
-        if (!isEmailDomainVerified(emailAddress)) throw NotVerifiedEmailDomainException()
+        if (!isEmailDomainVerified(emailAddress)) throw CustomException(ErrorCode.NOT_VERIFIED_EMAIL_DOMAIN)
     }
 
     @Async
@@ -61,7 +59,7 @@ class EmailService(
             javaMailSender.send(message)
         } catch (e: Exception) {
             log.error("Failed to send email to {}", address, e)
-            throw EmailSendFailureException(e)
+            throw CustomException(ErrorCode.EMAIL_SEND_FAILURE, cause = e)
         }
     }
 
@@ -96,7 +94,7 @@ class EmailService(
     fun getEmailByCode(code: String): String {
         val emailCode =
             emailCodeRepository.findByCodeAndKind(code, EmailKind.RESET_PASSWORD)
-                ?: throw UserNotFoundException()
+                ?: throw CustomException(ErrorCode.USER_NOT_FOUND)
         return emailCode.email
     }
 
@@ -137,7 +135,7 @@ class EmailService(
     }
 
     fun validateEmailDomainDuplicate(domain: String) {
-        if (isEmailDomainDuplicate(domain)) throw DuplicatedEmailDomainException()
+        if (isEmailDomainDuplicate(domain)) throw CustomException(ErrorCode.DUPLICATE_EMAIL_DOMAIN)
     }
 
     private fun isEmailDomainDuplicate(domain: String): Boolean {
