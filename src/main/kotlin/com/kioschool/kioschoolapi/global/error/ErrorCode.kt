@@ -26,6 +26,8 @@ enum class ErrorCode(
     NO_PERMISSION_TO_INVITE(HttpStatus.FORBIDDEN, "초대 권한이 없습니다."),
     NO_PERMISSION_TO_JOIN_WORKSPACE(HttpStatus.FORBIDDEN, "워크스페이스를 가입 할 권한이 없습니다."),
     SUPER_ADMIN_WORKSPACE_READ_ONLY(HttpStatus.BAD_REQUEST, "최고 관리자(Super Admin)는 타인의 워크스페이스를 조회만 할 수 있으며, 수정(CUD)은 불가능합니다."),
+    TABLE_POSITION_CONFLICT(HttpStatus.CONFLICT, "해당 위치에 이미 다른 테이블이 배치되어 있습니다."),
+    INVALID_TABLE_POSITION(HttpStatus.BAD_REQUEST, "테이블 위치가 올바르지 않습니다."),
 
     // Product
     NOT_FOUND_PRODUCT(HttpStatus.NOT_FOUND, "존재하지 않는 상품입니다."),
