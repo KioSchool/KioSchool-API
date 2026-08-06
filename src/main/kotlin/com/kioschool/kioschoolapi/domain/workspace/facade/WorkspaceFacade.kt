@@ -5,6 +5,7 @@ import com.kioschool.kioschoolapi.domain.order.repository.OrderRepository
 import com.kioschool.kioschoolapi.domain.order.repository.OrderSessionRepository
 import com.kioschool.kioschoolapi.domain.statistics.repository.DailyOrderStatisticRepository
 import com.kioschool.kioschoolapi.domain.user.service.UserService
+import com.kioschool.kioschoolapi.domain.workspace.dto.common.TablePositionDto
 import com.kioschool.kioschoolapi.domain.workspace.dto.common.WorkspaceAdminDetailDto
 import com.kioschool.kioschoolapi.domain.workspace.dto.common.WorkspaceDto
 import com.kioschool.kioschoolapi.domain.workspace.dto.common.WorkspaceTableDto
@@ -167,6 +168,31 @@ class WorkspaceFacade(
         workspaceService.checkCanAccessWorkspace(user, workspace)
 
         return workspaceService.getAllWorkspaceTables(workspace).map { WorkspaceTableDto.of(it) }
+    }
+
+    fun updateTablePosition(
+        username: String,
+        workspaceId: Long,
+        tableId: Long,
+        position: TablePositionDto?
+    ): WorkspaceTableDto {
+        val user = userService.getUser(username)
+        val workspace = workspaceService.getWorkspace(workspaceId)
+
+        workspaceService.checkCanAccessWorkspace(user, workspace)
+
+        return WorkspaceTableDto.of(
+            workspaceService.updateTablePosition(workspace, tableId, position?.x, position?.y)
+        )
+    }
+
+    fun resetTablePositions(username: String, workspaceId: Long): List<WorkspaceTableDto> {
+        val user = userService.getUser(username)
+        val workspace = workspaceService.getWorkspace(workspaceId)
+
+        workspaceService.checkCanAccessWorkspace(user, workspace)
+
+        return workspaceService.resetTablePositions(workspace).map { WorkspaceTableDto.of(it) }
     }
 
     fun updateOrderSetting(

@@ -1,6 +1,7 @@
 package com.kioschool.kioschoolapi.workspace.facade
 
 import com.kioschool.kioschoolapi.domain.user.service.UserService
+import com.kioschool.kioschoolapi.domain.workspace.dto.common.TablePositionDto
 import com.kioschool.kioschoolapi.domain.workspace.facade.WorkspaceFacade
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.domain.order.repository.OrderRepository
@@ -677,6 +678,102 @@ class WorkspaceFacadeTest : DescribeSpec({
             verify { workspaceService.getWorkspace(workspaceId) }
             verify { workspaceService.checkCanAccessWorkspace(user, workspace) }
             verify { workspaceService.getAllWorkspaceTables(workspace) }
+        }
+    }
+
+    describe("updateTablePosition") {
+        it("should check access then delegate to workspaceService") {
+            val username = "username"
+            val user = SampleEntity.user
+            val workspace = SampleEntity.workspace
+            val table = SampleEntity.workspaceTableWithId(1L, positionX = 3, positionY = 2)
+
+            every { userService.getUser(username) } returns user
+            every { workspaceService.getWorkspace(1L) } returns workspace
+            every { workspaceService.checkCanAccessWorkspace(user, workspace) } just Runs
+            every { workspaceService.updateTablePosition(workspace, 1L, 3, 2) } returns table
+
+            val result = sut.updateTablePosition(username, 1L, 1L, TablePositionDto(3, 2))
+
+            assertEquals(TablePositionDto(3, 2), result.position)
+
+            verify { workspaceService.checkCanAccessWorkspace(user, workspace) }
+            verify { workspaceService.updateTablePosition(workspace, 1L, 3, 2) }
+        }
+
+        it("should pass null coordinates when position is null") {
+            val username = "username"
+            val user = SampleEntity.user
+            val workspace = SampleEntity.workspace
+            val table = SampleEntity.workspaceTableWithId(1L)
+
+            every { userService.getUser(username) } returns user
+            every { workspaceService.getWorkspace(1L) } returns workspace
+            every { workspaceService.checkCanAccessWorkspace(user, workspace) } just Runs
+            every { workspaceService.updateTablePosition(workspace, 1L, null, null) } returns table
+
+            val result = sut.updateTablePosition(username, 1L, 1L, null)
+
+            assertEquals(null, result.position)
+
+            verify { workspaceService.updateTablePosition(workspace, 1L, null, null) }
+        }
+
+        it("should not call updateTablePosition when the workspace is inaccessible") {
+            val username = "username"
+            val user = SampleEntity.user
+            val workspace = SampleEntity.workspace
+
+            every { userService.getUser(username) } returns user
+            every { workspaceService.getWorkspace(1L) } returns workspace
+            every {
+                workspaceService.checkCanAccessWorkspace(user, workspace)
+            } throws CustomException(ErrorCode.WORKSPACE_INACCESSIBLE)
+
+            val ex = assertThrows<CustomException> {
+                sut.updateTablePosition(username, 1L, 1L, TablePositionDto(3, 2))
+            }
+            assertEquals(ErrorCode.WORKSPACE_INACCESSIBLE, ex.errorCode)
+
+            verify(exactly = 0) { workspaceService.updateTablePosition(any(), any(), any(), any()) }
+        }
+    }
+
+    describe("resetTablePositions") {
+        it("should check access then delegate to workspaceService") {
+            val username = "username"
+            val user = SampleEntity.user
+            val workspace = SampleEntity.workspace
+            val tables = listOf(SampleEntity.workspaceTableWithId(1L))
+
+            every { userService.getUser(username) } returns user
+            every { workspaceService.getWorkspace(1L) } returns workspace
+            every { workspaceService.checkCanAccessWorkspace(user, workspace) } just Runs
+            every { workspaceService.resetTablePositions(workspace) } returns tables
+
+            val result = sut.resetTablePositions(username, 1L)
+
+            assertEquals(1, result.size)
+            assertEquals(null, result.first().position)
+
+            verify { workspaceService.checkCanAccessWorkspace(user, workspace) }
+            verify { workspaceService.resetTablePositions(workspace) }
+        }
+
+        it("should not call resetTablePositions when the workspace is inaccessible") {
+            val username = "username"
+            val user = SampleEntity.user
+            val workspace = SampleEntity.workspace
+
+            every { userService.getUser(username) } returns user
+            every { workspaceService.getWorkspace(1L) } returns workspace
+            every {
+                workspaceService.checkCanAccessWorkspace(user, workspace)
+            } throws CustomException(ErrorCode.WORKSPACE_INACCESSIBLE)
+
+            assertThrows<CustomException> { sut.resetTablePositions(username, 1L) }
+
+            verify(exactly = 0) { workspaceService.resetTablePositions(any()) }
         }
     }
 
