@@ -15,6 +15,7 @@ class UpdateTableCountRequestBodyTest : DescribeSpec({
 
             violations.size shouldBe 1
             violations.first().message shouldBe "테이블 개수는 1개 이상이어야 합니다."
+            violations.first().propertyPath.toString() shouldBe "tableCount"
         }
 
         it("should reject tableCount above 100") {
@@ -22,6 +23,7 @@ class UpdateTableCountRequestBodyTest : DescribeSpec({
 
             violations.size shouldBe 1
             violations.first().message shouldBe "테이블 개수는 100개 이하여야 합니다."
+            violations.first().propertyPath.toString() shouldBe "tableCount"
         }
 
         it("should accept tableCount at both bounds") {
