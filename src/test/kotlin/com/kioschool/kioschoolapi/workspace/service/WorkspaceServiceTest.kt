@@ -674,6 +674,28 @@ class WorkspaceServiceTest : DescribeSpec({
         }
     }
 
+    describe("resetTablePositions") {
+        it("should clear positions of all tables in the workspace") {
+            val workspace = SampleEntity.workspace
+            val tables = listOf(
+                SampleEntity.workspaceTableWithId(1L, tableNumber = 1, positionX = 0, positionY = 0),
+                SampleEntity.workspaceTableWithId(2L, tableNumber = 2, positionX = 1, positionY = 0)
+            )
+
+            every { workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace) } returns tables
+            every { workspaceTableRepository.saveAll(any<Iterable<WorkspaceTable>>()) } returns tables
+
+            val result = sut.resetTablePositions(workspace)
+
+            result.forEach {
+                it.positionX shouldBe null
+                it.positionY shouldBe null
+            }
+
+            verify { workspaceTableRepository.saveAll(any<Iterable<WorkspaceTable>>()) }
+        }
+    }
+
     describe("saveWorkspaceTable") {
         it("should save workspace table") {
             val table = SampleEntity.workspaceTable

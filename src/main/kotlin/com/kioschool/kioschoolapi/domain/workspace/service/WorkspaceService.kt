@@ -238,6 +238,16 @@ class WorkspaceService(
         return workspaceTableRepository.save(table)
     }
 
+    @Transactional
+    fun resetTablePositions(workspace: Workspace): List<WorkspaceTable> {
+        val tables = workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace)
+        tables.forEach {
+            it.positionX = null
+            it.positionY = null
+        }
+        return workspaceTableRepository.saveAll(tables)
+    }
+
     fun saveWorkspaceTable(table: WorkspaceTable): WorkspaceTable {
         return workspaceTableRepository.save(table)
     }
