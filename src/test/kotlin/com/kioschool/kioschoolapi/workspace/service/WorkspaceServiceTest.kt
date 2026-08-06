@@ -636,6 +636,32 @@ class WorkspaceServiceTest : DescribeSpec({
             verify(exactly = 0) { workspaceTableRepository.save(any()) }
         }
 
+        it("should throw INVALID_TABLE_POSITION when y is negative") {
+            val workspace = SampleEntity.workspace
+            val table = SampleEntity.workspaceTableWithId(1L)
+
+            every { workspaceTableRepository.findByIdAndWorkspace(1L, workspace) } returns Optional.of(table)
+
+            val ex = shouldThrow<CustomException> { sut.updateTablePosition(workspace, 1L, 3, -1) }
+            ex.errorCode shouldBe ErrorCode.INVALID_TABLE_POSITION
+
+            verify(exactly = 0) { workspaceTableRepository.save(any()) }
+        }
+
+        it("should throw INVALID_TABLE_POSITION when y is at or beyond the grid limit") {
+            val workspace = SampleEntity.workspace
+            val table = SampleEntity.workspaceTableWithId(1L)
+
+            every { workspaceTableRepository.findByIdAndWorkspace(1L, workspace) } returns Optional.of(table)
+
+            val ex = shouldThrow<CustomException> {
+                sut.updateTablePosition(workspace, 1L, 3, WorkspaceService.MAX_GRID_SIZE)
+            }
+            ex.errorCode shouldBe ErrorCode.INVALID_TABLE_POSITION
+
+            verify(exactly = 0) { workspaceTableRepository.save(any()) }
+        }
+
         it("should throw WORKSPACE_TABLE_NOT_FOUND when the table does not belong to the workspace") {
             val workspace = SampleEntity.workspace
 

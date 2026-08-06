@@ -16,7 +16,7 @@ class WorkspaceTable(
     val tableHash: String,
     @OneToOne(fetch = FetchType.LAZY)
     var orderSession: OrderSession? = null,
-    // 명시적 컬럼명 필수: Hibernate의 CamelCaseToUnderscoresNamingStrategy는 이름 끝의
+    // 두 필드 모두 명시적 컬럼명 필수: Hibernate의 CamelCaseToUnderscoresNamingStrategy는 이름 끝의
     // 대문자 한 글자에 언더스코어를 넣지 않아, 암시적 매핑은 positionx/positiony가 된다.
     @Column(name = "position_x")
     var positionX: Int? = null,

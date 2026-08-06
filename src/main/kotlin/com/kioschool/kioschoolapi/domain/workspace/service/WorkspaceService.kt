@@ -228,10 +228,10 @@ class WorkspaceService(
             throw CustomException(ErrorCode.INVALID_TABLE_POSITION)
         }
 
-        if (workspaceTableRepository.existsByWorkspaceAndPositionXAndPositionYAndIdNot(
-                workspace, x, y, tableId
-            )
-        ) throw CustomException(ErrorCode.TABLE_POSITION_CONFLICT)
+        val isOccupied = workspaceTableRepository.existsByWorkspaceAndPositionXAndPositionYAndIdNot(
+            workspace, x, y, tableId
+        )
+        if (isOccupied) throw CustomException(ErrorCode.TABLE_POSITION_CONFLICT)
 
         table.positionX = x
         table.positionY = y
@@ -268,7 +268,9 @@ class WorkspaceService(
     }
 
     companion object {
-        // 100x100 = 10,000칸. tableCount 상한이 100이므로 정상적인 배치를 제약할 수 없는 크기다.
+        // 100x100 = 10,000칸이므로 어떤 현실적인 배치에도 제약이 되지 않는다.
+        // 목적은 격자 크기 강제가 아니라 터무니없는 좌표로 테이블이 화면 밖에
+        // 갇히는 것을 막는 것이다.
         const val MAX_GRID_SIZE = 100
     }
 }
