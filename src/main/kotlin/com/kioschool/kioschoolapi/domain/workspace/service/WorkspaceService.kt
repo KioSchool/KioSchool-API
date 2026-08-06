@@ -208,6 +208,36 @@ class WorkspaceService(
         }
     }
 
+    @Transactional
+    fun updateTablePosition(
+        workspace: Workspace,
+        tableId: Long,
+        x: Int?,
+        y: Int?
+    ): WorkspaceTable {
+        val table = workspaceTableRepository.findByIdAndWorkspace(tableId, workspace)
+            .orElseThrow { CustomException(ErrorCode.WORKSPACE_TABLE_NOT_FOUND) }
+
+        if (x == null || y == null) {
+            table.positionX = null
+            table.positionY = null
+            return workspaceTableRepository.save(table)
+        }
+
+        if (x < 0 || y < 0 || x >= MAX_GRID_SIZE || y >= MAX_GRID_SIZE) {
+            throw CustomException(ErrorCode.INVALID_TABLE_POSITION)
+        }
+
+        if (workspaceTableRepository.existsByWorkspaceAndPositionXAndPositionYAndIdNot(
+                workspace, x, y, tableId
+            )
+        ) throw CustomException(ErrorCode.TABLE_POSITION_CONFLICT)
+
+        table.positionX = x
+        table.positionY = y
+        return workspaceTableRepository.save(table)
+    }
+
     fun saveWorkspaceTable(table: WorkspaceTable): WorkspaceTable {
         return workspaceTableRepository.save(table)
     }
@@ -235,5 +265,10 @@ class WorkspaceService(
         }
         workspace.owner = newOwner
         return workspaceRepository.save(workspace)
+    }
+
+    companion object {
+        // 100x100 = 10,000칸. tableCount 상한이 100이므로 정상적인 배치를 제약할 수 없는 크기다.
+        const val MAX_GRID_SIZE = 100
     }
 }

@@ -541,6 +541,113 @@ class WorkspaceServiceTest : DescribeSpec({
         }
     }
 
+    describe("updateTablePosition") {
+        it("should save the given position") {
+            val workspace = SampleEntity.workspace
+            val table = SampleEntity.workspaceTableWithId(1L)
+
+            every { workspaceTableRepository.findByIdAndWorkspace(1L, workspace) } returns Optional.of(table)
+            every {
+                workspaceTableRepository.existsByWorkspaceAndPositionXAndPositionYAndIdNot(workspace, 3, 2, 1L)
+            } returns false
+            every { workspaceTableRepository.save(table) } returns table
+
+            val result = sut.updateTablePosition(workspace, 1L, 3, 2)
+
+            result.positionX shouldBe 3
+            result.positionY shouldBe 2
+
+            verify { workspaceTableRepository.save(table) }
+        }
+
+        it("should clear the position when position is null") {
+            val workspace = SampleEntity.workspace
+            val table = SampleEntity.workspaceTableWithId(1L, positionX = 3, positionY = 2)
+
+            every { workspaceTableRepository.findByIdAndWorkspace(1L, workspace) } returns Optional.of(table)
+            every { workspaceTableRepository.save(table) } returns table
+
+            val result = sut.updateTablePosition(workspace, 1L, null, null)
+
+            result.positionX shouldBe null
+            result.positionY shouldBe null
+
+            verify { workspaceTableRepository.save(table) }
+            verify(exactly = 0) {
+                workspaceTableRepository.existsByWorkspaceAndPositionXAndPositionYAndIdNot(
+                    any(), any(), any(), any()
+                )
+            }
+        }
+
+        it("should throw TABLE_POSITION_CONFLICT when another table occupies the cell") {
+            val workspace = SampleEntity.workspace
+            val table = SampleEntity.workspaceTableWithId(1L)
+
+            every { workspaceTableRepository.findByIdAndWorkspace(1L, workspace) } returns Optional.of(table)
+            every {
+                workspaceTableRepository.existsByWorkspaceAndPositionXAndPositionYAndIdNot(workspace, 3, 2, 1L)
+            } returns true
+
+            val ex = shouldThrow<CustomException> { sut.updateTablePosition(workspace, 1L, 3, 2) }
+            ex.errorCode shouldBe ErrorCode.TABLE_POSITION_CONFLICT
+
+            verify(exactly = 0) { workspaceTableRepository.save(any()) }
+        }
+
+        it("should allow re-saving the same table to the cell it already occupies") {
+            val workspace = SampleEntity.workspace
+            val table = SampleEntity.workspaceTableWithId(1L, positionX = 3, positionY = 2)
+
+            every { workspaceTableRepository.findByIdAndWorkspace(1L, workspace) } returns Optional.of(table)
+            every {
+                workspaceTableRepository.existsByWorkspaceAndPositionXAndPositionYAndIdNot(workspace, 3, 2, 1L)
+            } returns false
+            every { workspaceTableRepository.save(table) } returns table
+
+            sut.updateTablePosition(workspace, 1L, 3, 2)
+
+            verify { workspaceTableRepository.save(table) }
+        }
+
+        it("should throw INVALID_TABLE_POSITION when a coordinate is negative") {
+            val workspace = SampleEntity.workspace
+            val table = SampleEntity.workspaceTableWithId(1L)
+
+            every { workspaceTableRepository.findByIdAndWorkspace(1L, workspace) } returns Optional.of(table)
+
+            val ex = shouldThrow<CustomException> { sut.updateTablePosition(workspace, 1L, -1, 2) }
+            ex.errorCode shouldBe ErrorCode.INVALID_TABLE_POSITION
+
+            verify(exactly = 0) { workspaceTableRepository.save(any()) }
+        }
+
+        it("should throw INVALID_TABLE_POSITION when a coordinate is at or beyond the grid limit") {
+            val workspace = SampleEntity.workspace
+            val table = SampleEntity.workspaceTableWithId(1L)
+
+            every { workspaceTableRepository.findByIdAndWorkspace(1L, workspace) } returns Optional.of(table)
+
+            val ex = shouldThrow<CustomException> {
+                sut.updateTablePosition(workspace, 1L, WorkspaceService.MAX_GRID_SIZE, 2)
+            }
+            ex.errorCode shouldBe ErrorCode.INVALID_TABLE_POSITION
+
+            verify(exactly = 0) { workspaceTableRepository.save(any()) }
+        }
+
+        it("should throw WORKSPACE_TABLE_NOT_FOUND when the table does not belong to the workspace") {
+            val workspace = SampleEntity.workspace
+
+            every { workspaceTableRepository.findByIdAndWorkspace(99L, workspace) } returns Optional.empty()
+
+            val ex = shouldThrow<CustomException> { sut.updateTablePosition(workspace, 99L, 3, 2) }
+            ex.errorCode shouldBe ErrorCode.WORKSPACE_TABLE_NOT_FOUND
+
+            verify(exactly = 0) { workspaceTableRepository.save(any()) }
+        }
+    }
+
     describe("saveWorkspaceTable") {
         it("should save workspace table") {
             val table = SampleEntity.workspaceTable

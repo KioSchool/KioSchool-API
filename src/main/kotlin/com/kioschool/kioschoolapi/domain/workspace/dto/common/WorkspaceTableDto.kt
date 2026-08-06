@@ -20,9 +20,7 @@ data class WorkspaceTableDto(
                 tableNumber = workspaceTable.tableNumber,
                 tableHash = workspaceTable.tableHash,
                 orderSession = workspaceTable.orderSession?.let { OrderSessionDto.of(it) },
-                position = workspaceTable.positionX?.let { x ->
-                    workspaceTable.positionY?.let { y -> TablePositionDto(x, y) }
-                },
+                position = TablePositionDto.of(workspaceTable.positionX, workspaceTable.positionY),
                 createdAt = workspaceTable.createdAt,
                 updatedAt = workspaceTable.updatedAt
             )

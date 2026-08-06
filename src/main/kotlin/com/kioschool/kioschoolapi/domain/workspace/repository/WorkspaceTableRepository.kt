@@ -16,4 +16,13 @@ interface WorkspaceTableRepository : JpaRepository<WorkspaceTable, Long> {
         tableHash: String,
         workspace: Workspace
     ): Optional<WorkspaceTable>
+
+    fun findByIdAndWorkspace(id: Long, workspace: Workspace): Optional<WorkspaceTable>
+
+    fun existsByWorkspaceAndPositionXAndPositionYAndIdNot(
+        workspace: Workspace,
+        positionX: Int,
+        positionY: Int,
+        id: Long
+    ): Boolean
 }

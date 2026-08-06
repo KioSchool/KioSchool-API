@@ -30,5 +30,27 @@ class WorkspaceTableDtoTest : DescribeSpec({
 
             WorkspaceTableDto.of(table).position shouldBe TablePositionDto(3, 2)
         }
+
+        it("should map position to null when only positionX is set") {
+            val table = WorkspaceTable(
+                workspace = SampleEntity.workspace,
+                tableNumber = 1,
+                tableHash = "testHash",
+                positionX = 3
+            )
+
+            WorkspaceTableDto.of(table).position shouldBe null
+        }
+
+        it("should map position to null when only positionY is set") {
+            val table = WorkspaceTable(
+                workspace = SampleEntity.workspace,
+                tableNumber = 1,
+                tableHash = "testHash",
+                positionY = 2
+            )
+
+            WorkspaceTableDto.of(table).position shouldBe null
+        }
     }
 })
