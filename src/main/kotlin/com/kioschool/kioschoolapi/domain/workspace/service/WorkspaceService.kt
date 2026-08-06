@@ -202,12 +202,17 @@ class WorkspaceService(
 
             workspaceTableRepository.saveAll(newTables)
         } else if (currentTableCount > workspace.tableCount) {
-            val tablesToRemove =
+            // row를 삭제하면 tableHash가 소실되어 인쇄된 QR이 영구 무효화된다.
+            // 범위 밖 테이블은 남겨두고 배치 좌표만 비운다.
+            val outOfRangeTables =
                 workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace)
-                    .reversed()
-                    .take((currentTableCount - workspace.tableCount).toInt())
+                    .filter { it.tableNumber > workspace.tableCount }
 
-            workspaceTableRepository.deleteAll(tablesToRemove)
+            outOfRangeTables.forEach {
+                it.positionX = null
+                it.positionY = null
+            }
+            workspaceTableRepository.saveAll(outOfRangeTables)
         }
     }
 

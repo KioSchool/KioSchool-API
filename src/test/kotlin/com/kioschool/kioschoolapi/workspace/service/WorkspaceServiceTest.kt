@@ -524,20 +524,44 @@ class WorkspaceServiceTest : DescribeSpec({
             verify { workspaceTableRepository.saveAll(any<Iterable<WorkspaceTable>>()) }
         }
 
-        it("should remove tables when table count is decreased") {
+        it("should clear positions of out-of-range tables instead of deleting them when table count is decreased") {
             val workspace = SampleEntity.workspace.apply { tableCount = 1 }
+            val tables = listOf(
+                SampleEntity.workspaceTableWithId(1L, tableNumber = 1, positionX = 0, positionY = 0),
+                SampleEntity.workspaceTableWithId(2L, tableNumber = 2, positionX = 1, positionY = 0),
+                SampleEntity.workspaceTableWithId(3L, tableNumber = 3, positionX = 2, positionY = 0)
+            )
 
             every { workspaceTableRepository.countAllByWorkspace(workspace) } returns 3
-            every { workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace) } returns listOf(
-                SampleEntity.workspaceTable,
-                SampleEntity.workspaceTable,
-                SampleEntity.workspaceTable
-            )
-            every { workspaceTableRepository.deleteAll(any<Iterable<WorkspaceTable>>()) } just Runs
+            every { workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace) } returns tables
+            every { workspaceTableRepository.saveAll(any<Iterable<WorkspaceTable>>()) } returns listOf()
 
             sut.updateWorkspaceTables(workspace)
 
-            verify { workspaceTableRepository.deleteAll(any<Iterable<WorkspaceTable>>()) }
+            // 범위 안 테이블(1번)은 그대로
+            tables[0].positionX shouldBe 0
+            tables[0].positionY shouldBe 0
+
+            // 범위 밖 테이블(2, 3번)은 position만 비워짐
+            tables[1].positionX shouldBe null
+            tables[1].positionY shouldBe null
+            tables[2].positionX shouldBe null
+            tables[2].positionY shouldBe null
+
+            verify { workspaceTableRepository.saveAll(any<Iterable<WorkspaceTable>>()) }
+            verify(exactly = 0) { workspaceTableRepository.deleteAll(any<Iterable<WorkspaceTable>>()) }
+        }
+
+        it("should do nothing when table count returns to the row high-water mark") {
+            val workspace = SampleEntity.workspace.apply { tableCount = 3 }
+
+            every { workspaceTableRepository.countAllByWorkspace(workspace) } returns 3
+
+            sut.updateWorkspaceTables(workspace)
+
+            // hash 재발급이 없어야 인쇄된 QR이 살아있다
+            verify(exactly = 0) { workspaceTableRepository.saveAll(any<Iterable<WorkspaceTable>>()) }
+            verify(exactly = 0) { workspaceTableRepository.deleteAll(any<Iterable<WorkspaceTable>>()) }
         }
     }
 
