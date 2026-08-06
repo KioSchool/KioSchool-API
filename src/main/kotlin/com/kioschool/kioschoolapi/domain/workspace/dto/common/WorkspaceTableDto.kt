@@ -9,6 +9,7 @@ data class WorkspaceTableDto(
     val tableNumber: Int,
     val tableHash: String,
     val orderSession: OrderSessionDto?,
+    val position: TablePositionDto?,
     val createdAt: LocalDateTime?,
     val updatedAt: LocalDateTime?
 ) {
@@ -19,6 +20,9 @@ data class WorkspaceTableDto(
                 tableNumber = workspaceTable.tableNumber,
                 tableHash = workspaceTable.tableHash,
                 orderSession = workspaceTable.orderSession?.let { OrderSessionDto.of(it) },
+                position = workspaceTable.positionX?.let { x ->
+                    workspaceTable.positionY?.let { y -> TablePositionDto(x, y) }
+                },
                 createdAt = workspaceTable.createdAt,
                 updatedAt = workspaceTable.updatedAt
             )

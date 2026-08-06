@@ -16,4 +16,6 @@ class WorkspaceTable(
     val tableHash: String,
     @OneToOne(fetch = FetchType.LAZY)
     var orderSession: OrderSession? = null,
+    var positionX: Int? = null,
+    var positionY: Int? = null,
 ) : BaseEntity()
