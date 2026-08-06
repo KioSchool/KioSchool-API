@@ -203,6 +203,7 @@ class WorkspaceService(
         return workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace)
     }
 
+    @Transactional
     fun updateWorkspaceTables(workspace: Workspace) {
         val currentTableCount = workspaceTableRepository.countAllByWorkspace(workspace)
 
@@ -222,6 +223,18 @@ class WorkspaceService(
             val outOfRangeTables =
                 workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace)
                     .filter { it.tableNumber > workspace.tableCount }
+
+            val strandedSessions = outOfRangeTables.filter { it.orderSession != null }
+            if (strandedSessions.isNotEmpty()) {
+                log.warn(
+                    "tableCount decrease to {} stranded active sessions on workspace {} tables {}. " +
+                        "These tables are no longer visible to admins and their QR codes will 404 until " +
+                        "tableCount is raised again or the daily scheduler closes the sessions.",
+                    workspace.tableCount,
+                    workspace.id,
+                    strandedSessions.map { it.tableNumber }
+                )
+            }
 
             outOfRangeTables.forEach {
                 it.positionX = null
@@ -262,7 +275,7 @@ class WorkspaceService(
     }
 
     @Transactional
-    fun resetTablePositions(workspace: Workspace): List<WorkspaceTable> {
+    fun resetTablePositions(workspace: Workspace) {
         val tables = workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace)
 
         val cleared = tables.filter { it.positionX != null && it.positionY != null }
@@ -275,7 +288,7 @@ class WorkspaceService(
             it.positionX = null
             it.positionY = null
         }
-        return workspaceTableRepository.saveAll(tables)
+        workspaceTableRepository.saveAll(tables)
     }
 
     fun saveWorkspaceTable(table: WorkspaceTable): WorkspaceTable {
@@ -299,7 +312,7 @@ class WorkspaceService(
     }
 
     fun deleteAllWorkspaceTables(workspace: Workspace) {
-        val tables = workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace)
+        val tables = getAllWorkspaceTablesIncludingOutOfRange(workspace)
         workspaceTableRepository.deleteAll(tables)
     }
 

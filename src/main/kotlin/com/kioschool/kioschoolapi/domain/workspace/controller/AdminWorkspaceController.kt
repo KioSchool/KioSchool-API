@@ -145,7 +145,10 @@ class AdminWorkspaceController(
         )
     }
 
-    @Operation(summary = "워크스페이스 테이블 전체 조회", description = "워크스페이스의 모든 테이블을 조회합니다.")
+    @Operation(
+        summary = "워크스페이스 테이블 전체 조회",
+        description = "워크스페이스의 테이블을 조회합니다. tableCount 범위 내의 테이블만 반환합니다."
+    )
     @GetMapping("/workspace/tables")
     fun getWorkspaceTables(
         @AdminUsername username: String,
@@ -175,7 +178,8 @@ class AdminWorkspaceController(
 
     @Operation(
         summary = "워크스페이스 테이블 위치 초기화",
-        description = "워크스페이스의 모든 테이블 위치를 미배치 상태로 되돌립니다."
+        description = "워크스페이스의 모든 테이블 위치를 미배치 상태로 되돌립니다." +
+            " tableCount 범위 밖 테이블의 좌표도 함께 비우지만, 응답에는 범위 내 테이블만 포함됩니다."
     )
     @PostMapping("/workspace/table/positions/reset")
     fun resetTablePositions(

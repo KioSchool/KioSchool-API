@@ -44,6 +44,7 @@ class WorkspaceServiceTest : DescribeSpec({
         mockkObject(workspaceTableRepository)
         mockkObject(workspaceMemberRepository)
         mockkObject(userService)
+        SampleEntity.workspace.tableCount = 1
     }
 
     afterTest {
@@ -601,7 +602,39 @@ class WorkspaceServiceTest : DescribeSpec({
             tables[2].positionX shouldBe null
             tables[2].positionY shouldBe null
 
-            verify { workspaceTableRepository.saveAll(any<Iterable<WorkspaceTable>>()) }
+            verify {
+                workspaceTableRepository.saveAll(
+                    match<Iterable<WorkspaceTable>> {
+                        it.map(WorkspaceTable::tableNumber).toSet() == setOf(2, 3)
+                    }
+                )
+            }
+            verify(exactly = 0) { workspaceTableRepository.deleteAll(any<Iterable<WorkspaceTable>>()) }
+        }
+
+        it("should preserve tableHash across a decrease and a matching increase") {
+            val workspace = SampleEntity.workspace
+            val tables = listOf(
+                SampleEntity.workspaceTableWithId(1L, tableNumber = 1),
+                SampleEntity.workspaceTableWithId(2L, tableNumber = 2),
+                SampleEntity.workspaceTableWithId(3L, tableNumber = 3)
+            )
+            val hashesBefore = tables.map { it.tableHash }
+
+            every { workspaceTableRepository.countAllByWorkspace(workspace) } returns 3
+            every { workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace) } returns tables
+            every { workspaceTableRepository.saveAll(any<Iterable<WorkspaceTable>>()) } returns listOf()
+
+            // 3 -> 1 (감소): row는 남고 좌표만 비워진다
+            workspace.tableCount = 1
+            sut.updateWorkspaceTables(workspace)
+
+            // 1 -> 3 (복귀): 신규 생성이 없어야 한다
+            workspace.tableCount = 3
+            sut.updateWorkspaceTables(workspace)
+
+            // 인쇄된 QR이 살아있다는 것이 이 기능의 존재 이유다
+            tables.map { it.tableHash } shouldBe hashesBefore
             verify(exactly = 0) { workspaceTableRepository.deleteAll(any<Iterable<WorkspaceTable>>()) }
         }
 
@@ -762,9 +795,9 @@ class WorkspaceServiceTest : DescribeSpec({
             every { workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace) } returns tables
             every { workspaceTableRepository.saveAll(any<Iterable<WorkspaceTable>>()) } returns tables
 
-            val result = sut.resetTablePositions(workspace)
+            sut.resetTablePositions(workspace)
 
-            result.forEach {
+            tables.forEach {
                 it.positionX shouldBe null
                 it.positionY shouldBe null
             }
