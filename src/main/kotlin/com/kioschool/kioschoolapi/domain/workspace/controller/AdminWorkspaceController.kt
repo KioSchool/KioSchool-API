@@ -156,7 +156,9 @@ class AdminWorkspaceController(
 
     @Operation(
         summary = "워크스페이스 테이블 위치 수정",
-        description = "테이블의 격자 위치를 수정합니다. position이 null이면 배치를 취소합니다."
+        description = "테이블의 격자 위치를 수정합니다. position이 null이면 배치를 취소합니다. " +
+            "x, y는 0 이상 100 미만이어야 하며 벗어나면 400 INVALID_TABLE_POSITION, " +
+            "다른 테이블이 이미 그 칸을 점유하고 있으면 409 TABLE_POSITION_CONFLICT를 반환합니다."
     )
     @PatchMapping("/workspace/table/position")
     fun updateTablePosition(

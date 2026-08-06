@@ -14,6 +14,7 @@ import com.kioschool.kioschoolapi.global.common.enums.UserRole
 import com.kioschool.kioschoolapi.global.error.ErrorCode
 import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import com.kioschool.kioschoolapi.global.security.CustomUserDetails
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
@@ -35,6 +36,8 @@ class WorkspaceService(
     val userService: UserService,
     val s3Service: S3Service
 ) {
+    private val log = LoggerFactory.getLogger(javaClass)
+
     fun getAllWorkspaces(name: String?, page: Int, size: Int, updatedAfter: LocalDateTime? = null): Page<Workspace> {
         return customWorkspaceRepository.findAllByCondition(
             name,
@@ -241,6 +244,13 @@ class WorkspaceService(
     @Transactional
     fun resetTablePositions(workspace: Workspace): List<WorkspaceTable> {
         val tables = workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace)
+
+        val cleared = tables.filter { it.positionX != null && it.positionY != null }
+            .map { "${it.tableNumber}:(${it.positionX},${it.positionY})" }
+        if (cleared.isNotEmpty()) {
+            log.info("Resetting table positions for workspace {}: {}", workspace.id, cleared)
+        }
+
         tables.forEach {
             it.positionX = null
             it.positionY = null

@@ -694,6 +694,23 @@ class WorkspaceServiceTest : DescribeSpec({
 
             verify { workspaceTableRepository.saveAll(any<Iterable<WorkspaceTable>>()) }
         }
+
+        it("should clear positions of tables beyond tableCount too") {
+            val workspace = SampleEntity.workspace.apply { tableCount = 1 }
+            val tables = listOf(
+                SampleEntity.workspaceTableWithId(1L, tableNumber = 1, positionX = 0, positionY = 0),
+                SampleEntity.workspaceTableWithId(5L, tableNumber = 5, positionX = 4, positionY = 0)
+            )
+
+            every { workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace) } returns tables
+            every { workspaceTableRepository.saveAll(any<Iterable<WorkspaceTable>>()) } returns tables
+
+            sut.resetTablePositions(workspace)
+
+            // tableCount = 1이지만 5번 테이블 좌표도 비워져야 한다 -- 화면 밖에 갇힌 테이블의 복구 경로
+            tables[1].positionX shouldBe null
+            tables[1].positionY shouldBe null
+        }
     }
 
     describe("saveWorkspaceTable") {

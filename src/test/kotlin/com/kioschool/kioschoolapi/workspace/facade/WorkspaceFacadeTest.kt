@@ -750,6 +750,7 @@ class WorkspaceFacadeTest : DescribeSpec({
             every { workspaceService.getWorkspace(1L) } returns workspace
             every { workspaceService.checkCanAccessWorkspace(user, workspace) } just Runs
             every { workspaceService.resetTablePositions(workspace) } returns tables
+            every { workspaceService.getAllWorkspaceTables(workspace) } returns tables
 
             val result = sut.resetTablePositions(username, 1L)
 
@@ -758,6 +759,7 @@ class WorkspaceFacadeTest : DescribeSpec({
 
             verify { workspaceService.checkCanAccessWorkspace(user, workspace) }
             verify { workspaceService.resetTablePositions(workspace) }
+            verify { workspaceService.getAllWorkspaceTables(workspace) }
         }
 
         it("should not call resetTablePositions when the workspace is inaccessible") {

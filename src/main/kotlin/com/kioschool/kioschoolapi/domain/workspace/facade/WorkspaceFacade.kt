@@ -192,7 +192,9 @@ class WorkspaceFacade(
 
         workspaceService.checkCanAccessWorkspace(user, workspace)
 
-        return workspaceService.resetTablePositions(workspace).map { WorkspaceTableDto.of(it) }
+        // 쓰기는 tableCount 범위 밖 테이블까지 비운다(복구 경로). 응답은 GET과 같은 뷰를 준다.
+        workspaceService.resetTablePositions(workspace)
+        return workspaceService.getAllWorkspaceTables(workspace).map { WorkspaceTableDto.of(it) }
     }
 
     fun updateOrderSetting(
