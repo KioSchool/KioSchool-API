@@ -499,16 +499,24 @@ class WorkspaceServiceTest : DescribeSpec({
     }
 
     describe("getAllWorkspaceTables") {
-        it("should get all workspace tables") {
-            val workspace = SampleEntity.workspace
-
-            every { workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace) } returns listOf(
-                SampleEntity.workspaceTable
+        it("should return only tables within tableCount") {
+            val workspace = SampleEntity.workspace.apply { tableCount = 2 }
+            val tables = listOf(
+                SampleEntity.workspaceTableWithId(1L, tableNumber = 1),
+                SampleEntity.workspaceTableWithId(2L, tableNumber = 2)
             )
 
-            sut.getAllWorkspaceTables(workspace) shouldBe listOf(SampleEntity.workspaceTable)
+            every {
+                workspaceTableRepository
+                    .findAllByWorkspaceAndTableNumberLessThanEqualOrderByTableNumber(workspace, 2)
+            } returns tables
 
-            verify { workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace) }
+            sut.getAllWorkspaceTables(workspace) shouldBe tables
+
+            verify {
+                workspaceTableRepository
+                    .findAllByWorkspaceAndTableNumberLessThanEqualOrderByTableNumber(workspace, 2)
+            }
         }
     }
 

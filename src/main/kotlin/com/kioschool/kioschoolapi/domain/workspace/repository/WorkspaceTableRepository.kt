@@ -25,4 +25,9 @@ interface WorkspaceTableRepository : JpaRepository<WorkspaceTable, Long> {
         positionY: Int,
         id: Long
     ): Boolean
+
+    fun findAllByWorkspaceAndTableNumberLessThanEqualOrderByTableNumber(
+        workspace: Workspace,
+        tableNumber: Int
+    ): List<WorkspaceTable>
 }

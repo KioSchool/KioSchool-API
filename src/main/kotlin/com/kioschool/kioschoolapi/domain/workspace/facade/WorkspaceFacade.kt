@@ -242,7 +242,7 @@ class WorkspaceFacade(
         orderRepository.deleteAll(orders)
 
         // 3. WorkspaceTable의 orderSession 참조를 null로 해제 (OrderSession FK)
-        val tables = workspaceService.getAllWorkspaceTables(workspace)
+        val tables = workspaceService.getAllWorkspaceTablesIncludingOutOfRange(workspace)
         tables.filter { it.orderSession != null }.forEach {
             it.orderSession = null
             workspaceService.saveWorkspaceTable(it)

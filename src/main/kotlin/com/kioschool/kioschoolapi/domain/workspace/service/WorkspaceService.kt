@@ -185,6 +185,17 @@ class WorkspaceService(
     }
 
     fun getAllWorkspaceTables(workspace: Workspace): List<WorkspaceTable> {
+        return workspaceTableRepository
+            .findAllByWorkspaceAndTableNumberLessThanEqualOrderByTableNumber(
+                workspace,
+                workspace.tableCount
+            )
+    }
+
+    // 관리자 화면용 뷰(getAllWorkspaceTables)와 달리 tableCount 범위 밖 테이블까지 포함한다.
+    // 정리(cleanup) 경로는 반드시 이 접근자를 써야 한다 — 슬라이스된 뷰를 쓰면 범위 밖 테이블의
+    // orderSession 참조가 끊기지 않아 FK 제약 위반이 난다.
+    fun getAllWorkspaceTablesIncludingOutOfRange(workspace: Workspace): List<WorkspaceTable> {
         return workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace)
     }
 
