@@ -7,6 +7,7 @@ import com.kioschool.kioschoolapi.domain.workspace.facade.WorkspaceFacade
 import com.kioschool.kioschoolapi.global.security.annotation.AdminUsername
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.validation.Valid
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
 
@@ -122,7 +123,7 @@ class AdminWorkspaceController(
     @PostMapping("/workspace/table-count")
     fun updateTableCount(
         @AdminUsername username: String,
-        @RequestBody body: UpdateTableCountRequestBody
+        @Valid @RequestBody body: UpdateTableCountRequestBody
     ): WorkspaceDto {
         return workspaceFacade.updateTableCount(
             username,
