@@ -154,6 +154,35 @@ class AdminWorkspaceController(
         return workspaceFacade.getAllWorkspaceTables(username, workspaceId)
     }
 
+    @Operation(
+        summary = "워크스페이스 테이블 위치 수정",
+        description = "테이블의 격자 위치를 수정합니다. position이 null이면 배치를 취소합니다."
+    )
+    @PatchMapping("/workspace/table/position")
+    fun updateTablePosition(
+        @AdminUsername username: String,
+        @RequestBody body: UpdateTablePositionRequestBody
+    ): WorkspaceTableDto {
+        return workspaceFacade.updateTablePosition(
+            username,
+            body.workspaceId,
+            body.tableId,
+            body.position
+        )
+    }
+
+    @Operation(
+        summary = "워크스페이스 테이블 위치 초기화",
+        description = "워크스페이스의 모든 테이블 위치를 미배치 상태로 되돌립니다."
+    )
+    @PostMapping("/workspace/table/positions/reset")
+    fun resetTablePositions(
+        @AdminUsername username: String,
+        @RequestBody body: ResetTablePositionsRequestBody
+    ): List<WorkspaceTableDto> {
+        return workspaceFacade.resetTablePositions(username, body.workspaceId)
+    }
+
     @Operation(summary = "워크스페이스 주문 설정 변경", description = "워크스페이스의 설정 중 주문 관련한 설정을 변경합니다.")
     @PutMapping("/workspace/setting/order")
     fun updateOrderSetting(
