@@ -477,7 +477,7 @@ class WorkspaceServiceTest : DescribeSpec({
 
     describe("getWorkspaceTable") {
         it("should get workspace table") {
-            val workspace = SampleEntity.workspace
+            val workspace = SampleEntity.workspace.apply { tableCount = 1 }
             val tableNumber = 1
 
             every {
@@ -517,6 +517,51 @@ class WorkspaceServiceTest : DescribeSpec({
                 workspaceTableRepository
                     .findAllByWorkspaceAndTableNumberLessThanEqualOrderByTableNumber(workspace, 2)
             }
+        }
+    }
+
+    describe("out-of-range table access") {
+        it("should reject a tableHash whose table number exceeds tableCount") {
+            val workspace = SampleEntity.workspace.apply { tableCount = 2 }
+            val table = SampleEntity.workspaceTableWithId(5L, tableNumber = 5)
+
+            every {
+                workspaceTableRepository.findByTableHashAndWorkspace("testHash5", workspace)
+            } returns Optional.of(table)
+
+            val ex = shouldThrow<CustomException> {
+                sut.getWorkspaceTableByHash(workspace, "testHash5")
+            }
+            ex.errorCode shouldBe ErrorCode.WORKSPACE_TABLE_NOT_FOUND
+        }
+
+        it("should return a tableHash whose table number is within tableCount") {
+            val workspace = SampleEntity.workspace.apply { tableCount = 2 }
+            val table = SampleEntity.workspaceTableWithId(1L, tableNumber = 1)
+
+            every {
+                workspaceTableRepository.findByTableHashAndWorkspace("testHash1", workspace)
+            } returns Optional.of(table)
+
+            sut.getWorkspaceTableByHash(workspace, "testHash1") shouldBe table
+        }
+
+        it("should reject a tableNumber that exceeds tableCount without hitting the repository") {
+            val workspace = SampleEntity.workspace.apply { tableCount = 2 }
+
+            val ex = shouldThrow<CustomException> { sut.getWorkspaceTable(workspace, 5) }
+            ex.errorCode shouldBe ErrorCode.WORKSPACE_TABLE_NOT_FOUND
+
+            verify(exactly = 0) {
+                workspaceTableRepository.findByTableNumberAndWorkspace(any(), any())
+            }
+        }
+
+        it("should reject a tableNumber below 1") {
+            val workspace = SampleEntity.workspace.apply { tableCount = 2 }
+
+            val ex = shouldThrow<CustomException> { sut.getWorkspaceTable(workspace, 0) }
+            ex.errorCode shouldBe ErrorCode.WORKSPACE_TABLE_NOT_FOUND
         }
     }
 

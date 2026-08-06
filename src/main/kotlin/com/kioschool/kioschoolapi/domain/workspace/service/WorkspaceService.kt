@@ -178,6 +178,10 @@ class WorkspaceService(
     }
 
     fun getWorkspaceTable(workspace: Workspace, tableNumber: Int): WorkspaceTable {
+        if (tableNumber < 1 || tableNumber > workspace.tableCount) {
+            throw CustomException(ErrorCode.WORKSPACE_TABLE_NOT_FOUND)
+        }
+
         return workspaceTableRepository.findByTableNumberAndWorkspace(
             tableNumber,
             workspace
@@ -279,8 +283,15 @@ class WorkspaceService(
     }
 
     fun getWorkspaceTableByHash(workspace: Workspace, tableHash: String): WorkspaceTable {
-        return workspaceTableRepository.findByTableHashAndWorkspace(tableHash, workspace)
+        val table = workspaceTableRepository.findByTableHashAndWorkspace(tableHash, workspace)
             .orElseThrow { CustomException(ErrorCode.WORKSPACE_TABLE_NOT_FOUND) }
+
+        // tableCount 감소로 보존만 된 테이블은 존재하지 않는 것으로 취급한다.
+        if (table.tableNumber > workspace.tableCount) {
+            throw CustomException(ErrorCode.WORKSPACE_TABLE_NOT_FOUND)
+        }
+
+        return table
     }
 
     fun deleteWorkspace(workspace: Workspace) {
