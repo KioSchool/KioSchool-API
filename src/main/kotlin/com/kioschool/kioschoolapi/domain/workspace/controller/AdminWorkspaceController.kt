@@ -177,6 +177,25 @@ class AdminWorkspaceController(
     }
 
     @Operation(
+        summary = "워크스페이스 테이블 위치 일괄 수정",
+        description = "편집 모드의 저장 한 번을 반영합니다. 여러 테이블의 격자 위치를 한 요청으로 바꾸며, " +
+            "하나라도 실패하면 아무것도 저장되지 않습니다. position이 null인 항목은 배치를 취소합니다. " +
+            "충돌 판정은 요청을 모두 반영한 최종 상태 기준이라 서로 자리를 맞바꾸는 재배치도 통과합니다. " +
+            "요청에 없는 테이블의 좌표는 그대로 유지되며 그 칸도 여전히 점유 상태로 봅니다. " +
+            "같은 테이블이 두 번 들어오면 400 INVALID_INPUT, x, y가 0 이상 100 미만을 벗어나면 " +
+            "400 INVALID_TABLE_POSITION, 최종 상태에 겹치는 칸이 있으면 409 TABLE_POSITION_CONFLICT를 " +
+            "반환합니다. 409의 errors[0]에는 걸린 칸의 좌표와 요청 내 위치가 담깁니다. " +
+            "응답은 GET /workspace/tables와 같은 뷰입니다."
+    )
+    @PatchMapping("/workspace/table/positions")
+    fun updateTablePositions(
+        @AdminUsername username: String,
+        @Valid @RequestBody body: UpdateTablePositionsRequestBody
+    ): List<WorkspaceTableDto> {
+        return workspaceFacade.updateTablePositions(username, body.workspaceId, body.positions)
+    }
+
+    @Operation(
         summary = "워크스페이스 테이블 위치 초기화",
         description = "워크스페이스의 모든 테이블 위치를 미배치 상태로 되돌립니다." +
             " tableCount 범위 밖 테이블의 좌표도 함께 비우지만, 응답에는 범위 내 테이블만 포함됩니다."
