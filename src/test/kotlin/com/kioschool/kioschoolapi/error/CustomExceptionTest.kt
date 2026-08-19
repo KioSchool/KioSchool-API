@@ -1,6 +1,7 @@
 package com.kioschool.kioschoolapi.error
 
 import com.kioschool.kioschoolapi.global.error.ErrorCode
+import com.kioschool.kioschoolapi.global.error.dto.FieldErrorDetail
 import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
@@ -16,6 +17,17 @@ class CustomExceptionTest : DescribeSpec({
         it("message가 주어지면 그 값을 사용한다") {
             val ex = CustomException(ErrorCode.INVALID_INPUT, "커스텀 메시지")
             ex.message shouldBe "커스텀 메시지"
+        }
+
+        it("errors가 없으면 빈 리스트다") {
+            val ex = CustomException(ErrorCode.USER_NOT_FOUND)
+            ex.errors shouldBe emptyList()
+        }
+
+        it("errors를 실어 보낼 수 있다") {
+            val detail = FieldErrorDetail("positions[1].position", "(2, 0)", "이미 점유된 칸입니다.")
+            val ex = CustomException(ErrorCode.TABLE_POSITION_CONFLICT, errors = listOf(detail))
+            ex.errors shouldBe listOf(detail)
         }
 
         it("cause를 전달할 수 있다") {
