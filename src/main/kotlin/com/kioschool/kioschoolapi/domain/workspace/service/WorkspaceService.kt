@@ -2,6 +2,8 @@ package com.kioschool.kioschoolapi.domain.workspace.service
 
 import com.kioschool.kioschoolapi.domain.user.entity.User
 import com.kioschool.kioschoolapi.domain.user.service.UserService
+import com.kioschool.kioschoolapi.domain.workspace.dto.common.TablePositionDto
+import com.kioschool.kioschoolapi.domain.workspace.dto.common.TablePositionUpdateDto
 import com.kioschool.kioschoolapi.domain.workspace.entity.*
 import com.kioschool.kioschoolapi.domain.workspace.repository.CustomWorkspaceRepository
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceMemberRepository
@@ -12,6 +14,7 @@ import com.kioschool.kioschoolapi.global.cache.annotation.WorkspaceUpdateEvent
 import org.springframework.data.repository.findByIdOrNull
 import com.kioschool.kioschoolapi.global.common.enums.UserRole
 import com.kioschool.kioschoolapi.global.error.ErrorCode
+import com.kioschool.kioschoolapi.global.error.dto.FieldErrorDetail
 import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import com.kioschool.kioschoolapi.global.security.CustomUserDetails
 import org.slf4j.LoggerFactory
@@ -272,6 +275,95 @@ class WorkspaceService(
         table.positionX = x
         table.positionY = y
         return workspaceTableRepository.save(table)
+    }
+
+    /**
+     * 편집 모드의 "저장" 한 번을 그대로 반영한다. 검증을 모두 통과하기 전에는 엔티티를 건드리지
+     * 않으므로 부분 적용이 남지 않는다.
+     *
+     * 충돌 판정은 요청을 다 반영한 **최종 상태** 기준이다. 순서대로 검사하면 자리를 서로 맞바꾸는
+     * 재배치(1번을 2번 자리로, 2번을 1번 자리로)가 항상 409로 튕긴다.
+     */
+    @Transactional
+    fun updateTablePositions(workspace: Workspace, updates: List<TablePositionUpdateDto>) {
+        val duplicatedTableIds = updates.groupingBy { it.tableId }.eachCount()
+            .filterValues { it > 1 }.keys
+        if (duplicatedTableIds.isNotEmpty()) {
+            throw CustomException(
+                ErrorCode.INVALID_INPUT,
+                "한 요청에 같은 테이블이 두 번 들어올 수 없습니다: $duplicatedTableIds"
+            )
+        }
+
+        val tables = workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace)
+        val tablesById = tables.associateBy { it.id }
+
+        updates.forEach { update ->
+            if (!tablesById.containsKey(update.tableId)) {
+                throw CustomException(ErrorCode.WORKSPACE_TABLE_NOT_FOUND)
+            }
+
+            val position = update.position ?: return@forEach
+            if (position.x < 0 || position.y < 0 ||
+                position.x >= MAX_GRID_SIZE || position.y >= MAX_GRID_SIZE
+            ) {
+                throw CustomException(ErrorCode.INVALID_TABLE_POSITION)
+            }
+        }
+
+        // 요청에 없는 테이블은 지금 좌표를 그대로 유지한다 -- 그 칸도 여전히 점유 상태다.
+        val finalPositions = tables.associate {
+            it.id to TablePositionDto.of(it.positionX, it.positionY)
+        }.toMutableMap()
+        updates.forEach { finalPositions[it.tableId] = it.position }
+
+        val updatedTableIds = updates.map { it.tableId }.toSet()
+        val occupants = mutableMapOf<TablePositionDto, Long>()
+        finalPositions.forEach { (tableId, position) ->
+            if (position == null) return@forEach
+            val previousOccupant = occupants.putIfAbsent(position, tableId) ?: return@forEach
+
+            // 이번 요청이 건드리지 않은 두 테이블끼리 이미 겹쳐 있다면(동시 저장 경합의 흔적 등)
+            // 그건 이 요청의 잘못이 아니다. 여기서 막으면 관리자가 저장 자체를 못 하게 된다.
+            if (tableId !in updatedTableIds && previousOccupant !in updatedTableIds) {
+                log.warn(
+                    "Pre-existing table position collision on workspace {} at ({}, {}): tables {} and {}",
+                    workspace.id, position.x, position.y, previousOccupant, tableId
+                )
+                return@forEach
+            }
+
+            throw conflictOf(position, updates)
+        }
+
+        val changed = updates.mapNotNull { update ->
+            val table = tablesById.getValue(update.tableId)
+            val position = update.position
+            if (table.positionX == position?.x && table.positionY == position?.y) return@mapNotNull null
+
+            table.positionX = position?.x
+            table.positionY = position?.y
+            table
+        }
+        if (changed.isNotEmpty()) workspaceTableRepository.saveAll(changed)
+    }
+
+    // 충돌한 칸을 요청 본문의 위치로 되짚어준다. 프론트가 격자에서 그 칸을 집어낼 수 있게 하기 위함.
+    private fun conflictOf(
+        position: TablePositionDto,
+        updates: List<TablePositionUpdateDto>
+    ): CustomException {
+        val index = updates.indexOfLast { it.position == position }
+        return CustomException(
+            ErrorCode.TABLE_POSITION_CONFLICT,
+            errors = listOf(
+                FieldErrorDetail(
+                    field = if (index >= 0) "positions[$index].position" else "positions",
+                    value = "(${position.x}, ${position.y})",
+                    reason = ErrorCode.TABLE_POSITION_CONFLICT.defaultMessage
+                )
+            )
+        )
     }
 
     @Transactional
