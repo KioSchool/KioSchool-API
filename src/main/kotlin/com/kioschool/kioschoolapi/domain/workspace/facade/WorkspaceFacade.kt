@@ -6,6 +6,7 @@ import com.kioschool.kioschoolapi.domain.order.repository.OrderSessionRepository
 import com.kioschool.kioschoolapi.domain.statistics.repository.DailyOrderStatisticRepository
 import com.kioschool.kioschoolapi.domain.user.service.UserService
 import com.kioschool.kioschoolapi.domain.workspace.dto.common.TablePositionDto
+import com.kioschool.kioschoolapi.domain.workspace.dto.common.TablePositionUpdateDto
 import com.kioschool.kioschoolapi.domain.workspace.dto.common.WorkspaceAdminDetailDto
 import com.kioschool.kioschoolapi.domain.workspace.dto.common.WorkspaceDto
 import com.kioschool.kioschoolapi.domain.workspace.dto.common.WorkspaceTableDto
@@ -184,6 +185,21 @@ class WorkspaceFacade(
         return WorkspaceTableDto.of(
             workspaceService.updateTablePosition(workspace, tableId, position?.x, position?.y)
         )
+    }
+
+    fun updateTablePositions(
+        username: String,
+        workspaceId: Long,
+        positions: List<TablePositionUpdateDto>
+    ): List<WorkspaceTableDto> {
+        val user = userService.getUser(username)
+        val workspace = workspaceService.getWorkspace(workspaceId)
+
+        workspaceService.checkCanAccessWorkspace(user, workspace)
+
+        // 하나라도 실패하면 아무것도 저장되지 않는다. 응답은 GET /workspace/tables와 같은 뷰.
+        workspaceService.updateTablePositions(workspace, positions)
+        return workspaceService.getAllWorkspaceTables(workspace).map { WorkspaceTableDto.of(it) }
     }
 
     fun resetTablePositions(username: String, workspaceId: Long): List<WorkspaceTableDto> {

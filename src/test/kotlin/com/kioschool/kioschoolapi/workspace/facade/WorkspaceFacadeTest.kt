@@ -2,6 +2,7 @@ package com.kioschool.kioschoolapi.workspace.facade
 
 import com.kioschool.kioschoolapi.domain.user.service.UserService
 import com.kioschool.kioschoolapi.domain.workspace.dto.common.TablePositionDto
+import com.kioschool.kioschoolapi.domain.workspace.dto.common.TablePositionUpdateDto
 import com.kioschool.kioschoolapi.domain.workspace.facade.WorkspaceFacade
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.domain.order.repository.OrderRepository
@@ -736,6 +737,48 @@ class WorkspaceFacadeTest : DescribeSpec({
             assertEquals(ErrorCode.WORKSPACE_INACCESSIBLE, ex.errorCode)
 
             verify(exactly = 0) { workspaceService.updateTablePosition(any(), any(), any(), any()) }
+        }
+    }
+
+    describe("updateTablePositions") {
+        val positions = listOf(TablePositionUpdateDto(1L, TablePositionDto(2, 0)))
+
+        it("should check access, delegate to workspaceService, then return the GET view") {
+            val username = "username"
+            val user = SampleEntity.user
+            val workspace = SampleEntity.workspace
+            val tables = listOf(SampleEntity.workspaceTableWithId(1L, positionX = 2, positionY = 0))
+
+            every { userService.getUser(username) } returns user
+            every { workspaceService.getWorkspace(1L) } returns workspace
+            every { workspaceService.checkCanAccessWorkspace(user, workspace) } just Runs
+            every { workspaceService.updateTablePositions(workspace, positions) } just Runs
+            every { workspaceService.getAllWorkspaceTables(workspace) } returns tables
+
+            val result = sut.updateTablePositions(username, 1L, positions)
+
+            assertEquals(1, result.size)
+            assertEquals(TablePositionDto(2, 0), result.first().position)
+
+            verify { workspaceService.checkCanAccessWorkspace(user, workspace) }
+            verify { workspaceService.updateTablePositions(workspace, positions) }
+            verify { workspaceService.getAllWorkspaceTables(workspace) }
+        }
+
+        it("should not call updateTablePositions when the workspace is inaccessible") {
+            val username = "username"
+            val user = SampleEntity.user
+            val workspace = SampleEntity.workspace
+
+            every { userService.getUser(username) } returns user
+            every { workspaceService.getWorkspace(1L) } returns workspace
+            every {
+                workspaceService.checkCanAccessWorkspace(user, workspace)
+            } throws CustomException(ErrorCode.WORKSPACE_INACCESSIBLE)
+
+            assertThrows<CustomException> { sut.updateTablePositions(username, 1L, positions) }
+
+            verify(exactly = 0) { workspaceService.updateTablePositions(any(), any()) }
         }
     }
 
