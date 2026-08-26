@@ -897,6 +897,8 @@ class WorkspaceServiceTest : DescribeSpec({
             }
 
             ex.errors.size shouldBe 1
+            // 프론트는 이 index만 읽는다. field 문자열을 정규식으로 파싱하지 않아도 되게 한다.
+            ex.errors[0].index shouldBe 1
             ex.errors[0].field shouldBe "positions[1].position"
             ex.errors[0].value shouldBe "(4, 5)"
         }

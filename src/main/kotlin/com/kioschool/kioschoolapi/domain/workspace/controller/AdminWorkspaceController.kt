@@ -184,7 +184,8 @@ class AdminWorkspaceController(
             "요청에 없는 테이블의 좌표는 그대로 유지되며 그 칸도 여전히 점유 상태로 봅니다. " +
             "같은 테이블이 두 번 들어오면 400 INVALID_INPUT, x, y가 0 이상 100 미만을 벗어나면 " +
             "400 INVALID_TABLE_POSITION, 최종 상태에 겹치는 칸이 있으면 409 TABLE_POSITION_CONFLICT를 " +
-            "반환합니다. 409의 errors[0]에는 걸린 칸의 좌표와 요청 내 위치가 담깁니다. " +
+            "반환합니다. 409의 errors[0].index에 걸린 항목의 positions 배열 인덱스가, " +
+            "errors[0].value에 그 칸의 좌표가 담깁니다. " +
             "응답은 GET /workspace/tables와 같은 뷰입니다."
     )
     @PatchMapping("/workspace/table/positions")

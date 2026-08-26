@@ -360,7 +360,8 @@ class WorkspaceService(
                 FieldErrorDetail(
                     field = if (index >= 0) "positions[$index].position" else "positions",
                     value = "(${position.x}, ${position.y})",
-                    reason = ErrorCode.TABLE_POSITION_CONFLICT.defaultMessage
+                    reason = ErrorCode.TABLE_POSITION_CONFLICT.defaultMessage,
+                    index = index.takeIf { it >= 0 }
                 )
             )
         )
