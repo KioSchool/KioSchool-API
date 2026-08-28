@@ -31,7 +31,6 @@ class CustomExceptionTest : DescribeSpec({
             ErrorCode.NOT_SELLABLE_PRODUCT.status.value() shouldBe 406
             ErrorCode.NOT_VERIFIED_EMAIL_DOMAIN.status.value() shouldBe 422
             ErrorCode.NO_PERMISSION.status.value() shouldBe 401
-            ErrorCode.INCORRECT_ACCOUNT_HOLDER.status.value() shouldBe 404
             ErrorCode.ACCOUNT_HOLDER_NOT_FOUND.status.value() shouldBe 404
             ErrorCode.EMAIL_SEND_FAILURE.status.value() shouldBe 500
         }
