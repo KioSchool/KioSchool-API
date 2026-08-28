@@ -20,6 +20,20 @@ class PortoneService(
         return "Bearer ${response.body()?.response?.access_token ?: ""}"
     }
 
+    fun getAccountHolder(bank: String, accountNumber: String): String {
+        val accessToken = getAccessToken()
+
+        val response = portoneApi.getAccountHolder(accessToken, bank, accountNumber).execute()
+        val body = response.body()
+        val accountHolder = body?.response?.bank_holder?.trim()
+
+        if (body == null || body.code != 0 || accountHolder.isNullOrBlank()) {
+            throw CustomException(ErrorCode.ACCOUNT_HOLDER_NOT_FOUND)
+        }
+
+        return accountHolder
+    }
+
     fun validateAccountHolder(bank: String, accountNumber: String, accountHolder: String) {
         val accessToken = getAccessToken()
 
