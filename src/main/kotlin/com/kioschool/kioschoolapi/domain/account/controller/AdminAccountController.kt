@@ -22,7 +22,7 @@ class AdminAccountController(
         return accountFacade.getAllBanks()
     }
 
-    @Operation(summary = "계좌 등록", description = "계좌를 등록합니다.")
+    @Operation(summary = "계좌 등록", description = "계좌를 등록합니다. 예금주명은 은행 조회값을 사용합니다.")
     @PostMapping("/account")
     fun registerAccount(
         @AdminUsername username: String,
@@ -31,10 +31,8 @@ class AdminAccountController(
         return accountFacade.registerAccount(
             username,
             body.bankId,
-            body.accountNumber,
-            body.accountHolder
+            body.accountNumber
         )
-
     }
 
     @Operation(summary = "계좌 삭제", description = "등록된 계좌를 삭제합니다.")

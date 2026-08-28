@@ -41,7 +41,7 @@ enum class ErrorCode(
     // Account / Toss
     BANK_NOT_FOUND(HttpStatus.NOT_FOUND, "은행을 찾을 수 없습니다."),
     BANK_TOSS_NAME_NOT_FOUND(HttpStatus.BAD_REQUEST, "해당 은행은 토스 명칭이 등록되어 있지 않습니다."),
-    INCORRECT_ACCOUNT_HOLDER(HttpStatus.NOT_FOUND, "예금주명이 일치하지 않습니다. 또한 은행 점검 시간으로 인한 오류일 수 있습니다."),
+    ACCOUNT_HOLDER_NOT_FOUND(HttpStatus.NOT_FOUND, "계좌 정보를 조회할 수 없습니다. 은행과 계좌번호를 다시 확인해주세요. 은행 점검 시간일 수도 있습니다."),
     DIFFERENT_ACCOUNT_NUMBER(HttpStatus.BAD_REQUEST, "토스 계좌와 사용자 계좌가 일치하지 않습니다."),
 
     // Email

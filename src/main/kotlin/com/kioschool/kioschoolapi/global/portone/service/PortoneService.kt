@@ -20,19 +20,17 @@ class PortoneService(
         return "Bearer ${response.body()?.response?.access_token ?: ""}"
     }
 
-    fun validateAccountHolder(bank: String, accountNumber: String, accountHolder: String) {
+    fun getAccountHolder(bank: String, accountNumber: String): String {
         val accessToken = getAccessToken()
 
         val response = portoneApi.getAccountHolder(accessToken, bank, accountNumber).execute()
         val body = response.body()
-        val realAccountHolder = body?.response?.bank_holder
+        val accountHolder = body?.response?.bank_holder?.trim()
 
-        if (body == null || body.code != 0 || realAccountHolder.isNullOrBlank()) {
-            throw CustomException(ErrorCode.INCORRECT_ACCOUNT_HOLDER)
+        if (body == null || body.code != 0 || accountHolder.isNullOrBlank()) {
+            throw CustomException(ErrorCode.ACCOUNT_HOLDER_NOT_FOUND)
         }
 
-        if (!accountHolder.startsWith(realAccountHolder)) {
-            throw CustomException(ErrorCode.INCORRECT_ACCOUNT_HOLDER)
-        }
+        return accountHolder
     }
 }

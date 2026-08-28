@@ -50,11 +50,10 @@ class AccountFacade(
     fun registerAccount(
         username: String,
         bankId: Long,
-        accountNumber: String,
-        accountHolder: String
+        accountNumber: String
     ): UserDto {
         val bank = bankService.getBank(bankId)
-        portoneService.validateAccountHolder(bank.code, accountNumber, accountHolder)
+        val accountHolder = portoneService.getAccountHolder(bank.code, accountNumber)
 
         val user = userService.getUser(username)
         user.account = accountService.createAccount(bank, accountNumber, accountHolder)
