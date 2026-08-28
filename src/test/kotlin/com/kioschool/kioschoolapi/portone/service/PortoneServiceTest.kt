@@ -9,6 +9,7 @@ import com.kioschool.kioschoolapi.global.portone.dto.GetTokenResponse
 import com.kioschool.kioschoolapi.global.portone.service.PortoneService
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
+import io.mockk.clearAllMocks
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.assertThrows
@@ -18,6 +19,10 @@ import retrofit2.Response
 class PortoneServiceTest : DescribeSpec({
     val portoneApi = mockk<PortoneApi>()
     val sut = PortoneService("api-key", "api-secret", portoneApi)
+
+    afterTest {
+        clearAllMocks()
+    }
 
     fun stubToken() {
         val tokenCall = mockk<Call<BaseResponse<GetTokenResponse>>>()
