@@ -108,87 +108,66 @@ class AccountFacadeTest : DescribeSpec({
     }
 
     describe("registerAccount") {
-        it("should call bankService.getBank, portoneService.validateAccountHolder, userService.getUser, accountService.createAccount, userService.saveUser") {
+        it("PortOne 조회값을 예금주명으로 저장한다") {
             val username = "username"
             val bankId = 1L
             val accountNumber = "accountNumber"
-            val accountHolder = "accountHolder"
+            val realAccountHolder = "박지인(모임통장)"
 
             every { bankService.getBank(bankId) } returns SampleEntity.bank
             every {
-                portoneService.validateAccountHolder(
-                    SampleEntity.bank.code,
-                    accountNumber,
-                    accountHolder
-                )
-            } returns Unit
+                portoneService.getAccountHolder(SampleEntity.bank.code, accountNumber)
+            } returns realAccountHolder
             every { userService.getUser(username) } returns SampleEntity.user
             every {
                 accountService.createAccount(
                     SampleEntity.bank,
                     accountNumber,
-                    accountHolder
+                    realAccountHolder
                 )
             } returns SampleEntity.account
             every { userService.saveUser(any()) } returns SampleEntity.user.apply {
                 this.account = SampleEntity.account
             }
 
-            val result = sut.registerAccount(username, bankId, accountNumber, accountHolder)
+            val result = sut.registerAccount(username, bankId, accountNumber)
 
             assert(result.name == SampleEntity.user.name)
             assert(result.account?.accountNumber == SampleEntity.account.accountNumber)
 
             verify { bankService.getBank(bankId) }
-            verify {
-                portoneService.validateAccountHolder(
-                    SampleEntity.bank.code,
-                    accountNumber,
-                    accountHolder
-                )
-            }
+            verify { portoneService.getAccountHolder(SampleEntity.bank.code, accountNumber) }
             verify { userService.getUser(username) }
-            verify { accountService.createAccount(SampleEntity.bank, accountNumber, accountHolder) }
-            verify { userService.saveUser(any()) }
-        }
-
-        it("should throw CustomException when account holder is incorrect") {
-            val username = "username"
-            val bankId = 1L
-            val accountNumber = "accountNumber"
-            val accountHolder = "accountHolder"
-
-            every { bankService.getBank(bankId) } returns SampleEntity.bank
-            every {
-                portoneService.validateAccountHolder(
-                    SampleEntity.bank.code,
-                    accountNumber,
-                    accountHolder
-                )
-            } throws CustomException(ErrorCode.INCORRECT_ACCOUNT_HOLDER)
-
-            val ex = assertThrows<CustomException> {
-                sut.registerAccount(username, bankId, accountNumber, accountHolder)
-            }
-            assertEquals(ErrorCode.INCORRECT_ACCOUNT_HOLDER, ex.errorCode)
-
-            verify { bankService.getBank(bankId) }
             verify {
-                portoneService.validateAccountHolder(
-                    SampleEntity.bank.code,
-                    accountNumber,
-                    accountHolder
-                )
-            }
-            verify(exactly = 0) { userService.getUser(username) }
-            verify(exactly = 0) {
                 accountService.createAccount(
                     SampleEntity.bank,
                     accountNumber,
-                    accountHolder
+                    realAccountHolder
                 )
             }
-            verify(exactly = 0) { userService.saveUser(SampleEntity.user) }
+            verify { userService.saveUser(any()) }
+        }
+
+        it("PortOne 조회에 실패하면 계좌를 저장하지 않는다") {
+            val username = "username"
+            val bankId = 1L
+            val accountNumber = "accountNumber"
+
+            every { bankService.getBank(bankId) } returns SampleEntity.bank
+            every {
+                portoneService.getAccountHolder(SampleEntity.bank.code, accountNumber)
+            } throws CustomException(ErrorCode.ACCOUNT_HOLDER_NOT_FOUND)
+
+            val ex = assertThrows<CustomException> {
+                sut.registerAccount(username, bankId, accountNumber)
+            }
+            assertEquals(ErrorCode.ACCOUNT_HOLDER_NOT_FOUND, ex.errorCode)
+
+            verify { bankService.getBank(bankId) }
+            verify { portoneService.getAccountHolder(SampleEntity.bank.code, accountNumber) }
+            verify(exactly = 0) { userService.getUser(username) }
+            verify(exactly = 0) { accountService.createAccount(any(), any(), any()) }
+            verify(exactly = 0) { userService.saveUser(any()) }
         }
     }
 
