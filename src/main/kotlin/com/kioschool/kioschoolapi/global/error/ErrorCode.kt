@@ -51,6 +51,15 @@ enum class ErrorCode(
     NOT_VERIFIED_EMAIL_DOMAIN(HttpStatus.UNPROCESSABLE_ENTITY, "허용되지 않은 이메일 도메인입니다."),
     EMAIL_SEND_FAILURE(HttpStatus.INTERNAL_SERVER_ERROR, "이메일 전송에 실패했습니다."),
 
+    // Inquiry
+    INQUIRY_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 문의입니다."),
+    INQUIRY_ALREADY_ANSWERED(HttpStatus.CONFLICT, "이미 답변이 완료된 문의입니다."),
+    INQUIRY_ALREADY_CLOSED(HttpStatus.CONFLICT, "이미 종결된 문의입니다."),
+    INQUIRY_IMAGE_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "이미지는 최대 5장까지 첨부할 수 있습니다."),
+    INQUIRY_IMAGE_TOO_LARGE(HttpStatus.PAYLOAD_TOO_LARGE, "이미지 한 장의 크기는 5MB를 넘을 수 없습니다."),
+    INQUIRY_IMAGE_TYPE_NOT_ALLOWED(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "JPEG, PNG, WebP 이미지만 첨부할 수 있습니다."),
+    INQUIRY_RATE_LIMIT_EXCEEDED(HttpStatus.TOO_MANY_REQUESTS, "문의 접수 횟수 제한을 초과했습니다. 잠시 후 다시 시도해 주세요."),
+
     // Security
     AUTHENTICATION_REQUIRED(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다."),
     ACCESS_DENIED(HttpStatus.FORBIDDEN, "접근 권한이 없습니다."),
