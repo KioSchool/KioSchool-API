@@ -3,6 +3,7 @@ package com.kioschool.kioschoolapi.domain.inquiry.service
 import com.kioschool.kioschoolapi.domain.email.service.EmailService
 import com.kioschool.kioschoolapi.domain.inquiry.entity.Inquiry
 import com.kioschool.kioschoolapi.domain.inquiry.entity.InquiryImage
+import com.kioschool.kioschoolapi.domain.inquiry.entity.InquiryReply
 import com.kioschool.kioschoolapi.domain.inquiry.enum.InquiryStatus
 import com.kioschool.kioschoolapi.domain.inquiry.repository.InquiryRepository
 import com.kioschool.kioschoolapi.domain.inquiry.util.InquiryImageValidator
@@ -101,6 +102,51 @@ class InquiryService(
             ?: throw CustomException(ErrorCode.INQUIRY_NOT_FOUND)
 
     fun getImageAccessUrl(storageKey: String): String = s3Service.getPublicUrl(storageKey)
+
+    /**
+     * 잠금 → 상태 확인 → 동기 발송 → 저장을 한 트랜잭션에서 처리한다.
+     * 발송이 실패하면 전체가 롤백되므로 실패한 답변이 DB에 남지 않는다.
+     */
+    @Transactional(rollbackFor = [Exception::class])
+    fun replyToInquiry(
+        username: String,
+        inquiryId: Long,
+        subject: String,
+        content: String,
+        emailBody: String,
+    ): Inquiry {
+        val inquiry = inquiryRepository.findByIdForUpdate(inquiryId)
+            ?: throw CustomException(ErrorCode.INQUIRY_NOT_FOUND)
+        validatePending(inquiry)
+
+        val respondedBy = userService.getUser(username)
+
+        // 수신 주소는 요청에서 받지 않는다. 반드시 문의에 저장된 값을 쓴다.
+        emailService.sendEmailSync(inquiry.replyEmail, subject, emailBody)
+
+        val sentAt = LocalDateTime.now()
+        inquiry.reply = InquiryReply(
+            inquiry = inquiry,
+            subject = subject,
+            content = content,
+            recipientEmail = inquiry.replyEmail,
+            respondedBy = respondedBy,
+            sentAt = sentAt,
+        )
+        inquiry.status = InquiryStatus.ANSWERED
+        inquiry.answeredAt = sentAt
+        inquiry.purgeAt = sentAt.plusDays(resolvedRetentionDays)
+
+        return inquiryRepository.save(inquiry)
+    }
+
+    private fun validatePending(inquiry: Inquiry) {
+        when (inquiry.status) {
+            InquiryStatus.ANSWERED -> throw CustomException(ErrorCode.INQUIRY_ALREADY_ANSWERED)
+            InquiryStatus.CLOSED -> throw CustomException(ErrorCode.INQUIRY_ALREADY_CLOSED)
+            InquiryStatus.PENDING -> Unit
+        }
+    }
 
     /**
      * 업로드는 성공했는데 커밋이 실패하는 경우를 잡는다. 이게 없으면 DB에 기록이 없는
