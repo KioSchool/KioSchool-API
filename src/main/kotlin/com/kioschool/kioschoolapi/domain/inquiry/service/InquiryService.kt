@@ -32,7 +32,7 @@ class InquiryService(
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
-    @Transactional
+    @Transactional(rollbackFor = [Exception::class])
     fun createInquiry(
         title: String,
         content: String,

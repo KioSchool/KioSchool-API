@@ -14,6 +14,8 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldStartWith
 import io.mockk.*
 import org.springframework.mock.web.MockMultipartFile
+import org.springframework.transaction.support.TransactionSynchronization
+import org.springframework.transaction.support.TransactionSynchronizationManager
 
 class InquiryServiceCreateTest : DescribeSpec({
     val inquiryRepository = mockk<InquiryRepository>()
@@ -76,6 +78,47 @@ class InquiryServiceCreateTest : DescribeSpec({
             }
 
             verify(exactly = 1) { s3Service.deleteByKey(match { it.startsWith("test/inquiry/inquiry-7/") }) }
+        }
+
+        it("트랜잭션이 롤백되면 업로드된 이미지를 정리한다") {
+            val saved = SampleEntity.newInquiry(id = 9L)
+            every { inquiryRepository.save(any()) } returns saved
+            every { s3Service.uploadMultipartFile(any(), any(), any()) } returns "https://cdn/x.png"
+            every { s3Service.deleteByKey(any()) } just Runs
+
+            TransactionSynchronizationManager.initSynchronization()
+            try {
+                sut.createInquiry("제목", "본문", "a@b.com", listOf(validatedImage("shot.png")))
+
+                val synchronizations = TransactionSynchronizationManager.getSynchronizations()
+                synchronizations.forEach {
+                    it.afterCompletion(TransactionSynchronization.STATUS_ROLLED_BACK)
+                }
+
+                verify(exactly = 1) { s3Service.deleteByKey(match { it.startsWith("test/inquiry/inquiry-9/") }) }
+            } finally {
+                TransactionSynchronizationManager.clearSynchronization()
+            }
+        }
+
+        it("트랜잭션이 커밋되면 업로드된 이미지를 정리하지 않는다") {
+            val saved = SampleEntity.newInquiry(id = 10L)
+            every { inquiryRepository.save(any()) } returns saved
+            every { s3Service.uploadMultipartFile(any(), any(), any()) } returns "https://cdn/x.png"
+
+            TransactionSynchronizationManager.initSynchronization()
+            try {
+                sut.createInquiry("제목", "본문", "a@b.com", listOf(validatedImage("shot.png")))
+
+                val synchronizations = TransactionSynchronizationManager.getSynchronizations()
+                synchronizations.forEach {
+                    it.afterCompletion(TransactionSynchronization.STATUS_COMMITTED)
+                }
+
+                verify(exactly = 0) { s3Service.deleteByKey(any()) }
+            } finally {
+                TransactionSynchronizationManager.clearSynchronization()
+            }
         }
     }
 })
