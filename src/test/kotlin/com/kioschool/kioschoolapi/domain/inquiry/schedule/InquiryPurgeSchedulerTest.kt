@@ -3,6 +3,7 @@ package com.kioschool.kioschoolapi.domain.inquiry.schedule
 import com.kioschool.kioschoolapi.domain.inquiry.repository.InquiryRepository
 import com.kioschool.kioschoolapi.domain.inquiry.service.InquiryPurgeService
 import com.kioschool.kioschoolapi.factory.SampleEntity
+import com.kioschool.kioschoolapi.global.discord.service.DiscordService
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.core.spec.style.DescribeSpec
 import io.mockk.*
@@ -12,8 +13,10 @@ import java.time.LocalDateTime
 class InquiryPurgeSchedulerTest : DescribeSpec({
     val inquiryRepository = mockk<InquiryRepository>()
     val inquiryPurgeService = mockk<InquiryPurgeService>()
-    val sut = InquiryPurgeScheduler(inquiryRepository, inquiryPurgeService)
+    val discordService = mockk<DiscordService>()
+    val sut = InquiryPurgeScheduler(inquiryRepository, inquiryPurgeService, discordService)
 
+    beforeTest { every { discordService.sendInquiryPurgeSummary(any(), any()) } just Runs }
     afterTest { clearAllMocks() }
 
     describe("purgeExpiredInquiries") {

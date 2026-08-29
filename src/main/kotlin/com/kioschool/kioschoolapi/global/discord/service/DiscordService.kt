@@ -73,6 +73,19 @@ class DiscordService(
         send(message)
     }
 
+    @Async
+    fun sendInquiryPurgeSummary(purgedCount: Int, failedCount: Int) {
+        if (purgedCount == 0 && failedCount == 0) return
+
+        val message =
+            """## [문의 파기 배치]
+            |파기: ${purgedCount}건
+            |실패: ${failedCount}건
+            """.trimMargin()
+
+        send(message)
+    }
+
     fun sendInquiryCreated(inquiry: Inquiry) {
         val message =
             """## [신규 문의]

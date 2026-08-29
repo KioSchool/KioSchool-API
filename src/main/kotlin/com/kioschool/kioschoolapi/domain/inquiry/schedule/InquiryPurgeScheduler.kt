@@ -2,8 +2,10 @@ package com.kioschool.kioschoolapi.domain.inquiry.schedule
 
 import com.kioschool.kioschoolapi.domain.inquiry.repository.InquiryRepository
 import com.kioschool.kioschoolapi.domain.inquiry.service.InquiryPurgeService
+import com.kioschool.kioschoolapi.global.discord.service.DiscordService
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime
@@ -12,6 +14,7 @@ import java.time.LocalDateTime
 class InquiryPurgeScheduler(
     private val inquiryRepository: InquiryRepository,
     private val inquiryPurgeService: InquiryPurgeService,
+    private val discordService: DiscordService,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -19,7 +22,7 @@ class InquiryPurgeScheduler(
     fun purgeExpiredInquiries() {
         val expired = inquiryRepository.findAllByPurgeAtBefore(
             LocalDateTime.now(),
-            PageRequest.of(0, BATCH_SIZE)
+            PageRequest.of(0, BATCH_SIZE, Sort.by("purgeAt"))
         )
         if (expired.isEmpty()) return
 
@@ -36,6 +39,7 @@ class InquiryPurgeScheduler(
         }
 
         log.info("Inquiry purge finished: purged={}, failed={}", purged, failed)
+        discordService.sendInquiryPurgeSummary(purged, failed)
     }
 
     companion object {
