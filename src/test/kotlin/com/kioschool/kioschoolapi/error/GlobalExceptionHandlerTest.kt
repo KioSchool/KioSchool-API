@@ -3,6 +3,7 @@ package com.kioschool.kioschoolapi.error
 import com.kioschool.kioschoolapi.global.error.ErrorCode
 import com.kioschool.kioschoolapi.global.error.GlobalExceptionHandler
 import com.kioschool.kioschoolapi.global.error.dto.ErrorResponse
+import com.kioschool.kioschoolapi.global.error.dto.FieldErrorDetail
 import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import com.kioschool.kioschoolapi.global.logging.annotation.Masked
 import io.kotest.core.spec.style.DescribeSpec
@@ -40,6 +41,17 @@ class GlobalExceptionHandlerTest : DescribeSpec({
             body.message shouldBe "접근 불가능한 워크스페이스입니다."
             body.status shouldBe 405
             body.path shouldBe "/admin/workspace/1"
+            body.errors shouldBe emptyList()
+        }
+
+        it("CustomException이 errors를 실어 오면 응답에 그대로 담는다") {
+            val detail = FieldErrorDetail("positions[1].position", "(2, 0)", "이미 점유된 칸입니다.")
+            val response = sut.handleCustomException(
+                CustomException(ErrorCode.TABLE_POSITION_CONFLICT, errors = listOf(detail)),
+                request("/admin/workspace/table/positions"),
+            )
+            response.statusCode.value() shouldBe 409
+            response.body!!.errors shouldBe listOf(detail)
         }
     }
 
