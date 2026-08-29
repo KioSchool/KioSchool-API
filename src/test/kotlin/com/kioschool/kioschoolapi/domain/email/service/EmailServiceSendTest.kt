@@ -49,6 +49,15 @@ class EmailServiceSendTest : DescribeSpec({
 
             ex.errorCode shouldBe ErrorCode.EMAIL_SEND_FAILURE
         }
+
+        it("주소가 올바르지 않아 메시지 구성이 실패해도 EMAIL_SEND_FAILURE를 던진다") {
+            every { javaMailSender.createMimeMessage() } throws
+                jakarta.mail.internet.AddressException("malformed address")
+
+            val ex = shouldThrow<CustomException> { sut.sendEmailSync("not-an-email", "제목", "본문") }
+
+            ex.errorCode shouldBe ErrorCode.EMAIL_SEND_FAILURE
+        }
     }
 
     describe("sendEmail") {

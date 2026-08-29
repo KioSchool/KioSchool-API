@@ -49,15 +49,15 @@ class EmailService(
      * [sendEmail]은 @Async라 즉시 리턴하므로 성공 여부를 호출자가 알 수 없다.
      */
     fun sendEmailSync(address: String, subject: String, text: String) {
-        val message = javaMailSender.createMimeMessage()
-        val helper = MimeMessageHelper(message, true, "UTF-8")
-
-        helper.setFrom(fromAddress)
-        helper.setTo(address)
-        helper.setSubject(subject)
-        helper.setText(text, true)
-
         try {
+            val message = javaMailSender.createMimeMessage()
+            val helper = MimeMessageHelper(message, true, "UTF-8")
+
+            helper.setFrom(fromAddress)
+            helper.setTo(address)
+            helper.setSubject(subject)
+            helper.setText(text, true)
+
             javaMailSender.send(message)
         } catch (e: Exception) {
             log.error("Failed to send email to {}", address, e)
