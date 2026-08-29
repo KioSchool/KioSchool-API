@@ -3,12 +3,19 @@ package com.kioschool.kioschoolapi.domain.inquiry.service
 import com.kioschool.kioschoolapi.domain.email.service.EmailService
 import com.kioschool.kioschoolapi.domain.inquiry.entity.Inquiry
 import com.kioschool.kioschoolapi.domain.inquiry.entity.InquiryImage
+import com.kioschool.kioschoolapi.domain.inquiry.enum.InquiryStatus
 import com.kioschool.kioschoolapi.domain.inquiry.repository.InquiryRepository
 import com.kioschool.kioschoolapi.domain.inquiry.util.InquiryImageValidator
 import com.kioschool.kioschoolapi.domain.user.service.UserService
 import com.kioschool.kioschoolapi.global.aws.S3Service
+import com.kioschool.kioschoolapi.global.error.ErrorCode
+import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.support.TransactionSynchronization
@@ -78,6 +85,23 @@ class InquiryService(
         return inquiry
     }
 
+    fun getInquiries(status: InquiryStatus?, page: Int, size: Int): Page<Inquiry> {
+        val pageable = PageRequest.of(
+            page,
+            size.coerceIn(1, MAX_PAGE_SIZE),
+            Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id"))
+        )
+
+        return if (status == null) inquiryRepository.findAll(pageable)
+        else inquiryRepository.findAllByStatus(status, pageable)
+    }
+
+    fun getInquiry(inquiryId: Long): Inquiry =
+        inquiryRepository.findByIdOrNull(inquiryId)
+            ?: throw CustomException(ErrorCode.INQUIRY_NOT_FOUND)
+
+    fun getImageAccessUrl(storageKey: String): String = s3Service.getPublicUrl(storageKey)
+
     /**
      * 업로드는 성공했는데 커밋이 실패하는 경우를 잡는다. 이게 없으면 DB에 기록이 없는
      * S3 파일이 영구히 남고 파기 스케줄러도 그것을 찾지 못한다.
@@ -100,5 +124,9 @@ class InquiryService(
             runCatching { s3Service.deleteByKey(key) }
                 .onFailure { log.error("Failed to delete orphaned inquiry image {}", key, it) }
         }
+    }
+
+    companion object {
+        const val MAX_PAGE_SIZE = 100
     }
 }
