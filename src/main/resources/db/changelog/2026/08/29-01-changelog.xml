@@ -73,6 +73,12 @@
       referencedTableName="inquiry" referencedColumnNames="id"/>
   </changeSet>
 
+  <changeSet author="ji-inpark" id="inquiry-4">
+    <createIndex indexName="idx_inquiry_image_inquiry_id" tableName="inquiry_image">
+      <column name="inquiry_id"/>
+    </createIndex>
+  </changeSet>
+
   <changeSet author="ji-inpark" id="inquiry-3">
     <createTable tableName="inquiry_reply">
       <column autoIncrement="true" name="id" type="BIGINT">
