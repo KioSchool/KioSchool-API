@@ -141,7 +141,7 @@ class InquiryService(
     }
 
     private fun validatePending(inquiry: Inquiry) {
-        when (inquiry.status) {
+        val ignored: Unit = when (inquiry.status) {
             InquiryStatus.ANSWERED -> throw CustomException(ErrorCode.INQUIRY_ALREADY_ANSWERED)
             InquiryStatus.CLOSED -> throw CustomException(ErrorCode.INQUIRY_ALREADY_CLOSED)
             InquiryStatus.PENDING -> Unit
