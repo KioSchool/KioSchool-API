@@ -1,10 +1,12 @@
 package com.kioschool.kioschoolapi.domain.workspace.dto.request
 
 import com.kioschool.kioschoolapi.global.common.interfaces.WorkspaceAware
-import org.hibernate.validator.constraints.Length
+import jakarta.validation.constraints.Max
+import jakarta.validation.constraints.Min
 
-class UpdateTableCountRequestBody(
+data class UpdateTableCountRequestBody(
     override val workspaceId: Long,
-    @field:Length(min = 1, max = 100, message = "테이블 개수는 1 ~ 100 사이로 입력해주세요.")
+    @field:Min(1, message = "테이블 개수는 1개 이상이어야 합니다.")
+    @field:Max(100, message = "테이블 개수는 100개 이하여야 합니다.")
     val tableCount: Int
 ) : WorkspaceAware

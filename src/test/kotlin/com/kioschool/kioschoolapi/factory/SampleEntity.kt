@@ -207,6 +207,19 @@ object SampleEntity {
         tableHash = "testHash"
     )
 
+    fun workspaceTableWithId(
+        id: Long,
+        tableNumber: Int = 1,
+        positionX: Int? = null,
+        positionY: Int? = null
+    ) = WorkspaceTable(
+        workspace = workspace,
+        tableNumber = tableNumber,
+        tableHash = "testHash$tableNumber",
+        positionX = positionX,
+        positionY = positionY
+    ).apply { setId(id) }
+
     val testSession1 = OrderSession(
         workspace = workspace,
         tableNumber = 1,
