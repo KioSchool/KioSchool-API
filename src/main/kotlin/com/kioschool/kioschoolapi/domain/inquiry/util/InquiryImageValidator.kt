@@ -13,6 +13,15 @@ import org.springframework.web.multipart.MultipartFile
  * 디코딩(scrimage) 방식은 쓰지 않는다. 인증 없는 공개 엔드포인트에서 압축 해제 시
  * 거대해지는 이미지(decompression bomb)를 받으면 OOM으로 서버가 죽는다.
  * 서명 검사는 앞 12바이트만 읽으므로 파일 크기와 무관하게 상수 시간이다.
+ *
+ * 다만 이 검증은 파일 앞부분의 서명만 확인할 뿐, 나머지 바이트에 대해서는 아무것도
+ * 보장하지 않는다. 유효한 PNG/JPEG/WebP 서명 뒤에 임의의 바이트(HTML, 스크립트 등)를
+ * 이어붙인 폴리글랏(polyglot) 파일도 이 검증을 통과한다. 따라서 이 검증을 통과한
+ * 파일이라도 브라우저가 스니핑해 실행할 수 있는 Content-Type이나
+ * `Content-Disposition: inline`으로 그대로 서빙해서는 안 되며, 저장 경로에
+ * `file.originalFilename`을 신뢰해서도 안 된다(이후 저장 단계에서 UUID 기반 저장 키를
+ * 생성하고, 파일명이 아닌 이 검증기가 판별한 실제 타입으로 S3 Content-Type을 명시적으로
+ * 설정하는 것도 같은 이유다).
  */
 object InquiryImageValidator {
     const val MAX_IMAGE_COUNT = 5

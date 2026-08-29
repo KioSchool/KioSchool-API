@@ -71,6 +71,11 @@ class InquiryImageValidatorTest : DescribeSpec({
             ex.errorCode shouldBe ErrorCode.INQUIRY_IMAGE_TOO_LARGE
         }
 
+        it("정확히 5MB이면 허용한다") {
+            val files = listOf(file("a.png", pngHeader, size = InquiryImageValidator.MAX_IMAGE_SIZE_BYTES))
+            InquiryImageValidator.validate(files).size shouldBe 1
+        }
+
         it("확장자만 png인 HTML 파일은 INQUIRY_IMAGE_TYPE_NOT_ALLOWED") {
             val files = listOf(file("evil.png", "<html><script>".toByteArray()))
             val ex = shouldThrow<CustomException> { InquiryImageValidator.validate(files) }
@@ -87,6 +92,18 @@ class InquiryImageValidatorTest : DescribeSpec({
             val result = InquiryImageValidator.validate(listOf(file("shot.PNG", pngHeader)))
             result[0].contentType shouldBe "image/png"
             result[0].extension shouldBe "png"
+        }
+
+        it("JPEG 파일을 검증한다") {
+            val result = InquiryImageValidator.validate(listOf(file("shot.jpg", jpegHeader)))
+            result[0].contentType shouldBe "image/jpeg"
+            result[0].extension shouldBe "jpeg"
+        }
+
+        it("WebP 파일을 검증한다") {
+            val result = InquiryImageValidator.validate(listOf(file("shot.webp", webpHeader)))
+            result[0].contentType shouldBe "image/webp"
+            result[0].extension shouldBe "webp"
         }
     }
 })
