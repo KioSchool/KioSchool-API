@@ -87,7 +87,7 @@ class InquiryService(
 
     fun getInquiries(status: InquiryStatus?, page: Int, size: Int): Page<Inquiry> {
         val pageable = PageRequest.of(
-            page,
+            page.coerceAtLeast(0),
             size.coerceIn(1, MAX_PAGE_SIZE),
             Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id"))
         )
