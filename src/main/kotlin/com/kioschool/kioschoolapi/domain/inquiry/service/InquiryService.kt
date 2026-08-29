@@ -140,6 +140,21 @@ class InquiryService(
         return inquiryRepository.save(inquiry)
     }
 
+    @Transactional(rollbackFor = [Exception::class])
+    fun closeInquiry(inquiryId: Long, closedReason: String?): Inquiry {
+        val inquiry = inquiryRepository.findByIdForUpdate(inquiryId)
+            ?: throw CustomException(ErrorCode.INQUIRY_NOT_FOUND)
+        validatePending(inquiry)
+
+        val closedAt = LocalDateTime.now()
+        inquiry.status = InquiryStatus.CLOSED
+        inquiry.closedAt = closedAt
+        inquiry.closedReason = closedReason
+        inquiry.purgeAt = closedAt.plusDays(resolvedRetentionDays)
+
+        return inquiryRepository.save(inquiry)
+    }
+
     private fun validatePending(inquiry: Inquiry) {
         val ignored: Unit = when (inquiry.status) {
             InquiryStatus.ANSWERED -> throw CustomException(ErrorCode.INQUIRY_ALREADY_ANSWERED)

@@ -2,6 +2,7 @@ package com.kioschool.kioschoolapi.domain.inquiry.controller
 
 import com.kioschool.kioschoolapi.domain.inquiry.dto.common.InquiryDetailDto
 import com.kioschool.kioschoolapi.domain.inquiry.dto.common.InquirySummaryDto
+import com.kioschool.kioschoolapi.domain.inquiry.dto.request.CloseInquiryRequestBody
 import com.kioschool.kioschoolapi.domain.inquiry.dto.request.ReplyInquiryRequestBody
 import com.kioschool.kioschoolapi.domain.inquiry.enum.InquiryStatus
 import com.kioschool.kioschoolapi.domain.inquiry.facade.InquiryFacade
@@ -44,5 +45,14 @@ class SuperAdminInquiryController(
         @RequestBody @Valid body: ReplyInquiryRequestBody,
     ): InquiryDetailDto {
         return inquiryFacade.replyToInquiry(username, inquiryId, body)
+    }
+
+    @Operation(summary = "문의 종결", description = "답변 없이 문의를 종결합니다. 메일은 발송하지 않습니다.")
+    @PostMapping("/inquiries/{inquiryId}/close")
+    fun closeInquiry(
+        @PathVariable inquiryId: Long,
+        @RequestBody @Valid body: CloseInquiryRequestBody,
+    ): InquiryDetailDto {
+        return inquiryFacade.closeInquiry(inquiryId, body)
     }
 }

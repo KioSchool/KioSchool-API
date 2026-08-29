@@ -4,6 +4,7 @@ import com.kioschool.kioschoolapi.domain.inquiry.dto.common.CreateInquiryRespons
 import com.kioschool.kioschoolapi.domain.inquiry.dto.common.InquiryDetailDto
 import com.kioschool.kioschoolapi.domain.inquiry.dto.common.InquiryImageDto
 import com.kioschool.kioschoolapi.domain.inquiry.dto.common.InquirySummaryDto
+import com.kioschool.kioschoolapi.domain.inquiry.dto.request.CloseInquiryRequestBody
 import com.kioschool.kioschoolapi.domain.inquiry.dto.request.CreateInquiryRequestBody
 import com.kioschool.kioschoolapi.domain.inquiry.dto.request.ReplyInquiryRequestBody
 import com.kioschool.kioschoolapi.domain.inquiry.entity.Inquiry
@@ -72,6 +73,9 @@ class InquiryFacade(
 
         return toDetailDto(inquiry)
     }
+
+    fun closeInquiry(inquiryId: Long, body: CloseInquiryRequestBody): InquiryDetailDto =
+        toDetailDto(inquiryService.closeInquiry(inquiryId, body.normalizedClosedReason()))
 
     private fun toDetailDto(inquiry: Inquiry): InquiryDetailDto {
         val images = inquiry.images.map {
