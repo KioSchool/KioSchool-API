@@ -9,6 +9,7 @@ import com.kioschool.kioschoolapi.domain.inquiry.util.InquiryImageValidator
 import com.kioschool.kioschoolapi.global.template.TemplateService
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
 
 @Component
@@ -18,6 +19,7 @@ class InquiryFacade(
     private val templateService: TemplateService,
     private val eventPublisher: ApplicationEventPublisher,
 ) {
+    @Transactional(rollbackFor = [Exception::class])
     fun createInquiry(
         body: CreateInquiryRequestBody,
         imageFiles: List<MultipartFile>?,

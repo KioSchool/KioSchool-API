@@ -73,7 +73,6 @@ class DiscordService(
         send(message)
     }
 
-    @Async
     fun sendInquiryCreated(inquiry: Inquiry) {
         val message =
             """## [신규 문의]

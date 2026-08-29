@@ -27,7 +27,7 @@ class InquiryCreatedListener(
     private val log = LoggerFactory.getLogger(javaClass)
 
     @Async("taskExecutor")
-    @Transactional
+    @Transactional(readOnly = true)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     fun on(event: InquiryCreatedEvent) {
         val inquiry = inquiryRepository.findByIdOrNull(event.inquiryId) ?: return
@@ -37,7 +37,7 @@ class InquiryCreatedListener(
 
         runCatching {
             val template = templateService.getInquiryReceivedEmailTemplate(inquiry.id, inquiry.title)
-            emailService.sendEmail(inquiry.replyEmail, RECEIVED_SUBJECT, template)
+            emailService.sendEmailSync(inquiry.replyEmail, RECEIVED_SUBJECT, template)
         }.onFailure { log.error("Received-confirmation email failed for inquiryId={}", inquiry.id, it) }
     }
 

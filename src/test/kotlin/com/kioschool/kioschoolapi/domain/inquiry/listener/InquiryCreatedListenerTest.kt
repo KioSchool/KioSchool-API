@@ -27,12 +27,12 @@ class InquiryCreatedListenerTest : DescribeSpec({
             every { inquiryRepository.findById(5L) } returns Optional.of(inquiry)
             every { discordService.sendInquiryCreated(inquiry) } just Runs
             every { templateService.getInquiryReceivedEmailTemplate(5L, inquiry.title) } returns "html"
-            every { emailService.sendEmail("a@b.com", any(), "html") } just Runs
+            every { emailService.sendEmailSync("a@b.com", any(), "html") } just Runs
 
             sut.on(InquiryCreatedEvent(5L))
 
             verify(exactly = 1) { discordService.sendInquiryCreated(inquiry) }
-            verify(exactly = 1) { emailService.sendEmail("a@b.com", any(), "html") }
+            verify(exactly = 1) { emailService.sendEmailSync("a@b.com", any(), "html") }
         }
 
         it("Discord가 실패해도 접수 확인 메일은 보낸다") {
@@ -40,11 +40,11 @@ class InquiryCreatedListenerTest : DescribeSpec({
             every { inquiryRepository.findById(5L) } returns Optional.of(inquiry)
             every { discordService.sendInquiryCreated(any()) } throws RuntimeException("discord down")
             every { templateService.getInquiryReceivedEmailTemplate(any(), any()) } returns "html"
-            every { emailService.sendEmail(any(), any(), any()) } just Runs
+            every { emailService.sendEmailSync(any(), any(), any()) } just Runs
 
             shouldNotThrowAny { sut.on(InquiryCreatedEvent(5L)) }
 
-            verify(exactly = 1) { emailService.sendEmail("a@b.com", any(), "html") }
+            verify(exactly = 1) { emailService.sendEmailSync("a@b.com", any(), "html") }
         }
 
         it("메일 발송이 실패해도 예외를 밖으로 던지지 않는다") {
@@ -52,7 +52,7 @@ class InquiryCreatedListenerTest : DescribeSpec({
             every { inquiryRepository.findById(5L) } returns Optional.of(inquiry)
             every { discordService.sendInquiryCreated(any()) } just Runs
             every { templateService.getInquiryReceivedEmailTemplate(any(), any()) } returns "html"
-            every { emailService.sendEmail(any(), any(), any()) } throws RuntimeException("smtp down")
+            every { emailService.sendEmailSync(any(), any(), any()) } throws RuntimeException("smtp down")
 
             shouldNotThrowAny { sut.on(InquiryCreatedEvent(5L)) }
         }
