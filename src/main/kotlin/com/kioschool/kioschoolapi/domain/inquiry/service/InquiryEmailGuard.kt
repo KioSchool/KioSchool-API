@@ -4,6 +4,7 @@ import com.kioschool.kioschoolapi.global.error.ErrorCode
 import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.dao.DataAccessException
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.data.redis.core.ValueOperations
 import org.springframework.stereotype.Component
@@ -30,21 +31,29 @@ class InquiryEmailGuard(
     private val log = LoggerFactory.getLogger(javaClass)
 
     fun check(normalizedEmail: String) {
-        val key = "$KEY_PREFIX$normalizedEmail"
+        val key = "$KEY_PREFIX${normalizedEmail.trim().lowercase()}"
 
         val count = try {
             valueOperations.increment(key, 1)
-        } catch (e: Exception) {
+        } catch (e: DataAccessException) {
             log.warn("Inquiry email guard skipped (redis unavailable): {}", e.message)
             return
         } ?: return
 
-        if (count == 1L) {
-            runCatching { redisTemplate.expire(key, Duration.ofMinutes(windowMinutes)) }
-                .onFailure { log.warn("Failed to set TTL on {}: {}", key, it.message) }
-        }
+        ensureTtl(key)
 
         if (count > maxCount) throw CustomException(ErrorCode.INQUIRY_RATE_LIMIT_EXCEEDED)
+    }
+
+    private fun ensureTtl(key: String) {
+        runCatching {
+            // getExpire returns a negative value when the key has no TTL (or doesn't exist).
+            // Checking every call, not just on count==1, self-heals a TTL that failed to
+            // get set on a prior request instead of leaving the key to live forever.
+            if (redisTemplate.getExpire(key) < 0) {
+                redisTemplate.expire(key, Duration.ofMinutes(windowMinutes))
+            }
+        }.onFailure { log.warn("Failed to set TTL on {}: {}", key, it.message) }
     }
 
     companion object {

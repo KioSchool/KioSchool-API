@@ -22,6 +22,7 @@ class InquiryEmailGuardTest : DescribeSpec({
     describe("check") {
         it("첫 요청이면 TTL을 건다") {
             every { valueOperations.increment("inquiry:guard:email:a@b.com", 1) } returns 1L
+            every { redisTemplate.getExpire("inquiry:guard:email:a@b.com") } returns -2L
             every { redisTemplate.expire("inquiry:guard:email:a@b.com", Duration.ofMinutes(60)) } returns true
 
             shouldNotThrowAny { sut.check("a@b.com") }
@@ -33,14 +34,23 @@ class InquiryEmailGuardTest : DescribeSpec({
 
         it("두 번째 요청부터는 TTL을 다시 걸지 않는다") {
             every { valueOperations.increment("inquiry:guard:email:a@b.com", 1) } returns 2L
+            every { redisTemplate.getExpire("inquiry:guard:email:a@b.com") } returns 100L
 
             shouldNotThrowAny { sut.check("a@b.com") }
 
             verify(exactly = 0) { redisTemplate.expire(any(), any<Duration>()) }
         }
 
+        it("정확히 상한이면 통과한다") {
+            every { valueOperations.increment("inquiry:guard:email:a@b.com", 1) } returns 3L
+            every { redisTemplate.getExpire("inquiry:guard:email:a@b.com") } returns 100L
+
+            shouldNotThrowAny { sut.check("a@b.com") }
+        }
+
         it("상한을 넘으면 INQUIRY_RATE_LIMIT_EXCEEDED") {
             every { valueOperations.increment("inquiry:guard:email:a@b.com", 1) } returns 4L
+            every { redisTemplate.getExpire("inquiry:guard:email:a@b.com") } returns 100L
 
             val ex = shouldThrow<CustomException> { sut.check("a@b.com") }
             ex.errorCode shouldBe ErrorCode.INQUIRY_RATE_LIMIT_EXCEEDED
