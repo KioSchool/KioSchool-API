@@ -1,5 +1,6 @@
 package com.kioschool.kioschoolapi.global.discord.service
 
+import com.kioschool.kioschoolapi.domain.inquiry.entity.Inquiry
 import com.kioschool.kioschoolapi.domain.user.entity.User
 import com.kioschool.kioschoolapi.domain.workspace.entity.Workspace
 import com.kioschool.kioschoolapi.global.discord.api.DiscordApi
@@ -67,6 +68,20 @@ class DiscordService(
             |기준일: $referenceDate
             |성공: ${successCount}건
             |실패 워크스페이스: $failedSection
+            """.trimMargin()
+
+        send(message)
+    }
+
+    @Async
+    fun sendInquiryCreated(inquiry: Inquiry) {
+        val message =
+            """## [신규 문의]
+            |문의 ID: ${inquiry.id}
+            |제목: ${inquiry.title}
+            |첨부 이미지: ${inquiry.images.size}개
+            |접수 시각: ${inquiry.createdAt}
+            |관리자 확인: $baseUrl/super-admin/inquiries/${inquiry.id}
             """.trimMargin()
 
         send(message)
