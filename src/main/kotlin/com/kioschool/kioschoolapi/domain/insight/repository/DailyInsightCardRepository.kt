@@ -7,7 +7,6 @@ import java.util.Optional
 
 interface DailyInsightCardRepository : JpaRepository<DailyInsightCard, Long> {
     fun findByWorkspaceIdAndReferenceDate(workspaceId: Long, referenceDate: LocalDate): Optional<DailyInsightCard>
-    fun findTopByWorkspaceIdOrderByReferenceDateDesc(workspaceId: Long): Optional<DailyInsightCard>
     fun findAllByWorkspaceIdAndReferenceDateGreaterThanEqualOrderByReferenceDateDesc(
         workspaceId: Long,
         referenceDate: LocalDate
