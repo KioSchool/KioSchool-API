@@ -13,10 +13,6 @@ import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.event.TransactionPhase
 import org.springframework.transaction.event.TransactionalEventListener
 
-/**
- * 접수 커밋 이후의 부수 작업. 여기서 무엇이 실패해도 이미 반환된 201에는 영향이 없고,
- * 고객이 문의를 다시 접수할 필요도 없다.
- */
 @Component
 class InquiryCreatedListener(
     private val inquiryRepository: InquiryRepository,

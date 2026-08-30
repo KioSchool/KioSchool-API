@@ -34,7 +34,6 @@ class InquiryService(
     private val resolvedRetentionDays: Long,
     private val inquiryRepository: InquiryRepository,
     private val s3Service: S3Service,
-    // 아래 둘은 Task 12(답변 발송)에서 쓴다. 생성자 시그니처를 두 번 바꾸지 않으려고 미리 받는다.
     private val userService: UserService,
     private val emailService: EmailService,
 ) {
@@ -81,8 +80,6 @@ class InquiryService(
             throw e
         }
 
-        // 명시적 재저장이 필요 없다: images는 cascade = ALL이고 이 메서드는 @Transactional이므로
-        // 커밋 시점의 dirty checking으로 자동 반영된다. (managed 엔티티인 inquiry를 그대로 반환)
         return inquiry
     }
 

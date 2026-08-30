@@ -60,7 +60,6 @@ class InquiryFacade(
         body: ReplyInquiryRequestBody,
     ): InquiryDetailDto {
         val content = body.normalizedContent()
-        // 이스케이프는 템플릿의 th:text가 처리한다. 여기서 직접 escape하거나 <br>을 만들지 않는다.
         val emailBody = templateService.getInquiryReplyEmailTemplate(content)
 
         val inquiry = inquiryService.replyToInquiry(
