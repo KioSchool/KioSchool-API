@@ -27,15 +27,21 @@ class TemplateServiceInquiryTest : DescribeSpec({
     }
 
     describe("getInquiryReplyEmailTemplate") {
-        it("답변 본문을 컨텍스트에 담는다") {
+        it("답변 본문과 원본 문의 내용을 컨텍스트에 담는다") {
             val contextSlot = slot<Context>()
             every {
                 templateEngine.process("inquiryReplyEmail", capture(contextSlot))
             } returns "rendered"
 
-            sut.getInquiryReplyEmailTemplate("확인했습니다.\n감사합니다.") shouldBe "rendered"
+            sut.getInquiryReplyEmailTemplate(
+                content = "확인했습니다.\n감사합니다.",
+                inquiryTitle = "결제 문의",
+                inquiryContent = "결제 후 화면이 멈췄습니다.",
+            ) shouldBe "rendered"
 
             contextSlot.captured.getVariable("content") shouldBe "확인했습니다.\n감사합니다."
+            contextSlot.captured.getVariable("inquiryTitle") shouldBe "결제 문의"
+            contextSlot.captured.getVariable("inquiryContent") shouldBe "결제 후 화면이 멈췄습니다."
         }
     }
 })

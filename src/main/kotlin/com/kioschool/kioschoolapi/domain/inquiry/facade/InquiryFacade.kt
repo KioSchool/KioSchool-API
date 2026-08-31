@@ -59,8 +59,13 @@ class InquiryFacade(
         inquiryId: Long,
         body: ReplyInquiryRequestBody,
     ): InquiryDetailDto {
+        val originalInquiry = inquiryService.getInquiry(inquiryId)
         val content = body.normalizedContent()
-        val emailBody = templateService.getInquiryReplyEmailTemplate(content)
+        val emailBody = templateService.getInquiryReplyEmailTemplate(
+            content = content,
+            inquiryTitle = originalInquiry.title,
+            inquiryContent = originalInquiry.content,
+        )
 
         val inquiry = inquiryService.replyToInquiry(
             username = username,
