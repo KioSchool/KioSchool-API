@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS"
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+  <changeSet author="ji-inpark" id="inquiry-1">
+    <createTable tableName="inquiry">
+      <column autoIncrement="true" name="id" type="BIGINT">
+        <constraints nullable="false" primaryKey="true"/>
+      </column>
+      <column name="title" type="VARCHAR(100)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="content" type="TEXT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="reply_email" type="VARCHAR(255)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="status" type="VARCHAR(20)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="privacy_agreed_at" type="TIMESTAMP WITHOUT TIME ZONE">
+        <constraints nullable="false"/>
+      </column>
+      <column name="purge_at" type="TIMESTAMP WITHOUT TIME ZONE">
+        <constraints nullable="false"/>
+      </column>
+      <column name="answered_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+      <column name="closed_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+      <column name="closed_reason" type="VARCHAR(200)"/>
+      <column name="created_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+      <column name="updated_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+    </createTable>
+    <createIndex indexName="idx_inquiry_purge_at" tableName="inquiry">
+      <column name="purge_at"/>
+    </createIndex>
+    <createIndex indexName="idx_inquiry_status_created_at" tableName="inquiry">
+      <column name="status"/>
+      <column name="created_at"/>
+    </createIndex>
+  </changeSet>
+
+  <changeSet author="ji-inpark" id="inquiry-2">
+    <createTable tableName="inquiry_image">
+      <column autoIncrement="true" name="id" type="BIGINT">
+        <constraints nullable="false" primaryKey="true"/>
+      </column>
+      <column name="inquiry_id" type="BIGINT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="storage_key" type="VARCHAR(512)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="original_file_name" type="VARCHAR(255)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="content_type" type="VARCHAR(100)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="size" type="BIGINT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="created_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+      <column name="updated_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+    </createTable>
+    <addForeignKeyConstraint
+      baseTableName="inquiry_image" baseColumnNames="inquiry_id"
+      constraintName="fk_inquiry_image_inquiry"
+      referencedTableName="inquiry" referencedColumnNames="id"/>
+  </changeSet>
+
+  <changeSet author="ji-inpark" id="inquiry-4">
+    <createIndex indexName="idx_inquiry_image_inquiry_id" tableName="inquiry_image">
+      <column name="inquiry_id"/>
+    </createIndex>
+  </changeSet>
+
+  <changeSet author="ji-inpark" id="inquiry-3">
+    <createTable tableName="inquiry_reply">
+      <column autoIncrement="true" name="id" type="BIGINT">
+        <constraints nullable="false" primaryKey="true"/>
+      </column>
+      <column name="inquiry_id" type="BIGINT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="subject" type="VARCHAR(150)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="content" type="TEXT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="recipient_email" type="VARCHAR(255)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="responded_by_id" type="BIGINT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="sent_at" type="TIMESTAMP WITHOUT TIME ZONE">
+        <constraints nullable="false"/>
+      </column>
+      <column name="created_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+      <column name="updated_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+    </createTable>
+    <addUniqueConstraint
+      tableName="inquiry_reply" columnNames="inquiry_id"
+      constraintName="uk_inquiry_reply_inquiry"/>
+    <addForeignKeyConstraint
+      baseTableName="inquiry_reply" baseColumnNames="inquiry_id"
+      constraintName="fk_inquiry_reply_inquiry"
+      referencedTableName="inquiry" referencedColumnNames="id"/>
+    <addForeignKeyConstraint
+      baseTableName="inquiry_reply" baseColumnNames="responded_by_id"
+      constraintName="fk_inquiry_reply_user"
+      referencedTableName="user" referencedColumnNames="id"/>
+  </changeSet>
+
+</databaseChangeLog>

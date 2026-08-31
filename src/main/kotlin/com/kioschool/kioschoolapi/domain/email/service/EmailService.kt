@@ -44,23 +44,30 @@ class EmailService(
         if (!isEmailDomainVerified(emailAddress)) throw CustomException(ErrorCode.NOT_VERIFIED_EMAIL_DOMAIN)
     }
 
-    @Async
-    fun sendEmail(address: String, subject: String, text: String) {
-        val message = javaMailSender.createMimeMessage()
-        val helper = MimeMessageHelper(message, true, "UTF-8")
-
-        helper.setFrom(fromAddress)
-
-        helper.setTo(address)
-        helper.setSubject(subject)
-        helper.setText(text, true)
-
+    /**
+     * 동기 발송. 발송 성공을 트랜잭션 커밋 조건으로 삼아야 하는 곳(문의 답변)에서 쓴다.
+     * [sendEmail]은 @Async라 즉시 리턴하므로 성공 여부를 호출자가 알 수 없다.
+     */
+    fun sendEmailSync(address: String, subject: String, text: String) {
         try {
+            val message = javaMailSender.createMimeMessage()
+            val helper = MimeMessageHelper(message, true, "UTF-8")
+
+            helper.setFrom(fromAddress)
+            helper.setTo(address)
+            helper.setSubject(subject)
+            helper.setText(text, true)
+
             javaMailSender.send(message)
         } catch (e: Exception) {
             log.error("Failed to send email to {}", address, e)
             throw CustomException(ErrorCode.EMAIL_SEND_FAILURE, cause = e)
         }
+    }
+
+    @Async
+    fun sendEmail(address: String, subject: String, text: String) {
+        sendEmailSync(address, subject, text)
     }
 
     fun isRegisterEmailVerified(address: String): Boolean {

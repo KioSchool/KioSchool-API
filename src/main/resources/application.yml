@@ -12,7 +12,7 @@ spring:
   servlet:
     multipart:
       max-file-size: 20MB
-      max-request-size: 20MB
+      max-request-size: 30MB
   datasource:
     hikari:
       maximum-pool-size: 10 # 고정 풀 크기 권장 (CPU 코어수, DB 스펙에 맞춰 조절)
@@ -44,6 +44,9 @@ spring:
       mail:
         smtp:
           auth: true
+          connectiontimeout: 5000
+          timeout: 10000
+          writetimeout: 10000
           ssl:
             enable: true
 jwt:
@@ -99,6 +102,15 @@ management:
 kio-school:
   og:
     fallback-image-url: "https://kio-school.com/preview.png"
+
+inquiry:
+  guard:
+    email:
+      max-count: 3
+      window-minutes: 60
+  retention:
+    unanswered-days: 180
+    resolved-days: 90
 
 kioschool:
   insight:

@@ -36,4 +36,22 @@ class TemplateService(
 
         return templateEngine.process("emailDomainAddedEmail", context)
     }
+
+    fun getInquiryReceivedEmailTemplate(inquiryId: Long, title: String): String {
+        val context = Context().apply {
+            setVariable("inquiryId", inquiryId)
+            setVariable("title", title)
+        }
+
+        return templateEngine.process("inquiryReceivedEmail", context)
+    }
+
+    fun getInquiryReplyEmailTemplate(content: String): String {
+        val context = Context().apply {
+            setVariable("content", content)
+            setVariable("baseUrl", baseUrl)
+        }
+
+        return templateEngine.process("inquiryReplyEmail", context)
+    }
 }

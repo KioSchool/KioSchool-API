@@ -75,6 +75,31 @@ class S3Service(
     fun getPublicUrl(path: String): String =
         amazonS3Client.getUrl(bucketName, path).toString()
 
+    /**
+     * 원본을 그대로 올린다. [uploadResizedWebpImage]는 400px로 축소하므로
+     * 스크린샷 증빙에는 쓸 수 없다.
+     *
+     * contentLength를 메타데이터에 넣지 않으면 SDK가 스트림 전체를 메모리에 버퍼링하며 경고를 남긴다.
+     */
+    fun uploadMultipartFile(file: MultipartFile, path: String, contentType: String): String {
+        val metadata = ObjectMetadata().apply {
+            contentLength = file.size
+            this.contentType = contentType
+        }
+        file.inputStream.use { amazonS3Client.putObject(bucketName, path, it, metadata) }
+        return getPublicUrl(path)
+    }
+
+    /**
+     * 키로 직접 지운다. [deleteFile]은 URL에서 버킷명을 잘라 키를 역산하므로
+     * 키를 저장하는 쪽(문의 첨부)에서는 쓸 수 없다.
+     *
+     * 이미 없는 객체에 대한 삭제도 성공으로 처리되므로 재실행이 멱등하다.
+     */
+    fun deleteByKey(key: String) {
+        amazonS3Client.deleteObject(bucketName, key)
+    }
+
     companion object {
         const val DOWNLOAD_CONNECT_TIMEOUT_MS = 5_000
         const val DOWNLOAD_READ_TIMEOUT_MS = 30_000
