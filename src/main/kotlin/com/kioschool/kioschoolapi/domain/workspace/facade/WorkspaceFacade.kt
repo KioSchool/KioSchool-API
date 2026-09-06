@@ -10,6 +10,7 @@ import com.kioschool.kioschoolapi.domain.workspace.dto.common.TablePositionUpdat
 import com.kioschool.kioschoolapi.domain.workspace.dto.common.WorkspaceAdminDetailDto
 import com.kioschool.kioschoolapi.domain.workspace.dto.common.WorkspaceDto
 import com.kioschool.kioschoolapi.domain.workspace.dto.common.WorkspaceTableDto
+import com.kioschool.kioschoolapi.domain.workspace.dto.request.UpdateWorkspaceImageRequestBody
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.global.cache.constant.CacheNames
 import com.kioschool.kioschoolapi.global.discord.service.DiscordService
@@ -148,7 +149,7 @@ class WorkspaceFacade(
     fun updateWorkspaceImage(
         username: String,
         workspaceId: Long,
-        imageIds: List<Long?>,
+        body: UpdateWorkspaceImageRequestBody,
         imageFiles: List<MultipartFile>,
     ): WorkspaceDto {
         val user = userService.getUser(username)
@@ -156,10 +157,12 @@ class WorkspaceFacade(
 
         workspaceService.checkCanAccessWorkspace(user, workspace)
 
-        val deleteImages = workspace.images.filter { !imageIds.contains(it.id) }
+        val slots = body.toSlots(imageFiles)
+
+        val deleteImages = workspace.images.filter { !body.imageIds.contains(it.id) }
         workspaceService.deleteWorkspaceImages(workspace, deleteImages)
 
-        return WorkspaceDto.of(workspaceService.saveWorkspaceImages(workspace, imageFiles))
+        return WorkspaceDto.of(workspaceService.applyImageSlots(workspace, slots))
     }
 
     fun getAllWorkspaceTables(username: String, workspaceId: Long): List<WorkspaceTableDto> {
