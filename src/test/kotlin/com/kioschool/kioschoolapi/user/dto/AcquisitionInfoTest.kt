@@ -49,5 +49,13 @@ class AcquisitionInfoTest : DescribeSpec({
             result.channel shouldBe null
             result.context shouldBe "source=instagram"
         }
+
+        it("should convert blank context to null") {
+            val info = AcquisitionInfo(AcquisitionChannel.INSTAGRAM, null, "   ")
+
+            val result = info.normalized()
+
+            result.context shouldBe null
+        }
     }
 })
