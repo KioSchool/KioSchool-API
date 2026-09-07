@@ -99,25 +99,6 @@ class UserServiceTest : DescribeSpec({
         }
     }
 
-    describe("saveUser with parameters") {
-        it("should save user") {
-            val loginId = "test"
-            val loginPassword = "test"
-            val name = "test"
-            val email = "test@test.com"
-
-            // Mock
-            every { repository.save(any<User>()) } returns SampleEntity.user
-            every { passwordEncoder.encode(loginPassword) } returns "encoded password"
-
-            // Act
-            sut.saveUser(loginId, loginPassword, name, email) shouldBe SampleEntity.user
-
-            // Assert
-            verify { repository.save(any<User>()) }
-        }
-    }
-
     describe("saveUser") {
         it("should persist acquisition info") {
             val acquisition = AcquisitionInfo(

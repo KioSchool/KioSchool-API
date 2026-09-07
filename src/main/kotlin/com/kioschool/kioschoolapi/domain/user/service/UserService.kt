@@ -30,19 +30,6 @@ class UserService(
         return userRepository.save(user)
     }
 
-    fun saveUser(loginId: String, loginPassword: String, name: String, email: String): User {
-        return userRepository.save(
-            User(
-                loginId = loginId,
-                loginPassword = passwordEncoder.encode(loginPassword),
-                name = name,
-                email = email,
-                role = UserRole.ADMIN,
-                members = mutableListOf()
-            )
-        )
-    }
-
     fun saveUser(
         loginId: String,
         loginPassword: String,

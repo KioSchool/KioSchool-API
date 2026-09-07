@@ -1,9 +1,11 @@
 package com.kioschool.kioschoolapi.user.facade
 
 import com.kioschool.kioschoolapi.domain.email.service.EmailService
+import com.kioschool.kioschoolapi.domain.user.dto.common.AcquisitionInfo
 import com.kioschool.kioschoolapi.domain.user.facade.UserFacade
 import com.kioschool.kioschoolapi.domain.user.service.UserService
 import com.kioschool.kioschoolapi.factory.SampleEntity
+import com.kioschool.kioschoolapi.global.common.enums.AcquisitionChannel
 import com.kioschool.kioschoolapi.global.common.enums.UserRole
 import com.kioschool.kioschoolapi.global.discord.service.DiscordService
 import com.kioschool.kioschoolapi.global.error.ErrorCode
@@ -11,6 +13,7 @@ import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import com.kioschool.kioschoolapi.global.security.JwtProvider
 import com.kioschool.kioschoolapi.global.template.TemplateService
 import io.kotest.core.spec.style.DescribeSpec
+import io.kotest.matchers.shouldBe
 import io.mockk.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.assertThrows
@@ -135,13 +138,14 @@ class UserFacadeTest : DescribeSpec({
                     loginId,
                     loginPassword,
                     name,
-                    email
+                    email,
+                    any()
                 )
             } returns SampleEntity.user
             every { discordService.sendUserRegister(any()) } just Runs
             every { jwtProvider.createToken(any()) } returns "token"
 
-            val result = sut.register(response, loginId, loginPassword, name, email)
+            val result = sut.register(response, loginId, loginPassword, name, email, AcquisitionInfo.EMPTY)
 
             assert(response.headerNames.contains("Set-Cookie"))
             assert(response.getHeaderValue("Set-Cookie") == "Authorization=token; Path=/; Secure; HttpOnly; SameSite=NONE")
@@ -150,9 +154,39 @@ class UserFacadeTest : DescribeSpec({
             verify { userService.validateLoginId(loginId) }
             verify { userService.validateEmail(email) }
             verify { emailService.deleteRegisterCode(email) }
-            verify { userService.saveUser(loginId, loginPassword, name, email) }
+            verify { userService.saveUser(loginId, loginPassword, name, email, any()) }
             verify { discordService.sendUserRegister(any()) }
             verify { jwtProvider.createToken(any()) }
+        }
+
+        it("should normalize acquisition info before saving") {
+            val loginId = "test"
+            val loginPassword = "test"
+            val name = "test"
+            val email = "test@test.com"
+            val response = MockHttpServletResponse()
+            // ETC가 아닌데 자유입력이 실려온 조합
+            val rawAcquisition = AcquisitionInfo(
+                AcquisitionChannel.INSTAGRAM,
+                "버려져야 하는 값",
+                "source=instagram"
+            )
+            val savedAcquisition = slot<AcquisitionInfo>()
+
+            every { userService.validateLoginId(loginId) } just Runs
+            every { userService.validateEmail(email) } just Runs
+            every { emailService.deleteRegisterCode(email) } just Runs
+            every {
+                userService.saveUser(loginId, loginPassword, name, email, capture(savedAcquisition))
+            } returns SampleEntity.user
+            every { discordService.sendUserRegister(any()) } just Runs
+            every { jwtProvider.createToken(any()) } returns "token"
+
+            sut.register(response, loginId, loginPassword, name, email, rawAcquisition)
+
+            savedAcquisition.captured.channel shouldBe AcquisitionChannel.INSTAGRAM
+            savedAcquisition.captured.channelEtc shouldBe null
+            savedAcquisition.captured.context shouldBe "source=instagram"
         }
 
         it("should throw exception when loginId is invalid") {
@@ -165,14 +199,14 @@ class UserFacadeTest : DescribeSpec({
             every { userService.validateLoginId(loginId) } throws CustomException(ErrorCode.DUPLICATE_LOGIN_ID)
 
             val ex = assertThrows<CustomException> {
-                sut.register(response, loginId, loginPassword, name, email)
+                sut.register(response, loginId, loginPassword, name, email, AcquisitionInfo.EMPTY)
             }
             assertEquals(ErrorCode.DUPLICATE_LOGIN_ID, ex.errorCode)
 
             verify { userService.validateLoginId(loginId) }
             verify(exactly = 0) { userService.validateEmail(any()) }
             verify(exactly = 0) { emailService.deleteRegisterCode(any()) }
-            verify(exactly = 0) { userService.saveUser(any(), any(), any(), any()) }
+            verify(exactly = 0) { userService.saveUser(any(), any(), any(), any(), any()) }
             verify(exactly = 0) { discordService.sendUserRegister(any()) }
             verify(exactly = 0) { jwtProvider.createToken(any()) }
         }
@@ -188,14 +222,14 @@ class UserFacadeTest : DescribeSpec({
             every { userService.validateEmail(email) } throws CustomException(ErrorCode.DUPLICATE_EMAIL)
 
             val ex = assertThrows<CustomException> {
-                sut.register(response, loginId, loginPassword, name, email)
+                sut.register(response, loginId, loginPassword, name, email, AcquisitionInfo.EMPTY)
             }
             assertEquals(ErrorCode.DUPLICATE_EMAIL, ex.errorCode)
 
             verify { userService.validateLoginId(loginId) }
             verify { userService.validateEmail(email) }
             verify(exactly = 0) { emailService.deleteRegisterCode(any()) }
-            verify(exactly = 0) { userService.saveUser(any(), any(), any(), any()) }
+            verify(exactly = 0) { userService.saveUser(any(), any(), any(), any(), any()) }
             verify(exactly = 0) { discordService.sendUserRegister(any()) }
             verify(exactly = 0) { jwtProvider.createToken(any()) }
         }
