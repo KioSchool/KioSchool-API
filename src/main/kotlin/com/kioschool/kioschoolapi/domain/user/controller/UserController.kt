@@ -57,7 +57,11 @@ class UserController(
             body.password,
             body.name,
             body.email,
-            AcquisitionInfo(body.acquisitionChannel, body.acquisitionChannelEtc, body.acquisitionContext)
+            AcquisitionInfo(
+                channel = body.acquisitionChannel,
+                channelEtc = body.acquisitionChannelEtc,
+                context = body.acquisitionContext
+            )
         )
     }
 

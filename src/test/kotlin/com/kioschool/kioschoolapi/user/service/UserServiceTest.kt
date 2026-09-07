@@ -99,7 +99,7 @@ class UserServiceTest : DescribeSpec({
         }
     }
 
-    describe("saveUser") {
+    describe("saveUser with acquisition") {
         it("should persist acquisition info") {
             val acquisition = AcquisitionInfo(
                 AcquisitionChannel.SENIOR_HANDOVER,
@@ -125,6 +125,7 @@ class UserServiceTest : DescribeSpec({
             sut.saveUser("test", "password", "테스트", "test@test.com", AcquisitionInfo.EMPTY)
 
             savedSlot.captured.acquisitionChannel shouldBe null
+            savedSlot.captured.acquisitionChannelEtc shouldBe null
             savedSlot.captured.acquisitionContext shouldBe null
         }
     }
