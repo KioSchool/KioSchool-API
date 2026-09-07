@@ -1,10 +1,12 @@
 package com.kioschool.kioschoolapi.user.service
 
 import com.kioschool.kioschoolapi.domain.email.service.EmailService
+import com.kioschool.kioschoolapi.domain.user.dto.common.AcquisitionInfo
 import com.kioschool.kioschoolapi.domain.user.entity.User
 import com.kioschool.kioschoolapi.domain.user.repository.UserRepository
 import com.kioschool.kioschoolapi.domain.user.service.UserService
 import com.kioschool.kioschoolapi.factory.SampleEntity
+import com.kioschool.kioschoolapi.global.common.enums.AcquisitionChannel
 import com.kioschool.kioschoolapi.global.common.enums.UserRole
 import com.kioschool.kioschoolapi.global.error.ErrorCode
 import com.kioschool.kioschoolapi.global.error.exception.CustomException
@@ -113,6 +115,36 @@ class UserServiceTest : DescribeSpec({
 
             // Assert
             verify { repository.save(any<User>()) }
+        }
+    }
+
+    describe("saveUser") {
+        it("should persist acquisition info") {
+            val acquisition = AcquisitionInfo(
+                AcquisitionChannel.SENIOR_HANDOVER,
+                null,
+                "source=instagram"
+            )
+            val savedSlot = slot<User>()
+            every { passwordEncoder.encode("password") } returns "encoded"
+            every { repository.save(capture(savedSlot)) } answers { savedSlot.captured }
+
+            sut.saveUser("test", "password", "테스트", "test@test.com", acquisition)
+
+            savedSlot.captured.acquisitionChannel shouldBe AcquisitionChannel.SENIOR_HANDOVER
+            savedSlot.captured.acquisitionChannelEtc shouldBe null
+            savedSlot.captured.acquisitionContext shouldBe "source=instagram"
+        }
+
+        it("should persist nulls when acquisition is empty") {
+            val savedSlot = slot<User>()
+            every { passwordEncoder.encode("password") } returns "encoded"
+            every { repository.save(capture(savedSlot)) } answers { savedSlot.captured }
+
+            sut.saveUser("test", "password", "테스트", "test@test.com", AcquisitionInfo.EMPTY)
+
+            savedSlot.captured.acquisitionChannel shouldBe null
+            savedSlot.captured.acquisitionContext shouldBe null
         }
     }
 
