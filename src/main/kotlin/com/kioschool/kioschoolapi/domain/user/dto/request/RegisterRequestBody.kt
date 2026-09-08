@@ -1,6 +1,5 @@
 package com.kioschool.kioschoolapi.domain.user.dto.request
 
-import com.kioschool.kioschoolapi.global.common.enums.AcquisitionChannel
 import com.kioschool.kioschoolapi.global.logging.annotation.Masked
 import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.NotBlank
@@ -18,9 +17,4 @@ data class RegisterRequestBody(
     val name: String,
     @field:Email(message = "이메일 형식이 올바르지 않습니다.")
     val email: String,
-    val acquisitionChannel: AcquisitionChannel? = null,
-    @field:Length(max = 100, message = "유입 경로 직접 입력은 100자를 초과할 수 없습니다.")
-    val acquisitionChannelEtc: String? = null,
-    @field:Length(max = 500, message = "유입 문맥은 500자를 초과할 수 없습니다.")
-    val acquisitionContext: String? = null,
 )

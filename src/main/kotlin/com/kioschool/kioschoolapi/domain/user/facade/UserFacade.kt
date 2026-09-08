@@ -1,7 +1,6 @@
 package com.kioschool.kioschoolapi.domain.user.facade
 
 import com.kioschool.kioschoolapi.domain.email.service.EmailService
-import com.kioschool.kioschoolapi.domain.user.dto.common.AcquisitionInfo
 import com.kioschool.kioschoolapi.domain.user.dto.common.UserDto
 import com.kioschool.kioschoolapi.domain.user.service.UserService
 import com.kioschool.kioschoolapi.global.common.enums.UserRole
@@ -64,14 +63,13 @@ class UserFacade(
         loginId: String,
         loginPassword: String,
         name: String,
-        email: String,
-        acquisition: AcquisitionInfo
+        email: String
     ): ResponseEntity<String> {
         userService.validateLoginId(loginId)
         userService.validateEmail(email)
         emailService.deleteRegisterCode(email)
 
-        val user = userService.saveUser(loginId, loginPassword, name, email, acquisition.normalized())
+        val user = userService.saveUser(loginId, loginPassword, name, email)
 
         discordService.sendUserRegister(user)
 

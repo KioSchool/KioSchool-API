@@ -1,7 +1,6 @@
 package com.kioschool.kioschoolapi.domain.user.service
 
 import com.kioschool.kioschoolapi.domain.email.service.EmailService
-import com.kioschool.kioschoolapi.domain.user.dto.common.AcquisitionInfo
 import com.kioschool.kioschoolapi.domain.user.entity.User
 import com.kioschool.kioschoolapi.domain.user.repository.UserRepository
 import com.kioschool.kioschoolapi.global.common.enums.UserRole
@@ -30,13 +29,7 @@ class UserService(
         return userRepository.save(user)
     }
 
-    fun saveUser(
-        loginId: String,
-        loginPassword: String,
-        name: String,
-        email: String,
-        acquisition: AcquisitionInfo
-    ): User {
+    fun saveUser(loginId: String, loginPassword: String, name: String, email: String): User {
         return userRepository.save(
             User(
                 loginId = loginId,
@@ -44,10 +37,7 @@ class UserService(
                 name = name,
                 email = email,
                 role = UserRole.ADMIN,
-                members = mutableListOf(),
-                acquisitionChannel = acquisition.channel,
-                acquisitionChannelEtc = acquisition.channelEtc,
-                acquisitionContext = acquisition.context
+                members = mutableListOf()
             )
         )
     }

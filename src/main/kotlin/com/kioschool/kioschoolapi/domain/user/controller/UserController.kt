@@ -1,6 +1,5 @@
 package com.kioschool.kioschoolapi.domain.user.controller
 
-import com.kioschool.kioschoolapi.domain.user.dto.common.AcquisitionInfo
 import com.kioschool.kioschoolapi.domain.user.dto.request.IsDuplicateLoginIdRequestBody
 import com.kioschool.kioschoolapi.domain.user.dto.request.LoginRequestBody
 import com.kioschool.kioschoolapi.domain.user.dto.request.RegisterRequestBody
@@ -51,18 +50,7 @@ class UserController(
         @Valid @RequestBody body: RegisterRequestBody,
         response: HttpServletResponse
     ): ResponseEntity<String> {
-        return userFacade.register(
-            response,
-            body.id,
-            body.password,
-            body.name,
-            body.email,
-            AcquisitionInfo(
-                channel = body.acquisitionChannel,
-                channelEtc = body.acquisitionChannelEtc,
-                context = body.acquisitionContext
-            )
-        )
+        return userFacade.register(response, body.id, body.password, body.name, body.email)
     }
 
     @Operation(summary = "ID 중복 체크", description = "중복되는 ID가 있으면 true를 반환합니다.")
