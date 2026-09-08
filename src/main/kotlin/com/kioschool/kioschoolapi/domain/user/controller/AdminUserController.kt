@@ -1,12 +1,15 @@
 package com.kioschool.kioschoolapi.domain.user.controller
 
+import com.kioschool.kioschoolapi.domain.user.dto.admin.AcquisitionRequestBody
 import com.kioschool.kioschoolapi.domain.user.dto.admin.CreateSuperUserRequestBody
 import com.kioschool.kioschoolapi.domain.user.dto.admin.RegisterAccountUrlRequestBody
+import com.kioschool.kioschoolapi.domain.user.dto.common.AcquisitionInfo
 import com.kioschool.kioschoolapi.domain.user.dto.common.UserDto
 import com.kioschool.kioschoolapi.domain.user.facade.UserFacade
 import com.kioschool.kioschoolapi.global.security.annotation.AdminUsername
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.validation.Valid
 import org.springframework.web.bind.annotation.*
 
 @Tag(name = "Admin User Controller")
@@ -43,5 +46,24 @@ class AdminUserController(
         @RequestBody body: RegisterAccountUrlRequestBody
     ): UserDto {
         return userFacade.registerAccountUrl(username, body.accountUrl)
+    }
+
+    @Operation(
+        summary = "유입 경로 등록",
+        description = "회원가입 직후 설문한 유입 경로를 저장합니다.<br>이미 저장된 값이 있으면 덮어씁니다."
+    )
+    @PostMapping("/user/acquisition")
+    fun saveAcquisitionSurvey(
+        @AdminUsername username: String,
+        @Valid @RequestBody body: AcquisitionRequestBody
+    ) {
+        userFacade.saveAcquisitionSurvey(
+            username,
+            AcquisitionInfo(
+                channel = body.channel,
+                channelEtc = body.channelEtc,
+                context = body.context
+            )
+        )
     }
 }

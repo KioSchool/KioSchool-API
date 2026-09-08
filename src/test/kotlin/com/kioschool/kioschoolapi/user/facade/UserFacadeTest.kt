@@ -1,9 +1,11 @@
 package com.kioschool.kioschoolapi.user.facade
 
 import com.kioschool.kioschoolapi.domain.email.service.EmailService
+import com.kioschool.kioschoolapi.domain.user.dto.common.AcquisitionInfo
 import com.kioschool.kioschoolapi.domain.user.facade.UserFacade
 import com.kioschool.kioschoolapi.domain.user.service.UserService
 import com.kioschool.kioschoolapi.factory.SampleEntity
+import com.kioschool.kioschoolapi.global.common.enums.AcquisitionChannel
 import com.kioschool.kioschoolapi.global.common.enums.UserRole
 import com.kioschool.kioschoolapi.global.discord.service.DiscordService
 import com.kioschool.kioschoolapi.global.error.ErrorCode
@@ -11,6 +13,7 @@ import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import com.kioschool.kioschoolapi.global.security.JwtProvider
 import com.kioschool.kioschoolapi.global.template.TemplateService
 import io.kotest.core.spec.style.DescribeSpec
+import io.kotest.matchers.shouldBe
 import io.mockk.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.assertThrows
@@ -198,6 +201,48 @@ class UserFacadeTest : DescribeSpec({
             verify(exactly = 0) { userService.saveUser(any(), any(), any(), any()) }
             verify(exactly = 0) { discordService.sendUserRegister(any()) }
             verify(exactly = 0) { jwtProvider.createToken(any()) }
+        }
+    }
+
+    describe("saveAcquisitionSurvey") {
+        it("should normalize acquisition info before saving") {
+            val username = "test"
+            val user = SampleEntity.user
+            // ETC가 아닌데 자유입력이 실려온 조합
+            val rawAcquisition = AcquisitionInfo(
+                AcquisitionChannel.INSTAGRAM,
+                "버려져야 하는 값",
+                "source=instagram"
+            )
+            val savedAcquisition = slot<AcquisitionInfo>()
+
+            every { userService.getUser(username) } returns user
+            every {
+                userService.saveAcquisitionSurvey(user, capture(savedAcquisition))
+            } returns mockk()
+
+            sut.saveAcquisitionSurvey(username, rawAcquisition)
+
+            savedAcquisition.captured.channel shouldBe AcquisitionChannel.INSTAGRAM
+            savedAcquisition.captured.channelEtc shouldBe null
+            savedAcquisition.captured.context shouldBe "source=instagram"
+
+            verify { userService.getUser(username) }
+            verify { userService.saveAcquisitionSurvey(user, any()) }
+        }
+
+        it("should throw CustomException(USER_NOT_FOUND) when user does not exist") {
+            val username = "test"
+
+            every { userService.getUser(username) } throws CustomException(ErrorCode.USER_NOT_FOUND)
+
+            val ex = assertThrows<CustomException> {
+                sut.saveAcquisitionSurvey(username, AcquisitionInfo.EMPTY)
+            }
+            assertEquals(ErrorCode.USER_NOT_FOUND, ex.errorCode)
+
+            verify { userService.getUser(username) }
+            verify(exactly = 0) { userService.saveAcquisitionSurvey(any(), any()) }
         }
     }
 

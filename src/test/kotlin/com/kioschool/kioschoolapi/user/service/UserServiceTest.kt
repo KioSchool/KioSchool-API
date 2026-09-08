@@ -1,10 +1,14 @@
 package com.kioschool.kioschoolapi.user.service
 
 import com.kioschool.kioschoolapi.domain.email.service.EmailService
+import com.kioschool.kioschoolapi.domain.user.dto.common.AcquisitionInfo
+import com.kioschool.kioschoolapi.domain.user.entity.AcquisitionSurvey
 import com.kioschool.kioschoolapi.domain.user.entity.User
+import com.kioschool.kioschoolapi.domain.user.repository.AcquisitionSurveyRepository
 import com.kioschool.kioschoolapi.domain.user.repository.UserRepository
 import com.kioschool.kioschoolapi.domain.user.service.UserService
 import com.kioschool.kioschoolapi.factory.SampleEntity
+import com.kioschool.kioschoolapi.global.common.enums.AcquisitionChannel
 import com.kioschool.kioschoolapi.global.common.enums.UserRole
 import com.kioschool.kioschoolapi.global.error.ErrorCode
 import com.kioschool.kioschoolapi.global.error.exception.CustomException
@@ -18,17 +22,20 @@ import org.springframework.security.crypto.password.PasswordEncoder
 
 class UserServiceTest : DescribeSpec({
     val repository = mockk<UserRepository>()
+    val acquisitionSurveyRepository = mockk<AcquisitionSurveyRepository>()
     val passwordEncoder = mockk<PasswordEncoder>()
     val emailService = mockk<EmailService>()
 
     val sut = UserService(
         repository,
+        acquisitionSurveyRepository,
         passwordEncoder,
         emailService
     )
 
     beforeTest {
         mockkObject(repository)
+        mockkObject(acquisitionSurveyRepository)
         mockkObject(passwordEncoder)
         mockkObject(emailService)
     }
@@ -113,6 +120,70 @@ class UserServiceTest : DescribeSpec({
 
             // Assert
             verify { repository.save(any<User>()) }
+        }
+    }
+
+    describe("saveAcquisitionSurvey") {
+        it("should persist acquisition info on the survey entity") {
+            val user = SampleEntity.user
+            val acquisition = AcquisitionInfo(
+                AcquisitionChannel.SENIOR_HANDOVER,
+                null,
+                "source=instagram"
+            )
+            val savedSlot = slot<AcquisitionSurvey>()
+            every { acquisitionSurveyRepository.findByUser(user) } returns null
+            every { acquisitionSurveyRepository.save(capture(savedSlot)) } answers { savedSlot.captured }
+
+            sut.saveAcquisitionSurvey(user, acquisition)
+
+            savedSlot.captured.user shouldBe user
+            savedSlot.captured.channel shouldBe AcquisitionChannel.SENIOR_HANDOVER
+            savedSlot.captured.channelEtc shouldBe null
+            savedSlot.captured.context shouldBe "source=instagram"
+        }
+
+        it("should drop channelEtc when channel is not ETC") {
+            val user = SampleEntity.user
+            val acquisition = AcquisitionInfo(
+                AcquisitionChannel.INSTAGRAM,
+                "버려져야 하는 값",
+                null
+            ).normalized()
+            val savedSlot = slot<AcquisitionSurvey>()
+            every { acquisitionSurveyRepository.findByUser(user) } returns null
+            every { acquisitionSurveyRepository.save(capture(savedSlot)) } answers { savedSlot.captured }
+
+            sut.saveAcquisitionSurvey(user, acquisition)
+
+            savedSlot.captured.channel shouldBe AcquisitionChannel.INSTAGRAM
+            savedSlot.captured.channelEtc shouldBe null
+        }
+
+        it("should overwrite the existing survey when called twice for the same user") {
+            val user = SampleEntity.user
+            val existingSurvey = AcquisitionSurvey(
+                user = user,
+                channel = AcquisitionChannel.SEARCH,
+                channelEtc = null,
+                context = "first call"
+            )
+            val newAcquisition = AcquisitionInfo(
+                AcquisitionChannel.ETC,
+                "친구 추천",
+                "second call"
+            )
+            val savedSlot = slot<AcquisitionSurvey>()
+            every { acquisitionSurveyRepository.findByUser(user) } returns existingSurvey
+            every { acquisitionSurveyRepository.save(capture(savedSlot)) } answers { savedSlot.captured }
+
+            sut.saveAcquisitionSurvey(user, newAcquisition)
+
+            savedSlot.captured shouldBe existingSurvey
+            savedSlot.captured.channel shouldBe AcquisitionChannel.ETC
+            savedSlot.captured.channelEtc shouldBe "친구 추천"
+            savedSlot.captured.context shouldBe "second call"
+            verify(exactly = 1) { acquisitionSurveyRepository.save(any()) }
         }
     }
 
