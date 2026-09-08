@@ -2,8 +2,10 @@ package com.kioschool.kioschoolapi.domain.workspace.service
 
 import com.kioschool.kioschoolapi.domain.user.entity.User
 import com.kioschool.kioschoolapi.domain.user.service.UserService
+import com.kioschool.kioschoolapi.domain.workspace.dto.common.FocalPointDto
 import com.kioschool.kioschoolapi.domain.workspace.dto.common.TablePositionDto
 import com.kioschool.kioschoolapi.domain.workspace.dto.common.TablePositionUpdateDto
+import com.kioschool.kioschoolapi.domain.workspace.dto.common.WorkspaceImageSlot
 import com.kioschool.kioschoolapi.domain.workspace.entity.*
 import com.kioschool.kioschoolapi.domain.workspace.repository.CustomWorkspaceRepository
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceMemberRepository
@@ -24,7 +26,6 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.springframework.web.multipart.MultipartFile
 import java.time.LocalDateTime
 import java.util.*
 
@@ -170,13 +171,40 @@ class WorkspaceService(
 
     @Transactional
     @WorkspaceUpdateEvent
-    fun saveWorkspaceImages(workspace: Workspace, newImageFiles: List<MultipartFile>): Workspace {
-        newImageFiles.forEach {
-            val path =
-                "$workspacePath/workspace${workspace.id}/workspace/${System.currentTimeMillis()}.webp"
-            val imageUrl = s3Service.uploadResizedWebpImage(it.inputStream, path)
-            workspace.images.add(WorkspaceImage(workspace = workspace, url = imageUrl))
+    fun applyImageSlots(workspace: Workspace, slots: List<WorkspaceImageSlot>): Workspace {
+        val imagesById = workspace.images.associateBy { it.id }
+
+        slots.forEachIndexed { index, slot ->
+            when (slot) {
+                is WorkspaceImageSlot.Existing -> {
+                    // 존재 검증은 workspace의 실제 이미지를 알 수 없는 UpdateWorkspaceImageRequestBody.toSlots()에서
+                    // 여기로 미뤄졌다. workspace.images는 워크스페이스 범위로 한정된 관계라 다른 워크스페이스의
+                    // 이미지가 섞일 일이 없으므로, 존재하지 않거나 오래된 imageId는 여기서 조용히 무시해도 안전하다.
+                    val image = imagesById[slot.imageId] ?: return@forEachIndexed
+                    slot.focalPoint?.let {
+                        image.focalX = it.x
+                        image.focalY = it.y
+                    }
+                }
+
+                is WorkspaceImageSlot.New -> {
+                    // 한 요청에 여러 장을 올리면 currentTimeMillis가 같을 수 있어 슬롯 인덱스로 구분한다.
+                    val path =
+                        "$workspacePath/workspace${workspace.id}/workspace/${System.currentTimeMillis()}-$index.webp"
+                    val imageUrl = s3Service.uploadResizedWebpImage(slot.file.inputStream, path)
+                    val focalPoint = slot.focalPoint ?: FocalPointDto.CENTER
+                    workspace.images.add(
+                        WorkspaceImage(
+                            workspace = workspace,
+                            url = imageUrl,
+                            focalX = focalPoint.x,
+                            focalY = focalPoint.y,
+                        )
+                    )
+                }
+            }
         }
+
         return workspaceRepository.save(workspace)
     }
 
