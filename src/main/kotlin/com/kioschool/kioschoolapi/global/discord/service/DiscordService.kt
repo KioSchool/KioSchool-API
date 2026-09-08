@@ -24,21 +24,9 @@ class DiscordService(
             |아이디: ${user.loginId}
             |이름: ${user.name}
             |이메일: ${user.email}
-            |유입: ${describeAcquisitionChannel(user)}
-            """.trimMargin() + describeAcquisitionContext(user)
+            """.trimMargin()
 
         send(message)
-    }
-
-    private fun describeAcquisitionChannel(user: User): String {
-        val channel = user.acquisitionChannel ?: return "미응답"
-        val etc = user.acquisitionChannelEtc ?: return channel.label
-        return "${channel.label} - $etc"
-    }
-
-    private fun describeAcquisitionContext(user: User): String {
-        val context = user.acquisitionContext ?: return ""
-        return "\n유입문맥: $context"
     }
 
     @Async
