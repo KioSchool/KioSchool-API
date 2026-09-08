@@ -1,7 +1,6 @@
 package com.kioschool.kioschoolapi.user.service
 
 import com.kioschool.kioschoolapi.domain.email.service.EmailService
-import com.kioschool.kioschoolapi.domain.user.dto.common.AcquisitionInfo
 import com.kioschool.kioschoolapi.domain.user.entity.AcquisitionSurvey
 import com.kioschool.kioschoolapi.domain.user.entity.User
 import com.kioschool.kioschoolapi.domain.user.repository.AcquisitionSurveyRepository
@@ -126,38 +125,16 @@ class UserServiceTest : DescribeSpec({
     describe("saveAcquisitionSurvey") {
         it("should persist acquisition info on the survey entity") {
             val user = SampleEntity.user
-            val acquisition = AcquisitionInfo(
-                AcquisitionChannel.SENIOR_HANDOVER,
-                null,
-                "source=instagram"
-            )
             val savedSlot = slot<AcquisitionSurvey>()
             every { acquisitionSurveyRepository.findByUser(user) } returns null
             every { acquisitionSurveyRepository.save(capture(savedSlot)) } answers { savedSlot.captured }
 
-            sut.saveAcquisitionSurvey(user, acquisition)
+            sut.saveAcquisitionSurvey(user, AcquisitionChannel.SENIOR_HANDOVER, null, "source=instagram")
 
             savedSlot.captured.user shouldBe user
             savedSlot.captured.channel shouldBe AcquisitionChannel.SENIOR_HANDOVER
             savedSlot.captured.channelEtc shouldBe null
             savedSlot.captured.context shouldBe "source=instagram"
-        }
-
-        it("should drop channelEtc when channel is not ETC") {
-            val user = SampleEntity.user
-            val acquisition = AcquisitionInfo(
-                AcquisitionChannel.INSTAGRAM,
-                "버려져야 하는 값",
-                null
-            ).normalized()
-            val savedSlot = slot<AcquisitionSurvey>()
-            every { acquisitionSurveyRepository.findByUser(user) } returns null
-            every { acquisitionSurveyRepository.save(capture(savedSlot)) } answers { savedSlot.captured }
-
-            sut.saveAcquisitionSurvey(user, acquisition)
-
-            savedSlot.captured.channel shouldBe AcquisitionChannel.INSTAGRAM
-            savedSlot.captured.channelEtc shouldBe null
         }
 
         it("should overwrite the existing survey when called twice for the same user") {
@@ -168,20 +145,15 @@ class UserServiceTest : DescribeSpec({
                 channelEtc = null,
                 context = "first call"
             )
-            val newAcquisition = AcquisitionInfo(
-                AcquisitionChannel.ETC,
-                "친구 추천",
-                "second call"
-            )
             val savedSlot = slot<AcquisitionSurvey>()
             every { acquisitionSurveyRepository.findByUser(user) } returns existingSurvey
             every { acquisitionSurveyRepository.save(capture(savedSlot)) } answers { savedSlot.captured }
 
-            sut.saveAcquisitionSurvey(user, newAcquisition)
+            sut.saveAcquisitionSurvey(user, AcquisitionChannel.ETC, "\uce5c\uad6c \ucd94\ucc9c", "second call")
 
             savedSlot.captured shouldBe existingSurvey
             savedSlot.captured.channel shouldBe AcquisitionChannel.ETC
-            savedSlot.captured.channelEtc shouldBe "친구 추천"
+            savedSlot.captured.channelEtc shouldBe "\uce5c\uad6c \ucd94\ucc9c"
             savedSlot.captured.context shouldBe "second call"
             verify(exactly = 1) { acquisitionSurveyRepository.save(any()) }
         }

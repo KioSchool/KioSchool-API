@@ -1,11 +1,11 @@
 package com.kioschool.kioschoolapi.domain.user.service
 
 import com.kioschool.kioschoolapi.domain.email.service.EmailService
-import com.kioschool.kioschoolapi.domain.user.dto.common.AcquisitionInfo
 import com.kioschool.kioschoolapi.domain.user.entity.AcquisitionSurvey
 import com.kioschool.kioschoolapi.domain.user.entity.User
 import com.kioschool.kioschoolapi.domain.user.repository.AcquisitionSurveyRepository
 import com.kioschool.kioschoolapi.domain.user.repository.UserRepository
+import com.kioschool.kioschoolapi.global.common.enums.AcquisitionChannel
 import com.kioschool.kioschoolapi.global.common.enums.UserRole
 import com.kioschool.kioschoolapi.global.error.ErrorCode
 import com.kioschool.kioschoolapi.global.error.exception.CustomException
@@ -46,11 +46,16 @@ class UserService(
         )
     }
 
-    fun saveAcquisitionSurvey(user: User, acquisition: AcquisitionInfo): AcquisitionSurvey {
+    fun saveAcquisitionSurvey(
+        user: User,
+        channel: AcquisitionChannel?,
+        channelEtc: String?,
+        context: String?
+    ): AcquisitionSurvey {
         val survey = acquisitionSurveyRepository.findByUser(user) ?: AcquisitionSurvey(user = user)
-        survey.channel = acquisition.channel
-        survey.channelEtc = acquisition.channelEtc
-        survey.context = acquisition.context
+        survey.channel = channel
+        survey.channelEtc = channelEtc
+        survey.context = context
 
         return acquisitionSurveyRepository.save(survey)
     }
