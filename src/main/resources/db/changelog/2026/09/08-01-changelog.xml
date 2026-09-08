@@ -31,10 +31,4 @@
       constraintName="fk_acquisition_survey_user"
       referencedTableName="user" referencedColumnNames="id"/>
   </changeSet>
-  <changeSet author="rune" id="1788830539343-4">
-    <dropColumn columnName="acquisition_channel" schemaName="public" tableName="user"/>
-    <dropColumn columnName="acquisition_channel_etc" schemaName="public" tableName="user"/>
-    <dropColumn columnName="acquisition_context" schemaName="public" tableName="user"/>
-  </changeSet>
-
 </databaseChangeLog>
