@@ -3,7 +3,6 @@ package com.kioschool.kioschoolapi.domain.user.controller
 import com.kioschool.kioschoolapi.domain.user.dto.admin.AcquisitionRequestBody
 import com.kioschool.kioschoolapi.domain.user.dto.admin.CreateSuperUserRequestBody
 import com.kioschool.kioschoolapi.domain.user.dto.admin.RegisterAccountUrlRequestBody
-import com.kioschool.kioschoolapi.domain.user.dto.common.AcquisitionInfo
 import com.kioschool.kioschoolapi.domain.user.dto.common.UserDto
 import com.kioschool.kioschoolapi.domain.user.facade.UserFacade
 import com.kioschool.kioschoolapi.global.security.annotation.AdminUsername
@@ -57,13 +56,6 @@ class AdminUserController(
         @AdminUsername username: String,
         @Valid @RequestBody body: AcquisitionRequestBody
     ) {
-        userFacade.saveAcquisitionSurvey(
-            username,
-            AcquisitionInfo(
-                channel = body.channel,
-                channelEtc = body.channelEtc,
-                context = body.context
-            )
-        )
+        userFacade.saveAcquisitionSurvey(username, body.channel, body.channelEtc, body.context)
     }
 }

@@ -1,7 +1,7 @@
 package com.kioschool.kioschoolapi.user.facade
 
 import com.kioschool.kioschoolapi.domain.email.service.EmailService
-import com.kioschool.kioschoolapi.domain.user.dto.common.AcquisitionInfo
+import com.kioschool.kioschoolapi.domain.user.entity.AcquisitionSurvey
 import com.kioschool.kioschoolapi.domain.user.facade.UserFacade
 import com.kioschool.kioschoolapi.domain.user.service.UserService
 import com.kioschool.kioschoolapi.factory.SampleEntity
@@ -205,44 +205,81 @@ class UserFacadeTest : DescribeSpec({
     }
 
     describe("saveAcquisitionSurvey") {
-        it("should normalize acquisition info before saving") {
-            val username = "test"
-            val user = SampleEntity.user
-            // ETC가 아닌데 자유입력이 실려온 조합
-            val rawAcquisition = AcquisitionInfo(
-                AcquisitionChannel.INSTAGRAM,
-                "버려져야 하는 값",
-                "source=instagram"
-            )
-            val savedAcquisition = slot<AcquisitionInfo>()
+        val username = "test"
+        val user = SampleEntity.user
+
+        // 정규화 책임이 파사드로 옮겨왔다. userService에 실제로 넘어가는 값으로 규칙을 고정한다.
+        fun saveAndCapture(
+            channel: AcquisitionChannel?,
+            channelEtc: String?,
+            context: String?
+        ): Triple<AcquisitionChannel?, String?, String?> {
+            var captured: Triple<AcquisitionChannel?, String?, String?>? = null
 
             every { userService.getUser(username) } returns user
             every {
-                userService.saveAcquisitionSurvey(user, capture(savedAcquisition))
-            } returns mockk()
+                userService.saveAcquisitionSurvey(user, any(), any(), any())
+            } answers {
+                captured = Triple(arg<AcquisitionChannel?>(1), arg<String?>(2), arg<String?>(3))
+                mockk<AcquisitionSurvey>()
+            }
 
-            sut.saveAcquisitionSurvey(username, rawAcquisition)
-
-            savedAcquisition.captured.channel shouldBe AcquisitionChannel.INSTAGRAM
-            savedAcquisition.captured.channelEtc shouldBe null
-            savedAcquisition.captured.context shouldBe "source=instagram"
+            sut.saveAcquisitionSurvey(username, channel, channelEtc, context)
 
             verify { userService.getUser(username) }
-            verify { userService.saveAcquisitionSurvey(user, any()) }
+            return captured!!
+        }
+
+        it("should drop channelEtc when channel is not ETC") {
+            val (channel, channelEtc, _) =
+                saveAndCapture(AcquisitionChannel.INSTAGRAM, "\uce5c\uad6c\uac00 \uc54c\ub824\uc90c", null)
+
+            channel shouldBe AcquisitionChannel.INSTAGRAM
+            channelEtc shouldBe null
+        }
+
+        it("should keep channelEtc when channel is ETC") {
+            val (_, channelEtc, _) = saveAndCapture(AcquisitionChannel.ETC, "\uad50\uc218\ub2d8 \ucd94\ucc9c", null)
+
+            channelEtc shouldBe "\uad50\uc218\ub2d8 \ucd94\ucc9c"
+        }
+
+        it("should allow ETC without channelEtc") {
+            val (channel, channelEtc, _) = saveAndCapture(AcquisitionChannel.ETC, null, null)
+
+            channel shouldBe AcquisitionChannel.ETC
+            channelEtc shouldBe null
+        }
+
+        it("should convert blank channelEtc to null") {
+            val (_, channelEtc, _) = saveAndCapture(AcquisitionChannel.ETC, "   ", null)
+
+            channelEtc shouldBe null
+        }
+
+        it("should keep context regardless of channel") {
+            val (channel, _, context) = saveAndCapture(null, null, "source=instagram")
+
+            channel shouldBe null
+            context shouldBe "source=instagram"
+        }
+
+        it("should convert blank context to null") {
+            val (_, _, context) = saveAndCapture(AcquisitionChannel.INSTAGRAM, null, "   ")
+
+            context shouldBe null
         }
 
         it("should throw CustomException(USER_NOT_FOUND) when user does not exist") {
-            val username = "test"
-
             every { userService.getUser(username) } throws CustomException(ErrorCode.USER_NOT_FOUND)
 
             val ex = assertThrows<CustomException> {
-                sut.saveAcquisitionSurvey(username, AcquisitionInfo.EMPTY)
+                sut.saveAcquisitionSurvey(username, null, null, null)
             }
             assertEquals(ErrorCode.USER_NOT_FOUND, ex.errorCode)
 
             verify { userService.getUser(username) }
-            verify(exactly = 0) { userService.saveAcquisitionSurvey(any(), any()) }
+            verify(exactly = 0) { userService.saveAcquisitionSurvey(any(), any(), any(), any()) }
         }
     }
 
