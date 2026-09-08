@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS"
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+  <changeSet author="rune" id="1788830539343-1">
+    <createTable tableName="acquisition_survey">
+      <column autoIncrement="true" name="id" type="BIGINT">
+        <constraints nullable="false" primaryKey="true" primaryKeyName="pk_acquisition_survey"/>
+      </column>
+      <column name="created_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+      <column name="updated_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+      <column name="user_id" type="BIGINT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="channel" type="VARCHAR(40)"/>
+      <column name="channel_etc" type="VARCHAR(100)"/>
+      <column name="context" type="VARCHAR(500)"/>
+    </createTable>
+  </changeSet>
+  <changeSet author="rune" id="1788830539343-2">
+    <addUniqueConstraint
+      tableName="acquisition_survey" columnNames="user_id"
+      constraintName="uk_acquisition_survey_user"/>
+  </changeSet>
+  <changeSet author="rune" id="1788830539343-3">
+    <addForeignKeyConstraint
+      baseTableName="acquisition_survey" baseColumnNames="user_id"
+      constraintName="fk_acquisition_survey_user"
+      referencedTableName="user" referencedColumnNames="id"/>
+  </changeSet>
+  <changeSet author="rune" id="1788830539343-4">
+    <dropColumn columnName="acquisition_channel" schemaName="public" tableName="user"/>
+    <dropColumn columnName="acquisition_channel_etc" schemaName="public" tableName="user"/>
+    <dropColumn columnName="acquisition_context" schemaName="public" tableName="user"/>
+  </changeSet>
+
+</databaseChangeLog>
