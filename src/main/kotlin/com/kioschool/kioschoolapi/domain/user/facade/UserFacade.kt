@@ -1,6 +1,7 @@
 package com.kioschool.kioschoolapi.domain.user.facade
 
 import com.kioschool.kioschoolapi.domain.email.service.EmailService
+import com.kioschool.kioschoolapi.domain.user.dto.common.AcquisitionInfo
 import com.kioschool.kioschoolapi.domain.user.dto.common.UserDto
 import com.kioschool.kioschoolapi.domain.user.service.UserService
 import com.kioschool.kioschoolapi.global.common.enums.UserRole
@@ -152,4 +153,9 @@ class UserFacade(
 
     fun getAllUsers(name: String?, page: Int, size: Int) =
         userService.getAllUsers(name, page, size).map { UserDto.of(it) }
+
+    fun saveAcquisitionSurvey(username: String, acquisition: AcquisitionInfo) {
+        val user = userService.getUser(username)
+        userService.saveAcquisitionSurvey(user, acquisition.normalized())
+    }
 }

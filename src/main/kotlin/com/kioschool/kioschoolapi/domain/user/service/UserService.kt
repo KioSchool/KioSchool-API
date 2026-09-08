@@ -1,7 +1,10 @@
 package com.kioschool.kioschoolapi.domain.user.service
 
 import com.kioschool.kioschoolapi.domain.email.service.EmailService
+import com.kioschool.kioschoolapi.domain.user.dto.common.AcquisitionInfo
+import com.kioschool.kioschoolapi.domain.user.entity.AcquisitionSurvey
 import com.kioschool.kioschoolapi.domain.user.entity.User
+import com.kioschool.kioschoolapi.domain.user.repository.AcquisitionSurveyRepository
 import com.kioschool.kioschoolapi.domain.user.repository.UserRepository
 import com.kioschool.kioschoolapi.global.common.enums.UserRole
 import com.kioschool.kioschoolapi.global.error.ErrorCode
@@ -14,6 +17,7 @@ import org.springframework.stereotype.Service
 @Service
 class UserService(
     private val userRepository: UserRepository,
+    private val acquisitionSurveyRepository: AcquisitionSurveyRepository,
     private val passwordEncoder: PasswordEncoder,
     private val emailService: EmailService,
 ) {
@@ -40,6 +44,15 @@ class UserService(
                 members = mutableListOf()
             )
         )
+    }
+
+    fun saveAcquisitionSurvey(user: User, acquisition: AcquisitionInfo): AcquisitionSurvey {
+        val survey = acquisitionSurveyRepository.findByUser(user) ?: AcquisitionSurvey(user = user)
+        survey.channel = acquisition.channel
+        survey.channelEtc = acquisition.channelEtc
+        survey.context = acquisition.context
+
+        return acquisitionSurveyRepository.save(survey)
     }
 
     fun validateLoginId(loginId: String) {
