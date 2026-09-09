@@ -29,6 +29,8 @@ class CustomerDonationService(
     fun getTodayCount(): Long =
         customerDonationClickRepository.countByCreatedAtGreaterThanEqual(startOfBusinessDay())
 
+    fun getTotalCount(): Long = customerDonationClickRepository.count()
+
     private fun startOfBusinessDay(): LocalDateTime {
         val now = LocalDateTime.now()
         return if (now.hour < BUSINESS_DAY_START_HOUR) {

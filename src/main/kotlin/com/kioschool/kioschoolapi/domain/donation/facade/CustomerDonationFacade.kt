@@ -18,11 +18,11 @@ class CustomerDonationFacade(
             noteIndex = body.noteIndex,
             amount = body.amount,
         )
-        return CustomerDonationClickCountResponse(todayCount)
+        return CustomerDonationClickCountResponse(todayCount, customerDonationService.getTotalCount())
     }
 
-    fun getTodayCount(): CustomerDonationClickCountResponse =
-        CustomerDonationClickCountResponse(customerDonationService.getTodayCount())
+    fun getCounts(): CustomerDonationClickCountResponse =
+        CustomerDonationClickCountResponse(customerDonationService.getTodayCount(), customerDonationService.getTotalCount())
 
     private fun String.trimToNull(): String? = trim().takeIf { it.isNotEmpty() }
 }
