@@ -46,6 +46,10 @@ class UserService(
         )
     }
 
+    fun hasAcquisitionSurvey(user: User): Boolean {
+        return acquisitionSurveyRepository.findByUser(user) != null
+    }
+
     fun saveAcquisitionSurvey(
         user: User,
         channel: AcquisitionChannel?,

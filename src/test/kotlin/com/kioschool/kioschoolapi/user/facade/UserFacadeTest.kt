@@ -204,6 +204,39 @@ class UserFacadeTest : DescribeSpec({
         }
     }
 
+    describe("isAcquisitionSurveyAnswered") {
+        val username = "test"
+        val user = SampleEntity.user
+
+        it("should return false when the user has never been asked") {
+            every { userService.getUser(username) } returns user
+            every { userService.hasAcquisitionSurvey(user) } returns false
+
+            sut.isAcquisitionSurveyAnswered(username) shouldBe false
+
+            verify { userService.getUser(username) }
+            verify { userService.hasAcquisitionSurvey(user) }
+        }
+
+        it("should return true when a survey row exists") {
+            every { userService.getUser(username) } returns user
+            every { userService.hasAcquisitionSurvey(user) } returns true
+
+            sut.isAcquisitionSurveyAnswered(username) shouldBe true
+        }
+
+        it("should throw CustomException(USER_NOT_FOUND) when user does not exist") {
+            every { userService.getUser(username) } throws CustomException(ErrorCode.USER_NOT_FOUND)
+
+            val ex = assertThrows<CustomException> {
+                sut.isAcquisitionSurveyAnswered(username)
+            }
+            assertEquals(ErrorCode.USER_NOT_FOUND, ex.errorCode)
+
+            verify(exactly = 0) { userService.hasAcquisitionSurvey(any()) }
+        }
+    }
+
     describe("saveAcquisitionSurvey") {
         val username = "test"
         val user = SampleEntity.user
