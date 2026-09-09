@@ -122,6 +122,31 @@ class UserServiceTest : DescribeSpec({
         }
     }
 
+    describe("hasAcquisitionSurvey") {
+        it("should return false when the user has no survey row") {
+            val user = SampleEntity.user
+            every { acquisitionSurveyRepository.findByUser(user) } returns null
+
+            sut.hasAcquisitionSurvey(user) shouldBe false
+        }
+
+        it("should return true when a survey row exists") {
+            val user = SampleEntity.user
+            every { acquisitionSurveyRepository.findByUser(user) } returns AcquisitionSurvey(user = user)
+
+            sut.hasAcquisitionSurvey(user) shouldBe true
+        }
+
+        it("should return true even when the row was skipped (channel is null)") {
+            val user = SampleEntity.user
+            every {
+                acquisitionSurveyRepository.findByUser(user)
+            } returns AcquisitionSurvey(user = user, channel = null, channelEtc = null, context = "source=naver")
+
+            sut.hasAcquisitionSurvey(user) shouldBe true
+        }
+    }
+
     describe("saveAcquisitionSurvey") {
         it("should persist acquisition info on the survey entity") {
             val user = SampleEntity.user
