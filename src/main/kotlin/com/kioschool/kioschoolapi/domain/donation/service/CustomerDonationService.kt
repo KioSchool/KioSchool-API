@@ -11,11 +11,14 @@ class CustomerDonationService(
     private val customerDonationClickRepository: CustomerDonationClickRepository,
 ) {
     @Transactional(rollbackFor = [Exception::class])
-    fun recordClick(workspaceId: Long?, variant: String?, amount: Int?): Long {
+    fun recordClick(orderId: Long?, workspaceId: Long?, variant: String?, method: String?, noteIndex: Int?, amount: Int?): Long {
         customerDonationClickRepository.save(
             CustomerDonationClick(
+                orderId = orderId,
                 workspaceId = workspaceId,
                 variant = variant,
+                method = method,
+                noteIndex = noteIndex,
                 amount = amount,
             )
         )
