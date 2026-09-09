@@ -11,8 +11,11 @@ class CustomerDonationFacade(
 ) {
     fun recordClick(body: RecordCustomerDonationClickRequestBody): CustomerDonationClickCountResponse {
         val todayCount = customerDonationService.recordClick(
+            orderId = body.orderId,
             workspaceId = body.workspaceId,
-            variant = body.variant?.trim()?.takeIf { it.isNotEmpty() },
+            variant = body.variant?.trimToNull(),
+            method = body.method?.trimToNull(),
+            noteIndex = body.noteIndex,
             amount = body.amount,
         )
         return CustomerDonationClickCountResponse(todayCount)
@@ -20,4 +23,6 @@ class CustomerDonationFacade(
 
     fun getTodayCount(): CustomerDonationClickCountResponse =
         CustomerDonationClickCountResponse(customerDonationService.getTodayCount())
+
+    private fun String.trimToNull(): String? = trim().takeIf { it.isNotEmpty() }
 }

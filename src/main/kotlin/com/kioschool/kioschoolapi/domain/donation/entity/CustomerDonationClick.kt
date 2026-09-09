@@ -8,7 +8,10 @@ import jakarta.persistence.Table
 @Table(name = "customer_donation_click")
 class CustomerDonationClick(
     // 후속 분석용. 지금은 count(*)만 쓰고 아무 컬럼도 읽지 않는다.
+    var orderId: Long? = null,
     var workspaceId: Long? = null,
     var variant: String? = null,
+    var method: String? = null,
+    var noteIndex: Int? = null,
     var amount: Int? = null,
 ) : BaseEntity()
