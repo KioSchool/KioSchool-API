@@ -154,6 +154,12 @@ class UserFacade(
     fun getAllUsers(name: String?, page: Int, size: Int) =
         userService.getAllUsers(name, page, size).map { UserDto.of(it) }
 
+    fun isAcquisitionSurveyAnswered(username: String): Boolean {
+        val user = userService.getUser(username)
+        // 건너뛴 응답도 row로 남는다(channel = null). 다시 묻지 않기 위해 값이 아니라 존재 여부로 판단한다.
+        return userService.hasAcquisitionSurvey(user)
+    }
+
     fun saveAcquisitionSurvey(
         username: String,
         channel: AcquisitionChannel?,
