@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS"
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+  <changeSet author="ji-inpark" id="customer-donation-click-1">
+    <createTable tableName="customer_donation_click">
+      <column autoIncrement="true" name="id" type="BIGINT">
+        <constraints nullable="false" primaryKey="true"/>
+      </column>
+      <column name="workspace_id" type="BIGINT"/>
+      <column name="variant" type="VARCHAR(50)"/>
+      <column name="amount" type="INT"/>
+      <column name="created_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+      <column name="updated_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+    </createTable>
+    <createIndex indexName="idx_customer_donation_click_created_at" tableName="customer_donation_click">
+      <column name="created_at"/>
+    </createIndex>
+  </changeSet>
+
+</databaseChangeLog>

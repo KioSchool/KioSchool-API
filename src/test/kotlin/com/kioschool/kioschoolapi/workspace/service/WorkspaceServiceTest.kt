@@ -1,8 +1,10 @@
 package com.kioschool.kioschoolapi.workspace.service
 
 import com.kioschool.kioschoolapi.domain.user.service.UserService
+import com.kioschool.kioschoolapi.domain.workspace.dto.common.FocalPointDto
 import com.kioschool.kioschoolapi.domain.workspace.dto.common.TablePositionDto
 import com.kioschool.kioschoolapi.domain.workspace.dto.common.TablePositionUpdateDto
+import com.kioschool.kioschoolapi.domain.workspace.dto.common.WorkspaceImageSlot
 import com.kioschool.kioschoolapi.domain.workspace.entity.WorkspaceTable
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepository
 import com.kioschool.kioschoolapi.domain.workspace.repository.CustomWorkspaceRepository
@@ -20,6 +22,7 @@ import io.mockk.*
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
 import org.springframework.web.multipart.MultipartFile
+import java.io.ByteArrayInputStream
 import java.util.*
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceMemberRepository
 
@@ -442,25 +445,99 @@ class WorkspaceServiceTest : DescribeSpec({
         }
     }
 
-    describe("saveWorkspaceImages") {
-        it("should save workspace images") {
+    describe("applyImageSlots") {
+        beforeTest {
+            SampleEntity.workspace.images.clear()
+        }
+
+        it("should update the focal point of an existing image") {
+            val workspace = SampleEntity.workspace.apply {
+                images.add(SampleEntity.workspaceImage1.apply { focalX = 50; focalY = 50 })
+            }
+            every { repository.save(workspace) } returns workspace
+
+            sut.applyImageSlots(
+                workspace,
+                listOf(WorkspaceImageSlot.Existing(1L, FocalPointDto(20, 12))),
+            )
+
+            SampleEntity.workspaceImage1.focalX shouldBe 20
+            SampleEntity.workspaceImage1.focalY shouldBe 12
+        }
+
+        it("should keep the stored focal point when the slot carries none") {
+            val workspace = SampleEntity.workspace.apply {
+                images.add(SampleEntity.workspaceImage1.apply { focalX = 30; focalY = 40 })
+            }
+            every { repository.save(workspace) } returns workspace
+
+            sut.applyImageSlots(workspace, listOf(WorkspaceImageSlot.Existing(1L, null)))
+
+            SampleEntity.workspaceImage1.focalX shouldBe 30
+            SampleEntity.workspaceImage1.focalY shouldBe 40
+        }
+
+        it("should upload a new file and attach its focal point") {
             val workspace = SampleEntity.workspace
-            val newImageFiles = listOf(mockk<MultipartFile>(), mockk<MultipartFile>())
-            newImageFiles.forEach { every { it.inputStream } returns java.io.ByteArrayInputStream(ByteArray(0)) }
+            val file = mockk<MultipartFile>()
+            every { file.inputStream } returns ByteArrayInputStream(ByteArray(0))
+            every { s3Service.uploadResizedWebpImage(any(), any()) } returns "uploaded-url"
+            every { repository.save(workspace) } returns workspace
 
-            every {
-                s3Service.uploadResizedWebpImage(any(), any<String>())
-            } returns "imageUrl"
-            every {
-                repository.save(workspace)
-            } returns workspace
+            sut.applyImageSlots(
+                workspace,
+                listOf(WorkspaceImageSlot.New(file, FocalPointDto(70, 80))),
+            )
 
-            val result = sut.saveWorkspaceImages(workspace, newImageFiles)
+            workspace.images.size shouldBe 1
+            workspace.images.first().url shouldBe "uploaded-url"
+            workspace.images.first().focalX shouldBe 70
+            workspace.images.first().focalY shouldBe 80
+        }
 
-            assert(result == workspace)
+        it("should default a new file to the center when the slot carries no focal point") {
+            val workspace = SampleEntity.workspace
+            val file = mockk<MultipartFile>()
+            every { file.inputStream } returns ByteArrayInputStream(ByteArray(0))
+            every { s3Service.uploadResizedWebpImage(any(), any()) } returns "uploaded-url"
+            every { repository.save(workspace) } returns workspace
 
-            verify(exactly = 2) { s3Service.uploadResizedWebpImage(any(), any<String>()) }
-            verify { repository.save(workspace) }
+            sut.applyImageSlots(workspace, listOf(WorkspaceImageSlot.New(file, null)))
+
+            workspace.images.first().focalX shouldBe FocalPointDto.CENTER_VALUE
+            workspace.images.first().focalY shouldBe FocalPointDto.CENTER_VALUE
+        }
+
+        it("should give each uploaded file a distinct path within the same millisecond") {
+            val workspace = SampleEntity.workspace
+            val file = mockk<MultipartFile>()
+            every { file.inputStream } returns ByteArrayInputStream(ByteArray(0))
+            val paths = mutableListOf<String>()
+            every { s3Service.uploadResizedWebpImage(any(), capture(paths)) } returns "uploaded-url"
+            every { repository.save(workspace) } returns workspace
+
+            sut.applyImageSlots(
+                workspace,
+                listOf(
+                    WorkspaceImageSlot.New(file, null),
+                    WorkspaceImageSlot.New(file, null),
+                ),
+            )
+
+            paths.toSet().size shouldBe 2
+        }
+
+        it("should silently skip a slot whose imageId does not match any image in the workspace") {
+            val workspace = SampleEntity.workspace.apply {
+                images.add(SampleEntity.workspaceImage1.apply { focalX = 30; focalY = 40 })
+            }
+            every { repository.save(workspace) } returns workspace
+
+            sut.applyImageSlots(workspace, listOf(WorkspaceImageSlot.Existing(999L, FocalPointDto(0, 0))))
+
+            workspace.images.size shouldBe 1
+            SampleEntity.workspaceImage1.focalX shouldBe 30
+            SampleEntity.workspaceImage1.focalY shouldBe 40
         }
     }
 

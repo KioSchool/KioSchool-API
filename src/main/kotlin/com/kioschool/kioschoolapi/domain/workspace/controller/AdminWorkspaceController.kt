@@ -77,13 +77,13 @@ class AdminWorkspaceController(
     @PutMapping("/workspace/image")
     fun updateWorkspaceImage(
         @AdminUsername username: String,
-        @RequestPart body: UpdateWorkspaceImageRequestBody,
+        @Valid @RequestPart body: UpdateWorkspaceImageRequestBody,
         @RequestPart(required = false) imageFiles: List<MultipartFile>?,
     ): WorkspaceDto {
         return workspaceFacade.updateWorkspaceImage(
             username,
             body.workspaceId,
-            body.imageIds,
+            body,
             imageFiles ?: emptyList()
         )
     }
