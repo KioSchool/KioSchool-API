@@ -639,8 +639,7 @@ class WorkspaceFacadeTest : DescribeSpec({
             val workspace = SampleEntity.workspace.apply {
                 images.addAll(SampleEntity.workspaceImages)
             }
-            // 프론트가 오래된 목록을 그대로 되돌려보낸 상황. imageIds는 "남길 사진"이라
-            // 검증이 없으면 실재하는 1·2·3이 전부 삭제 대상이 되고, 복원할 사진은 하나도 없다.
+            // 검증이 없으면 실재하는 1·2·3이 전부 삭제 대상이 되고, 복원할 사진은 없다.
             val body = UpdateWorkspaceImageRequestBody(
                 workspaceId = workspaceId,
                 imageIds = listOf(999901L, 999902L, 999903L),
