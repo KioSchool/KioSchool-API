@@ -47,6 +47,7 @@ class Workspace(
         orphanRemoval = true,
         fetch = FetchType.LAZY
     )
+    @OrderBy("id")
     val images: MutableList<WorkspaceImage> = mutableListOf(),
     var description: String = "",
     var notice: String = "",
