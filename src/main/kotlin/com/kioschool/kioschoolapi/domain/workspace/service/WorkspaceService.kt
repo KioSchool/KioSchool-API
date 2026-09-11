@@ -26,6 +26,8 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.support.TransactionSynchronization
+import org.springframework.transaction.support.TransactionSynchronizationManager
 import java.time.LocalDateTime
 import java.util.*
 
@@ -162,10 +164,26 @@ class WorkspaceService(
         return workspaceRepository.save(workspace)
     }
 
+    /**
+     * S3 원본 삭제는 커밋 이후로 미룬다. 즉시 지우면 뒤이은 신규 업로드가 실패해 트랜잭션이
+     * 롤백됐을 때 DB 행은 살아있는데 S3 객체만 사라져 깨진 URL이 남는다. S3 삭제는 되돌릴 수
+     * 없으므로 DB 삭제가 확정된 뒤에만 실행한다.
+     */
     fun deleteWorkspaceImages(workspace: Workspace, deletedImages: List<WorkspaceImage>) {
         workspace.images.removeAll(deletedImages.toSet())
-        deletedImages.forEach {
-            s3Service.deleteFile(it.url)
+        deleteFromS3AfterCommit(deletedImages.map { it.url })
+    }
+
+    /**
+     * imageIds는 "남길 사진"의 목록이라, 여기에 없는 사진은 그대로 삭제 대상이 된다. 실재하지
+     * 않는 id가 섞여 들어오면 남길 사진이 하나도 없는 요청이 되어 워크스페이스의 사진이 S3
+     * 원본까지 전부 지워지므로, 삭제를 시작하기 전에 막는다. 프론트가 오래된 목록을 그대로
+     * 재전송하는 경우(동시 편집, 오래 열어둔 탭)가 현실적인 트리거다.
+     */
+    fun checkImagesBelongToWorkspace(workspace: Workspace, imageIds: List<Long?>) {
+        val existingIds = workspace.images.mapTo(mutableSetOf()) { it.id }
+        if (imageIds.filterNotNull().any { it !in existingIds }) {
+            throw CustomException(ErrorCode.WORKSPACE_IMAGE_NOT_FOUND)
         }
     }
 
@@ -173,14 +191,19 @@ class WorkspaceService(
     @WorkspaceUpdateEvent
     fun applyImageSlots(workspace: Workspace, slots: List<WorkspaceImageSlot>): Workspace {
         val imagesById = workspace.images.associateBy { it.id }
+        val uploadedUrls = mutableListOf<String>()
+        // 루프 도중에 업로드가 실패해도 그 전까지 올라간 파일을 회수해야 하므로, 목록을
+        // 채우기 전에 미리 등록해 참조를 넘겨둔다.
+        registerRollbackCleanup(uploadedUrls)
 
         slots.forEachIndexed { index, slot ->
             when (slot) {
                 is WorkspaceImageSlot.Existing -> {
-                    // 존재 검증은 workspace의 실제 이미지를 알 수 없는 UpdateWorkspaceImageRequestBody.toSlots()에서
-                    // 여기로 미뤄졌다. workspace.images는 워크스페이스 범위로 한정된 관계라 다른 워크스페이스의
-                    // 이미지가 섞일 일이 없으므로, 존재하지 않거나 오래된 imageId는 여기서 조용히 무시해도 안전하다.
-                    val image = imagesById[slot.imageId] ?: return@forEachIndexed
+                    // 실재 여부는 checkImagesBelongToWorkspace가 삭제 전에 이미 걸렀다. 그럼에도 여기서
+                    // 못 찾았다면 호출 순서가 깨진 것이므로, 조용히 넘기지 않고 실패시킨다. 조용히 넘기면
+                    // 그 사진은 "남기지도 복원하지도 않은" 상태가 되어 삭제만 확정된다.
+                    val image = imagesById[slot.imageId]
+                        ?: throw CustomException(ErrorCode.WORKSPACE_IMAGE_NOT_FOUND)
                     slot.focalPoint?.let {
                         image.focalX = it.x
                         image.focalY = it.y
@@ -192,6 +215,7 @@ class WorkspaceService(
                     val path =
                         "$workspacePath/workspace${workspace.id}/workspace/${System.currentTimeMillis()}-$index.webp"
                     val imageUrl = s3Service.uploadResizedWebpImage(slot.file.inputStream, path)
+                    uploadedUrls += imageUrl
                     val focalPoint = slot.focalPoint ?: FocalPointDto.CENTER
                     workspace.images.add(
                         WorkspaceImage(
@@ -206,6 +230,51 @@ class WorkspaceService(
         }
 
         return workspaceRepository.save(workspace)
+    }
+
+    /**
+     * 업로드는 성공했는데 커밋이 실패하는 경우를 잡는다. 이게 없으면 DB에 기록이 없는 S3 파일이
+     * 영구히 남는다. urls는 호출 이후에도 계속 채워지는 목록이라, 콜백이 실행되는 시점(트랜잭션
+     * 종료 후)에는 그때까지 올라간 파일이 모두 들어 있다.
+     */
+    private fun registerRollbackCleanup(urls: List<String>) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) return
+
+        TransactionSynchronizationManager.registerSynchronization(
+            object : TransactionSynchronization {
+                override fun afterCompletion(status: Int) {
+                    if (status == TransactionSynchronization.STATUS_COMMITTED) return
+                    deleteQuietly(urls)
+                }
+            }
+        )
+    }
+
+    private fun deleteFromS3AfterCommit(urls: List<String>) {
+        if (urls.isEmpty()) return
+
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            // 트랜잭션 밖에서 호출됐다면 미룰 커밋이 없다. 기존 동작대로 즉시 삭제한다.
+            deleteQuietly(urls)
+            return
+        }
+
+        TransactionSynchronizationManager.registerSynchronization(
+            object : TransactionSynchronization {
+                override fun afterCommit() = deleteQuietly(urls)
+            }
+        )
+    }
+
+    /**
+     * 커밋이 끝난 뒤(또는 롤백 정리 중) 실행되므로 여기서 예외를 던져봐야 되돌릴 DB 상태가 없다.
+     * 실패는 로그로만 남기고 나머지 파일 삭제를 계속한다.
+     */
+    private fun deleteQuietly(urls: List<String>) {
+        urls.forEach { url ->
+            runCatching { s3Service.deleteFile(url) }
+                .onFailure { log.error("Failed to delete workspace image {}", url, it) }
+        }
     }
 
     fun getWorkspaceTable(workspace: Workspace, tableNumber: Int): WorkspaceTable {

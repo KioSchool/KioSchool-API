@@ -146,6 +146,13 @@ class WorkspaceFacade(
         return WorkspaceDto.of(workspaceService.saveWorkspace(workspace))
     }
 
+    /**
+     * 사진 삭제(S3 원본 포함)와 신규 업로드가 한 요청 안에서 일어나므로 하나의 트랜잭션으로 묶는다.
+     * 경계가 없으면 업로드 단계에서 실패했을 때 삭제만 확정되어 되돌릴 수 없다. 검증 → 삭제 →
+     * 업로드 순서도 그래서 중요하다. 실제 S3 호출은 커밋/롤백이 확정된 뒤에 실행된다
+     * (WorkspaceService.deleteWorkspaceImages, applyImageSlots 참고).
+     */
+    @Transactional
     fun updateWorkspaceImage(
         username: String,
         workspaceId: Long,
@@ -156,6 +163,7 @@ class WorkspaceFacade(
         val workspace = workspaceService.getWorkspace(workspaceId)
 
         workspaceService.checkCanAccessWorkspace(user, workspace)
+        workspaceService.checkImagesBelongToWorkspace(workspace, body.imageIds)
 
         val slots = body.toSlots(imageFiles)
 

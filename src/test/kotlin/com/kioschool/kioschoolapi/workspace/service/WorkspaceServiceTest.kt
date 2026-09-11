@@ -21,6 +21,9 @@ import io.kotest.matchers.shouldBe
 import io.mockk.*
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
+import org.springframework.transaction.support.TransactionSynchronization
+import org.springframework.transaction.support.TransactionSynchronizationManager
+import org.springframework.transaction.support.TransactionSynchronizationUtils
 import org.springframework.web.multipart.MultipartFile
 import java.io.ByteArrayInputStream
 import java.util.*
@@ -443,6 +446,61 @@ class WorkspaceServiceTest : DescribeSpec({
 
             verify(exactly = 3) { s3Service.deleteFile(any()) }
         }
+
+        it("should hold the S3 delete until the transaction commits") {
+            val workspace = SampleEntity.workspace.apply {
+                images.clear()
+                images.addAll(SampleEntity.workspaceImages)
+            }
+            every { s3Service.deleteFile(any()) } just Runs
+
+            TransactionSynchronizationManager.initSynchronization()
+            try {
+                sut.deleteWorkspaceImages(workspace, SampleEntity.workspaceImages)
+
+                // S3 삭제는 되돌릴 수 없다. 커밋 전에는 원본이 남아 있어야 롤백해도 복구된다.
+                verify(exactly = 0) { s3Service.deleteFile(any()) }
+
+                TransactionSynchronizationUtils.triggerAfterCommit()
+
+                verify(exactly = 3) { s3Service.deleteFile(any()) }
+            } finally {
+                TransactionSynchronizationManager.clearSynchronization()
+            }
+        }
+    }
+
+    describe("checkImagesBelongToWorkspace") {
+        it("should pass when every id belongs to the workspace") {
+            val workspace = SampleEntity.workspace.apply {
+                images.clear()
+                images.addAll(SampleEntity.workspaceImages)
+            }
+
+            sut.checkImagesBelongToWorkspace(workspace, listOf(1L, 2L, 3L))
+        }
+
+        it("should ignore nulls, which mark empty slots rather than images") {
+            val workspace = SampleEntity.workspace.apply {
+                images.clear()
+                images.addAll(SampleEntity.workspaceImages)
+            }
+
+            sut.checkImagesBelongToWorkspace(workspace, listOf(1L, null, null))
+        }
+
+        it("should throw when an id does not belong to the workspace") {
+            val workspace = SampleEntity.workspace.apply {
+                images.clear()
+                images.addAll(SampleEntity.workspaceImages)
+            }
+
+            val exception = shouldThrow<CustomException> {
+                sut.checkImagesBelongToWorkspace(workspace, listOf(1L, 2L, 999901L))
+            }
+
+            exception.errorCode shouldBe ErrorCode.WORKSPACE_IMAGE_NOT_FOUND
+        }
     }
 
     describe("applyImageSlots") {
@@ -527,17 +585,55 @@ class WorkspaceServiceTest : DescribeSpec({
             paths.toSet().size shouldBe 2
         }
 
-        it("should silently skip a slot whose imageId does not match any image in the workspace") {
+        it("should fail on a slot whose imageId does not match any image in the workspace") {
             val workspace = SampleEntity.workspace.apply {
                 images.add(SampleEntity.workspaceImage1.apply { focalX = 30; focalY = 40 })
             }
             every { repository.save(workspace) } returns workspace
 
-            sut.applyImageSlots(workspace, listOf(WorkspaceImageSlot.Existing(999L, FocalPointDto(0, 0))))
+            // 조용히 넘기면 그 사진은 남지도 복원되지도 않고 삭제만 확정된다.
+            val exception = shouldThrow<CustomException> {
+                sut.applyImageSlots(
+                    workspace,
+                    listOf(WorkspaceImageSlot.Existing(999L, FocalPointDto(0, 0))),
+                )
+            }
 
-            workspace.images.size shouldBe 1
-            SampleEntity.workspaceImage1.focalX shouldBe 30
-            SampleEntity.workspaceImage1.focalY shouldBe 40
+            exception.errorCode shouldBe ErrorCode.WORKSPACE_IMAGE_NOT_FOUND
+            verify(exactly = 0) { repository.save(workspace) }
+        }
+
+        it("should remove files already uploaded when a later upload fails and the transaction rolls back") {
+            val workspace = SampleEntity.workspace
+            val file = mockk<MultipartFile>()
+            every { file.inputStream } returns ByteArrayInputStream(ByteArray(0))
+            every {
+                s3Service.uploadResizedWebpImage(any(), any())
+            } returns "uploaded-url" andThenThrows RuntimeException("upload failed")
+            every { s3Service.deleteFile(any()) } just Runs
+
+            TransactionSynchronizationManager.initSynchronization()
+            try {
+                shouldThrow<RuntimeException> {
+                    sut.applyImageSlots(
+                        workspace,
+                        listOf(
+                            WorkspaceImageSlot.New(file, null),
+                            WorkspaceImageSlot.New(file, null),
+                        ),
+                    )
+                }
+
+                verify(exactly = 0) { s3Service.deleteFile(any()) }
+
+                TransactionSynchronizationManager.getSynchronizations().forEach {
+                    it.afterCompletion(TransactionSynchronization.STATUS_ROLLED_BACK)
+                }
+
+                verify(exactly = 1) { s3Service.deleteFile("uploaded-url") }
+            } finally {
+                TransactionSynchronizationManager.clearSynchronization()
+            }
         }
     }
 

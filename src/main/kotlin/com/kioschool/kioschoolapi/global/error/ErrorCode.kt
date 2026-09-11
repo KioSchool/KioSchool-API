@@ -30,6 +30,10 @@ enum class ErrorCode(
     INVALID_TABLE_POSITION(HttpStatus.BAD_REQUEST, "테이블 위치가 올바르지 않습니다."),
     INVALID_IMAGE_FOCAL_POINT(HttpStatus.BAD_REQUEST, "이미지 초점 위치가 올바르지 않습니다."),
     WORKSPACE_IMAGE_SLOT_MISMATCH(HttpStatus.BAD_REQUEST, "이미지 파일 수가 올바르지 않습니다."),
+    WORKSPACE_IMAGE_NOT_FOUND(
+        HttpStatus.BAD_REQUEST,
+        "수정하려는 사진을 찾을 수 없습니다. 화면을 새로고침한 뒤 다시 시도해주세요."
+    ),
 
     // Product
     NOT_FOUND_PRODUCT(HttpStatus.NOT_FOUND, "존재하지 않는 상품입니다."),

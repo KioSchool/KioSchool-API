@@ -530,6 +530,7 @@ class WorkspaceFacadeTest : DescribeSpec({
             every { userService.getUser(username) } returns user
             every { workspaceService.getWorkspace(workspaceId) } returns workspace
             every { workspaceService.checkCanAccessWorkspace(user, workspace) } just Runs
+            every { workspaceService.checkImagesBelongToWorkspace(workspace, body.imageIds) } just Runs
             every { workspaceService.deleteWorkspaceImages(workspace, any()) } just Runs
             every {
                 workspaceService.applyImageSlots(workspace, any<List<WorkspaceImageSlot>>())
@@ -569,6 +570,7 @@ class WorkspaceFacadeTest : DescribeSpec({
             every { userService.getUser(username) } returns user
             every { workspaceService.getWorkspace(workspaceId) } returns workspace
             every { workspaceService.checkCanAccessWorkspace(user, workspace) } just Runs
+            every { workspaceService.checkImagesBelongToWorkspace(workspace, body.imageIds) } just Runs
             every { workspaceService.deleteWorkspaceImages(workspace, capture(deleted)) } just Runs
             every {
                 workspaceService.applyImageSlots(workspace, any<List<WorkspaceImageSlot>>())
@@ -593,6 +595,7 @@ class WorkspaceFacadeTest : DescribeSpec({
             every { userService.getUser(username) } returns user
             every { workspaceService.getWorkspace(workspaceId) } returns workspace
             every { workspaceService.checkCanAccessWorkspace(user, workspace) } just Runs
+            every { workspaceService.checkImagesBelongToWorkspace(workspace, body.imageIds) } just Runs
             every { workspaceService.deleteWorkspaceImages(workspace, any()) } just Runs
 
             val exception = assertThrows<CustomException> {
@@ -627,6 +630,39 @@ class WorkspaceFacadeTest : DescribeSpec({
             exception.errorCode shouldBe ErrorCode.WORKSPACE_INACCESSIBLE
             verify(exactly = 0) { workspaceService.deleteWorkspaceImages(any(), any()) }
             verify(exactly = 0) { workspaceService.applyImageSlots(any(), any()) }
+        }
+
+        it("should reject an imageId that is not in the workspace before deleting anything") {
+            val username = "username"
+            val user = SampleEntity.user
+            val workspaceId = 1L
+            val workspace = SampleEntity.workspace.apply {
+                images.addAll(SampleEntity.workspaceImages)
+            }
+            // 프론트가 오래된 목록을 그대로 되돌려보낸 상황. imageIds는 "남길 사진"이라
+            // 검증이 없으면 실재하는 1·2·3이 전부 삭제 대상이 되고, 복원할 사진은 하나도 없다.
+            val body = UpdateWorkspaceImageRequestBody(
+                workspaceId = workspaceId,
+                imageIds = listOf(999901L, 999902L, 999903L),
+                focalPoints = null,
+            )
+
+            every { userService.getUser(username) } returns user
+            every { workspaceService.getWorkspace(workspaceId) } returns workspace
+            every { workspaceService.checkCanAccessWorkspace(user, workspace) } just Runs
+            every {
+                workspaceService.checkImagesBelongToWorkspace(workspace, body.imageIds)
+            } throws CustomException(ErrorCode.WORKSPACE_IMAGE_NOT_FOUND)
+
+            val exception = assertThrows<CustomException> {
+                sut.updateWorkspaceImage(username, workspaceId, body, emptyList())
+            }
+
+            exception.errorCode shouldBe ErrorCode.WORKSPACE_IMAGE_NOT_FOUND
+            verify(exactly = 0) { workspaceService.deleteWorkspaceImages(any(), any()) }
+            verify(exactly = 0) {
+                workspaceService.applyImageSlots(any(), any<List<WorkspaceImageSlot>>())
+            }
         }
     }
 
