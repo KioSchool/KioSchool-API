@@ -146,10 +146,7 @@ class WorkspaceFacade(
         return WorkspaceDto.of(workspaceService.saveWorkspace(workspace))
     }
 
-    /**
-     * 삭제(S3 원본 포함)와 업로드가 한 요청에서 일어나므로 한 트랜잭션으로 묶는다. 경계가 없으면
-     * 업로드 실패 시 삭제만 확정된다. 실제 S3 호출은 커밋/롤백 이후로 미뤄진다(WorkspaceService).
-     */
+    /** 경계가 없으면 업로드 실패 시 삭제만 확정된다. */
     @Transactional
     fun updateWorkspaceImage(
         username: String,

@@ -639,7 +639,6 @@ class WorkspaceFacadeTest : DescribeSpec({
             val workspace = SampleEntity.workspace.apply {
                 images.addAll(SampleEntity.workspaceImages)
             }
-            // 검증이 없으면 실재하는 1·2·3이 전부 삭제 대상이 되고, 복원할 사진은 없다.
             val body = UpdateWorkspaceImageRequestBody(
                 workspaceId = workspaceId,
                 imageIds = listOf(999901L, 999902L, 999903L),

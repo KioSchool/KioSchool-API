@@ -458,7 +458,6 @@ class WorkspaceServiceTest : DescribeSpec({
             try {
                 sut.deleteWorkspaceImages(workspace, SampleEntity.workspaceImages)
 
-                // 커밋 전에는 원본이 남아 있어야 롤백해도 복구된다.
                 verify(exactly = 0) { s3Service.deleteFile(any()) }
 
                 TransactionSynchronizationUtils.triggerAfterCommit()
@@ -591,7 +590,6 @@ class WorkspaceServiceTest : DescribeSpec({
             }
             every { repository.save(workspace) } returns workspace
 
-            // 조용히 넘기면 삭제만 확정된다.
             val exception = shouldThrow<CustomException> {
                 sut.applyImageSlots(
                     workspace,

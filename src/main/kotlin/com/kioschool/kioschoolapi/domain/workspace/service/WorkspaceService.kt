@@ -164,19 +164,12 @@ class WorkspaceService(
         return workspaceRepository.save(workspace)
     }
 
-    /**
-     * S3 삭제는 되돌릴 수 없어 커밋 이후로 미룬다. 즉시 지우면 이후 단계가 실패해 롤백됐을 때
-     * DB 행만 남고 원본이 사라진다.
-     */
     fun deleteWorkspaceImages(workspace: Workspace, deletedImages: List<WorkspaceImage>) {
         workspace.images.removeAll(deletedImages.toSet())
         deleteFromS3AfterCommit(deletedImages.map { it.url })
     }
 
-    /**
-     * imageIds는 "남길 사진" 목록이라, 실재하지 않는 id가 섞이면 남길 사진이 하나도 없는 요청이
-     * 되어 S3 원본까지 전부 지워진다. 삭제를 시작하기 전에 막는다.
-     */
+    /** imageIds는 "남길 사진" 목록이라, 없는 id가 섞이면 사진이 S3 원본까지 전부 지워진다. */
     fun checkImagesBelongToWorkspace(workspace: Workspace, imageIds: List<Long?>) {
         val existingIds = workspace.images.mapTo(mutableSetOf()) { it.id }
         if (imageIds.filterNotNull().any { it !in existingIds }) {
@@ -195,8 +188,7 @@ class WorkspaceService(
         slots.forEachIndexed { index, slot ->
             when (slot) {
                 is WorkspaceImageSlot.Existing -> {
-                    // checkImagesBelongToWorkspace가 먼저 거르므로 도달하지 않는다. 조용히 넘기면
-                    // 그 사진은 복원되지 않은 채 삭제만 확정되므로 실패시킨다.
+                    // 조용히 넘기면 그 사진은 복원되지 않은 채 삭제만 확정된다.
                     val image = imagesById[slot.imageId]
                         ?: throw CustomException(ErrorCode.WORKSPACE_IMAGE_NOT_FOUND)
                     slot.focalPoint?.let {
@@ -227,10 +219,7 @@ class WorkspaceService(
         return workspaceRepository.save(workspace)
     }
 
-    /**
-     * 업로드는 됐는데 커밋이 실패하면 DB에 기록 없는 파일이 남는다. urls는 등록 이후에도 계속
-     * 채워지므로 콜백 시점엔 그때까지 올라간 파일이 모두 들어 있다.
-     */
+    /** 업로드는 됐는데 커밋이 실패하면 DB에 기록 없는 파일이 남는다. */
     private fun registerRollbackCleanup(urls: List<String>) {
         if (!TransactionSynchronizationManager.isSynchronizationActive()) return
 
@@ -244,11 +233,11 @@ class WorkspaceService(
         )
     }
 
+    /** S3 삭제는 되돌릴 수 없다. 롤백되면 원본이 그대로 남아야 한다. */
     private fun deleteFromS3AfterCommit(urls: List<String>) {
         if (urls.isEmpty()) return
 
         if (!TransactionSynchronizationManager.isSynchronizationActive()) {
-            // 트랜잭션 밖이면 미룰 커밋이 없다. 기존 동작대로 즉시 삭제한다.
             deleteQuietly(urls)
             return
         }
@@ -260,7 +249,6 @@ class WorkspaceService(
         )
     }
 
-    /** 커밋/롤백이 끝난 뒤 실행되므로 되돌릴 DB 상태가 없다. 실패는 로그만 남기고 계속한다. */
     private fun deleteQuietly(urls: List<String>) {
         urls.forEach { url ->
             runCatching { s3Service.deleteFile(url) }
