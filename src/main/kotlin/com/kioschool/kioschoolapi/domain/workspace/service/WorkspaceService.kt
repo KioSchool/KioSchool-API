@@ -26,6 +26,8 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.support.TransactionSynchronization
+import org.springframework.transaction.support.TransactionSynchronizationManager
 import java.time.LocalDateTime
 import java.util.*
 
@@ -164,8 +166,14 @@ class WorkspaceService(
 
     fun deleteWorkspaceImages(workspace: Workspace, deletedImages: List<WorkspaceImage>) {
         workspace.images.removeAll(deletedImages.toSet())
-        deletedImages.forEach {
-            s3Service.deleteFile(it.url)
+        deleteFromS3AfterCommit(deletedImages.map { it.url })
+    }
+
+    /** imageIds는 "남길 사진" 목록이라, 없는 id가 섞이면 사진이 S3 원본까지 전부 지워진다. */
+    fun checkImagesBelongToWorkspace(workspace: Workspace, imageIds: List<Long?>) {
+        val existingIds = workspace.images.mapTo(mutableSetOf()) { it.id }
+        if (imageIds.filterNotNull().any { it !in existingIds }) {
+            throw CustomException(ErrorCode.WORKSPACE_IMAGE_NOT_FOUND)
         }
     }
 
@@ -173,14 +181,16 @@ class WorkspaceService(
     @WorkspaceUpdateEvent
     fun applyImageSlots(workspace: Workspace, slots: List<WorkspaceImageSlot>): Workspace {
         val imagesById = workspace.images.associateBy { it.id }
+        val uploadedUrls = mutableListOf<String>()
+        // 루프 중간에 실패해도 그 전까지 올라간 파일을 회수해야 해서, 채우기 전에 등록한다.
+        registerRollbackCleanup(uploadedUrls)
 
         slots.forEachIndexed { index, slot ->
             when (slot) {
                 is WorkspaceImageSlot.Existing -> {
-                    // 존재 검증은 workspace의 실제 이미지를 알 수 없는 UpdateWorkspaceImageRequestBody.toSlots()에서
-                    // 여기로 미뤄졌다. workspace.images는 워크스페이스 범위로 한정된 관계라 다른 워크스페이스의
-                    // 이미지가 섞일 일이 없으므로, 존재하지 않거나 오래된 imageId는 여기서 조용히 무시해도 안전하다.
-                    val image = imagesById[slot.imageId] ?: return@forEachIndexed
+                    // 조용히 넘기면 그 사진은 복원되지 않은 채 삭제만 확정된다.
+                    val image = imagesById[slot.imageId]
+                        ?: throw CustomException(ErrorCode.WORKSPACE_IMAGE_NOT_FOUND)
                     slot.focalPoint?.let {
                         image.focalX = it.x
                         image.focalY = it.y
@@ -192,6 +202,7 @@ class WorkspaceService(
                     val path =
                         "$workspacePath/workspace${workspace.id}/workspace/${System.currentTimeMillis()}-$index.webp"
                     val imageUrl = s3Service.uploadResizedWebpImage(slot.file.inputStream, path)
+                    uploadedUrls += imageUrl
                     val focalPoint = slot.focalPoint ?: FocalPointDto.CENTER
                     workspace.images.add(
                         WorkspaceImage(
@@ -206,6 +217,43 @@ class WorkspaceService(
         }
 
         return workspaceRepository.save(workspace)
+    }
+
+    /** 업로드는 됐는데 커밋이 실패하면 DB에 기록 없는 파일이 남는다. */
+    private fun registerRollbackCleanup(urls: List<String>) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) return
+
+        TransactionSynchronizationManager.registerSynchronization(
+            object : TransactionSynchronization {
+                override fun afterCompletion(status: Int) {
+                    if (status == TransactionSynchronization.STATUS_COMMITTED) return
+                    deleteQuietly(urls)
+                }
+            }
+        )
+    }
+
+    /** S3 삭제는 되돌릴 수 없다. 롤백되면 원본이 그대로 남아야 한다. */
+    private fun deleteFromS3AfterCommit(urls: List<String>) {
+        if (urls.isEmpty()) return
+
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            deleteQuietly(urls)
+            return
+        }
+
+        TransactionSynchronizationManager.registerSynchronization(
+            object : TransactionSynchronization {
+                override fun afterCommit() = deleteQuietly(urls)
+            }
+        )
+    }
+
+    private fun deleteQuietly(urls: List<String>) {
+        urls.forEach { url ->
+            runCatching { s3Service.deleteFile(url) }
+                .onFailure { log.error("Failed to delete workspace image {}", url, it) }
+        }
     }
 
     fun getWorkspaceTable(workspace: Workspace, tableNumber: Int): WorkspaceTable {

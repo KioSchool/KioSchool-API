@@ -146,6 +146,8 @@ class WorkspaceFacade(
         return WorkspaceDto.of(workspaceService.saveWorkspace(workspace))
     }
 
+    /** 경계가 없으면 업로드 실패 시 삭제만 확정된다. */
+    @Transactional
     fun updateWorkspaceImage(
         username: String,
         workspaceId: Long,
@@ -156,6 +158,7 @@ class WorkspaceFacade(
         val workspace = workspaceService.getWorkspace(workspaceId)
 
         workspaceService.checkCanAccessWorkspace(user, workspace)
+        workspaceService.checkImagesBelongToWorkspace(workspace, body.imageIds)
 
         val slots = body.toSlots(imageFiles)
 

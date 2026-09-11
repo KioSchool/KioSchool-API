@@ -7,19 +7,9 @@ import kotlin.reflect.full.declaredMemberProperties
 import kotlin.reflect.jvm.javaField
 
 /**
- * A @OneToMany List with no @OrderBy is a Hibernate *bag*: the collection is materialised in
- * whatever order the database happens to return rows, and no SQL ORDER BY is emitted. PostgreSQL
- * has no stable row order either -- an UPDATE writes a new tuple version, which a sequential scan
- * then returns last -- so simply editing one row reshuffles the collection.
- *
- * Workspace.images is serialised straight into WorkspaceDto.images and rendered in that order by
- * both the admin editor and the customer-facing slider, so the shuffle is user-visible: changing
- * one photo's focal point moved that photo to the end of the list. Workspace.products already
- * carried @OrderBy("id") for the same reason.
- *
- * WorkspaceOgImageListener independently works around the missing order with
- * `images.minByOrNull { it.id }`, which is the same "oldest image first" rule @OrderBy("id")
- * states declaratively.
+ * A @OneToMany List with no @OrderBy is a Hibernate bag: no SQL ORDER BY is emitted, and PostgreSQL
+ * returns an UPDATEd row last, so editing one row reshuffles the collection. These two are rendered
+ * in response order by the admin editor and the customer-facing slider, so the shuffle is visible.
  */
 class EntityCollectionOrderingTest : DescribeSpec({
     describe("Workspace collections rendered in API responses") {
