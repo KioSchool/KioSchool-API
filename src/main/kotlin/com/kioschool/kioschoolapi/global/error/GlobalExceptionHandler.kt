@@ -35,7 +35,7 @@ class GlobalExceptionHandler : ResponseEntityExceptionHandler() {
             log.warn("Business error [{}] at {}: {}", errorCode.name, request.requestURI, ex.message)
         }
         return ResponseEntity.status(errorCode.status)
-            .body(ErrorResponse.of(errorCode, request.requestURI, ex.message))
+            .body(ErrorResponse.of(errorCode, request.requestURI, ex.message, ex.errors))
     }
 
     @ExceptionHandler(ConstraintViolationException::class)

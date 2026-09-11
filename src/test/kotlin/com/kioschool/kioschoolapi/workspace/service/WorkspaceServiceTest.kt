@@ -1,6 +1,10 @@
 package com.kioschool.kioschoolapi.workspace.service
 
 import com.kioschool.kioschoolapi.domain.user.service.UserService
+import com.kioschool.kioschoolapi.domain.workspace.dto.common.FocalPointDto
+import com.kioschool.kioschoolapi.domain.workspace.dto.common.TablePositionDto
+import com.kioschool.kioschoolapi.domain.workspace.dto.common.TablePositionUpdateDto
+import com.kioschool.kioschoolapi.domain.workspace.dto.common.WorkspaceImageSlot
 import com.kioschool.kioschoolapi.domain.workspace.entity.WorkspaceTable
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepository
 import com.kioschool.kioschoolapi.domain.workspace.repository.CustomWorkspaceRepository
@@ -17,7 +21,11 @@ import io.kotest.matchers.shouldBe
 import io.mockk.*
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
+import org.springframework.transaction.support.TransactionSynchronization
+import org.springframework.transaction.support.TransactionSynchronizationManager
+import org.springframework.transaction.support.TransactionSynchronizationUtils
 import org.springframework.web.multipart.MultipartFile
+import java.io.ByteArrayInputStream
 import java.util.*
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceMemberRepository
 
@@ -44,6 +52,7 @@ class WorkspaceServiceTest : DescribeSpec({
         mockkObject(workspaceTableRepository)
         mockkObject(workspaceMemberRepository)
         mockkObject(userService)
+        SampleEntity.workspace.tableCount = 1
     }
 
     afterTest {
@@ -437,27 +446,192 @@ class WorkspaceServiceTest : DescribeSpec({
 
             verify(exactly = 3) { s3Service.deleteFile(any()) }
         }
+
+        it("should hold the S3 delete until the transaction commits") {
+            val workspace = SampleEntity.workspace.apply {
+                images.clear()
+                images.addAll(SampleEntity.workspaceImages)
+            }
+            every { s3Service.deleteFile(any()) } just Runs
+
+            TransactionSynchronizationManager.initSynchronization()
+            try {
+                sut.deleteWorkspaceImages(workspace, SampleEntity.workspaceImages)
+
+                verify(exactly = 0) { s3Service.deleteFile(any()) }
+
+                TransactionSynchronizationUtils.triggerAfterCommit()
+
+                verify(exactly = 3) { s3Service.deleteFile(any()) }
+            } finally {
+                TransactionSynchronizationManager.clearSynchronization()
+            }
+        }
     }
 
-    describe("saveWorkspaceImages") {
-        it("should save workspace images") {
+    describe("checkImagesBelongToWorkspace") {
+        it("should pass when every id belongs to the workspace") {
+            val workspace = SampleEntity.workspace.apply {
+                images.clear()
+                images.addAll(SampleEntity.workspaceImages)
+            }
+
+            sut.checkImagesBelongToWorkspace(workspace, listOf(1L, 2L, 3L))
+        }
+
+        it("should ignore nulls, which mark empty slots rather than images") {
+            val workspace = SampleEntity.workspace.apply {
+                images.clear()
+                images.addAll(SampleEntity.workspaceImages)
+            }
+
+            sut.checkImagesBelongToWorkspace(workspace, listOf(1L, null, null))
+        }
+
+        it("should throw when an id does not belong to the workspace") {
+            val workspace = SampleEntity.workspace.apply {
+                images.clear()
+                images.addAll(SampleEntity.workspaceImages)
+            }
+
+            val exception = shouldThrow<CustomException> {
+                sut.checkImagesBelongToWorkspace(workspace, listOf(1L, 2L, 999901L))
+            }
+
+            exception.errorCode shouldBe ErrorCode.WORKSPACE_IMAGE_NOT_FOUND
+        }
+    }
+
+    describe("applyImageSlots") {
+        beforeTest {
+            SampleEntity.workspace.images.clear()
+        }
+
+        it("should update the focal point of an existing image") {
+            val workspace = SampleEntity.workspace.apply {
+                images.add(SampleEntity.workspaceImage1.apply { focalX = 50; focalY = 50 })
+            }
+            every { repository.save(workspace) } returns workspace
+
+            sut.applyImageSlots(
+                workspace,
+                listOf(WorkspaceImageSlot.Existing(1L, FocalPointDto(20, 12))),
+            )
+
+            SampleEntity.workspaceImage1.focalX shouldBe 20
+            SampleEntity.workspaceImage1.focalY shouldBe 12
+        }
+
+        it("should keep the stored focal point when the slot carries none") {
+            val workspace = SampleEntity.workspace.apply {
+                images.add(SampleEntity.workspaceImage1.apply { focalX = 30; focalY = 40 })
+            }
+            every { repository.save(workspace) } returns workspace
+
+            sut.applyImageSlots(workspace, listOf(WorkspaceImageSlot.Existing(1L, null)))
+
+            SampleEntity.workspaceImage1.focalX shouldBe 30
+            SampleEntity.workspaceImage1.focalY shouldBe 40
+        }
+
+        it("should upload a new file and attach its focal point") {
             val workspace = SampleEntity.workspace
-            val newImageFiles = listOf(mockk<MultipartFile>(), mockk<MultipartFile>())
-            newImageFiles.forEach { every { it.inputStream } returns java.io.ByteArrayInputStream(ByteArray(0)) }
+            val file = mockk<MultipartFile>()
+            every { file.inputStream } returns ByteArrayInputStream(ByteArray(0))
+            every { s3Service.uploadResizedWebpImage(any(), any()) } returns "uploaded-url"
+            every { repository.save(workspace) } returns workspace
 
+            sut.applyImageSlots(
+                workspace,
+                listOf(WorkspaceImageSlot.New(file, FocalPointDto(70, 80))),
+            )
+
+            workspace.images.size shouldBe 1
+            workspace.images.first().url shouldBe "uploaded-url"
+            workspace.images.first().focalX shouldBe 70
+            workspace.images.first().focalY shouldBe 80
+        }
+
+        it("should default a new file to the center when the slot carries no focal point") {
+            val workspace = SampleEntity.workspace
+            val file = mockk<MultipartFile>()
+            every { file.inputStream } returns ByteArrayInputStream(ByteArray(0))
+            every { s3Service.uploadResizedWebpImage(any(), any()) } returns "uploaded-url"
+            every { repository.save(workspace) } returns workspace
+
+            sut.applyImageSlots(workspace, listOf(WorkspaceImageSlot.New(file, null)))
+
+            workspace.images.first().focalX shouldBe FocalPointDto.CENTER_VALUE
+            workspace.images.first().focalY shouldBe FocalPointDto.CENTER_VALUE
+        }
+
+        it("should give each uploaded file a distinct path within the same millisecond") {
+            val workspace = SampleEntity.workspace
+            val file = mockk<MultipartFile>()
+            every { file.inputStream } returns ByteArrayInputStream(ByteArray(0))
+            val paths = mutableListOf<String>()
+            every { s3Service.uploadResizedWebpImage(any(), capture(paths)) } returns "uploaded-url"
+            every { repository.save(workspace) } returns workspace
+
+            sut.applyImageSlots(
+                workspace,
+                listOf(
+                    WorkspaceImageSlot.New(file, null),
+                    WorkspaceImageSlot.New(file, null),
+                ),
+            )
+
+            paths.toSet().size shouldBe 2
+        }
+
+        it("should fail on a slot whose imageId does not match any image in the workspace") {
+            val workspace = SampleEntity.workspace.apply {
+                images.add(SampleEntity.workspaceImage1.apply { focalX = 30; focalY = 40 })
+            }
+            every { repository.save(workspace) } returns workspace
+
+            val exception = shouldThrow<CustomException> {
+                sut.applyImageSlots(
+                    workspace,
+                    listOf(WorkspaceImageSlot.Existing(999L, FocalPointDto(0, 0))),
+                )
+            }
+
+            exception.errorCode shouldBe ErrorCode.WORKSPACE_IMAGE_NOT_FOUND
+            verify(exactly = 0) { repository.save(workspace) }
+        }
+
+        it("should remove files already uploaded when a later upload fails and the transaction rolls back") {
+            val workspace = SampleEntity.workspace
+            val file = mockk<MultipartFile>()
+            every { file.inputStream } returns ByteArrayInputStream(ByteArray(0))
             every {
-                s3Service.uploadResizedWebpImage(any(), any<String>())
-            } returns "imageUrl"
-            every {
-                repository.save(workspace)
-            } returns workspace
+                s3Service.uploadResizedWebpImage(any(), any())
+            } returns "uploaded-url" andThenThrows RuntimeException("upload failed")
+            every { s3Service.deleteFile(any()) } just Runs
 
-            val result = sut.saveWorkspaceImages(workspace, newImageFiles)
+            TransactionSynchronizationManager.initSynchronization()
+            try {
+                shouldThrow<RuntimeException> {
+                    sut.applyImageSlots(
+                        workspace,
+                        listOf(
+                            WorkspaceImageSlot.New(file, null),
+                            WorkspaceImageSlot.New(file, null),
+                        ),
+                    )
+                }
 
-            assert(result == workspace)
+                verify(exactly = 0) { s3Service.deleteFile(any()) }
 
-            verify(exactly = 2) { s3Service.uploadResizedWebpImage(any(), any<String>()) }
-            verify { repository.save(workspace) }
+                TransactionSynchronizationManager.getSynchronizations().forEach {
+                    it.afterCompletion(TransactionSynchronization.STATUS_ROLLED_BACK)
+                }
+
+                verify(exactly = 1) { s3Service.deleteFile("uploaded-url") }
+            } finally {
+                TransactionSynchronizationManager.clearSynchronization()
+            }
         }
     }
 
@@ -477,7 +651,7 @@ class WorkspaceServiceTest : DescribeSpec({
 
     describe("getWorkspaceTable") {
         it("should get workspace table") {
-            val workspace = SampleEntity.workspace
+            val workspace = SampleEntity.workspace.apply { tableCount = 1 }
             val tableNumber = 1
 
             every {
@@ -499,16 +673,69 @@ class WorkspaceServiceTest : DescribeSpec({
     }
 
     describe("getAllWorkspaceTables") {
-        it("should get all workspace tables") {
-            val workspace = SampleEntity.workspace
-
-            every { workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace) } returns listOf(
-                SampleEntity.workspaceTable
+        it("should return only tables within tableCount") {
+            val workspace = SampleEntity.workspace.apply { tableCount = 2 }
+            val tables = listOf(
+                SampleEntity.workspaceTableWithId(1L, tableNumber = 1),
+                SampleEntity.workspaceTableWithId(2L, tableNumber = 2)
             )
 
-            sut.getAllWorkspaceTables(workspace) shouldBe listOf(SampleEntity.workspaceTable)
+            every {
+                workspaceTableRepository
+                    .findAllByWorkspaceAndTableNumberLessThanEqualOrderByTableNumber(workspace, 2)
+            } returns tables
 
-            verify { workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace) }
+            sut.getAllWorkspaceTables(workspace) shouldBe tables
+
+            verify {
+                workspaceTableRepository
+                    .findAllByWorkspaceAndTableNumberLessThanEqualOrderByTableNumber(workspace, 2)
+            }
+        }
+    }
+
+    describe("out-of-range table access") {
+        it("should reject a tableHash whose table number exceeds tableCount") {
+            val workspace = SampleEntity.workspace.apply { tableCount = 2 }
+            val table = SampleEntity.workspaceTableWithId(5L, tableNumber = 5)
+
+            every {
+                workspaceTableRepository.findByTableHashAndWorkspace("testHash5", workspace)
+            } returns Optional.of(table)
+
+            val ex = shouldThrow<CustomException> {
+                sut.getWorkspaceTableByHash(workspace, "testHash5")
+            }
+            ex.errorCode shouldBe ErrorCode.WORKSPACE_TABLE_NOT_FOUND
+        }
+
+        it("should return a tableHash whose table number is within tableCount") {
+            val workspace = SampleEntity.workspace.apply { tableCount = 2 }
+            val table = SampleEntity.workspaceTableWithId(1L, tableNumber = 1)
+
+            every {
+                workspaceTableRepository.findByTableHashAndWorkspace("testHash1", workspace)
+            } returns Optional.of(table)
+
+            sut.getWorkspaceTableByHash(workspace, "testHash1") shouldBe table
+        }
+
+        it("should reject a tableNumber that exceeds tableCount without hitting the repository") {
+            val workspace = SampleEntity.workspace.apply { tableCount = 2 }
+
+            val ex = shouldThrow<CustomException> { sut.getWorkspaceTable(workspace, 5) }
+            ex.errorCode shouldBe ErrorCode.WORKSPACE_TABLE_NOT_FOUND
+
+            verify(exactly = 0) {
+                workspaceTableRepository.findByTableNumberAndWorkspace(any(), any())
+            }
+        }
+
+        it("should reject a tableNumber below 1") {
+            val workspace = SampleEntity.workspace.apply { tableCount = 2 }
+
+            val ex = shouldThrow<CustomException> { sut.getWorkspaceTable(workspace, 0) }
+            ex.errorCode shouldBe ErrorCode.WORKSPACE_TABLE_NOT_FOUND
         }
     }
 
@@ -524,20 +751,496 @@ class WorkspaceServiceTest : DescribeSpec({
             verify { workspaceTableRepository.saveAll(any<Iterable<WorkspaceTable>>()) }
         }
 
-        it("should remove tables when table count is decreased") {
+        it("should clear positions of out-of-range tables instead of deleting them when table count is decreased") {
             val workspace = SampleEntity.workspace.apply { tableCount = 1 }
+            val tables = listOf(
+                SampleEntity.workspaceTableWithId(1L, tableNumber = 1, positionX = 0, positionY = 0),
+                SampleEntity.workspaceTableWithId(2L, tableNumber = 2, positionX = 1, positionY = 0),
+                SampleEntity.workspaceTableWithId(3L, tableNumber = 3, positionX = 2, positionY = 0)
+            )
 
             every { workspaceTableRepository.countAllByWorkspace(workspace) } returns 3
-            every { workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace) } returns listOf(
-                SampleEntity.workspaceTable,
-                SampleEntity.workspaceTable,
-                SampleEntity.workspaceTable
-            )
-            every { workspaceTableRepository.deleteAll(any<Iterable<WorkspaceTable>>()) } just Runs
+            every { workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace) } returns tables
+            every { workspaceTableRepository.saveAll(any<Iterable<WorkspaceTable>>()) } returns listOf()
 
             sut.updateWorkspaceTables(workspace)
 
-            verify { workspaceTableRepository.deleteAll(any<Iterable<WorkspaceTable>>()) }
+            // 범위 안 테이블(1번)은 그대로
+            tables[0].positionX shouldBe 0
+            tables[0].positionY shouldBe 0
+
+            // 범위 밖 테이블(2, 3번)은 position만 비워짐
+            tables[1].positionX shouldBe null
+            tables[1].positionY shouldBe null
+            tables[2].positionX shouldBe null
+            tables[2].positionY shouldBe null
+
+            verify {
+                workspaceTableRepository.saveAll(
+                    match<Iterable<WorkspaceTable>> {
+                        it.map(WorkspaceTable::tableNumber).toSet() == setOf(2, 3)
+                    }
+                )
+            }
+            verify(exactly = 0) { workspaceTableRepository.deleteAll(any<Iterable<WorkspaceTable>>()) }
+        }
+
+        it("should preserve tableHash across a decrease and a matching increase") {
+            val workspace = SampleEntity.workspace
+            val tables = listOf(
+                SampleEntity.workspaceTableWithId(1L, tableNumber = 1),
+                SampleEntity.workspaceTableWithId(2L, tableNumber = 2),
+                SampleEntity.workspaceTableWithId(3L, tableNumber = 3)
+            )
+            val hashesBefore = tables.map { it.tableHash }
+
+            every { workspaceTableRepository.countAllByWorkspace(workspace) } returns 3
+            every { workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace) } returns tables
+            every { workspaceTableRepository.saveAll(any<Iterable<WorkspaceTable>>()) } returns listOf()
+
+            // 3 -> 1 (감소): row는 남고 좌표만 비워진다
+            workspace.tableCount = 1
+            sut.updateWorkspaceTables(workspace)
+
+            // 1 -> 3 (복귀): 신규 생성이 없어야 한다
+            workspace.tableCount = 3
+            sut.updateWorkspaceTables(workspace)
+
+            // 인쇄된 QR이 살아있다는 것이 이 기능의 존재 이유다
+            tables.map { it.tableHash } shouldBe hashesBefore
+            verify(exactly = 0) { workspaceTableRepository.deleteAll(any<Iterable<WorkspaceTable>>()) }
+        }
+
+        it("should do nothing when table count returns to the row high-water mark") {
+            val workspace = SampleEntity.workspace.apply { tableCount = 3 }
+
+            every { workspaceTableRepository.countAllByWorkspace(workspace) } returns 3
+
+            sut.updateWorkspaceTables(workspace)
+
+            // hash 재발급이 없어야 인쇄된 QR이 살아있다
+            verify(exactly = 0) { workspaceTableRepository.saveAll(any<Iterable<WorkspaceTable>>()) }
+            verify(exactly = 0) { workspaceTableRepository.deleteAll(any<Iterable<WorkspaceTable>>()) }
+        }
+    }
+
+    describe("updateTablePosition") {
+        it("should save the given position") {
+            val workspace = SampleEntity.workspace
+            val table = SampleEntity.workspaceTableWithId(1L)
+
+            every { workspaceTableRepository.findByIdAndWorkspace(1L, workspace) } returns Optional.of(table)
+            every {
+                workspaceTableRepository.existsByWorkspaceAndPositionXAndPositionYAndIdNot(workspace, 3, 2, 1L)
+            } returns false
+            every { workspaceTableRepository.save(table) } returns table
+
+            val result = sut.updateTablePosition(workspace, 1L, 3, 2)
+
+            result.positionX shouldBe 3
+            result.positionY shouldBe 2
+
+            verify { workspaceTableRepository.save(table) }
+        }
+
+        it("should clear the position when position is null") {
+            val workspace = SampleEntity.workspace
+            val table = SampleEntity.workspaceTableWithId(1L, positionX = 3, positionY = 2)
+
+            every { workspaceTableRepository.findByIdAndWorkspace(1L, workspace) } returns Optional.of(table)
+            every { workspaceTableRepository.save(table) } returns table
+
+            val result = sut.updateTablePosition(workspace, 1L, null, null)
+
+            result.positionX shouldBe null
+            result.positionY shouldBe null
+
+            verify { workspaceTableRepository.save(table) }
+            verify(exactly = 0) {
+                workspaceTableRepository.existsByWorkspaceAndPositionXAndPositionYAndIdNot(
+                    any(), any(), any(), any()
+                )
+            }
+        }
+
+        it("should throw TABLE_POSITION_CONFLICT when another table occupies the cell") {
+            val workspace = SampleEntity.workspace
+            val table = SampleEntity.workspaceTableWithId(1L)
+
+            every { workspaceTableRepository.findByIdAndWorkspace(1L, workspace) } returns Optional.of(table)
+            every {
+                workspaceTableRepository.existsByWorkspaceAndPositionXAndPositionYAndIdNot(workspace, 3, 2, 1L)
+            } returns true
+
+            val ex = shouldThrow<CustomException> { sut.updateTablePosition(workspace, 1L, 3, 2) }
+            ex.errorCode shouldBe ErrorCode.TABLE_POSITION_CONFLICT
+
+            verify(exactly = 0) { workspaceTableRepository.save(any()) }
+        }
+
+        it("should allow re-saving the same table to the cell it already occupies") {
+            val workspace = SampleEntity.workspace
+            val table = SampleEntity.workspaceTableWithId(1L, positionX = 3, positionY = 2)
+
+            every { workspaceTableRepository.findByIdAndWorkspace(1L, workspace) } returns Optional.of(table)
+            every {
+                workspaceTableRepository.existsByWorkspaceAndPositionXAndPositionYAndIdNot(workspace, 3, 2, 1L)
+            } returns false
+            every { workspaceTableRepository.save(table) } returns table
+
+            sut.updateTablePosition(workspace, 1L, 3, 2)
+
+            verify { workspaceTableRepository.save(table) }
+        }
+
+        it("should throw INVALID_TABLE_POSITION when a coordinate is negative") {
+            val workspace = SampleEntity.workspace
+            val table = SampleEntity.workspaceTableWithId(1L)
+
+            every { workspaceTableRepository.findByIdAndWorkspace(1L, workspace) } returns Optional.of(table)
+
+            val ex = shouldThrow<CustomException> { sut.updateTablePosition(workspace, 1L, -1, 2) }
+            ex.errorCode shouldBe ErrorCode.INVALID_TABLE_POSITION
+
+            verify(exactly = 0) { workspaceTableRepository.save(any()) }
+        }
+
+        it("should throw INVALID_TABLE_POSITION when a coordinate is at or beyond the grid limit") {
+            val workspace = SampleEntity.workspace
+            val table = SampleEntity.workspaceTableWithId(1L)
+
+            every { workspaceTableRepository.findByIdAndWorkspace(1L, workspace) } returns Optional.of(table)
+
+            val ex = shouldThrow<CustomException> {
+                sut.updateTablePosition(workspace, 1L, WorkspaceService.MAX_GRID_SIZE, 2)
+            }
+            ex.errorCode shouldBe ErrorCode.INVALID_TABLE_POSITION
+
+            verify(exactly = 0) { workspaceTableRepository.save(any()) }
+        }
+
+        it("should throw INVALID_TABLE_POSITION when y is negative") {
+            val workspace = SampleEntity.workspace
+            val table = SampleEntity.workspaceTableWithId(1L)
+
+            every { workspaceTableRepository.findByIdAndWorkspace(1L, workspace) } returns Optional.of(table)
+
+            val ex = shouldThrow<CustomException> { sut.updateTablePosition(workspace, 1L, 3, -1) }
+            ex.errorCode shouldBe ErrorCode.INVALID_TABLE_POSITION
+
+            verify(exactly = 0) { workspaceTableRepository.save(any()) }
+        }
+
+        it("should throw INVALID_TABLE_POSITION when y is at or beyond the grid limit") {
+            val workspace = SampleEntity.workspace
+            val table = SampleEntity.workspaceTableWithId(1L)
+
+            every { workspaceTableRepository.findByIdAndWorkspace(1L, workspace) } returns Optional.of(table)
+
+            val ex = shouldThrow<CustomException> {
+                sut.updateTablePosition(workspace, 1L, 3, WorkspaceService.MAX_GRID_SIZE)
+            }
+            ex.errorCode shouldBe ErrorCode.INVALID_TABLE_POSITION
+
+            verify(exactly = 0) { workspaceTableRepository.save(any()) }
+        }
+
+        it("should throw WORKSPACE_TABLE_NOT_FOUND when the table does not belong to the workspace") {
+            val workspace = SampleEntity.workspace
+
+            every { workspaceTableRepository.findByIdAndWorkspace(99L, workspace) } returns Optional.empty()
+
+            val ex = shouldThrow<CustomException> { sut.updateTablePosition(workspace, 99L, 3, 2) }
+            ex.errorCode shouldBe ErrorCode.WORKSPACE_TABLE_NOT_FOUND
+
+            verify(exactly = 0) { workspaceTableRepository.save(any()) }
+        }
+    }
+
+    describe("updateTablePositions") {
+        fun update(tableId: Long, x: Int?, y: Int?) = TablePositionUpdateDto(
+            tableId,
+            if (x != null && y != null) TablePositionDto(x, y) else null
+        )
+
+        it("should apply every position in a single request") {
+            val workspace = SampleEntity.workspace
+            val tables = listOf(
+                SampleEntity.workspaceTableWithId(1L, tableNumber = 1),
+                SampleEntity.workspaceTableWithId(2L, tableNumber = 2)
+            )
+
+            every { workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace) } returns tables
+            every { workspaceTableRepository.saveAll(any<Iterable<WorkspaceTable>>()) } returns tables
+
+            sut.updateTablePositions(workspace, listOf(update(1L, 0, 0), update(2L, 1, 0)))
+
+            tables[0].positionX shouldBe 0
+            tables[0].positionY shouldBe 0
+            tables[1].positionX shouldBe 1
+            tables[1].positionY shouldBe 0
+
+            verify { workspaceTableRepository.saveAll(any<Iterable<WorkspaceTable>>()) }
+        }
+
+        it("should allow a swap that sequential per-table checks would reject") {
+            val workspace = SampleEntity.workspace
+            val tables = listOf(
+                SampleEntity.workspaceTableWithId(1L, tableNumber = 1, positionX = 0, positionY = 0),
+                SampleEntity.workspaceTableWithId(2L, tableNumber = 2, positionX = 1, positionY = 0)
+            )
+
+            every { workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace) } returns tables
+            every { workspaceTableRepository.saveAll(any<Iterable<WorkspaceTable>>()) } returns tables
+
+            // 1번을 (0,0) -> (1,0), 2번을 (1,0) -> (0,0). 순서대로 검사하면 첫 수정에서 409지만
+            // 요청을 다 반영한 최종 상태에는 충돌이 없다.
+            sut.updateTablePositions(workspace, listOf(update(1L, 1, 0), update(2L, 0, 0)))
+
+            tables[0].positionX shouldBe 1
+            tables[1].positionX shouldBe 0
+        }
+
+        it("should allow moving into a cell that the same request vacates") {
+            val workspace = SampleEntity.workspace
+            val tables = listOf(
+                SampleEntity.workspaceTableWithId(1L, tableNumber = 1, positionX = 0, positionY = 0),
+                SampleEntity.workspaceTableWithId(2L, tableNumber = 2, positionX = 1, positionY = 0)
+            )
+
+            every { workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace) } returns tables
+            every { workspaceTableRepository.saveAll(any<Iterable<WorkspaceTable>>()) } returns tables
+
+            // 1번은 배치를 취소하고, 2번이 그 자리로 들어온다.
+            sut.updateTablePositions(workspace, listOf(update(1L, null, null), update(2L, 0, 0)))
+
+            tables[0].positionX shouldBe null
+            tables[0].positionY shouldBe null
+            tables[1].positionX shouldBe 0
+            tables[1].positionY shouldBe 0
+        }
+
+        it("should throw TABLE_POSITION_CONFLICT when two updates target the same cell") {
+            val workspace = SampleEntity.workspace
+            val tables = listOf(
+                SampleEntity.workspaceTableWithId(1L, tableNumber = 1),
+                SampleEntity.workspaceTableWithId(2L, tableNumber = 2)
+            )
+
+            every { workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace) } returns tables
+
+            val ex = shouldThrow<CustomException> {
+                sut.updateTablePositions(workspace, listOf(update(1L, 2, 3), update(2L, 2, 3)))
+            }
+            ex.errorCode shouldBe ErrorCode.TABLE_POSITION_CONFLICT
+
+            verify(exactly = 0) { workspaceTableRepository.saveAll(any<Iterable<WorkspaceTable>>()) }
+        }
+
+        it("should throw TABLE_POSITION_CONFLICT when the cell is held by a table outside the request") {
+            val workspace = SampleEntity.workspace
+            val tables = listOf(
+                SampleEntity.workspaceTableWithId(1L, tableNumber = 1),
+                SampleEntity.workspaceTableWithId(2L, tableNumber = 2, positionX = 2, positionY = 3)
+            )
+
+            every { workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace) } returns tables
+
+            val ex = shouldThrow<CustomException> {
+                sut.updateTablePositions(workspace, listOf(update(1L, 2, 3)))
+            }
+            ex.errorCode shouldBe ErrorCode.TABLE_POSITION_CONFLICT
+
+            verify(exactly = 0) { workspaceTableRepository.saveAll(any<Iterable<WorkspaceTable>>()) }
+        }
+
+        it("should report the conflicting cell and its request index in the error details") {
+            val workspace = SampleEntity.workspace
+            val tables = listOf(
+                SampleEntity.workspaceTableWithId(1L, tableNumber = 1),
+                SampleEntity.workspaceTableWithId(2L, tableNumber = 2)
+            )
+
+            every { workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace) } returns tables
+
+            val ex = shouldThrow<CustomException> {
+                sut.updateTablePositions(workspace, listOf(update(1L, 4, 5), update(2L, 4, 5)))
+            }
+
+            ex.errors.size shouldBe 1
+            // 프론트는 이 index만 읽는다. field 문자열을 정규식으로 파싱하지 않아도 되게 한다.
+            ex.errors[0].index shouldBe 1
+            ex.errors[0].field shouldBe "positions[1].position"
+            ex.errors[0].value shouldBe "(4, 5)"
+        }
+
+        it("should clear the position when position is null") {
+            val workspace = SampleEntity.workspace
+            val tables = listOf(
+                SampleEntity.workspaceTableWithId(1L, tableNumber = 1, positionX = 3, positionY = 2)
+            )
+
+            every { workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace) } returns tables
+            every { workspaceTableRepository.saveAll(any<Iterable<WorkspaceTable>>()) } returns tables
+
+            sut.updateTablePositions(workspace, listOf(update(1L, null, null)))
+
+            tables[0].positionX shouldBe null
+            tables[0].positionY shouldBe null
+        }
+
+        it("should throw WORKSPACE_TABLE_NOT_FOUND when a table does not belong to the workspace") {
+            val workspace = SampleEntity.workspace
+            val tables = listOf(SampleEntity.workspaceTableWithId(1L, tableNumber = 1))
+
+            every { workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace) } returns tables
+
+            val ex = shouldThrow<CustomException> {
+                sut.updateTablePositions(workspace, listOf(update(1L, 0, 0), update(99L, 1, 0)))
+            }
+            ex.errorCode shouldBe ErrorCode.WORKSPACE_TABLE_NOT_FOUND
+
+            verify(exactly = 0) { workspaceTableRepository.saveAll(any<Iterable<WorkspaceTable>>()) }
+        }
+
+        it("should throw INVALID_TABLE_POSITION when a coordinate is out of the grid") {
+            val workspace = SampleEntity.workspace
+            val tables = listOf(
+                SampleEntity.workspaceTableWithId(1L, tableNumber = 1),
+                SampleEntity.workspaceTableWithId(2L, tableNumber = 2)
+            )
+
+            every { workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace) } returns tables
+
+            val ex = shouldThrow<CustomException> {
+                sut.updateTablePositions(
+                    workspace,
+                    listOf(update(1L, 0, 0), update(2L, WorkspaceService.MAX_GRID_SIZE, 0))
+                )
+            }
+            ex.errorCode shouldBe ErrorCode.INVALID_TABLE_POSITION
+
+            verify(exactly = 0) { workspaceTableRepository.saveAll(any<Iterable<WorkspaceTable>>()) }
+        }
+
+        it("should throw INVALID_INPUT when the same table appears twice") {
+            val workspace = SampleEntity.workspace
+            val tables = listOf(SampleEntity.workspaceTableWithId(1L, tableNumber = 1))
+
+            every { workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace) } returns tables
+
+            val ex = shouldThrow<CustomException> {
+                sut.updateTablePositions(workspace, listOf(update(1L, 0, 0), update(1L, 1, 0)))
+            }
+            ex.errorCode shouldBe ErrorCode.INVALID_INPUT
+
+            verify(exactly = 0) { workspaceTableRepository.saveAll(any<Iterable<WorkspaceTable>>()) }
+        }
+
+        it("should leave every position untouched when the request fails validation") {
+            val workspace = SampleEntity.workspace
+            val tables = listOf(
+                SampleEntity.workspaceTableWithId(1L, tableNumber = 1, positionX = 0, positionY = 0),
+                SampleEntity.workspaceTableWithId(2L, tableNumber = 2, positionX = 1, positionY = 0)
+            )
+
+            every { workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace) } returns tables
+
+            // 앞의 수정은 유효하지만 뒤가 격자를 벗어난다. 부분 반영이 남으면 안 된다.
+            shouldThrow<CustomException> {
+                sut.updateTablePositions(workspace, listOf(update(1L, 5, 5), update(2L, -1, 0)))
+            }
+
+            tables[0].positionX shouldBe 0
+            tables[0].positionY shouldBe 0
+            tables[1].positionX shouldBe 1
+            tables[1].positionY shouldBe 0
+        }
+
+        it("should ignore a pre-existing collision between tables the request does not touch") {
+            val workspace = SampleEntity.workspace
+            val tables = listOf(
+                SampleEntity.workspaceTableWithId(1L, tableNumber = 1),
+                // 동시 저장 경합 등으로 이미 같은 칸에 겹쳐 있는 두 테이블. 이번 요청은 건드리지 않는다.
+                SampleEntity.workspaceTableWithId(2L, tableNumber = 2, positionX = 9, positionY = 9),
+                SampleEntity.workspaceTableWithId(3L, tableNumber = 3, positionX = 9, positionY = 9)
+            )
+
+            every { workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace) } returns tables
+            every { workspaceTableRepository.saveAll(any<Iterable<WorkspaceTable>>()) } returns tables
+
+            // 남의 겹침 때문에 관리자가 저장 자체를 못 하게 되면 안 된다.
+            sut.updateTablePositions(workspace, listOf(update(1L, 0, 0)))
+
+            tables[0].positionX shouldBe 0
+            tables[0].positionY shouldBe 0
+        }
+
+        it("should still reject moving onto a cell that a pre-existing collision sits on") {
+            val workspace = SampleEntity.workspace
+            val tables = listOf(
+                SampleEntity.workspaceTableWithId(1L, tableNumber = 1),
+                SampleEntity.workspaceTableWithId(2L, tableNumber = 2, positionX = 9, positionY = 9),
+                SampleEntity.workspaceTableWithId(3L, tableNumber = 3, positionX = 9, positionY = 9)
+            )
+
+            every { workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace) } returns tables
+
+            val ex = shouldThrow<CustomException> {
+                sut.updateTablePositions(workspace, listOf(update(1L, 9, 9)))
+            }
+            ex.errorCode shouldBe ErrorCode.TABLE_POSITION_CONFLICT
+
+            verify(exactly = 0) { workspaceTableRepository.saveAll(any<Iterable<WorkspaceTable>>()) }
+        }
+
+        it("should not write anything when the request has no positions") {
+            val workspace = SampleEntity.workspace
+
+            every { workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace) } returns emptyList()
+
+            sut.updateTablePositions(workspace, emptyList())
+
+            verify(exactly = 0) { workspaceTableRepository.saveAll(any<Iterable<WorkspaceTable>>()) }
+        }
+    }
+
+    describe("resetTablePositions") {
+        it("should clear positions of all tables in the workspace") {
+            val workspace = SampleEntity.workspace
+            val tables = listOf(
+                SampleEntity.workspaceTableWithId(1L, tableNumber = 1, positionX = 0, positionY = 0),
+                SampleEntity.workspaceTableWithId(2L, tableNumber = 2, positionX = 1, positionY = 0)
+            )
+
+            every { workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace) } returns tables
+            every { workspaceTableRepository.saveAll(any<Iterable<WorkspaceTable>>()) } returns tables
+
+            sut.resetTablePositions(workspace)
+
+            tables.forEach {
+                it.positionX shouldBe null
+                it.positionY shouldBe null
+            }
+
+            verify { workspaceTableRepository.saveAll(any<Iterable<WorkspaceTable>>()) }
+        }
+
+        it("should clear positions of tables beyond tableCount too") {
+            val workspace = SampleEntity.workspace.apply { tableCount = 1 }
+            val tables = listOf(
+                SampleEntity.workspaceTableWithId(1L, tableNumber = 1, positionX = 0, positionY = 0),
+                SampleEntity.workspaceTableWithId(5L, tableNumber = 5, positionX = 4, positionY = 0)
+            )
+
+            every { workspaceTableRepository.findAllByWorkspaceOrderByTableNumber(workspace) } returns tables
+            every { workspaceTableRepository.saveAll(any<Iterable<WorkspaceTable>>()) } returns tables
+
+            sut.resetTablePositions(workspace)
+
+            // tableCount = 1이지만 5번 테이블 좌표도 비워져야 한다 -- 화면 밖에 갇힌 테이블의 복구 경로
+            tables[1].positionX shouldBe null
+            tables[1].positionY shouldBe null
         }
     }
 

@@ -64,4 +64,17 @@ interface DailyOrderStatisticRepository : JpaRepository<DailyOrderStatistic, Lon
     @Modifying
     @Query("UPDATE DailyOrderStatistic d SET d.excludedFromCalendar = true WHERE d.totalOrders > 0 AND d.totalOrders < :minOrders")
     fun excludeAllByTotalOrdersLessThan(@Param("minOrders") minOrders: Int): Int
+
+    @Query(
+        """
+        SELECT d.referenceDate FROM DailyOrderStatistic d
+        WHERE d.workspace.id = :workspaceId
+          AND d.referenceDate >= :since
+          AND d.excludedFromCalendar = true
+    """
+    )
+    fun findExcludedDatesByWorkspaceIdSince(
+        @Param("workspaceId") workspaceId: Long,
+        @Param("since") since: LocalDate
+    ): List<LocalDate>
 }

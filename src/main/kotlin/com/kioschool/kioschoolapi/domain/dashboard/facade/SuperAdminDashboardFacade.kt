@@ -166,7 +166,10 @@ class SuperAdminDashboardFacade(
         )
     }
 
-    @CacheEvict(cacheNames = ["${CacheNames.FESTIVAL_CALENDAR}#1h"], allEntries = true)
+    @CacheEvict(
+        cacheNames = ["${CacheNames.FESTIVAL_CALENDAR}#1h", CacheNames.INSIGHT_CARD],
+        allEntries = true
+    )
     fun setFestivalCalendarExclusion(statisticId: Long, excluded: Boolean) {
         val stat = dailyOrderStatisticRepository.findById(statisticId)
             .orElseThrow { IllegalArgumentException("통계 데이터를 찾을 수 없습니다.") }

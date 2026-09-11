@@ -26,6 +26,14 @@ enum class ErrorCode(
     NO_PERMISSION_TO_INVITE(HttpStatus.FORBIDDEN, "초대 권한이 없습니다."),
     NO_PERMISSION_TO_JOIN_WORKSPACE(HttpStatus.FORBIDDEN, "워크스페이스를 가입 할 권한이 없습니다."),
     SUPER_ADMIN_WORKSPACE_READ_ONLY(HttpStatus.BAD_REQUEST, "최고 관리자(Super Admin)는 타인의 워크스페이스를 조회만 할 수 있으며, 수정(CUD)은 불가능합니다."),
+    TABLE_POSITION_CONFLICT(HttpStatus.CONFLICT, "해당 위치에 이미 다른 테이블이 배치되어 있습니다."),
+    INVALID_TABLE_POSITION(HttpStatus.BAD_REQUEST, "테이블 위치가 올바르지 않습니다."),
+    INVALID_IMAGE_FOCAL_POINT(HttpStatus.BAD_REQUEST, "이미지 초점 위치가 올바르지 않습니다."),
+    WORKSPACE_IMAGE_SLOT_MISMATCH(HttpStatus.BAD_REQUEST, "이미지 파일 수가 올바르지 않습니다."),
+    WORKSPACE_IMAGE_NOT_FOUND(
+        HttpStatus.BAD_REQUEST,
+        "수정하려는 사진을 찾을 수 없습니다. 화면을 새로고침한 뒤 다시 시도해주세요."
+    ),
 
     // Product
     NOT_FOUND_PRODUCT(HttpStatus.NOT_FOUND, "존재하지 않는 상품입니다."),
@@ -48,6 +56,15 @@ enum class ErrorCode(
     DUPLICATE_EMAIL_DOMAIN(HttpStatus.BAD_REQUEST, "이미 등록된 도메인입니다."),
     NOT_VERIFIED_EMAIL_DOMAIN(HttpStatus.UNPROCESSABLE_ENTITY, "허용되지 않은 이메일 도메인입니다."),
     EMAIL_SEND_FAILURE(HttpStatus.INTERNAL_SERVER_ERROR, "이메일 전송에 실패했습니다."),
+
+    // Inquiry
+    INQUIRY_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 문의입니다."),
+    INQUIRY_ALREADY_ANSWERED(HttpStatus.CONFLICT, "이미 답변이 완료된 문의입니다."),
+    INQUIRY_ALREADY_CLOSED(HttpStatus.CONFLICT, "이미 종결된 문의입니다."),
+    INQUIRY_IMAGE_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "이미지는 최대 5장까지 첨부할 수 있습니다."),
+    INQUIRY_IMAGE_TOO_LARGE(HttpStatus.PAYLOAD_TOO_LARGE, "이미지 한 장의 크기는 5MB를 넘을 수 없습니다."),
+    INQUIRY_IMAGE_TYPE_NOT_ALLOWED(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "JPEG, PNG, WebP 이미지만 첨부할 수 있습니다."),
+    INQUIRY_RATE_LIMIT_EXCEEDED(HttpStatus.TOO_MANY_REQUESTS, "문의 접수 횟수 제한을 초과했습니다. 잠시 후 다시 시도해 주세요."),
 
     // Security
     AUTHENTICATION_REQUIRED(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다."),

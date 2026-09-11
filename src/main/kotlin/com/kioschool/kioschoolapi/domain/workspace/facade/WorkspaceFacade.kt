@@ -5,9 +5,12 @@ import com.kioschool.kioschoolapi.domain.order.repository.OrderRepository
 import com.kioschool.kioschoolapi.domain.order.repository.OrderSessionRepository
 import com.kioschool.kioschoolapi.domain.statistics.repository.DailyOrderStatisticRepository
 import com.kioschool.kioschoolapi.domain.user.service.UserService
+import com.kioschool.kioschoolapi.domain.workspace.dto.common.TablePositionDto
+import com.kioschool.kioschoolapi.domain.workspace.dto.common.TablePositionUpdateDto
 import com.kioschool.kioschoolapi.domain.workspace.dto.common.WorkspaceAdminDetailDto
 import com.kioschool.kioschoolapi.domain.workspace.dto.common.WorkspaceDto
 import com.kioschool.kioschoolapi.domain.workspace.dto.common.WorkspaceTableDto
+import com.kioschool.kioschoolapi.domain.workspace.dto.request.UpdateWorkspaceImageRequestBody
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.global.cache.constant.CacheNames
 import com.kioschool.kioschoolapi.global.discord.service.DiscordService
@@ -143,21 +146,26 @@ class WorkspaceFacade(
         return WorkspaceDto.of(workspaceService.saveWorkspace(workspace))
     }
 
+    /** 경계가 없으면 업로드 실패 시 삭제만 확정된다. */
+    @Transactional
     fun updateWorkspaceImage(
         username: String,
         workspaceId: Long,
-        imageIds: List<Long?>,
+        body: UpdateWorkspaceImageRequestBody,
         imageFiles: List<MultipartFile>,
     ): WorkspaceDto {
         val user = userService.getUser(username)
         val workspace = workspaceService.getWorkspace(workspaceId)
 
         workspaceService.checkCanAccessWorkspace(user, workspace)
+        workspaceService.checkImagesBelongToWorkspace(workspace, body.imageIds)
 
-        val deleteImages = workspace.images.filter { !imageIds.contains(it.id) }
+        val slots = body.toSlots(imageFiles)
+
+        val deleteImages = workspace.images.filter { !body.imageIds.contains(it.id) }
         workspaceService.deleteWorkspaceImages(workspace, deleteImages)
 
-        return WorkspaceDto.of(workspaceService.saveWorkspaceImages(workspace, imageFiles))
+        return WorkspaceDto.of(workspaceService.applyImageSlots(workspace, slots))
     }
 
     fun getAllWorkspaceTables(username: String, workspaceId: Long): List<WorkspaceTableDto> {
@@ -166,6 +174,48 @@ class WorkspaceFacade(
 
         workspaceService.checkCanAccessWorkspace(user, workspace)
 
+        return workspaceService.getAllWorkspaceTables(workspace).map { WorkspaceTableDto.of(it) }
+    }
+
+    fun updateTablePosition(
+        username: String,
+        workspaceId: Long,
+        tableId: Long,
+        position: TablePositionDto?
+    ): WorkspaceTableDto {
+        val user = userService.getUser(username)
+        val workspace = workspaceService.getWorkspace(workspaceId)
+
+        workspaceService.checkCanAccessWorkspace(user, workspace)
+
+        return WorkspaceTableDto.of(
+            workspaceService.updateTablePosition(workspace, tableId, position?.x, position?.y)
+        )
+    }
+
+    fun updateTablePositions(
+        username: String,
+        workspaceId: Long,
+        positions: List<TablePositionUpdateDto>
+    ): List<WorkspaceTableDto> {
+        val user = userService.getUser(username)
+        val workspace = workspaceService.getWorkspace(workspaceId)
+
+        workspaceService.checkCanAccessWorkspace(user, workspace)
+
+        // 하나라도 실패하면 아무것도 저장되지 않는다. 응답은 GET /workspace/tables와 같은 뷰.
+        workspaceService.updateTablePositions(workspace, positions)
+        return workspaceService.getAllWorkspaceTables(workspace).map { WorkspaceTableDto.of(it) }
+    }
+
+    fun resetTablePositions(username: String, workspaceId: Long): List<WorkspaceTableDto> {
+        val user = userService.getUser(username)
+        val workspace = workspaceService.getWorkspace(workspaceId)
+
+        workspaceService.checkCanAccessWorkspace(user, workspace)
+
+        // 쓰기는 tableCount 범위 밖 테이블까지 비운다(복구 경로). 응답은 GET과 같은 뷰를 준다.
+        workspaceService.resetTablePositions(workspace)
         return workspaceService.getAllWorkspaceTables(workspace).map { WorkspaceTableDto.of(it) }
     }
 
@@ -214,7 +264,7 @@ class WorkspaceFacade(
         orderRepository.deleteAll(orders)
 
         // 3. WorkspaceTable의 orderSession 참조를 null로 해제 (OrderSession FK)
-        val tables = workspaceService.getAllWorkspaceTables(workspace)
+        val tables = workspaceService.getAllWorkspaceTablesIncludingOutOfRange(workspace)
         tables.filter { it.orderSession != null }.forEach {
             it.orderSession = null
             workspaceService.saveWorkspaceTable(it)

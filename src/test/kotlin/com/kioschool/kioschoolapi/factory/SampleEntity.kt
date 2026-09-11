@@ -5,6 +5,8 @@ import com.kioschool.kioschoolapi.domain.account.entity.Bank
 import com.kioschool.kioschoolapi.domain.email.entity.EmailCode
 import com.kioschool.kioschoolapi.domain.email.entity.EmailDomain
 import com.kioschool.kioschoolapi.domain.email.enum.EmailKind
+import com.kioschool.kioschoolapi.domain.inquiry.entity.Inquiry
+import com.kioschool.kioschoolapi.domain.inquiry.enum.InquiryStatus
 import com.kioschool.kioschoolapi.domain.order.entity.Order
 import com.kioschool.kioschoolapi.domain.order.entity.OrderProduct
 import com.kioschool.kioschoolapi.domain.order.entity.OrderSession
@@ -14,6 +16,7 @@ import com.kioschool.kioschoolapi.domain.user.entity.User
 import com.kioschool.kioschoolapi.domain.workspace.entity.*
 import com.kioschool.kioschoolapi.global.common.entity.BaseEntity
 import com.kioschool.kioschoolapi.global.common.enums.UserRole
+import java.time.LocalDateTime
 import kotlin.reflect.full.superclasses
 
 object SampleEntity {
@@ -207,6 +210,19 @@ object SampleEntity {
         tableHash = "testHash"
     )
 
+    fun workspaceTableWithId(
+        id: Long,
+        tableNumber: Int = 1,
+        positionX: Int? = null,
+        positionY: Int? = null
+    ) = WorkspaceTable(
+        workspace = workspace,
+        tableNumber = tableNumber,
+        tableHash = "testHash$tableNumber",
+        positionX = positionX,
+        positionY = positionY
+    ).apply { setId(id) }
+
     val testSession1 = OrderSession(
         workspace = workspace,
         tableNumber = 1,
@@ -245,6 +261,20 @@ object SampleEntity {
         totalPrice = 3000,
         orderSession = testSession2
     ).apply { setId(20L) }
+
+    fun newInquiry(
+        id: Long = 1L,
+        status: InquiryStatus = InquiryStatus.PENDING,
+        replyEmail: String = "customer@example.com",
+        purgeAt: LocalDateTime = LocalDateTime.of(2027, 1, 1, 0, 0),
+    ) = Inquiry(
+        title = "결제 문의",
+        content = "결제 후 화면이 멈췄습니다.",
+        replyEmail = replyEmail,
+        privacyAgreedAt = LocalDateTime.of(2026, 8, 29, 12, 0),
+        purgeAt = purgeAt,
+        status = status,
+    ).apply { setId(id) }
 
     private fun BaseEntity.setId(id: Long) {
         val f = this::class.superclasses.first().java.getDeclaredField("id")

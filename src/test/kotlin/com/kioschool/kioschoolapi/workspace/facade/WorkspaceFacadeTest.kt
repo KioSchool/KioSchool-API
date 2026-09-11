@@ -1,6 +1,8 @@
 package com.kioschool.kioschoolapi.workspace.facade
 
 import com.kioschool.kioschoolapi.domain.user.service.UserService
+import com.kioschool.kioschoolapi.domain.workspace.dto.common.TablePositionDto
+import com.kioschool.kioschoolapi.domain.workspace.dto.common.TablePositionUpdateDto
 import com.kioschool.kioschoolapi.domain.workspace.facade.WorkspaceFacade
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.domain.order.repository.OrderRepository
@@ -15,6 +17,10 @@ import io.mockk.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.assertThrows
 import org.springframework.web.multipart.MultipartFile
+import com.kioschool.kioschoolapi.domain.workspace.dto.common.FocalPointDto
+import com.kioschool.kioschoolapi.domain.workspace.dto.common.WorkspaceImageSlot
+import com.kioschool.kioschoolapi.domain.workspace.dto.request.UpdateWorkspaceImageRequestBody
+import io.kotest.matchers.shouldBe
 
 class WorkspaceFacadeTest : DescribeSpec({
     val userService = mockk<UserService>()
@@ -508,152 +514,153 @@ class WorkspaceFacadeTest : DescribeSpec({
             SampleEntity.workspace.images.clear()
         }
 
-        it("should call userService.getUser, workspaceService.getWorkspace, workspaceService.deleteWorkspaceImages, workspaceService.saveWorkspaceImages and workspaceService.saveWorkspace") {
+        it("should check access, delete removed images and apply the slots") {
             val username = "username"
             val user = SampleEntity.user
             val workspaceId = 1L
             val workspace = SampleEntity.workspace.apply {
                 images.addAll(SampleEntity.workspaceImages)
             }
-            val imageIds = listOf(1L, 2L, 3L)
-            val imageFiles =
-                listOf(mockk<MultipartFile>(), mockk<MultipartFile>(), mockk<MultipartFile>())
-
+            val body = UpdateWorkspaceImageRequestBody(
+                workspaceId = workspaceId,
+                imageIds = listOf(1L, 2L, 3L),
+                focalPoints = listOf(FocalPointDto(10, 20), null, null),
+            )
 
             every { userService.getUser(username) } returns user
             every { workspaceService.getWorkspace(workspaceId) } returns workspace
             every { workspaceService.checkCanAccessWorkspace(user, workspace) } just Runs
+            every { workspaceService.checkImagesBelongToWorkspace(workspace, body.imageIds) } just Runs
             every { workspaceService.deleteWorkspaceImages(workspace, any()) } just Runs
             every {
-                workspaceService.saveWorkspaceImages(
-                    workspace,
-                    any<List<MultipartFile>>(),
-                )
+                workspaceService.applyImageSlots(workspace, any<List<WorkspaceImageSlot>>())
             } returns workspace
 
-            val result = sut.updateWorkspaceImage(
-                username,
-                workspaceId,
-                imageIds,
-                imageFiles,
-            )
+            val result = sut.updateWorkspaceImage(username, workspaceId, body, emptyList())
 
             assert(result.id == workspace.id)
 
-            verify { userService.getUser(username) }
-            verify { workspaceService.getWorkspace(workspaceId) }
             verify { workspaceService.checkCanAccessWorkspace(user, workspace) }
-            verify { workspaceService.deleteWorkspaceImages(workspace, any()) }
-            verify { workspaceService.saveWorkspaceImages(workspace, any<List<MultipartFile>>()) }
+            verify {
+                workspaceService.applyImageSlots(
+                    workspace,
+                    listOf(
+                        WorkspaceImageSlot.Existing(1L, FocalPointDto(10, 20)),
+                        WorkspaceImageSlot.Existing(2L, null),
+                        WorkspaceImageSlot.Existing(3L, null),
+                    ),
+                )
+            }
         }
 
-        it("should delete workspace images when imageIds is not exist and save workspace images") {
+        it("should delete images that are not kept") {
             val username = "username"
             val user = SampleEntity.user
             val workspaceId = 1L
             val workspace = SampleEntity.workspace.apply {
                 images.addAll(SampleEntity.workspaceImages)
             }
-            val imageIds = listOf(workspace.images[2].id, null, null)
-            val imageFiles =
-                listOf(mockk<MultipartFile>(), mockk<MultipartFile>())
+            val body = UpdateWorkspaceImageRequestBody(
+                workspaceId = workspaceId,
+                imageIds = listOf(1L, null, null),
+                focalPoints = null,
+            )
+            val deleted = slot<List<com.kioschool.kioschoolapi.domain.workspace.entity.WorkspaceImage>>()
 
             every { userService.getUser(username) } returns user
             every { workspaceService.getWorkspace(workspaceId) } returns workspace
             every { workspaceService.checkCanAccessWorkspace(user, workspace) } just Runs
+            every { workspaceService.checkImagesBelongToWorkspace(workspace, body.imageIds) } just Runs
+            every { workspaceService.deleteWorkspaceImages(workspace, capture(deleted)) } just Runs
             every {
-                workspaceService.deleteWorkspaceImages(
-                    workspace,
-                    arrayListOf(workspace.images[0], workspace.images[1])
-                )
-            } just Runs
-            every {
-                workspaceService.saveWorkspaceImages(
-                    workspace,
-                    imageFiles
-                )
+                workspaceService.applyImageSlots(workspace, any<List<WorkspaceImageSlot>>())
             } returns workspace
 
-            val result = sut.updateWorkspaceImage(
-                username,
-                workspaceId,
-                imageIds,
-                imageFiles
-            )
+            sut.updateWorkspaceImage(username, workspaceId, body, emptyList())
 
-            assert(result.id == workspace.id)
-
-            verify { userService.getUser(username) }
-            verify { workspaceService.getWorkspace(workspaceId) }
-            verify { workspaceService.checkCanAccessWorkspace(user, workspace) }
-            verify {
-                workspaceService.deleteWorkspaceImages(
-                    workspace,
-                    arrayListOf(workspace.images[0], workspace.images[1])
-                )
-            }
-            verify { workspaceService.saveWorkspaceImages(workspace, imageFiles) }
+            deleted.captured.map { it.id } shouldBe listOf(2L, 3L)
         }
 
-        it("should throw CustomException(USER_NOT_FOUND) when user not found") {
-            val username = "username"
-            val workspaceId = 1L
-            val imageIds = listOf(1L, 2L, 3L)
-            val imageFiles =
-                listOf(mockk<MultipartFile>(), mockk<MultipartFile>(), mockk<MultipartFile>())
-
-            every { userService.getUser(username) } throws CustomException(ErrorCode.USER_NOT_FOUND)
-
-            val ex = assertThrows<CustomException> {
-                sut.updateWorkspaceImage(
-                    username,
-                    workspaceId,
-                    imageIds,
-                    imageFiles
-                )
-            }
-            assertEquals(ErrorCode.USER_NOT_FOUND, ex.errorCode)
-
-            verify { userService.getUser(username) }
-            verify(exactly = 0) { workspaceService.getWorkspace(any()) }
-            verify(exactly = 0) { workspaceService.checkCanAccessWorkspace(any(), any()) }
-            verify(exactly = 0) { workspaceService.deleteWorkspaceImages(any(), any()) }
-            verify(exactly = 0) { workspaceService.saveWorkspaceImages(any(), any()) }
-        }
-
-        it("should throw CustomException(WORKSPACE_INACCESSIBLE) when user has no permission to update workspace") {
+        it("should check access before rejecting a malformed slot mapping") {
             val username = "username"
             val user = SampleEntity.user
             val workspaceId = 1L
             val workspace = SampleEntity.workspace
-            val imageIds = listOf(1L, 2L, 3L)
-            val imageFiles =
-                listOf(mockk<MultipartFile>(), mockk<MultipartFile>(), mockk<MultipartFile>())
+            val body = UpdateWorkspaceImageRequestBody(
+                workspaceId = workspaceId,
+                imageIds = listOf(1L, 2L, 3L),
+                focalPoints = null,
+            )
+
+            every { userService.getUser(username) } returns user
+            every { workspaceService.getWorkspace(workspaceId) } returns workspace
+            every { workspaceService.checkCanAccessWorkspace(user, workspace) } just Runs
+            every { workspaceService.checkImagesBelongToWorkspace(workspace, body.imageIds) } just Runs
+            every { workspaceService.deleteWorkspaceImages(workspace, any()) } just Runs
+
+            val exception = assertThrows<CustomException> {
+                sut.updateWorkspaceImage(username, workspaceId, body, listOf(mockk()))
+            }
+
+            exception.errorCode shouldBe ErrorCode.WORKSPACE_IMAGE_SLOT_MISMATCH
+            verify { workspaceService.checkCanAccessWorkspace(user, workspace) }
+        }
+
+        it("should propagate access denial before touching images") {
+            val username = "username"
+            val user = SampleEntity.user
+            val workspaceId = 1L
+            val workspace = SampleEntity.workspace
+            val body = UpdateWorkspaceImageRequestBody(
+                workspaceId = workspaceId,
+                imageIds = listOf(1L, 2L, 3L),
+                focalPoints = null,
+            )
 
             every { userService.getUser(username) } returns user
             every { workspaceService.getWorkspace(workspaceId) } returns workspace
             every {
-                workspaceService.checkCanAccessWorkspace(
-                    user,
-                    workspace
-                )
+                workspaceService.checkCanAccessWorkspace(user, workspace)
             } throws CustomException(ErrorCode.WORKSPACE_INACCESSIBLE)
 
-            val ex = assertThrows<CustomException> {
-                sut.updateWorkspaceImage(
-                    username,
-                    workspaceId,
-                    imageIds,
-                    imageFiles
-                )
+            val exception = assertThrows<CustomException> {
+                sut.updateWorkspaceImage(username, workspaceId, body, emptyList())
             }
-            assertEquals(ErrorCode.WORKSPACE_INACCESSIBLE, ex.errorCode)
 
-            verify { userService.getUser(username) }
-            verify { workspaceService.getWorkspace(workspaceId) }
-            verify { workspaceService.checkCanAccessWorkspace(user, workspace) }
+            exception.errorCode shouldBe ErrorCode.WORKSPACE_INACCESSIBLE
             verify(exactly = 0) { workspaceService.deleteWorkspaceImages(any(), any()) }
-            verify(exactly = 0) { workspaceService.saveWorkspaceImages(any(), any()) }
+            verify(exactly = 0) { workspaceService.applyImageSlots(any(), any()) }
+        }
+
+        it("should reject an imageId that is not in the workspace before deleting anything") {
+            val username = "username"
+            val user = SampleEntity.user
+            val workspaceId = 1L
+            val workspace = SampleEntity.workspace.apply {
+                images.addAll(SampleEntity.workspaceImages)
+            }
+            val body = UpdateWorkspaceImageRequestBody(
+                workspaceId = workspaceId,
+                imageIds = listOf(999901L, 999902L, 999903L),
+                focalPoints = null,
+            )
+
+            every { userService.getUser(username) } returns user
+            every { workspaceService.getWorkspace(workspaceId) } returns workspace
+            every { workspaceService.checkCanAccessWorkspace(user, workspace) } just Runs
+            every {
+                workspaceService.checkImagesBelongToWorkspace(workspace, body.imageIds)
+            } throws CustomException(ErrorCode.WORKSPACE_IMAGE_NOT_FOUND)
+
+            val exception = assertThrows<CustomException> {
+                sut.updateWorkspaceImage(username, workspaceId, body, emptyList())
+            }
+
+            exception.errorCode shouldBe ErrorCode.WORKSPACE_IMAGE_NOT_FOUND
+            verify(exactly = 0) { workspaceService.deleteWorkspaceImages(any(), any()) }
+            verify(exactly = 0) {
+                workspaceService.applyImageSlots(any(), any<List<WorkspaceImageSlot>>())
+            }
         }
     }
 
@@ -677,6 +684,200 @@ class WorkspaceFacadeTest : DescribeSpec({
             verify { workspaceService.getWorkspace(workspaceId) }
             verify { workspaceService.checkCanAccessWorkspace(user, workspace) }
             verify { workspaceService.getAllWorkspaceTables(workspace) }
+        }
+    }
+
+    describe("updateTablePosition") {
+        it("should check access then delegate to workspaceService") {
+            val username = "username"
+            val user = SampleEntity.user
+            val workspace = SampleEntity.workspace
+            val table = SampleEntity.workspaceTableWithId(1L, positionX = 3, positionY = 2)
+
+            every { userService.getUser(username) } returns user
+            every { workspaceService.getWorkspace(1L) } returns workspace
+            every { workspaceService.checkCanAccessWorkspace(user, workspace) } just Runs
+            every { workspaceService.updateTablePosition(workspace, 1L, 3, 2) } returns table
+
+            val result = sut.updateTablePosition(username, 1L, 1L, TablePositionDto(3, 2))
+
+            assertEquals(TablePositionDto(3, 2), result.position)
+
+            verify { workspaceService.checkCanAccessWorkspace(user, workspace) }
+            verify { workspaceService.updateTablePosition(workspace, 1L, 3, 2) }
+        }
+
+        it("should pass null coordinates when position is null") {
+            val username = "username"
+            val user = SampleEntity.user
+            val workspace = SampleEntity.workspace
+            val table = SampleEntity.workspaceTableWithId(1L)
+
+            every { userService.getUser(username) } returns user
+            every { workspaceService.getWorkspace(1L) } returns workspace
+            every { workspaceService.checkCanAccessWorkspace(user, workspace) } just Runs
+            every { workspaceService.updateTablePosition(workspace, 1L, null, null) } returns table
+
+            val result = sut.updateTablePosition(username, 1L, 1L, null)
+
+            assertEquals(null, result.position)
+
+            verify { workspaceService.updateTablePosition(workspace, 1L, null, null) }
+        }
+
+        it("should not call updateTablePosition when the workspace is inaccessible") {
+            val username = "username"
+            val user = SampleEntity.user
+            val workspace = SampleEntity.workspace
+
+            every { userService.getUser(username) } returns user
+            every { workspaceService.getWorkspace(1L) } returns workspace
+            every {
+                workspaceService.checkCanAccessWorkspace(user, workspace)
+            } throws CustomException(ErrorCode.WORKSPACE_INACCESSIBLE)
+
+            val ex = assertThrows<CustomException> {
+                sut.updateTablePosition(username, 1L, 1L, TablePositionDto(3, 2))
+            }
+            assertEquals(ErrorCode.WORKSPACE_INACCESSIBLE, ex.errorCode)
+
+            verify(exactly = 0) { workspaceService.updateTablePosition(any(), any(), any(), any()) }
+        }
+    }
+
+    describe("updateTablePositions") {
+        val positions = listOf(TablePositionUpdateDto(1L, TablePositionDto(2, 0)))
+
+        it("should check access, delegate to workspaceService, then return the GET view") {
+            val username = "username"
+            val user = SampleEntity.user
+            val workspace = SampleEntity.workspace
+            val tables = listOf(SampleEntity.workspaceTableWithId(1L, positionX = 2, positionY = 0))
+
+            every { userService.getUser(username) } returns user
+            every { workspaceService.getWorkspace(1L) } returns workspace
+            every { workspaceService.checkCanAccessWorkspace(user, workspace) } just Runs
+            every { workspaceService.updateTablePositions(workspace, positions) } just Runs
+            every { workspaceService.getAllWorkspaceTables(workspace) } returns tables
+
+            val result = sut.updateTablePositions(username, 1L, positions)
+
+            assertEquals(1, result.size)
+            assertEquals(TablePositionDto(2, 0), result.first().position)
+
+            verify { workspaceService.checkCanAccessWorkspace(user, workspace) }
+            verify { workspaceService.updateTablePositions(workspace, positions) }
+            verify { workspaceService.getAllWorkspaceTables(workspace) }
+        }
+
+        it("should not call updateTablePositions when the workspace is inaccessible") {
+            val username = "username"
+            val user = SampleEntity.user
+            val workspace = SampleEntity.workspace
+
+            every { userService.getUser(username) } returns user
+            every { workspaceService.getWorkspace(1L) } returns workspace
+            every {
+                workspaceService.checkCanAccessWorkspace(user, workspace)
+            } throws CustomException(ErrorCode.WORKSPACE_INACCESSIBLE)
+
+            assertThrows<CustomException> { sut.updateTablePositions(username, 1L, positions) }
+
+            verify(exactly = 0) { workspaceService.updateTablePositions(any(), any()) }
+        }
+    }
+
+    describe("resetTablePositions") {
+        it("should check access then delegate to workspaceService") {
+            val username = "username"
+            val user = SampleEntity.user
+            val workspace = SampleEntity.workspace
+            val tables = listOf(SampleEntity.workspaceTableWithId(1L))
+
+            every { userService.getUser(username) } returns user
+            every { workspaceService.getWorkspace(1L) } returns workspace
+            every { workspaceService.checkCanAccessWorkspace(user, workspace) } just Runs
+            every { workspaceService.resetTablePositions(workspace) } just Runs
+            every { workspaceService.getAllWorkspaceTables(workspace) } returns tables
+
+            val result = sut.resetTablePositions(username, 1L)
+
+            assertEquals(1, result.size)
+            assertEquals(null, result.first().position)
+
+            verify { workspaceService.checkCanAccessWorkspace(user, workspace) }
+            verify { workspaceService.resetTablePositions(workspace) }
+            verify { workspaceService.getAllWorkspaceTables(workspace) }
+        }
+
+        it("should not call resetTablePositions when the workspace is inaccessible") {
+            val username = "username"
+            val user = SampleEntity.user
+            val workspace = SampleEntity.workspace
+
+            every { userService.getUser(username) } returns user
+            every { workspaceService.getWorkspace(1L) } returns workspace
+            every {
+                workspaceService.checkCanAccessWorkspace(user, workspace)
+            } throws CustomException(ErrorCode.WORKSPACE_INACCESSIBLE)
+
+            assertThrows<CustomException> { sut.resetTablePositions(username, 1L) }
+
+            verify(exactly = 0) { workspaceService.resetTablePositions(any()) }
+        }
+    }
+
+    describe("forceDeleteWorkspace") {
+        it("should use the unsliced table accessor so out-of-range tables' orderSession refs are cleared before the FK-dependent deletes") {
+            val workspaceId = 1L
+            val workspace = SampleEntity.workspace.apply { tableCount = 2 }
+
+            // 범위 안 테이블
+            val inRangeTable = SampleEntity.workspaceTableWithId(1L, tableNumber = 1)
+            // 범위 밖 테이블이지만 살아있는 orderSession을 참조 -- 슬라이스된 뷰였다면 누락되어
+            // OrderSession 삭제 시 FK 제약 위반이 났을 행
+            val outOfRangeTableWithSession = SampleEntity.workspaceTableWithId(2L, tableNumber = 5).apply {
+                orderSession = SampleEntity.testSession1
+            }
+            val allTables = listOf(inRangeTable, outOfRangeTableWithSession)
+
+            val orders = listOf(SampleEntity.order1)
+            val sessions = listOf(SampleEntity.testSession1)
+
+            every { workspaceService.getWorkspace(workspaceId) } returns workspace
+            every { dailyOrderStatisticRepository.deleteByWorkspaceId(workspaceId) } just Runs
+            every { orderRepository.findAllByWorkspaceId(workspaceId) } returns orders
+            every { orderRepository.deleteAll(orders) } just Runs
+            every { workspaceService.getAllWorkspaceTablesIncludingOutOfRange(workspace) } returns allTables
+            every { workspaceService.saveWorkspaceTable(outOfRangeTableWithSession) } returns outOfRangeTableWithSession
+            every { orderSessionRepository.findAllByWorkspaceId(workspaceId) } returns sessions
+            every { orderSessionRepository.deleteAll(sessions) } just Runs
+            every { workspaceService.deleteAllWorkspaceTables(workspace) } just Runs
+            every { workspaceService.deleteWorkspace(workspace) } just Runs
+
+            val result = sut.forceDeleteWorkspace(workspaceId)
+
+            assert(result.id == workspace.id)
+            assert(outOfRangeTableWithSession.orderSession == null)
+
+            // 1. DailyOrderStatistic 삭제
+            verify { dailyOrderStatisticRepository.deleteByWorkspaceId(workspaceId) }
+            // 2. Order 삭제
+            verify { orderRepository.findAllByWorkspaceId(workspaceId) }
+            verify { orderRepository.deleteAll(orders) }
+            // 3. WorkspaceTable의 orderSession 참조 해제 -- 반드시 범위 밖 테이블까지 포함하는
+            //    접근자를 써야 하고, 관리자 화면용 슬라이스된 접근자는 절대 쓰지 않아야 한다
+            verify { workspaceService.getAllWorkspaceTablesIncludingOutOfRange(workspace) }
+            verify(exactly = 0) { workspaceService.getAllWorkspaceTables(any()) }
+            verify { workspaceService.saveWorkspaceTable(outOfRangeTableWithSession) }
+            verify(exactly = 0) { workspaceService.saveWorkspaceTable(inRangeTable) }
+            // 4. OrderSession 삭제
+            verify { orderSessionRepository.findAllByWorkspaceId(workspaceId) }
+            verify { orderSessionRepository.deleteAll(sessions) }
+            // 5. WorkspaceTable 삭제
+            verify { workspaceService.deleteAllWorkspaceTables(workspace) }
+            // 6. Workspace 삭제
+            verify { workspaceService.deleteWorkspace(workspace) }
         }
     }
 

@@ -1,9 +1,11 @@
 package com.kioschool.kioschoolapi.user.facade
 
 import com.kioschool.kioschoolapi.domain.email.service.EmailService
+import com.kioschool.kioschoolapi.domain.user.entity.AcquisitionSurvey
 import com.kioschool.kioschoolapi.domain.user.facade.UserFacade
 import com.kioschool.kioschoolapi.domain.user.service.UserService
 import com.kioschool.kioschoolapi.factory.SampleEntity
+import com.kioschool.kioschoolapi.global.common.enums.AcquisitionChannel
 import com.kioschool.kioschoolapi.global.common.enums.UserRole
 import com.kioschool.kioschoolapi.global.discord.service.DiscordService
 import com.kioschool.kioschoolapi.global.error.ErrorCode
@@ -11,6 +13,7 @@ import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import com.kioschool.kioschoolapi.global.security.JwtProvider
 import com.kioschool.kioschoolapi.global.template.TemplateService
 import io.kotest.core.spec.style.DescribeSpec
+import io.kotest.matchers.shouldBe
 import io.mockk.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.assertThrows
@@ -198,6 +201,118 @@ class UserFacadeTest : DescribeSpec({
             verify(exactly = 0) { userService.saveUser(any(), any(), any(), any()) }
             verify(exactly = 0) { discordService.sendUserRegister(any()) }
             verify(exactly = 0) { jwtProvider.createToken(any()) }
+        }
+    }
+
+    describe("isAcquisitionSurveyAnswered") {
+        val username = "test"
+        val user = SampleEntity.user
+
+        it("should return false when the user has never been asked") {
+            every { userService.getUser(username) } returns user
+            every { userService.hasAcquisitionSurvey(user) } returns false
+
+            sut.isAcquisitionSurveyAnswered(username) shouldBe false
+
+            verify { userService.getUser(username) }
+            verify { userService.hasAcquisitionSurvey(user) }
+        }
+
+        it("should return true when a survey row exists") {
+            every { userService.getUser(username) } returns user
+            every { userService.hasAcquisitionSurvey(user) } returns true
+
+            sut.isAcquisitionSurveyAnswered(username) shouldBe true
+        }
+
+        it("should throw CustomException(USER_NOT_FOUND) when user does not exist") {
+            every { userService.getUser(username) } throws CustomException(ErrorCode.USER_NOT_FOUND)
+
+            val ex = assertThrows<CustomException> {
+                sut.isAcquisitionSurveyAnswered(username)
+            }
+            assertEquals(ErrorCode.USER_NOT_FOUND, ex.errorCode)
+
+            verify(exactly = 0) { userService.hasAcquisitionSurvey(any()) }
+        }
+    }
+
+    describe("saveAcquisitionSurvey") {
+        val username = "test"
+        val user = SampleEntity.user
+
+        // 정규화 책임이 파사드로 옮겨왔다. userService에 실제로 넘어가는 값으로 규칙을 고정한다.
+        fun saveAndCapture(
+            channel: AcquisitionChannel?,
+            channelEtc: String?,
+            context: String?
+        ): Triple<AcquisitionChannel?, String?, String?> {
+            var captured: Triple<AcquisitionChannel?, String?, String?>? = null
+
+            every { userService.getUser(username) } returns user
+            every {
+                userService.saveAcquisitionSurvey(user, any(), any(), any())
+            } answers {
+                captured = Triple(arg<AcquisitionChannel?>(1), arg<String?>(2), arg<String?>(3))
+                mockk<AcquisitionSurvey>()
+            }
+
+            sut.saveAcquisitionSurvey(username, channel, channelEtc, context)
+
+            verify { userService.getUser(username) }
+            return captured!!
+        }
+
+        it("should drop channelEtc when channel is not ETC") {
+            val (channel, channelEtc, _) =
+                saveAndCapture(AcquisitionChannel.INSTAGRAM, "\uce5c\uad6c\uac00 \uc54c\ub824\uc90c", null)
+
+            channel shouldBe AcquisitionChannel.INSTAGRAM
+            channelEtc shouldBe null
+        }
+
+        it("should keep channelEtc when channel is ETC") {
+            val (_, channelEtc, _) = saveAndCapture(AcquisitionChannel.ETC, "\uad50\uc218\ub2d8 \ucd94\ucc9c", null)
+
+            channelEtc shouldBe "\uad50\uc218\ub2d8 \ucd94\ucc9c"
+        }
+
+        it("should allow ETC without channelEtc") {
+            val (channel, channelEtc, _) = saveAndCapture(AcquisitionChannel.ETC, null, null)
+
+            channel shouldBe AcquisitionChannel.ETC
+            channelEtc shouldBe null
+        }
+
+        it("should convert blank channelEtc to null") {
+            val (_, channelEtc, _) = saveAndCapture(AcquisitionChannel.ETC, "   ", null)
+
+            channelEtc shouldBe null
+        }
+
+        it("should keep context regardless of channel") {
+            val (channel, _, context) = saveAndCapture(null, null, "source=instagram")
+
+            channel shouldBe null
+            context shouldBe "source=instagram"
+        }
+
+        it("should convert blank context to null") {
+            val (_, _, context) = saveAndCapture(AcquisitionChannel.INSTAGRAM, null, "   ")
+
+            context shouldBe null
+        }
+
+        it("should throw CustomException(USER_NOT_FOUND) when user does not exist") {
+            every { userService.getUser(username) } throws CustomException(ErrorCode.USER_NOT_FOUND)
+
+            val ex = assertThrows<CustomException> {
+                sut.saveAcquisitionSurvey(username, null, null, null)
+            }
+            assertEquals(ErrorCode.USER_NOT_FOUND, ex.errorCode)
+
+            verify { userService.getUser(username) }
+            verify(exactly = 0) { userService.saveAcquisitionSurvey(any(), any(), any(), any()) }
         }
     }
 
