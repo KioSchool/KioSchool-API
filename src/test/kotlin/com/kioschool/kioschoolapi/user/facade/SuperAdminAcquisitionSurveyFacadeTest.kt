@@ -81,7 +81,7 @@ class SuperAdminAcquisitionSurveyFacadeTest : DescribeSpec({
                 user = SampleEntity.user,
                 channel = AcquisitionChannel.ETC,
                 channelEtc = "에브리타임",
-                context = "학생회 단톡방"
+                context = "source=instagram&landing=/"
             )
             every { acquisitionSurveyRepository.findAllWithUser(AcquisitionChannel.ETC, capture(pageable)) } returns PageImpl(listOf(survey))
 
