@@ -1,10 +1,14 @@
 package com.kioschool.kioschoolapi.domain.workspace.dto.common
 
+import com.fasterxml.jackson.annotation.JsonIgnore
+
 /**
  * 사진에서 항상 화면에 남아야 할 지점을 원본 대비 퍼센트로 나타낸다.
  * 프론트는 이 값을 CSS object-position으로 적용한다.
  */
 data class FocalPointDto(val x: Int, val y: Int) {
+    // is-접두 함수는 Jackson이 getter로 보고 필드로 직렬화하므로 제외한다.
+    @JsonIgnore
     fun isInRange() = x in MIN..MAX && y in MIN..MAX
 
     companion object {
