@@ -1,5 +1,6 @@
 package com.kioschool.kioschoolapi.global.configuration
 
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
@@ -70,19 +71,26 @@ class CacheConfiguration : CachingConfigurer {
         }
     }
 
+    companion object {
+        fun cacheValueSerializer(): GenericJackson2JsonRedisSerializer {
+            val objectMapper = ObjectMapper().apply {
+                registerModule(JavaTimeModule())
+                registerModule(KotlinModule.Builder().build())
+                activateDefaultTyping(
+                    BasicPolymorphicTypeValidator.builder()
+                        .allowIfBaseType(Any::class.java)
+                        .build(),
+                    ObjectMapper.DefaultTyping.EVERYTHING
+                )
+                // 배포 사이에 DTO 필드가 빠져도 이전 버전이 쓴 캐시를 읽을 수 있게 한다.
+                configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            }
+            return GenericJackson2JsonRedisSerializer(objectMapper)
+        }
+    }
+
     @Bean
     fun cacheManager(redisConnectionFactory: RedisConnectionFactory): CacheManager {
-        val objectMapper = ObjectMapper().apply {
-            registerModule(JavaTimeModule())
-            registerModule(KotlinModule.Builder().build())
-            activateDefaultTyping(
-                BasicPolymorphicTypeValidator.builder()
-                    .allowIfBaseType(Any::class.java)
-                    .build(),
-                ObjectMapper.DefaultTyping.EVERYTHING
-            )
-        }
-
         val redisCacheConfiguration = RedisCacheConfiguration.defaultCacheConfig()
             .serializeKeysWith(
                 RedisSerializationContext.SerializationPair.fromSerializer(
@@ -91,7 +99,7 @@ class CacheConfiguration : CachingConfigurer {
             )
             .serializeValuesWith(
                 RedisSerializationContext.SerializationPair.fromSerializer(
-                    GenericJackson2JsonRedisSerializer(objectMapper)
+                    cacheValueSerializer()
                 )
             )
             .entryTtl(Duration.ofMinutes(30))
