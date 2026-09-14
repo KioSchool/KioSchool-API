@@ -23,6 +23,10 @@ data class CreateInquiryRequestBody(
 
     @field:AssertTrue(message = "개인정보 수집 및 이용에 동의해야 합니다.")
     val privacyConsent: Boolean,
+
+    // Turnstile 키가 설정되지 않은 환경에서는 비어 있어도 된다. 필수 여부는 TurnstileService가 판단한다
+    @field:Masked
+    val captchaToken: String? = null,
 ) {
     fun normalizedTitle(): String = title.trim()
     fun normalizedContent(): String = content.trim()

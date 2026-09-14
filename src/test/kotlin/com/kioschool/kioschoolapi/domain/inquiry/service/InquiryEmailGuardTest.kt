@@ -63,6 +63,25 @@ class InquiryEmailGuardTest : DescribeSpec({
             shouldNotThrowAny { sut.check("a@b.com") }
         }
 
+        it("Gmail은 점과 +태그를 무시하고 같은 메일함으로 센다") {
+            every { valueOperations.increment("inquiry:guard:email:markh3485smith@gmail.com", 1) } returns 1L
+            every { redisTemplate.getExpire(any()) } returns 100L
+
+            sut.check("mark.h.34.8.5.s.mit.h@gmail.com")
+            sut.check("MarkH3485Smith+spam@googlemail.com")
+
+            verify(exactly = 2) { valueOperations.increment("inquiry:guard:email:markh3485smith@gmail.com", 1) }
+        }
+
+        it("Gmail이 아니면 점은 유지하고 +태그만 뗀다") {
+            every { valueOperations.increment("inquiry:guard:email:first.last@naver.com", 1) } returns 1L
+            every { redisTemplate.getExpire(any()) } returns 100L
+
+            sut.check("first.last+kio@naver.com")
+
+            verify(exactly = 1) { valueOperations.increment("inquiry:guard:email:first.last@naver.com", 1) }
+        }
+
         it("increment가 null이면 통과시킨다") {
             every { valueOperations.increment(any(), any<Long>()) } returns null
 
