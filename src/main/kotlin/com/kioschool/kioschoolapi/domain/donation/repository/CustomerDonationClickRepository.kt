@@ -8,4 +8,6 @@ import java.time.LocalDateTime
 @Repository
 interface CustomerDonationClickRepository : JpaRepository<CustomerDonationClick, Long> {
     fun countByCreatedAtGreaterThanEqual(start: LocalDateTime): Long
+
+    fun findByCreatedAtGreaterThanEqualAndCreatedAtLessThan(start: LocalDateTime, end: LocalDateTime): List<CustomerDonationClick>
 }
