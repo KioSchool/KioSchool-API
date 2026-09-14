@@ -1,6 +1,6 @@
 package com.kioschool.kioschoolapi.global.discord.api
 
-import okhttp3.FormBody
+import com.kioschool.kioschoolapi.global.discord.dto.DiscordWebhookRequest
 import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.POST
@@ -10,6 +10,6 @@ interface DiscordApi {
     @POST
     fun executeWebhook(
         @Url webhookUrl: String,
-        @Body request: FormBody
+        @Body request: DiscordWebhookRequest
     ): Call<Void>
 }
