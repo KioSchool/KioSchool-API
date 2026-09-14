@@ -52,6 +52,9 @@ enum class ErrorCode(
     ACCOUNT_HOLDER_NOT_FOUND(HttpStatus.NOT_FOUND, "계좌 정보를 조회할 수 없습니다. 은행과 계좌번호를 다시 확인해주세요. 은행 점검 시간일 수도 있습니다."),
     DIFFERENT_ACCOUNT_NUMBER(HttpStatus.BAD_REQUEST, "토스 계좌와 사용자 계좌가 일치하지 않습니다."),
 
+    // Donation
+    DONATION_CLICK_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 후원 클릭입니다."),
+
     // Email
     DUPLICATE_EMAIL_DOMAIN(HttpStatus.BAD_REQUEST, "이미 등록된 도메인입니다."),
     NOT_VERIFIED_EMAIL_DOMAIN(HttpStatus.UNPROCESSABLE_ENTITY, "허용되지 않은 이메일 도메인입니다."),
