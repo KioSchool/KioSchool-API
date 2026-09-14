@@ -1,5 +1,6 @@
 package com.kioschool.kioschoolapi.domain.donation.facade
 
+import com.kioschool.kioschoolapi.domain.donation.dto.common.CustomerDonationClickItemDto
 import com.kioschool.kioschoolapi.domain.donation.dto.common.CustomerDonationClickStatsDto
 import com.kioschool.kioschoolapi.domain.donation.entity.CustomerDonationClick
 import com.kioschool.kioschoolapi.domain.donation.repository.CustomerDonationClickRepository
@@ -8,6 +9,7 @@ import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepositor
 import com.kioschool.kioschoolapi.global.common.enums.OrderStatus
 import com.kioschool.kioschoolapi.global.error.ErrorCode
 import com.kioschool.kioschoolapi.global.error.exception.CustomException
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -39,6 +41,8 @@ class SuperAdminDonationFacade(
         val uniqueOrders = uniqueOrdersOf(clicks)
         val clickedAmounts = clicks.mapNotNull { it.amount }
         val clickedAmountSum = clickedAmounts.sumOf { it.toLong() }
+        val depositedClicks = clicks.filter { it.isDeposited }
+        val depositedOrders = uniqueOrdersOf(depositedClicks)
 
         val summary = CustomerDonationClickStatsDto.Summary(
             totalClicks = totalClicks,
@@ -46,7 +50,11 @@ class SuperAdminDonationFacade(
             clickedAmountSum = clickedAmountSum,
             averageAmount = if (clickedAmounts.isNotEmpty()) clickedAmountSum / clickedAmounts.size else 0L,
             ordersInRange = ordersInRange,
-            clickRatePerOrder = if (ordersInRange > 0) uniqueOrders.toDouble() / ordersInRange else 0.0
+            clickRatePerOrder = if (ordersInRange > 0) uniqueOrders.toDouble() / ordersInRange else 0.0,
+            depositedClicks = depositedClicks.size.toLong(),
+            depositedOrders = depositedOrders,
+            depositAmountSum = depositAmountSumOf(depositedClicks),
+            depositRatePerOrder = if (uniqueOrders > 0) depositedOrders.toDouble() / uniqueOrders else 0.0
         )
 
         return CustomerDonationClickStatsDto(
@@ -75,7 +83,8 @@ class SuperAdminDonationFacade(
                     date = date.format(DATE_FORMATTER),
                     clicks = dayClicks.size.toLong(),
                     uniqueOrders = uniqueOrdersOf(dayClicks),
-                    amountSum = dayClicks.sumOf { (it.amount ?: 0).toLong() }
+                    amountSum = dayClicks.sumOf { (it.amount ?: 0).toLong() },
+                    depositAmountSum = depositAmountSumOf(dayClicks)
                 )
             }
             .toList()
@@ -111,10 +120,55 @@ class SuperAdminDonationFacade(
                 workspaceName = workspaceNames[workspaceId],
                 clicks = workspaceClicks.size.toLong(),
                 uniqueOrders = uniqueOrdersOf(workspaceClicks),
-                amountSum = workspaceClicks.sumOf { (it.amount ?: 0).toLong() }
+                amountSum = workspaceClicks.sumOf { (it.amount ?: 0).toLong() },
+                depositAmountSum = depositAmountSumOf(workspaceClicks)
             )
         }
     }
+
+    fun getCustomerClickItems(date: LocalDate): List<CustomerDonationClickItemDto> {
+        val clicks = customerDonationClickRepository.findByCreatedAtGreaterThanEqualAndCreatedAtLessThan(
+            date.atTime(BUSINESS_DAY_START),
+            date.plusDays(1).atTime(BUSINESS_DAY_START)
+        ).sortedBy { it.createdAt }
+        val workspaceNames = workspaceNamesOf(clicks.mapNotNull { it.workspaceId }.distinct())
+
+        return clicks.map { CustomerDonationClickItemDto.of(it, workspaceNames[it.workspaceId]) }
+    }
+
+    fun confirmDeposit(clickId: Long, amount: Int, memo: String?): CustomerDonationClickItemDto {
+        val normalizedMemo = memo?.trim()?.takeIf { it.isNotEmpty() }
+        if (amount < MIN_DEPOSIT_AMOUNT || (normalizedMemo?.length ?: 0) > MAX_DEPOSIT_MEMO_LENGTH) {
+            throw CustomException(ErrorCode.INVALID_INPUT)
+        }
+
+        val click = findClick(clickId)
+        click.confirmDeposit(amount, normalizedMemo, LocalDateTime.now())
+        return toItem(customerDonationClickRepository.save(click))
+    }
+
+    fun cancelDeposit(clickId: Long): CustomerDonationClickItemDto {
+        val click = findClick(clickId)
+        click.cancelDeposit()
+        return toItem(customerDonationClickRepository.save(click))
+    }
+
+    private fun findClick(clickId: Long): CustomerDonationClick =
+        customerDonationClickRepository.findByIdOrNull(clickId)
+            ?: throw CustomException(ErrorCode.DONATION_CLICK_NOT_FOUND)
+
+    private fun toItem(click: CustomerDonationClick): CustomerDonationClickItemDto {
+        val workspaceNames = workspaceNamesOf(listOfNotNull(click.workspaceId))
+        return CustomerDonationClickItemDto.of(click, workspaceNames[click.workspaceId])
+    }
+
+    private fun workspaceNamesOf(workspaceIds: List<Long>): Map<Long, String> {
+        if (workspaceIds.isEmpty()) return emptyMap()
+        return workspaceRepository.findAllById(workspaceIds).associate { it.id to it.name }
+    }
+
+    private fun depositAmountSumOf(clicks: List<CustomerDonationClick>): Long =
+        clicks.sumOf { (it.depositAmount ?: 0).toLong() }
 
     private fun uniqueOrdersOf(clicks: List<CustomerDonationClick>): Long =
         clicks.mapNotNull { it.orderId }.distinct().size.toLong()
@@ -127,5 +181,7 @@ class SuperAdminDonationFacade(
         private val DATE_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE
         private const val MAX_RANGE_DAYS = 366L
         private const val TOP_WORKSPACE_LIMIT = 10
+        private const val MIN_DEPOSIT_AMOUNT = 1
+        private const val MAX_DEPOSIT_MEMO_LENGTH = 100
     }
 }
