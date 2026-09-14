@@ -7,7 +7,6 @@ data class CustomerDonationClickStatsDto(
     val daily: List<DailyPoint>,
     val byAmount: List<Bucket>,
     val byMethod: List<Bucket>,
-    val byVariant: List<Bucket>,
     val byNoteIndex: List<Bucket>,
     val topWorkspaces: List<WorkspaceItem>
 ) {

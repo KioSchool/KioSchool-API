@@ -8,7 +8,8 @@ data class AcquisitionSurveySummaryDto(
     val skippedCount: Long,
     // 설문은 어드민 홈 진입 시 뜬다. 아직 홈에 오지 않았거나 보고 나간 유저가 여기에 잡힌다.
     val notAskedCount: Long,
-    val responseRate: Double,
+    // 전체 유저 중 설문을 마친(응답 + 건너뜀) 비율
+    val surveyedRate: Double,
     // context는 자유 서술이 아니라 첫 방문 시 자동 수집한 UTM·referrer 값이다.
     val contextCount: Long,
     val channels: List<ChannelStat>

@@ -56,7 +56,6 @@ class SuperAdminDonationFacade(
             daily = buildDaily(clicks, startDate, endDate),
             byAmount = bucketsOf(clicks) { it.amount?.toString() },
             byMethod = bucketsOf(clicks) { it.method },
-            byVariant = bucketsOf(clicks) { it.variant },
             byNoteIndex = bucketsOf(clicks) { it.noteIndex?.toString() },
             topWorkspaces = buildTopWorkspaces(clicks)
         )

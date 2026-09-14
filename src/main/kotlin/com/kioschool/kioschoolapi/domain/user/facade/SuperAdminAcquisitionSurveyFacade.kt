@@ -40,7 +40,7 @@ class SuperAdminAcquisitionSurveyFacade(
             answeredCount = answeredCount,
             skippedCount = skippedCount,
             notAskedCount = (totalUsers - surveyedCount).coerceAtLeast(0),
-            responseRate = ratioOf(answeredCount, surveyedCount),
+            surveyedRate = ratioOf(surveyedCount, totalUsers),
             contextCount = acquisitionSurveyRepository.countByContextIsNotNull(),
             channels = channels
         )

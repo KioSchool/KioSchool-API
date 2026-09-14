@@ -41,7 +41,7 @@ class SuperAdminAcquisitionSurveyFacadeTest : DescribeSpec({
             result.answeredCount shouldBe 4L
             result.skippedCount shouldBe 2L
             result.notAskedCount shouldBe 4L
-            result.responseRate shouldBe 4.0 / 6.0
+            result.surveyedRate shouldBe 0.6
             result.contextCount shouldBe 1L
         }
 
@@ -68,7 +68,7 @@ class SuperAdminAcquisitionSurveyFacadeTest : DescribeSpec({
 
             val result = sut.getSummary()
 
-            result.responseRate shouldBe 0.0
+            result.surveyedRate shouldBe 0.0
             result.notAskedCount shouldBe 0L
             result.channels.all { it.ratio == 0.0 } shouldBe true
         }
