@@ -31,7 +31,11 @@ class TurnstileService(
 
     fun verify(token: String?) {
         if (secretKey.isBlank()) return
-        if (token.isNullOrBlank()) throw CustomException(ErrorCode.CAPTCHA_VERIFICATION_FAILED)
+        if (token.isNullOrBlank()) {
+            // 봇의 직접 호출이거나, 배포 직후 토큰을 보내지 않는 옛 프론트 화면일 수 있다
+            log.info("Turnstile verification rejected: [missing-token]")
+            throw CustomException(ErrorCode.CAPTCHA_VERIFICATION_FAILED)
+        }
 
         val response = try {
             turnstileApi.siteverify(secretKey, token).execute()
