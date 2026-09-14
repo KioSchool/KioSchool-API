@@ -73,4 +73,5 @@ enum class ErrorCode(
     AUTHENTICATION_REQUIRED(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다."),
     ACCESS_DENIED(HttpStatus.FORBIDDEN, "접근 권한이 없습니다."),
     INVALID_JWT(HttpStatus.UNAUTHORIZED, "유효하지 않은 토큰입니다."),
+    CAPTCHA_VERIFICATION_FAILED(HttpStatus.BAD_REQUEST, "자동 입력 방지 확인에 실패했습니다. 확인을 다시 완료한 뒤 시도해 주세요."),
 }

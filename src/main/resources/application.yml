@@ -103,6 +103,10 @@ kio-school:
   og:
     fallback-image-url: "https://kio-school.com/preview.png"
 
+turnstile:
+  # 비어 있으면 검증을 건너뛴다. 프론트 site key 배포 후에 설정해야 정상 접수가 막히지 않는다
+  secret-key: "${TURNSTILE_SECRET_KEY:}"
+
 inquiry:
   guard:
     email:

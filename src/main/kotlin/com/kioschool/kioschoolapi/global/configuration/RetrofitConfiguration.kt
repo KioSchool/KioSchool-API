@@ -3,6 +3,7 @@ package com.kioschool.kioschoolapi.global.configuration
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.kioschool.kioschoolapi.global.discord.api.DiscordApi
 import com.kioschool.kioschoolapi.global.portone.api.PortoneApi
+import com.kioschool.kioschoolapi.global.turnstile.api.TurnstileApi
 import okhttp3.OkHttpClient
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -47,5 +48,18 @@ class RetrofitConfiguration {
             .addConverterFactory(JacksonConverterFactory.create(objectMapper))
             .build()
             .create(PortoneApi::class.java)
+    }
+
+    @Bean("turnstileApi")
+    fun turnstileApi(
+        okHttpClient: OkHttpClient,
+        objectMapper: ObjectMapper
+    ): TurnstileApi {
+        return Retrofit.Builder()
+            .baseUrl("https://challenges.cloudflare.com/")
+            .client(okHttpClient)
+            .addConverterFactory(JacksonConverterFactory.create(objectMapper))
+            .build()
+            .create(TurnstileApi::class.java)
     }
 }
