@@ -37,4 +37,10 @@ interface OrderRepository : JpaRepository<Order, Long> {
     fun countByStatusAndCreatedAtAfter(status: OrderStatus, createdAt: LocalDateTime): Long
 
     fun countByCreatedAtAfter(createdAt: LocalDateTime): Long
+
+    fun countByStatusNotAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(
+        status: OrderStatus,
+        start: LocalDateTime,
+        end: LocalDateTime
+    ): Long
 }
