@@ -13,6 +13,9 @@ import java.time.Duration
 /**
  * 같은 이메일로 반복 접수하는 것을 막는다.
  *
+ * 같은 메일함으로 배달되는 주소 변형(`+태그`, Gmail의 점)은 하나로 묶어 센다.
+ * 점만 바꾼 Gmail 주소로 상한을 우회하는 봇 접수가 실제로 들어왔다.
+ *
  * 접수 확인 메일 때문에 POST /inquiries가 임의 주소로 메일을 보내는 공개 트리거가 되므로,
  * 전면 rate limit 대신 이 벡터만 막는다.
  *
@@ -31,7 +34,7 @@ class InquiryEmailGuard(
     private val log = LoggerFactory.getLogger(javaClass)
 
     fun check(normalizedEmail: String) {
-        val key = "$KEY_PREFIX${normalizedEmail.trim().lowercase()}"
+        val key = "$KEY_PREFIX${mailboxOf(normalizedEmail)}"
 
         val count = try {
             valueOperations.increment(key, 1)
@@ -56,7 +59,20 @@ class InquiryEmailGuard(
         }.onFailure { log.warn("Failed to set TTL on {}: {}", key, it.message) }
     }
 
+    private fun mailboxOf(email: String): String {
+        val lowered = email.trim().lowercase()
+        val localPart = lowered.substringBeforeLast('@')
+        val domain = lowered.substringAfterLast('@', missingDelimiterValue = "")
+        if (localPart.isEmpty() || domain.isEmpty()) return lowered
+
+        val withoutTag = localPart.substringBefore('+').ifEmpty { localPart }
+        if (domain in GMAIL_DOMAINS) return "${withoutTag.replace(".", "")}@gmail.com"
+
+        return "$withoutTag@$domain"
+    }
+
     companion object {
         private const val KEY_PREFIX = "inquiry:guard:email:"
+        private val GMAIL_DOMAINS = setOf("gmail.com", "googlemail.com")
     }
 }

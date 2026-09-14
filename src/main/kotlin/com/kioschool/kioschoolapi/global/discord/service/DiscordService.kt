@@ -4,7 +4,7 @@ import com.kioschool.kioschoolapi.domain.inquiry.entity.Inquiry
 import com.kioschool.kioschoolapi.domain.user.entity.User
 import com.kioschool.kioschoolapi.domain.workspace.entity.Workspace
 import com.kioschool.kioschoolapi.global.discord.api.DiscordApi
-import okhttp3.FormBody
+import com.kioschool.kioschoolapi.global.discord.dto.DiscordWebhookRequest
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
@@ -100,10 +100,6 @@ class DiscordService(
     }
 
     private fun send(message: String) {
-        val body = FormBody.Builder()
-            .add("content", message)
-            .build()
-
-        discordApi.executeWebhook(webhookUrl, body).execute()
+        discordApi.executeWebhook(webhookUrl, DiscordWebhookRequest(message)).execute()
     }
 }
