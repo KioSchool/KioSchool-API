@@ -8,6 +8,7 @@ data class AcquisitionSurveyResponseDto(
     val id: Long,
     val userId: Long,
     val userEmail: String,
+    val schoolName: String,
     val channel: AcquisitionChannel?,
     val channelLabel: String?,
     val channelEtc: String?,
@@ -15,11 +16,12 @@ data class AcquisitionSurveyResponseDto(
     val answeredAt: LocalDateTime?
 ) {
     companion object {
-        fun of(survey: AcquisitionSurvey): AcquisitionSurveyResponseDto {
+        fun of(survey: AcquisitionSurvey, schoolName: String): AcquisitionSurveyResponseDto {
             return AcquisitionSurveyResponseDto(
                 id = survey.id,
                 userId = survey.user.id,
                 userEmail = survey.user.email,
+                schoolName = schoolName,
                 channel = survey.channel,
                 channelLabel = survey.channel?.label,
                 channelEtc = survey.channelEtc,

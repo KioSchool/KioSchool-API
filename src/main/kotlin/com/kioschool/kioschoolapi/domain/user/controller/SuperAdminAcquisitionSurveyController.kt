@@ -20,7 +20,7 @@ class SuperAdminAcquisitionSurveyController(
 ) {
     @Operation(
         summary = "유입 경로 설문 요약",
-        description = "전체 기간의 응답/건너뜀/미응답 수와 유입 경로별 분포를 조회합니다."
+        description = "전체 기간의 응답/건너뜀/미응답 수와 유입 경로별 분포, 학교별 분포를 조회합니다."
     )
     @GetMapping("/users/acquisition-survey")
     fun getAcquisitionSurveySummary(): AcquisitionSurveySummaryDto {
@@ -29,14 +29,15 @@ class SuperAdminAcquisitionSurveyController(
 
     @Operation(
         summary = "유입 경로 설문 응답 목록",
-        description = "개별 응답을 최신순으로 조회합니다. channel을 주면 해당 유입 경로만 조회합니다."
+        description = "개별 응답을 최신순으로 조회합니다. channel·school을 주면 해당 유입 경로·학교만 조회합니다."
     )
     @GetMapping("/users/acquisition-survey/responses")
     fun getAcquisitionSurveyResponses(
         @RequestParam(required = false) channel: AcquisitionChannel?,
+        @RequestParam(required = false) school: String?,
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "20") size: Int
     ): Page<AcquisitionSurveyResponseDto> {
-        return superAdminAcquisitionSurveyFacade.getResponses(channel, page, size)
+        return superAdminAcquisitionSurveyFacade.getResponses(channel, school, page, size)
     }
 }
