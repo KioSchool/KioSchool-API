@@ -15,12 +15,14 @@ import java.util.concurrent.TimeUnit
 class RetrofitConfiguration {
     @Bean("okHttpClient")
     fun okHttpClient(): OkHttpClient {
+        // 회원가입·계좌 등록 요청 스레드에서 동기로 불리고 OSIV로 DB 커넥션을 쥔 채 기다리므로,
+        // 예금주 조회(토큰+조회 2회)가 프론트 타임아웃(10초) 안에 끝나도록 호출당 상한을 둔다.
         return OkHttpClient()
             .newBuilder().apply {
-                connectTimeout(15, TimeUnit.SECONDS)
-                writeTimeout(15, TimeUnit.SECONDS)
-                readTimeout(15, TimeUnit.SECONDS)
-                callTimeout(15, TimeUnit.SECONDS)
+                connectTimeout(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                writeTimeout(CALL_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                readTimeout(CALL_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                callTimeout(CALL_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             }.build()
     }
 
@@ -61,5 +63,10 @@ class RetrofitConfiguration {
             .addConverterFactory(JacksonConverterFactory.create(objectMapper))
             .build()
             .create(TurnstileApi::class.java)
+    }
+
+    companion object {
+        const val CONNECT_TIMEOUT_SECONDS = 3L
+        const val CALL_TIMEOUT_SECONDS = 4L
     }
 }
