@@ -13,8 +13,8 @@ import org.springframework.stereotype.Repository
 interface AcquisitionSurveyRepository : JpaRepository<AcquisitionSurvey, Long> {
     fun findByUser(user: User): AcquisitionSurvey?
 
-    @Query("SELECT s.channel, COUNT(s) FROM AcquisitionSurvey s GROUP BY s.channel")
-    fun countGroupByChannel(): List<Array<Any?>>
+    @Query("SELECT u.email, s.channel FROM AcquisitionSurvey s JOIN s.user u")
+    fun findAllEmailAndChannel(): List<Array<Any?>>
 
     fun countByContextIsNotNull(): Long
 
@@ -23,4 +23,18 @@ interface AcquisitionSurveyRepository : JpaRepository<AcquisitionSurvey, Long> {
         countQuery = "SELECT COUNT(s) FROM AcquisitionSurvey s WHERE (:channel IS NULL OR s.channel = :channel)"
     )
     fun findAllWithUser(channel: AcquisitionChannel?, pageable: Pageable): Page<AcquisitionSurvey>
+
+    @Query(
+        value = "SELECT s FROM AcquisitionSurvey s JOIN FETCH s.user u " +
+            "WHERE (:channel IS NULL OR s.channel = :channel) " +
+            "AND SUBSTRING(u.email, LOCATE('@', u.email) + 1) IN :emailDomains",
+        countQuery = "SELECT COUNT(s) FROM AcquisitionSurvey s JOIN s.user u " +
+            "WHERE (:channel IS NULL OR s.channel = :channel) " +
+            "AND SUBSTRING(u.email, LOCATE('@', u.email) + 1) IN :emailDomains"
+    )
+    fun findAllWithUserByEmailDomains(
+        channel: AcquisitionChannel?,
+        emailDomains: Collection<String>,
+        pageable: Pageable
+    ): Page<AcquisitionSurvey>
 }

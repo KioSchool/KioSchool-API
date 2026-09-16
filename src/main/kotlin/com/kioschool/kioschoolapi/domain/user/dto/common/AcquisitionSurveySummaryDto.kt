@@ -12,12 +12,22 @@ data class AcquisitionSurveySummaryDto(
     val surveyedRate: Double,
     // context는 자유 서술이 아니라 첫 방문 시 자동 수집한 UTM·referrer 값이다.
     val contextCount: Long,
-    val channels: List<ChannelStat>
+    val channels: List<ChannelStat>,
+    // 학교는 가입 이메일 도메인으로 판별한다. email_domain에 없는 도메인은 도메인 문자열이 그대로 학교명이 된다.
+    val schools: List<SchoolStat>
 ) {
     data class ChannelStat(
         val channel: AcquisitionChannel,
         val label: String,
         val count: Long,
         val ratio: Double
+    )
+
+    data class SchoolStat(
+        val schoolName: String,
+        val totalUsers: Long,
+        val answeredCount: Long,
+        val skippedCount: Long,
+        val channels: List<ChannelStat>
     )
 }

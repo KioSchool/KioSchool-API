@@ -17,6 +17,9 @@ interface UserRepository : JpaRepository<User, Long> {
 
     fun countByCreatedAtAfter(createdAt: LocalDateTime): Long
 
+    @Query("SELECT u.email FROM User u")
+    fun findAllEmails(): List<String>
+
     @Query("SELECT COUNT(u) FROM User u WHERE u.account IS NOT NULL")
     fun countUsersWithAccount(): Long
 
