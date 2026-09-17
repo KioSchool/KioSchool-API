@@ -60,12 +60,10 @@ class StatisticsCalculator(
         val byQuantity = allProducts.groupBy { it.productId }
             .map { (id, items) -> PopularProductItem(id, items.first().productName, items.sumOf { it.quantity }.toDouble()) }
             .sortedByDescending { it.value }
-            .take(5)
             
         val byRevenue = allProducts.groupBy { it.productId }
             .map { (id, items) -> PopularProductItem(id, items.first().productName, items.sumOf { it.totalPrice }.toDouble()) }
             .sortedByDescending { it.value }
-            .take(5)
 
         val productSessions = mutableMapOf<Long, MutableSet<Long>>()
         val productReorders = mutableMapOf<Long, MutableSet<Long>>()
@@ -95,7 +93,7 @@ class StatisticsCalculator(
             val rate = if (total > 0) (reorders.toDouble() / total) * 100 else 0.0
             val name = allProducts.firstOrNull { it.productId == productId }?.productName ?: "Unknown"
             PopularProductItem(productId, name, rate)
-        }.sortedByDescending { it.value }.take(5)
+        }.sortedByDescending { it.value }
 
         val previousDayStats = dailyOrderStatisticRepository.findByWorkspaceIdAndReferenceDate(workspaceId, referenceDate.minusDays(1))
         
