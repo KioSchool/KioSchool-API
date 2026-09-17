@@ -12,7 +12,7 @@ class MenuDiversityMetric : InsightMetric {
     override val category = MetricCategory.LOYALTY
 
     private fun diversityRatio(stat: DailyOrderStatistic): Double {
-        val sold = stat.popularProducts.byQuantity.size + stat.popularProducts.byRevenue.size
+        val sold = stat.popularProducts.byQuantity.size // 판매된 상품 전체가 한 번씩 들어있다
         val registered = stat.workspace.products.size
         return if (registered > 0) sold.coerceAtMost(registered).toDouble() / registered else 0.0
     }

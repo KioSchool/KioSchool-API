@@ -120,4 +120,55 @@ class StatisticsCalculatorTest : BehaviorSpec({
             }
         }
     }
+
+    Given("A workspace that sold more than 5 distinct products") {
+        val workspaceId = 2L
+        val referenceDate = LocalDate.of(2026, 9, 16)
+        val start = referenceDate.atTime(9, 0)
+        val end = referenceDate.plusDays(1).atTime(9, 0)
+
+        val workspace = mockk<Workspace>()
+        every { workspace.id } returns workspaceId
+
+        val session = mockk<OrderSession>()
+        every { session.id } returns 1L
+        every { session.tableNumber } returns 1
+        every { session.createdAt } returns referenceDate.atTime(18, 0)
+        every { session.endAt } returns referenceDate.atTime(20, 0)
+
+        val orders = (1L..7L).map { productId ->
+            val op = mockk<OrderProduct>()
+            every { op.productId } returns productId
+            every { op.productName } returns "Product$productId"
+            every { op.quantity } returns productId.toInt()
+            every { op.totalPrice } returns productId.toInt() * 1000
+
+            val order = mockk<Order>()
+            every { order.id } returns productId
+            every { order.createdAt } returns referenceDate.atTime(18, 30)
+            every { order.totalPrice } returns productId.toInt() * 1000
+            every { order.status } returns OrderStatus.SERVED
+            every { order.orderSession } returns session
+            every { order.orderProducts } returns mutableListOf(op)
+            order
+        }
+
+        every { workspaceRepository.findById(workspaceId) } returns Optional.of(workspace)
+        every { orderRepository.findValidOrders(workspaceId, start, end) } returns orders
+        every { orderSessionRepository.findAllByWorkspaceIdAndCreatedAtBetween(workspaceId, start, end) } returns listOf(session)
+        every {
+            dailyOrderStatisticRepository.findByWorkspaceIdAndReferenceDate(workspaceId, referenceDate.minusDays(1))
+        } returns Optional.empty()
+        every { orderRepository.findValidOrders(workspaceId, referenceDate.minusDays(1).atTime(9, 0), start) } returns emptyList()
+
+        When("Calculating statistics") {
+            val result = calculator.calculate(workspaceId, referenceDate)
+
+            Then("It keeps every product in each ranking") {
+                result.popularProducts.byQuantity.map { it.productId } shouldBe (7L downTo 1L).toList()
+                result.popularProducts.byRevenue.map { it.productId } shouldBe (7L downTo 1L).toList()
+                result.popularProducts.byReorderRate.size shouldBe 7
+            }
+        }
+    }
 })
