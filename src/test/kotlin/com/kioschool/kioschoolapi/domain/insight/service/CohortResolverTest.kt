@@ -46,6 +46,7 @@ class CohortResolverTest : DescribeSpec({
             val stat2 = mockStat(workspace = ws2)
 
             every { statisticRepository.findAllByReferenceDate(date) } returns listOf(stat1, stat2)
+            every { workspaceRepository.findAll() } returns listOf(ws1, ws2)
 
             val cohorts = sut.resolveAll(date)
 
@@ -55,6 +56,27 @@ class CohortResolverTest : DescribeSpec({
             cohorts[TableCountBucket.S]?.peers!! shouldContainExactlyInAnyOrder listOf(stat1, stat2)
             cohorts[TableCountBucket.XS]?.bucket shouldBe TableCountBucket.XS
             cohorts[TableCountBucket.S]?.bucket shouldBe TableCountBucket.S
+        }
+
+        it("통계 row가 없는 워크스페이스는 0 실적으로 비교 풀에 포함한다") {
+            val date = LocalDate.of(2026, 9, 16)
+            val active = mockWorkspace(id = 1, tableCount = 2)
+            val activeStat = mockStat(workspace = active)
+            val idleWorkspaces = (2L..5L).map { mockWorkspace(id = it, tableCount = 2) }
+
+            every { statisticRepository.findAllByReferenceDate(date) } returns listOf(activeStat)
+            every { workspaceRepository.findAll() } returns listOf(active) + idleWorkspaces
+
+            val peers = sut.resolveAll(date)[TableCountBucket.XS]!!.peers
+
+            peers.size shouldBe 5
+            peers.first() shouldBe activeStat
+            peers.drop(1).map { it.workspace } shouldContainExactlyInAnyOrder idleWorkspaces
+            peers.drop(1).forEach {
+                it.totalOrders shouldBe 0
+                it.averageOrderAmount shouldBe 0
+                it.salesByHour shouldBe emptyList()
+            }
         }
     }
 })
