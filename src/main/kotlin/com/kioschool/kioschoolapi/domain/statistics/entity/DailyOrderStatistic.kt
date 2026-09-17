@@ -40,4 +40,8 @@ class DailyOrderStatistic(
 
     @Column(columnDefinition = "boolean default false")
     var excludedFromCalendar: Boolean = false
-) : BaseEntity()
+) : BaseEntity() {
+    // 당일·전일 모두 주문이 없어 기본값뿐인 통계. 배치에서 만들지 않는다 (조회 시에는 HistoryStatisticsStrategy가 생성)
+    fun isIdleDay(): Boolean =
+        totalOrders == 0 && (previousDayComparison?.orderCountDifference ?: 0) == 0
+}

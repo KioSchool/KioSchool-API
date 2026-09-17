@@ -15,6 +15,8 @@ interface DailyOrderStatisticRepository : JpaRepository<DailyOrderStatistic, Lon
 
     fun findAllByReferenceDate(referenceDate: LocalDate): List<DailyOrderStatistic>
 
+    fun findAllByTotalOrders(totalOrders: Int): List<DailyOrderStatistic>
+
     fun deleteByWorkspaceId(workspaceId: Long)
 
     @Query("SELECT COALESCE(SUM(d.totalRevenue), 0) FROM DailyOrderStatistic d WHERE d.excludedFromCalendar = false")

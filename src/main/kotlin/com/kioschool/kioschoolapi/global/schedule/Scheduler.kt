@@ -4,7 +4,6 @@ import com.kioschool.kioschoolapi.domain.insight.service.DailyInsightCardGenerat
 import com.kioschool.kioschoolapi.domain.order.entity.GhostType
 import com.kioschool.kioschoolapi.domain.order.repository.OrderSessionRepository
 import com.kioschool.kioschoolapi.domain.order.service.OrderService
-import com.kioschool.kioschoolapi.domain.statistics.entity.DailyOrderStatistic
 import com.kioschool.kioschoolapi.domain.statistics.repository.DailyOrderStatisticRepository
 import com.kioschool.kioschoolapi.domain.statistics.service.StatisticsCalculator
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepository
@@ -117,7 +116,7 @@ class Scheduler(
             ) {
                 try {
                     val statistic = statisticsCalculator.calculate(workspace.id, referenceDate)
-                    if (isIdleDay(statistic)) return@forEach
+                    if (statistic.isIdleDay()) return@forEach
                     if (statistic.totalOrders < FESTIVAL_CALENDAR_MIN_ORDERS) {
                         statistic.excludedFromCalendar = true
                     }
@@ -131,10 +130,6 @@ class Scheduler(
             }
         }
     }
-
-    // 당일·전일 모두 주문이 없으면 기본값뿐인 row라 배치에서는 만들지 않는다 (조회 시 HistoryStatisticsStrategy가 생성)
-    private fun isIdleDay(statistic: DailyOrderStatistic): Boolean =
-        statistic.totalOrders == 0 && (statistic.previousDayComparison?.orderCountDifference ?: 0) == 0
 
     companion object {
         private const val FESTIVAL_CALENDAR_MIN_ORDERS = 15
