@@ -75,7 +75,7 @@ class SuperAdminAcquisitionSurveyFacadeTest : DescribeSpec({
 
             result.channels.map { it.channel } shouldBe AcquisitionChannel.entries.toList()
             result.channels.first { it.channel == AcquisitionChannel.INSTAGRAM }.ratio shouldBe 0.75
-            result.channels.first { it.channel == AcquisitionChannel.EVERYTIME_PROMOTION }.count shouldBe 1L
+            result.channels.first { it.channel == AcquisitionChannel.EVERYTIME_PROMOTION }.count shouldBe 0L
             result.channels.first { it.channel == AcquisitionChannel.EVERYTIME_PROMOTION }.label shouldBe
                 AcquisitionChannel.EVERYTIME_PROMOTION.label
             result.channels.first { it.channel == AcquisitionChannel.SEARCH }.count shouldBe 0L
