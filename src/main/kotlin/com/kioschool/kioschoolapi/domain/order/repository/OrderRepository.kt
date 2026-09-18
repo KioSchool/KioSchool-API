@@ -32,6 +32,9 @@ interface OrderRepository : JpaRepository<Order, Long> {
         @Param("end") end: LocalDateTime
     ): List<Order>
 
+    @Query("SELECT o.workspace.id, o.createdAt FROM Order o WHERE o.status != com.kioschool.kioschoolapi.global.common.enums.OrderStatus.CANCELLED")
+    fun findAllValidOrderWorkspaceIdAndCreatedAt(): List<Array<Any>>
+
     fun findAllByWorkspaceId(workspaceId: Long): List<Order>
 
     fun countByStatusAndCreatedAtAfter(status: OrderStatus, createdAt: LocalDateTime): Long
