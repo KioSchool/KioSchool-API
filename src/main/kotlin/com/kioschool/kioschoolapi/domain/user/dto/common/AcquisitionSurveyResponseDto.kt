@@ -7,7 +7,7 @@ import java.time.LocalDateTime
 data class AcquisitionSurveyResponseDto(
     val id: Long,
     val userId: Long,
-    val userEmail: String,
+    val userEmail: String?,
     val schoolName: String,
     val channel: AcquisitionChannel?,
     val channelLabel: String?,
