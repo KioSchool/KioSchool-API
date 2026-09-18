@@ -16,7 +16,7 @@ class User(
     @JsonIgnore
     var loginPassword: String,
     var name: String,
-    var email: String,
+    var email: String?,
     var role: UserRole,
     var accountUrl: String? = null,
     @OneToOne(fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)

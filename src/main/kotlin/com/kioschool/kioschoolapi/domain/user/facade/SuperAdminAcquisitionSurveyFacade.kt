@@ -22,7 +22,7 @@ class SuperAdminAcquisitionSurveyFacade(
         val userEmails = userRepository.findAllEmails()
         // 건너뛴 응답은 channel = null인 row로 남는다.
         val surveyChannels = acquisitionSurveyRepository.findAllEmailAndChannel()
-            .map { row -> row[0] as String to row[1] as AcquisitionChannel? }
+            .map { row -> row[0] as String? to row[1] as AcquisitionChannel? }
 
         val totalUsers = userEmails.size.toLong()
         val overall = tally(surveyChannels.map { it.second })
@@ -69,6 +69,8 @@ class SuperAdminAcquisitionSurveyFacade(
         val pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"))
         val surveys = if (school.isNullOrBlank()) {
             acquisitionSurveyRepository.findAllWithUser(channel, pageable)
+        } else if (school == NO_EMAIL_SCHOOL_NAME) {
+            acquisitionSurveyRepository.findAllWithUserWithoutEmail(channel, pageable)
         } else {
             acquisitionSurveyRepository.findAllWithUserByEmailDomains(
                 channel,
@@ -110,12 +112,18 @@ class SuperAdminAcquisitionSurveyFacade(
     )
 
     private class SchoolResolver(private val schoolNameByDomain: Map<String, String>) {
-        fun schoolOf(email: String): String {
+        // 수동 가입 등으로 이메일이 없는 유저는 한 학교로 묶는다.
+        fun schoolOf(email: String?): String {
+            if (email == null) return NO_EMAIL_SCHOOL_NAME
             val domain = email.substringAfter("@")
             return schoolNameByDomain[domain] ?: domain
         }
 
         fun domainsOf(schoolName: String): Set<String> =
             schoolNameByDomain.filterValues { it == schoolName }.keys.ifEmpty { setOf(schoolName) }
+    }
+
+    companion object {
+        const val NO_EMAIL_SCHOOL_NAME = "(이메일 없음)"
     }
 }
