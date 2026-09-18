@@ -116,6 +116,7 @@ class Scheduler(
             ) {
                 try {
                     val statistic = statisticsCalculator.calculate(workspace.id, referenceDate)
+                    if (statistic.isIdleDay()) return@forEach
                     if (statistic.totalOrders < FESTIVAL_CALENDAR_MIN_ORDERS) {
                         statistic.excludedFromCalendar = true
                     }

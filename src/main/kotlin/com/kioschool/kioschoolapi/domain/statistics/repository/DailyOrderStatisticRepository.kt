@@ -15,33 +15,35 @@ interface DailyOrderStatisticRepository : JpaRepository<DailyOrderStatistic, Lon
 
     fun findAllByReferenceDate(referenceDate: LocalDate): List<DailyOrderStatistic>
 
+    fun findAllByTotalOrders(totalOrders: Int): List<DailyOrderStatistic>
+
     fun deleteByWorkspaceId(workspaceId: Long)
 
-    @Query("SELECT COALESCE(SUM(d.totalRevenue), 0) FROM DailyOrderStatistic d")
+    @Query("SELECT COALESCE(SUM(d.totalRevenue), 0) FROM DailyOrderStatistic d WHERE d.excludedFromCalendar = false")
     fun sumTotalRevenue(): Long
 
-    @Query("SELECT COALESCE(SUM(d.totalOrders), 0) FROM DailyOrderStatistic d")
+    @Query("SELECT COALESCE(SUM(d.totalOrders), 0) FROM DailyOrderStatistic d WHERE d.excludedFromCalendar = false")
     fun sumTotalOrders(): Long
 
-    @Query("SELECT COALESCE(SUM(d.totalRevenue), 0) FROM DailyOrderStatistic d WHERE d.referenceDate >= :since")
+    @Query("SELECT COALESCE(SUM(d.totalRevenue), 0) FROM DailyOrderStatistic d WHERE d.referenceDate >= :since AND d.excludedFromCalendar = false")
     fun sumTotalRevenueSince(@Param("since") since: LocalDate): Long
 
-    @Query("SELECT COALESCE(SUM(d.totalOrders), 0) FROM DailyOrderStatistic d WHERE d.referenceDate >= :since")
+    @Query("SELECT COALESCE(SUM(d.totalOrders), 0) FROM DailyOrderStatistic d WHERE d.referenceDate >= :since AND d.excludedFromCalendar = false")
     fun sumTotalOrdersSince(@Param("since") since: LocalDate): Long
 
-    @Query("SELECT d FROM DailyOrderStatistic d WHERE d.referenceDate >= :since ORDER BY d.referenceDate ASC")
+    @Query("SELECT d FROM DailyOrderStatistic d WHERE d.referenceDate >= :since AND d.excludedFromCalendar = false ORDER BY d.referenceDate ASC")
     fun findAllSince(@Param("since") since: LocalDate): List<DailyOrderStatistic>
 
     @Query("""
         SELECT d.workspace.id, SUM(d.totalRevenue), SUM(d.totalOrders)
         FROM DailyOrderStatistic d
-        WHERE d.referenceDate >= :since
+        WHERE d.referenceDate >= :since AND d.excludedFromCalendar = false
         GROUP BY d.workspace.id
         ORDER BY SUM(d.totalRevenue) DESC
     """)
     fun findTopWorkspacesByRevenueSince(@Param("since") since: LocalDate): List<Array<Any>>
 
-    @Query("SELECT COUNT(DISTINCT d.workspace.id) FROM DailyOrderStatistic d WHERE d.referenceDate >= :since AND d.totalOrders > 0")
+    @Query("SELECT COUNT(DISTINCT d.workspace.id) FROM DailyOrderStatistic d WHERE d.referenceDate >= :since AND d.totalOrders > 0 AND d.excludedFromCalendar = false")
     fun countActiveWorkspacesSince(@Param("since") since: LocalDate): Long
 
     @Query("SELECT COALESCE(SUM(d.totalOrders), 0) FROM DailyOrderStatistic d WHERE d.referenceDate >= :since AND d.workspace.id = :workspaceId")
