@@ -3,11 +3,13 @@ package com.kioschool.kioschoolapi.user.facade
 import com.kioschool.kioschoolapi.domain.email.entity.EmailDomain
 import com.kioschool.kioschoolapi.domain.email.repository.EmailDomainRepository
 import com.kioschool.kioschoolapi.domain.user.entity.AcquisitionSurvey
+import com.kioschool.kioschoolapi.domain.user.entity.User
 import com.kioschool.kioschoolapi.domain.user.facade.SuperAdminAcquisitionSurveyFacade
 import com.kioschool.kioschoolapi.domain.user.repository.AcquisitionSurveyRepository
 import com.kioschool.kioschoolapi.domain.user.repository.UserRepository
 import com.kioschool.kioschoolapi.factory.SampleEntity
 import com.kioschool.kioschoolapi.global.common.enums.AcquisitionChannel
+import com.kioschool.kioschoolapi.global.common.enums.UserRole
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.clearAllMocks
@@ -75,7 +77,7 @@ class SuperAdminAcquisitionSurveyFacadeTest : DescribeSpec({
 
             result.channels.map { it.channel } shouldBe AcquisitionChannel.entries.toList()
             result.channels.first { it.channel == AcquisitionChannel.INSTAGRAM }.ratio shouldBe 0.75
-            result.channels.first { it.channel == AcquisitionChannel.EVERYTIME_PROMOTION }.count shouldBe 1L
+            result.channels.first { it.channel == AcquisitionChannel.EVERYTIME_PROMOTION }.count shouldBe 0L
             result.channels.first { it.channel == AcquisitionChannel.EVERYTIME_PROMOTION }.label shouldBe
                 AcquisitionChannel.EVERYTIME_PROMOTION.label
             result.channels.first { it.channel == AcquisitionChannel.SEARCH }.count shouldBe 0L
@@ -128,6 +130,23 @@ class SuperAdminAcquisitionSurveyFacadeTest : DescribeSpec({
         }
     }
 
+    describe("getSummary - 이메일 없는 유저") {
+        it("이메일이 null인 유저는 '(이메일 없음)' 학교로 묶는다") {
+            every { userRepository.findAllEmails() } returns listOf("a@konkuk.ac.kr", null, null)
+            every { acquisitionSurveyRepository.findAllEmailAndChannel() } returns listOf(
+                arrayOf("a@konkuk.ac.kr", AcquisitionChannel.INSTAGRAM),
+                arrayOf(null, AcquisitionChannel.ETC)
+            )
+
+            val result = sut.getSummary()
+
+            result.totalUsers shouldBe 3L
+            val noEmail = result.schools.first { it.schoolName == SuperAdminAcquisitionSurveyFacade.NO_EMAIL_SCHOOL_NAME }
+            noEmail.totalUsers shouldBe 2L
+            noEmail.answeredCount shouldBe 1L
+        }
+    }
+
     describe("getResponses") {
         it("최신순으로 조회하고 이메일과 학교명만 담는다") {
             val pageable = slot<Pageable>()
@@ -167,6 +186,24 @@ class SuperAdminAcquisitionSurveyFacadeTest : DescribeSpec({
             sut.getResponses(null, "unknown.ac.kr", 0, 20)
 
             verify { acquisitionSurveyRepository.findAllWithUserByEmailDomains(null, setOf("unknown.ac.kr"), any()) }
+        }
+
+        it("'(이메일 없음)' 학교를 주면 이메일이 null인 유저의 응답을 조회한다") {
+            val user = User(
+                loginId = "highschool",
+                loginPassword = "pw",
+                name = "고등학생",
+                email = null,
+                role = UserRole.ADMIN,
+                members = mutableListOf()
+            )
+            val survey = AcquisitionSurvey(user = user, channel = null, channelEtc = null, context = null)
+            every { acquisitionSurveyRepository.findAllWithUserWithoutEmail(null, any()) } returns PageImpl(listOf(survey))
+
+            val result = sut.getResponses(null, SuperAdminAcquisitionSurveyFacade.NO_EMAIL_SCHOOL_NAME, 0, 20)
+
+            result.content.single().userEmail shouldBe null
+            result.content.single().schoolName shouldBe SuperAdminAcquisitionSurveyFacade.NO_EMAIL_SCHOOL_NAME
         }
     }
 })

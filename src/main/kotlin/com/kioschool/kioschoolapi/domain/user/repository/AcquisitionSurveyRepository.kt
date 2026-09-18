@@ -37,4 +37,12 @@ interface AcquisitionSurveyRepository : JpaRepository<AcquisitionSurvey, Long> {
         emailDomains: Collection<String>,
         pageable: Pageable
     ): Page<AcquisitionSurvey>
+
+    @Query(
+        value = "SELECT s FROM AcquisitionSurvey s JOIN FETCH s.user u " +
+            "WHERE (:channel IS NULL OR s.channel = :channel) AND u.email IS NULL",
+        countQuery = "SELECT COUNT(s) FROM AcquisitionSurvey s JOIN s.user u " +
+            "WHERE (:channel IS NULL OR s.channel = :channel) AND u.email IS NULL"
+    )
+    fun findAllWithUserWithoutEmail(channel: AcquisitionChannel?, pageable: Pageable): Page<AcquisitionSurvey>
 }

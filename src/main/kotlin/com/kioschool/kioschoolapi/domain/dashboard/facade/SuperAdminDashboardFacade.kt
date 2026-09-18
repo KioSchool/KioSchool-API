@@ -5,6 +5,7 @@ import com.kioschool.kioschoolapi.domain.dashboard.dto.SuperAdminDashboardDto
 import com.kioschool.kioschoolapi.domain.email.repository.EmailDomainRepository
 import com.kioschool.kioschoolapi.domain.order.repository.OrderRepository
 import com.kioschool.kioschoolapi.domain.statistics.repository.DailyOrderStatisticRepository
+import com.kioschool.kioschoolapi.domain.user.facade.SuperAdminAcquisitionSurveyFacade
 import com.kioschool.kioschoolapi.domain.user.repository.UserRepository
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepository
 import com.kioschool.kioschoolapi.global.cache.constant.CacheNames
@@ -185,7 +186,8 @@ class SuperAdminDashboardFacade(
         val allEmailDomains = emailDomainRepository.findAll().associateBy { it.domain }
         val dateFormatter = DateTimeFormatter.ISO_LOCAL_DATE
 
-        fun resolveUniversity(email: String): String {
+        fun resolveUniversity(email: String?): String {
+            if (email == null) return SuperAdminAcquisitionSurveyFacade.NO_EMAIL_SCHOOL_NAME
             val domain = email.substringAfter("@")
             return allEmailDomains[domain]?.name ?: domain
         }
