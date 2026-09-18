@@ -75,6 +75,9 @@ class SuperAdminAcquisitionSurveyFacadeTest : DescribeSpec({
 
             result.channels.map { it.channel } shouldBe AcquisitionChannel.entries.toList()
             result.channels.first { it.channel == AcquisitionChannel.INSTAGRAM }.ratio shouldBe 0.75
+            result.channels.first { it.channel == AcquisitionChannel.EVERYTIME_PROMOTION }.count shouldBe 1L
+            result.channels.first { it.channel == AcquisitionChannel.EVERYTIME_PROMOTION }.label shouldBe
+                AcquisitionChannel.EVERYTIME_PROMOTION.label
             result.channels.first { it.channel == AcquisitionChannel.SEARCH }.count shouldBe 0L
             result.channels.first { it.channel == AcquisitionChannel.SEARCH }.label shouldBe AcquisitionChannel.SEARCH.label
         }
@@ -130,19 +133,24 @@ class SuperAdminAcquisitionSurveyFacadeTest : DescribeSpec({
             val pageable = slot<Pageable>()
             val survey = AcquisitionSurvey(
                 user = SampleEntity.user,
-                channel = AcquisitionChannel.ETC,
-                channelEtc = "에브리타임",
+                channel = AcquisitionChannel.EVERYTIME_PROMOTION,
+                channelEtc = null,
                 context = "source=instagram&landing=/"
             )
-            every { acquisitionSurveyRepository.findAllWithUser(AcquisitionChannel.ETC, capture(pageable)) } returns PageImpl(listOf(survey))
+            every {
+                acquisitionSurveyRepository.findAllWithUser(
+                    AcquisitionChannel.EVERYTIME_PROMOTION,
+                    capture(pageable)
+                )
+            } returns PageImpl(listOf(survey))
 
-            val result = sut.getResponses(AcquisitionChannel.ETC, null, 0, 20)
+            val result = sut.getResponses(AcquisitionChannel.EVERYTIME_PROMOTION, null, 0, 20)
 
             pageable.captured.sort.getOrderFor("createdAt")?.direction shouldBe Sort.Direction.DESC
             result.content.single().userEmail shouldBe SampleEntity.user.email
             result.content.single().schoolName shouldBe "test.com"
-            result.content.single().channelLabel shouldBe AcquisitionChannel.ETC.label
-            result.content.single().channelEtc shouldBe "에브리타임"
+            result.content.single().channelLabel shouldBe AcquisitionChannel.EVERYTIME_PROMOTION.label
+            result.content.single().channelEtc shouldBe null
         }
 
         it("학교를 주면 그 학교의 모든 이메일 도메인으로 조회한다") {
