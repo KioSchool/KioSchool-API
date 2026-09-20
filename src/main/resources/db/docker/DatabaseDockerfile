@@ -1,9 +1,10 @@
-FROM postgres:latest
+# prod와 같은 메이저 버전으로 고정 — latest는 18 이상으로 올라가며 PGDATA 경로가 바뀌어 기존 볼륨과 호환되지 않는다
+FROM postgres:17
 
 RUN apt-get update && apt-get install -y locales && rm -rf /var/lib/apt/lists/*
 
 RUN echo "ko_KR.UTF-8 UTF-8" >> /etc/locale.gen && \
     locale-gen ko_KR.UTF-8
 
-ENV LANG ko_KR.UTF8
-ENV LC_ALL ko_KR.UTF8
+ENV LANG=ko_KR.UTF8
+ENV LC_ALL=ko_KR.UTF8

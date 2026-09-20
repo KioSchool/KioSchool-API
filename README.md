@@ -9,13 +9,9 @@
 
 ### 2. 로컬 DB 세팅
 
-- 터미널에서 /src/main/resources/db/dockerfile 디렉토리로 이동
-- `docker build -t kio-school-db .` 명령어로 도커 이미지 생성
-- Docker Desktop에서 생성된 이미지 확인
-  ![Docker Desktop Image Check.png](src%2Fmain%2Fresources%2Freadme%2FDocker%20Desktop%20Image%20Check.png)
-
-- Run 버튼 클릭 후 아래와 같이 포트 설정
-  ![Run Image.png](src%2Fmain%2Fresources%2Freadme%2FRun%20Image.png)
+- `src/main/resources/db/docker` 디렉토리에서 `docker compose up -d --build` 실행
+- PostgreSQL 17(ko_KR 로케일, `localhost:2345`)과 Redis(`localhost:6379`) 컨테이너가 뜬다
+- prod와 같은 PostgreSQL 메이저 버전(17)을 쓴다. 버전이 다르면 prod 백업 덤프를 로컬에 복원할 수 없다
 
 ### 3. 로컬 서버 실행
 

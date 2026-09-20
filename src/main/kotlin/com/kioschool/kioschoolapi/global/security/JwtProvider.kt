@@ -3,6 +3,7 @@ package com.kioschool.kioschoolapi.global.security
 import com.kioschool.kioschoolapi.domain.user.entity.User
 import com.kioschool.kioschoolapi.global.common.enums.UserRole
 import com.nimbusds.jose.util.StandardCharset
+import io.jsonwebtoken.ExpiredJwtException
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.SignatureAlgorithm
 import io.jsonwebtoken.security.Keys
@@ -60,6 +61,9 @@ class JwtProvider(
                 .build()
                 .parseClaimsJws(token)
             claims.body.expiration.after(now)
+        } catch (e: ExpiredJwtException) {
+            // 만료된 쿠키가 남아 있는 브라우저가 매 요청마다 보내므로 정상 상황 — 로그를 남기지 않는다
+            false
         } catch (e: Exception) {
             log.warn("Invalid JWT token: {}", e.message)
             false
