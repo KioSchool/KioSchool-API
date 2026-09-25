@@ -1,5 +1,6 @@
 package com.kioschool.kioschoolapi.workspace.facade
 
+import com.kioschool.kioschoolapi.domain.insight.repository.DailyInsightCardRepository
 import com.kioschool.kioschoolapi.domain.user.service.UserService
 import com.kioschool.kioschoolapi.domain.workspace.dto.common.TablePositionDto
 import com.kioschool.kioschoolapi.domain.workspace.dto.common.TablePositionUpdateDto
@@ -29,8 +30,9 @@ class WorkspaceFacadeTest : DescribeSpec({
     val orderRepository = mockk<OrderRepository>()
     val orderSessionRepository = mockk<OrderSessionRepository>()
     val dailyOrderStatisticRepository = mockk<DailyOrderStatisticRepository>()
+    val dailyInsightCardRepository = mockk<DailyInsightCardRepository>()
 
-    val sut = WorkspaceFacade(userService, discordService, workspaceService, orderRepository, orderSessionRepository, dailyOrderStatisticRepository)
+    val sut = WorkspaceFacade(userService, discordService, workspaceService, orderRepository, orderSessionRepository, dailyOrderStatisticRepository, dailyInsightCardRepository)
 
     beforeTest {
         mockkObject(userService)
@@ -39,6 +41,7 @@ class WorkspaceFacadeTest : DescribeSpec({
         mockkObject(orderRepository)
         mockkObject(orderSessionRepository)
         mockkObject(dailyOrderStatisticRepository)
+        mockkObject(dailyInsightCardRepository)
     }
 
     afterTest {
@@ -846,6 +849,7 @@ class WorkspaceFacadeTest : DescribeSpec({
 
             every { workspaceService.getWorkspace(workspaceId) } returns workspace
             every { dailyOrderStatisticRepository.deleteByWorkspaceId(workspaceId) } just Runs
+            every { dailyInsightCardRepository.deleteByWorkspaceId(workspaceId) } just Runs
             every { orderRepository.findAllByWorkspaceId(workspaceId) } returns orders
             every { orderRepository.deleteAll(orders) } just Runs
             every { workspaceService.getAllWorkspaceTablesIncludingOutOfRange(workspace) } returns allTables
@@ -860,8 +864,9 @@ class WorkspaceFacadeTest : DescribeSpec({
             assert(result.id == workspace.id)
             assert(outOfRangeTableWithSession.orderSession == null)
 
-            // 1. DailyOrderStatistic 삭제
+            // 1. DailyOrderStatistic·DailyInsightCard 삭제
             verify { dailyOrderStatisticRepository.deleteByWorkspaceId(workspaceId) }
+            verify { dailyInsightCardRepository.deleteByWorkspaceId(workspaceId) }
             // 2. Order 삭제
             verify { orderRepository.findAllByWorkspaceId(workspaceId) }
             verify { orderRepository.deleteAll(orders) }

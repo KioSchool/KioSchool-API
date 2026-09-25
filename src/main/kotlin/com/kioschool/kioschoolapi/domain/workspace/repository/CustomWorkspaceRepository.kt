@@ -16,7 +16,7 @@ class CustomWorkspaceRepository(
     private val queryFactory: JPAQueryFactory
 ) {
     fun findAllByCondition(
-        name: String?,
+        keyword: String?,
         pageable: Pageable,
         updatedAfter: LocalDateTime? = null
     ): Page<Workspace> {
@@ -42,9 +42,14 @@ class CustomWorkspaceRepository(
             queryFactory.select(workspace.count()).from(workspace)
         }
 
-        if (!name.isNullOrBlank()) {
-            query.where(workspace.name.contains(name))
-            countQuery.where(workspace.name.contains(name))
+        if (!keyword.isNullOrBlank()) {
+            val trimmed = keyword.trim()
+            val keywordCondition = workspace.name.containsIgnoreCase(trimmed)
+                .or(workspace.owner.name.containsIgnoreCase(trimmed))
+                .or(workspace.owner.email.containsIgnoreCase(trimmed))
+                .or(workspace.owner.loginId.containsIgnoreCase(trimmed))
+            query.where(keywordCondition)
+            countQuery.where(keywordCondition)
         }
 
         if (updatedAfter != null) {
