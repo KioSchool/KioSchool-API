@@ -13,7 +13,8 @@ data class AcquisitionSurveyResponseDto(
     val channelLabel: String?,
     val channelEtc: String?,
     val context: String?,
-    val answeredAt: LocalDateTime?
+    val answeredAt: LocalDateTime?,
+    val user: SuperAdminUserDto
 ) {
     companion object {
         fun of(survey: AcquisitionSurvey, schoolName: String): AcquisitionSurveyResponseDto {
@@ -26,7 +27,8 @@ data class AcquisitionSurveyResponseDto(
                 channelLabel = survey.channel?.label,
                 channelEtc = survey.channelEtc,
                 context = survey.context,
-                answeredAt = survey.createdAt
+                answeredAt = survey.createdAt,
+                user = SuperAdminUserDto.of(survey.user)
             )
         }
     }
