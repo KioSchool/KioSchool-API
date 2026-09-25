@@ -1,6 +1,7 @@
 package com.kioschool.kioschoolapi.domain.user.facade
 
 import com.kioschool.kioschoolapi.domain.email.repository.EmailDomainRepository
+import com.kioschool.kioschoolapi.domain.email.service.SchoolResolver
 import com.kioschool.kioschoolapi.domain.user.dto.common.AcquisitionSurveyResponseDto
 import com.kioschool.kioschoolapi.domain.user.dto.common.AcquisitionSurveySummaryDto
 import com.kioschool.kioschoolapi.domain.user.repository.AcquisitionSurveyRepository
@@ -82,8 +83,7 @@ class SuperAdminAcquisitionSurveyFacade(
     }
 
     private fun createSchoolResolver(): SchoolResolver {
-        val schoolNameByDomain = emailDomainRepository.findAll().associate { it.domain to it.name }
-        return SchoolResolver(schoolNameByDomain)
+        return SchoolResolver.of(emailDomainRepository.findAll())
     }
 
     private fun tally(channels: List<AcquisitionChannel?>): ChannelTally {
@@ -111,19 +111,7 @@ class SuperAdminAcquisitionSurveyFacade(
         val channels: List<AcquisitionSurveySummaryDto.ChannelStat>
     )
 
-    private class SchoolResolver(private val schoolNameByDomain: Map<String, String>) {
-        // 수동 가입 등으로 이메일이 없는 유저는 한 학교로 묶는다.
-        fun schoolOf(email: String?): String {
-            if (email == null) return NO_EMAIL_SCHOOL_NAME
-            val domain = email.substringAfter("@")
-            return schoolNameByDomain[domain] ?: domain
-        }
-
-        fun domainsOf(schoolName: String): Set<String> =
-            schoolNameByDomain.filterValues { it == schoolName }.keys.ifEmpty { setOf(schoolName) }
-    }
-
     companion object {
-        const val NO_EMAIL_SCHOOL_NAME = "(이메일 없음)"
+        const val NO_EMAIL_SCHOOL_NAME = SchoolResolver.NO_EMAIL_SCHOOL_NAME
     }
 }

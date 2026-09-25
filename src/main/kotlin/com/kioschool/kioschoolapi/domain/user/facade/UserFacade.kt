@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.web.server.Cookie.SameSite
 import org.springframework.http.HttpHeaders
 import org.springframework.http.ResponseCookie
+import org.springframework.data.domain.Page
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Component
 
@@ -153,8 +154,11 @@ class UserFacade(
         return UserDto.of(userService.saveUser(user))
     }
 
-    fun getAllUsers(keyword: String?, accountFilter: UserAccountFilter?, page: Int, size: Int) =
-        userService.getAllUsers(keyword, accountFilter, page, size).map { SuperAdminUserDto.of(it) }
+    fun getAllUsers(keyword: String?, accountFilter: UserAccountFilter?, page: Int, size: Int): Page<SuperAdminUserDto> {
+        val schoolResolver = emailService.getSchoolResolver()
+        return userService.getAllUsers(keyword, schoolResolver.domainsMatching(keyword), accountFilter, page, size)
+            .map { SuperAdminUserDto.of(it, schoolResolver.schoolOf(it.email)) }
+    }
 
     fun isAcquisitionSurveyAnswered(username: String): Boolean {
         val user = userService.getUser(username)

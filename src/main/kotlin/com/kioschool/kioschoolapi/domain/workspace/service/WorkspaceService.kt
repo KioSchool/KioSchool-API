@@ -44,11 +44,18 @@ class WorkspaceService(
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
-    fun getAllWorkspaces(keyword: String?, page: Int, size: Int, updatedAfter: LocalDateTime? = null): Page<Workspace> {
+    fun getAllWorkspaces(
+        keyword: String?,
+        page: Int,
+        size: Int,
+        updatedAfter: LocalDateTime? = null,
+        schoolDomains: Set<String> = emptySet()
+    ): Page<Workspace> {
         return customWorkspaceRepository.findAllByCondition(
             keyword,
             PageRequest.of(page, size),
-            updatedAfter
+            updatedAfter,
+            schoolDomains
         )
     }
 

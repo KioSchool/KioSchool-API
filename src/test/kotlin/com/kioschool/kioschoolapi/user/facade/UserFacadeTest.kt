@@ -2,6 +2,7 @@ package com.kioschool.kioschoolapi.user.facade
 
 import com.kioschool.kioschoolapi.domain.email.service.EmailService
 import com.kioschool.kioschoolapi.domain.user.entity.AcquisitionSurvey
+import com.kioschool.kioschoolapi.domain.email.service.SchoolResolver
 import com.kioschool.kioschoolapi.domain.user.facade.UserFacade
 import com.kioschool.kioschoolapi.domain.user.service.UserService
 import com.kioschool.kioschoolapi.factory.SampleEntity
@@ -673,14 +674,17 @@ class UserFacadeTest : DescribeSpec({
             val size = 10
             val users = PageImpl(listOf(SampleEntity.user))
 
-            every { userService.getAllUsers(keyword, null, page, size) } returns users
+            val schoolResolver = SchoolResolver(mapOf("konkuk.ac.kr" to "건국대학교"))
+            every { emailService.getSchoolResolver() } returns schoolResolver
+            every { userService.getAllUsers(keyword, emptySet(), null, page, size) } returns users
 
             val result = sut.getAllUsers(keyword, null, page, size)
 
             assert(result.content.first().id == users.content.first().id)
             assert(result.content.first().loginId == users.content.first().loginId)
+            assert(result.content.first().schoolName == schoolResolver.schoolOf(users.content.first().email))
 
-            verify { userService.getAllUsers(keyword, null, page, size) }
+            verify { userService.getAllUsers(keyword, emptySet(), null, page, size) }
         }
     }
 })

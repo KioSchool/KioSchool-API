@@ -1,6 +1,7 @@
 package com.kioschool.kioschoolapi.domain.workspace.facade
 
 import com.kioschool.kioschoolapi.domain.account.dto.common.AccountDto
+import com.kioschool.kioschoolapi.domain.email.service.EmailService
 import com.kioschool.kioschoolapi.domain.insight.repository.DailyInsightCardRepository
 import com.kioschool.kioschoolapi.domain.order.repository.OrderRepository
 import com.kioschool.kioschoolapi.domain.order.repository.OrderSessionRepository
@@ -19,6 +20,7 @@ import com.kioschool.kioschoolapi.global.discord.service.DiscordService
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.cache.annotation.Caching
+import org.springframework.data.domain.Page
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
@@ -27,6 +29,7 @@ import org.springframework.web.multipart.MultipartFile
 @Component
 class WorkspaceFacade(
     val userService: UserService,
+    val emailService: EmailService,
     val discordService: DiscordService,
     val workspaceService: WorkspaceService,
     val orderRepository: OrderRepository,
@@ -34,8 +37,11 @@ class WorkspaceFacade(
     val dailyOrderStatisticRepository: DailyOrderStatisticRepository,
     val dailyInsightCardRepository: DailyInsightCardRepository
 ) {
-    fun getAllWorkspaces(keyword: String?, page: Int, size: Int, updatedAfter: LocalDateTime? = null) =
-        workspaceService.getAllWorkspaces(keyword, page, size, updatedAfter).map { SuperAdminWorkspaceDto.of(it) }
+    fun getAllWorkspaces(keyword: String?, page: Int, size: Int, updatedAfter: LocalDateTime? = null): Page<SuperAdminWorkspaceDto> {
+        val schoolResolver = emailService.getSchoolResolver()
+        return workspaceService.getAllWorkspaces(keyword, page, size, updatedAfter, schoolResolver.domainsMatching(keyword))
+            .map { SuperAdminWorkspaceDto.of(it, schoolResolver.schoolOf(it.owner.email)) }
+    }
 
     @Cacheable(cacheNames = [CacheNames.WORKSPACES], key = "#workspaceId")
     fun getWorkspace(workspaceId: Long): WorkspaceDto {

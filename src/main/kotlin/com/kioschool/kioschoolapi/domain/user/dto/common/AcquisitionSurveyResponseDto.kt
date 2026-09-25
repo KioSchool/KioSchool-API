@@ -28,7 +28,7 @@ data class AcquisitionSurveyResponseDto(
                 channelEtc = survey.channelEtc,
                 context = survey.context,
                 answeredAt = survey.createdAt,
-                user = SuperAdminUserDto.of(survey.user)
+                user = SuperAdminUserDto.of(survey.user, schoolName)
             )
         }
     }

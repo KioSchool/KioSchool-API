@@ -1,5 +1,6 @@
 package com.kioschool.kioschoolapi.workspace.facade
 
+import com.kioschool.kioschoolapi.domain.email.service.EmailService
 import com.kioschool.kioschoolapi.domain.insight.repository.DailyInsightCardRepository
 import com.kioschool.kioschoolapi.domain.user.service.UserService
 import com.kioschool.kioschoolapi.domain.workspace.dto.common.TablePositionDto
@@ -26,13 +27,14 @@ import io.kotest.matchers.shouldBe
 class WorkspaceFacadeTest : DescribeSpec({
     val userService = mockk<UserService>()
     val discordService = mockk<DiscordService>()
+    val emailService = mockk<EmailService>()
     val workspaceService = mockk<WorkspaceService>()
     val orderRepository = mockk<OrderRepository>()
     val orderSessionRepository = mockk<OrderSessionRepository>()
     val dailyOrderStatisticRepository = mockk<DailyOrderStatisticRepository>()
     val dailyInsightCardRepository = mockk<DailyInsightCardRepository>()
 
-    val sut = WorkspaceFacade(userService, discordService, workspaceService, orderRepository, orderSessionRepository, dailyOrderStatisticRepository, dailyInsightCardRepository)
+    val sut = WorkspaceFacade(userService, emailService, discordService, workspaceService, orderRepository, orderSessionRepository, dailyOrderStatisticRepository, dailyInsightCardRepository)
 
     beforeTest {
         mockkObject(userService)

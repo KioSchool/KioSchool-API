@@ -10,18 +10,20 @@ data class SuperAdminUserDto(
     val loginId: String,
     val name: String,
     val email: String?,
+    val schoolName: String,
     val role: UserRole,
     val account: AccountDto?,
     val workspaces: List<SuperAdminUserWorkspaceDto>,
     val createdAt: LocalDateTime?
 ) {
     companion object {
-        fun of(user: User): SuperAdminUserDto {
+        fun of(user: User, schoolName: String): SuperAdminUserDto {
             return SuperAdminUserDto(
                 id = user.id,
                 loginId = user.loginId,
                 name = user.name,
                 email = user.email,
+                schoolName = schoolName,
                 role = user.role,
                 account = user.account?.let { AccountDto.of(it) },
                 workspaces = user.getWorkspaces().map {

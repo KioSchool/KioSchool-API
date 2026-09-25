@@ -17,13 +17,14 @@ class CustomUserRepository(
 ) {
     fun findAllByCondition(
         keyword: String?,
+        schoolDomains: Set<String>,
         accountFilter: UserAccountFilter?,
         pageable: Pageable
     ): Page<User> {
         val user = QUser.user
         val account = QAccount.account
         val conditions = listOfNotNull(
-            keywordCondition(user, keyword),
+            keywordCondition(user, keyword, schoolDomains),
             accountCondition(account, accountFilter)
         ).toTypedArray()
 
@@ -44,12 +45,14 @@ class CustomUserRepository(
         return PageImpl(users, pageable, totalCount)
     }
 
-    private fun keywordCondition(user: QUser, keyword: String?): BooleanExpression? {
+    private fun keywordCondition(user: QUser, keyword: String?, schoolDomains: Set<String>): BooleanExpression? {
         if (keyword.isNullOrBlank()) return null
         val trimmed = keyword.trim()
-        return user.name.containsIgnoreCase(trimmed)
-            .or(user.email.containsIgnoreCase(trimmed))
-            .or(user.loginId.containsIgnoreCase(trimmed))
+        return schoolDomains.fold(
+            user.name.containsIgnoreCase(trimmed)
+                .or(user.email.containsIgnoreCase(trimmed))
+                .or(user.loginId.containsIgnoreCase(trimmed))
+        ) { condition, domain -> condition.or(user.email.endsWith("@$domain")) }
     }
 
     private fun accountCondition(account: QAccount, accountFilter: UserAccountFilter?): BooleanExpression? {

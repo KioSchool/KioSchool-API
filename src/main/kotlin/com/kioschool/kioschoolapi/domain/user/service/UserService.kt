@@ -100,8 +100,14 @@ class UserService(
         return userRepository.findByEmail(email) ?: throw CustomException(ErrorCode.USER_NOT_FOUND)
     }
 
-    fun getAllUsers(keyword: String?, accountFilter: UserAccountFilter?, page: Int, size: Int): Page<User> {
-        return customUserRepository.findAllByCondition(keyword, accountFilter, PageRequest.of(page, size))
+    fun getAllUsers(
+        keyword: String?,
+        schoolDomains: Set<String>,
+        accountFilter: UserAccountFilter?,
+        page: Int,
+        size: Int
+    ): Page<User> {
+        return customUserRepository.findAllByCondition(keyword, schoolDomains, accountFilter, PageRequest.of(page, size))
     }
 
     fun isSuperAdminUser(username: String): Boolean {

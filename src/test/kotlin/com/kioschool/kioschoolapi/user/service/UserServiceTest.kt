@@ -345,13 +345,13 @@ class UserServiceTest : DescribeSpec({
             val size = 10
 
             every {
-                customUserRepository.findAllByCondition(keyword, accountFilter, PageRequest.of(page, size))
+                customUserRepository.findAllByCondition(keyword, emptySet(), accountFilter, PageRequest.of(page, size))
             } returns PageImpl(listOf(SampleEntity.user))
 
-            val result = sut.getAllUsers(keyword, accountFilter, page, size)
+            val result = sut.getAllUsers(keyword, emptySet(), accountFilter, page, size)
 
             result.content.first().id shouldBe SampleEntity.user.id
-            verify { customUserRepository.findAllByCondition(keyword, accountFilter, PageRequest.of(page, size)) }
+            verify { customUserRepository.findAllByCondition(keyword, emptySet(), accountFilter, PageRequest.of(page, size)) }
         }
     }
 
