@@ -667,19 +667,20 @@ class UserFacadeTest : DescribeSpec({
     }
 
     describe("getAllUsers") {
-        it("should call getAllUsers") {
-            val name = "test"
+        it("should call getAllUsers and expose loginId for super admin") {
+            val keyword = "test"
             val page = 0
             val size = 10
             val users = PageImpl(listOf(SampleEntity.user))
 
-            every { userService.getAllUsers(name, page, size) } returns users
+            every { userService.getAllUsers(keyword, null, page, size) } returns users
 
-            val result = sut.getAllUsers(name, page, size)
+            val result = sut.getAllUsers(keyword, null, page, size)
 
             assert(result.content.first().id == users.content.first().id)
+            assert(result.content.first().loginId == users.content.first().loginId)
 
-            verify { userService.getAllUsers(name, page, size) }
+            verify { userService.getAllUsers(keyword, null, page, size) }
         }
     }
 })

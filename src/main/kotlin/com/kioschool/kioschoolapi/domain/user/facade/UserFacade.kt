@@ -1,9 +1,11 @@
 package com.kioschool.kioschoolapi.domain.user.facade
 
 import com.kioschool.kioschoolapi.domain.email.service.EmailService
+import com.kioschool.kioschoolapi.domain.user.dto.common.SuperAdminUserDto
 import com.kioschool.kioschoolapi.domain.user.dto.common.UserDto
 import com.kioschool.kioschoolapi.domain.user.service.UserService
 import com.kioschool.kioschoolapi.global.common.enums.AcquisitionChannel
+import com.kioschool.kioschoolapi.global.common.enums.UserAccountFilter
 import com.kioschool.kioschoolapi.global.common.enums.UserRole
 import com.kioschool.kioschoolapi.global.discord.service.DiscordService
 import com.kioschool.kioschoolapi.global.security.JwtProvider
@@ -151,8 +153,8 @@ class UserFacade(
         return UserDto.of(userService.saveUser(user))
     }
 
-    fun getAllUsers(name: String?, page: Int, size: Int) =
-        userService.getAllUsers(name, page, size).map { UserDto.of(it) }
+    fun getAllUsers(keyword: String?, accountFilter: UserAccountFilter?, page: Int, size: Int) =
+        userService.getAllUsers(keyword, accountFilter, page, size).map { SuperAdminUserDto.of(it) }
 
     fun isAcquisitionSurveyAnswered(username: String): Boolean {
         val user = userService.getUser(username)

@@ -4,8 +4,10 @@ import com.kioschool.kioschoolapi.domain.email.service.EmailService
 import com.kioschool.kioschoolapi.domain.user.entity.AcquisitionSurvey
 import com.kioschool.kioschoolapi.domain.user.entity.User
 import com.kioschool.kioschoolapi.domain.user.repository.AcquisitionSurveyRepository
+import com.kioschool.kioschoolapi.domain.user.repository.CustomUserRepository
 import com.kioschool.kioschoolapi.domain.user.repository.UserRepository
 import com.kioschool.kioschoolapi.global.common.enums.AcquisitionChannel
+import com.kioschool.kioschoolapi.global.common.enums.UserAccountFilter
 import com.kioschool.kioschoolapi.global.common.enums.UserRole
 import com.kioschool.kioschoolapi.global.error.ErrorCode
 import com.kioschool.kioschoolapi.global.error.exception.CustomException
@@ -17,6 +19,7 @@ import org.springframework.stereotype.Service
 @Service
 class UserService(
     private val userRepository: UserRepository,
+    private val customUserRepository: CustomUserRepository,
     private val acquisitionSurveyRepository: AcquisitionSurveyRepository,
     private val passwordEncoder: PasswordEncoder,
     private val emailService: EmailService,
@@ -97,15 +100,8 @@ class UserService(
         return userRepository.findByEmail(email) ?: throw CustomException(ErrorCode.USER_NOT_FOUND)
     }
 
-    fun getAllUsers(name: String?, page: Int, size: Int): Page<User> {
-        if (!name.isNullOrBlank()) {
-            return userRepository.findByNameContains(
-                name,
-                PageRequest.of(page, size)
-            )
-        }
-
-        return userRepository.findAll(PageRequest.of(page, size))
+    fun getAllUsers(keyword: String?, accountFilter: UserAccountFilter?, page: Int, size: Int): Page<User> {
+        return customUserRepository.findAllByCondition(keyword, accountFilter, PageRequest.of(page, size))
     }
 
     fun isSuperAdminUser(username: String): Boolean {
