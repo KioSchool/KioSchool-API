@@ -167,6 +167,7 @@ class SuperAdminAcquisitionSurveyFacadeTest : DescribeSpec({
 
             pageable.captured.sort.getOrderFor("createdAt")?.direction shouldBe Sort.Direction.DESC
             result.content.single().userEmail shouldBe SampleEntity.user.email
+            result.content.single().user.loginId shouldBe SampleEntity.user.loginId
             result.content.single().schoolName shouldBe "test.com"
             result.content.single().channelLabel shouldBe AcquisitionChannel.EVERYTIME_PROMOTION.label
             result.content.single().channelEtc shouldBe null

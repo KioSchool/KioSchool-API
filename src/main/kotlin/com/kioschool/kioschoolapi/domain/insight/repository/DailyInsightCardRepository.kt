@@ -13,4 +13,6 @@ interface DailyInsightCardRepository : JpaRepository<DailyInsightCard, Long> {
     ): List<DailyInsightCard>
     fun findAllByReferenceDate(referenceDate: LocalDate): List<DailyInsightCard>
     fun deleteByReferenceDate(referenceDate: LocalDate): Long
+
+    fun deleteByWorkspaceId(workspaceId: Long)
 }

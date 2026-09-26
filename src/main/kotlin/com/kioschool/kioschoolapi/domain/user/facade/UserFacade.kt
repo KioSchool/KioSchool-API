@@ -1,9 +1,11 @@
 package com.kioschool.kioschoolapi.domain.user.facade
 
 import com.kioschool.kioschoolapi.domain.email.service.EmailService
+import com.kioschool.kioschoolapi.domain.user.dto.common.SuperAdminUserDto
 import com.kioschool.kioschoolapi.domain.user.dto.common.UserDto
 import com.kioschool.kioschoolapi.domain.user.service.UserService
 import com.kioschool.kioschoolapi.global.common.enums.AcquisitionChannel
+import com.kioschool.kioschoolapi.global.common.enums.UserAccountFilter
 import com.kioschool.kioschoolapi.global.common.enums.UserRole
 import com.kioschool.kioschoolapi.global.discord.service.DiscordService
 import com.kioschool.kioschoolapi.global.security.JwtProvider
@@ -13,6 +15,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.web.server.Cookie.SameSite
 import org.springframework.http.HttpHeaders
 import org.springframework.http.ResponseCookie
+import org.springframework.data.domain.Page
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Component
 
@@ -151,8 +154,11 @@ class UserFacade(
         return UserDto.of(userService.saveUser(user))
     }
 
-    fun getAllUsers(name: String?, page: Int, size: Int) =
-        userService.getAllUsers(name, page, size).map { UserDto.of(it) }
+    fun getAllUsers(keyword: String?, accountFilter: UserAccountFilter?, page: Int, size: Int): Page<SuperAdminUserDto> {
+        val schoolResolver = emailService.getSchoolResolver()
+        return userService.getAllUsers(keyword, schoolResolver.domainsMatching(keyword), accountFilter, page, size)
+            .map { SuperAdminUserDto.of(it, schoolResolver.schoolOf(it.email)) }
+    }
 
     fun isAcquisitionSurveyAnswered(username: String): Boolean {
         val user = userService.getUser(username)

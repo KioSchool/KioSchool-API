@@ -164,4 +164,6 @@ class EmailService(
         val domain = email.substringAfterLast("@")
         return emailDomainRepository.findByDomain(domain) != null
     }
+
+    fun getSchoolResolver(): SchoolResolver = SchoolResolver.of(emailDomainRepository.findAll())
 }
