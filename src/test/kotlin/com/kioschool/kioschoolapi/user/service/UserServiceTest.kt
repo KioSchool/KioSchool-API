@@ -4,10 +4,12 @@ import com.kioschool.kioschoolapi.domain.email.service.EmailService
 import com.kioschool.kioschoolapi.domain.user.entity.AcquisitionSurvey
 import com.kioschool.kioschoolapi.domain.user.entity.User
 import com.kioschool.kioschoolapi.domain.user.repository.AcquisitionSurveyRepository
+import com.kioschool.kioschoolapi.domain.user.repository.CustomUserRepository
 import com.kioschool.kioschoolapi.domain.user.repository.UserRepository
 import com.kioschool.kioschoolapi.domain.user.service.UserService
 import com.kioschool.kioschoolapi.factory.SampleEntity
 import com.kioschool.kioschoolapi.global.common.enums.AcquisitionChannel
+import com.kioschool.kioschoolapi.global.common.enums.UserAccountFilter
 import com.kioschool.kioschoolapi.global.common.enums.UserRole
 import com.kioschool.kioschoolapi.global.error.ErrorCode
 import com.kioschool.kioschoolapi.global.error.exception.CustomException
@@ -16,17 +18,19 @@ import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.*
 import org.springframework.data.domain.PageImpl
-import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.PageRequest
 import org.springframework.security.crypto.password.PasswordEncoder
 
 class UserServiceTest : DescribeSpec({
     val repository = mockk<UserRepository>()
+    val customUserRepository = mockk<CustomUserRepository>()
     val acquisitionSurveyRepository = mockk<AcquisitionSurveyRepository>()
     val passwordEncoder = mockk<PasswordEncoder>()
     val emailService = mockk<EmailService>()
 
     val sut = UserService(
         repository,
+        customUserRepository,
         acquisitionSurveyRepository,
         passwordEncoder,
         emailService
@@ -34,6 +38,7 @@ class UserServiceTest : DescribeSpec({
 
     beforeTest {
         mockkObject(repository)
+        mockkObject(customUserRepository)
         mockkObject(acquisitionSurveyRepository)
         mockkObject(passwordEncoder)
         mockkObject(emailService)
@@ -333,38 +338,20 @@ class UserServiceTest : DescribeSpec({
     }
 
     describe("getAllUsers") {
-        it("should call findByNameContains if name is not null") {
-            val name = "test"
+        it("should pass keyword and account filter to customUserRepository") {
+            val keyword = "test"
+            val accountFilter = UserAccountFilter.NOT_CONNECTED
             val page = 0
             val size = 10
 
-            // Mock
-            every { repository.findByNameContains(name, Pageable.ofSize(size)) } returns PageImpl(
-                listOf(SampleEntity.user)
-            )
+            every {
+                customUserRepository.findAllByCondition(keyword, emptySet(), accountFilter, PageRequest.of(page, size))
+            } returns PageImpl(listOf(SampleEntity.user))
 
-            // Act
-            sut.getAllUsers(name, page, size)
+            val result = sut.getAllUsers(keyword, emptySet(), accountFilter, page, size)
 
-            // Assert
-            verify { repository.findByNameContains(name, Pageable.ofSize(size)) }
-            verify(exactly = 0) { repository.findAll(Pageable.ofSize(size)) }
-        }
-
-        it("should call findAll if name is null") {
-            val name = null
-            val page = 0
-            val size = 10
-
-            // Mock
-            every { repository.findAll(Pageable.ofSize(size)) } returns PageImpl(listOf(SampleEntity.user))
-
-            // Act
-            sut.getAllUsers(name, page, size)
-
-            // Assert
-            verify { repository.findAll(Pageable.ofSize(size)) }
-            verify(exactly = 0) { repository.findByNameContains(any(), Pageable.ofSize(size)) }
+            result.content.first().id shouldBe SampleEntity.user.id
+            verify { customUserRepository.findAllByCondition(keyword, emptySet(), accountFilter, PageRequest.of(page, size)) }
         }
     }
 

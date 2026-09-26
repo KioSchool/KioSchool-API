@@ -1,7 +1,7 @@
 package com.kioschool.kioschoolapi.domain.workspace.controller
 
 import com.kioschool.kioschoolapi.domain.workspace.dto.common.WorkspaceAdminDetailDto
-import com.kioschool.kioschoolapi.domain.workspace.dto.common.WorkspaceDto
+import com.kioschool.kioschoolapi.domain.workspace.dto.common.SuperAdminWorkspaceDto
 import com.kioschool.kioschoolapi.domain.workspace.dto.request.ChangeWorkspaceOwnerRequestBody
 import com.kioschool.kioschoolapi.domain.workspace.dto.request.ForceDeleteWorkspaceRequestBody
 import com.kioschool.kioschoolapi.domain.workspace.facade.WorkspaceFacade
@@ -18,15 +18,18 @@ import java.time.LocalDateTime
 class SuperAdminWorkspaceController(
     private val workspaceFacade: WorkspaceFacade,
 ) {
-    @Operation(summary = "워크스페이스 목록 조회", description = "모든 워크스페이스를 조회합니다.")
+    @Operation(
+        summary = "워크스페이스 목록 조회",
+        description = "모든 워크스페이스를 조회합니다. keyword는 주점 이름과 사장 이름·이메일·아이디에서 찾습니다."
+    )
     @GetMapping("/workspaces")
     fun getWorkspaces(
-        @RequestParam(required = false) name: String?,
+        @RequestParam(required = false) keyword: String?,
         @RequestParam page: Int,
         @RequestParam size: Int,
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) updatedAfter: LocalDateTime?
-    ): Page<WorkspaceDto> {
-        return workspaceFacade.getAllWorkspaces(name, page, size, updatedAfter)
+    ): Page<SuperAdminWorkspaceDto> {
+        return workspaceFacade.getAllWorkspaces(keyword, page, size, updatedAfter)
     }
 
     @Operation(

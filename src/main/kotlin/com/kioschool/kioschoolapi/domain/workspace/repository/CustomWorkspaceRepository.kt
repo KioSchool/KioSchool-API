@@ -16,9 +16,10 @@ class CustomWorkspaceRepository(
     private val queryFactory: JPAQueryFactory
 ) {
     fun findAllByCondition(
-        name: String?,
+        keyword: String?,
         pageable: Pageable,
-        updatedAfter: LocalDateTime? = null
+        updatedAfter: LocalDateTime? = null,
+        schoolDomains: Set<String> = emptySet()
     ): Page<Workspace> {
         val workspace = QWorkspace.workspace
         val product = QProduct.product
@@ -42,9 +43,16 @@ class CustomWorkspaceRepository(
             queryFactory.select(workspace.count()).from(workspace)
         }
 
-        if (!name.isNullOrBlank()) {
-            query.where(workspace.name.contains(name))
-            countQuery.where(workspace.name.contains(name))
+        if (!keyword.isNullOrBlank()) {
+            val trimmed = keyword.trim()
+            val keywordCondition = schoolDomains.fold(
+                workspace.name.containsIgnoreCase(trimmed)
+                    .or(workspace.owner.name.containsIgnoreCase(trimmed))
+                    .or(workspace.owner.email.containsIgnoreCase(trimmed))
+                    .or(workspace.owner.loginId.containsIgnoreCase(trimmed))
+            ) { condition, domain -> condition.or(workspace.owner.email.endsWith("@$domain")) }
+            query.where(keywordCondition)
+            countQuery.where(keywordCondition)
         }
 
         if (updatedAfter != null) {
