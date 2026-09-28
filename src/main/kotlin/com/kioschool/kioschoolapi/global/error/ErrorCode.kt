@@ -9,6 +9,12 @@ enum class ErrorCode(
     // Common
     INVALID_INPUT(HttpStatus.BAD_REQUEST, "입력값이 올바르지 않습니다."),
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 오류가 발생했습니다."),
+    // 상품 사진·주점 대표사진 업로드 공통. 리사이저(scrimage)가 디코딩하지 못하는 파일은
+    // 서버 잘못이 아니라 입력 잘못이므로 500이 아니라 415로 돌려준다.
+    UNSUPPORTED_IMAGE_FORMAT(
+        HttpStatus.UNSUPPORTED_MEDIA_TYPE,
+        "이미지를 읽을 수 없는 형식입니다. 아이폰 사진(HEIC)이라면 JPEG나 PNG로 저장한 뒤 다시 올려주세요."
+    ),
 
     // User
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다."),
