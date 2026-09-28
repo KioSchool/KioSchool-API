@@ -2,6 +2,9 @@ package com.kioschool.kioschoolapi.global.aws
 
 import com.amazonaws.services.s3.AmazonS3Client
 import com.amazonaws.services.s3.model.ObjectMetadata
+import com.kioschool.kioschoolapi.global.error.ErrorCode
+import com.kioschool.kioschoolapi.global.error.exception.CustomException
+import com.sksamuel.scrimage.ImageParseException
 import com.sksamuel.scrimage.ImmutableImage
 import com.sksamuel.scrimage.webp.WebpWriter
 import org.springframework.beans.factory.annotation.Value
@@ -22,8 +25,25 @@ class S3Service(
         return amazonS3Client.getUrl(bucketName, path).toString()
     }
 
+    /**
+     * 리사이저가 읽는 형식은 scrimage에 등록된 리더가 정한다 — WebP(scrimage-webp)와
+     * javax.imageio가 기본 제공하는 JPEG/PNG/GIF/BMP 등이다. 그 밖의 파일(대표적으로
+     * 아이폰 기본 포맷인 HEIC)은 어떤 리더도 읽지 못해 [ImageParseException]이 올라온다.
+     *
+     * 그대로 두면 [com.kioschool.kioschoolapi.global.error.GlobalExceptionHandler]의
+     * 포괄 핸들러가 INTERNAL_ERROR로 잡아 500이 나간다. 올린 사람은 "서버 오류가
+     * 발생했습니다"만 보게 되어 파일을 바꿀 생각을 못 하고 같은 파일로 재시도한다.
+     * 무엇을 어떻게 고쳐야 하는지 담은 415로 바꿔서 던진다.
+     *
+     * 허용 형식을 여기서 따로 정하지 않는 이유: 리더 구성이 바뀌면(의존성 추가/제거)
+     * 목록이 곧바로 어긋난다. "실제로 디코딩되는가"를 그대로 판정 기준으로 쓴다.
+     */
     fun uploadResizedWebpImage(inputStream: InputStream, path: String, maxDimension: Int = 400): String {
-        val image = ImmutableImage.loader().fromStream(inputStream)
+        val image = try {
+            ImmutableImage.loader().fromStream(inputStream)
+        } catch (e: ImageParseException) {
+            throw CustomException(ErrorCode.UNSUPPORTED_IMAGE_FORMAT, cause = e)
+        }
         val webpBytes = image.max(maxDimension, maxDimension).bytes(WebpWriter.DEFAULT)
 
         val bais = ByteArrayInputStream(webpBytes)
