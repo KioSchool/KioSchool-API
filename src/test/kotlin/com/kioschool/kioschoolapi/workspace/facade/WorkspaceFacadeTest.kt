@@ -690,9 +690,87 @@ class WorkspaceFacadeTest : DescribeSpec({
             verify { workspaceService.checkCanAccessWorkspace(user, workspace) }
             verify { workspaceService.getAllWorkspaceTables(workspace) }
         }
+
+        it("should fill active sessions with live order stats") {
+            val username = "username"
+            val user = SampleEntity.user
+            val workspace = SampleEntity.workspace
+            val table = SampleEntity.workspaceTableWithId(1L).apply {
+                orderSession = SampleEntity.orderSessionWithId(10L)
+            }
+
+            every { userService.getUser(username) } returns user
+            every { workspaceService.getWorkspace(1L) } returns workspace
+            every { workspaceService.checkCanAccessWorkspace(user, workspace) } just Runs
+            every { workspaceService.getAllWorkspaceTables(workspace) } returns listOf(table)
+            every { orderRepository.sumValidOrdersByOrderSessionIds(listOf(10L)) } returns
+                listOf(arrayOf<Any>(10L, 3L, 45000L))
+
+            val session = sut.getAllWorkspaceTables(username, 1L).first().orderSession!!
+
+            session.orderCount shouldBe 3
+            session.totalOrderPrice shouldBe 45000L
+        }
+
+        it("should report zero for an active session without valid orders") {
+            val username = "username"
+            val user = SampleEntity.user
+            val workspace = SampleEntity.workspace
+            val table = SampleEntity.workspaceTableWithId(1L).apply {
+                orderSession = SampleEntity.orderSessionWithId(10L, orderCount = 7, totalOrderPrice = 9000L)
+            }
+
+            every { userService.getUser(username) } returns user
+            every { workspaceService.getWorkspace(1L) } returns workspace
+            every { workspaceService.checkCanAccessWorkspace(user, workspace) } just Runs
+            every { workspaceService.getAllWorkspaceTables(workspace) } returns listOf(table)
+            every { orderRepository.sumValidOrdersByOrderSessionIds(listOf(10L)) } returns emptyList()
+
+            val session = sut.getAllWorkspaceTables(username, 1L).first().orderSession!!
+
+            session.orderCount shouldBe 0
+            session.totalOrderPrice shouldBe 0L
+        }
+
+        it("should not query order stats when no table has an active session") {
+            val username = "username"
+            val user = SampleEntity.user
+            val workspace = SampleEntity.workspace
+
+            every { userService.getUser(username) } returns user
+            every { workspaceService.getWorkspace(1L) } returns workspace
+            every { workspaceService.checkCanAccessWorkspace(user, workspace) } just Runs
+            every { workspaceService.getAllWorkspaceTables(workspace) } returns
+                listOf(SampleEntity.workspaceTableWithId(1L))
+
+            sut.getAllWorkspaceTables(username, 1L)
+
+            verify(exactly = 0) { orderRepository.sumValidOrdersByOrderSessionIds(any()) }
+        }
     }
 
     describe("updateTablePosition") {
+        it("should fill the active session with live order stats") {
+            val username = "username"
+            val user = SampleEntity.user
+            val workspace = SampleEntity.workspace
+            val table = SampleEntity.workspaceTableWithId(1L).apply {
+                orderSession = SampleEntity.orderSessionWithId(10L)
+            }
+
+            every { userService.getUser(username) } returns user
+            every { workspaceService.getWorkspace(1L) } returns workspace
+            every { workspaceService.checkCanAccessWorkspace(user, workspace) } just Runs
+            every { workspaceService.updateTablePosition(workspace, 1L, null, null) } returns table
+            every { orderRepository.sumValidOrdersByOrderSessionIds(listOf(10L)) } returns
+                listOf(arrayOf<Any>(10L, 2L, 30000L))
+
+            val session = sut.updateTablePosition(username, 1L, 1L, null).orderSession!!
+
+            session.orderCount shouldBe 2
+            session.totalOrderPrice shouldBe 30000L
+        }
+
         it("should check access then delegate to workspaceService") {
             val username = "username"
             val user = SampleEntity.user
@@ -775,6 +853,28 @@ class WorkspaceFacadeTest : DescribeSpec({
             verify { workspaceService.getAllWorkspaceTables(workspace) }
         }
 
+        it("should fill active sessions with live order stats") {
+            val username = "username"
+            val user = SampleEntity.user
+            val workspace = SampleEntity.workspace
+            val table = SampleEntity.workspaceTableWithId(1L, positionX = 2, positionY = 0).apply {
+                orderSession = SampleEntity.orderSessionWithId(10L)
+            }
+
+            every { userService.getUser(username) } returns user
+            every { workspaceService.getWorkspace(1L) } returns workspace
+            every { workspaceService.checkCanAccessWorkspace(user, workspace) } just Runs
+            every { workspaceService.updateTablePositions(workspace, positions) } just Runs
+            every { workspaceService.getAllWorkspaceTables(workspace) } returns listOf(table)
+            every { orderRepository.sumValidOrdersByOrderSessionIds(listOf(10L)) } returns
+                listOf(arrayOf<Any>(10L, 4L, 52000L))
+
+            val session = sut.updateTablePositions(username, 1L, positions).first().orderSession!!
+
+            session.orderCount shouldBe 4
+            session.totalOrderPrice shouldBe 52000L
+        }
+
         it("should not call updateTablePositions when the workspace is inaccessible") {
             val username = "username"
             val user = SampleEntity.user
@@ -813,6 +913,28 @@ class WorkspaceFacadeTest : DescribeSpec({
             verify { workspaceService.checkCanAccessWorkspace(user, workspace) }
             verify { workspaceService.resetTablePositions(workspace) }
             verify { workspaceService.getAllWorkspaceTables(workspace) }
+        }
+
+        it("should fill active sessions with live order stats") {
+            val username = "username"
+            val user = SampleEntity.user
+            val workspace = SampleEntity.workspace
+            val table = SampleEntity.workspaceTableWithId(1L).apply {
+                orderSession = SampleEntity.orderSessionWithId(10L)
+            }
+
+            every { userService.getUser(username) } returns user
+            every { workspaceService.getWorkspace(1L) } returns workspace
+            every { workspaceService.checkCanAccessWorkspace(user, workspace) } just Runs
+            every { workspaceService.resetTablePositions(workspace) } just Runs
+            every { workspaceService.getAllWorkspaceTables(workspace) } returns listOf(table)
+            every { orderRepository.sumValidOrdersByOrderSessionIds(listOf(10L)) } returns
+                listOf(arrayOf<Any>(10L, 1L, 8000L))
+
+            val session = sut.resetTablePositions(username, 1L).first().orderSession!!
+
+            session.orderCount shouldBe 1
+            session.totalOrderPrice shouldBe 8000L
         }
 
         it("should not call resetTablePositions when the workspace is inaccessible") {

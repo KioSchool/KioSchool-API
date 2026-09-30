@@ -14,6 +14,7 @@ import com.kioschool.kioschoolapi.domain.workspace.dto.common.WorkspaceAdminDeta
 import com.kioschool.kioschoolapi.domain.workspace.dto.common.WorkspaceDto
 import com.kioschool.kioschoolapi.domain.workspace.dto.common.WorkspaceTableDto
 import com.kioschool.kioschoolapi.domain.workspace.dto.request.UpdateWorkspaceImageRequestBody
+import com.kioschool.kioschoolapi.domain.workspace.entity.WorkspaceTable
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.global.cache.constant.CacheNames
 import com.kioschool.kioschoolapi.global.discord.service.DiscordService
@@ -185,7 +186,7 @@ class WorkspaceFacade(
 
         workspaceService.checkCanAccessWorkspace(user, workspace)
 
-        return workspaceService.getAllWorkspaceTables(workspace).map { WorkspaceTableDto.of(it) }
+        return toTableDtos(workspaceService.getAllWorkspaceTables(workspace))
     }
 
     fun updateTablePosition(
@@ -199,7 +200,7 @@ class WorkspaceFacade(
 
         workspaceService.checkCanAccessWorkspace(user, workspace)
 
-        return WorkspaceTableDto.of(
+        return toTableDto(
             workspaceService.updateTablePosition(workspace, tableId, position?.x, position?.y)
         )
     }
@@ -216,7 +217,7 @@ class WorkspaceFacade(
 
         // 하나라도 실패하면 아무것도 저장되지 않는다. 응답은 GET /workspace/tables와 같은 뷰.
         workspaceService.updateTablePositions(workspace, positions)
-        return workspaceService.getAllWorkspaceTables(workspace).map { WorkspaceTableDto.of(it) }
+        return toTableDtos(workspaceService.getAllWorkspaceTables(workspace))
     }
 
     fun resetTablePositions(username: String, workspaceId: Long): List<WorkspaceTableDto> {
@@ -227,7 +228,7 @@ class WorkspaceFacade(
 
         // 쓰기는 tableCount 범위 밖 테이블까지 비운다(복구 경로). 응답은 GET과 같은 뷰를 준다.
         workspaceService.resetTablePositions(workspace)
-        return workspaceService.getAllWorkspaceTables(workspace).map { WorkspaceTableDto.of(it) }
+        return toTableDtos(workspaceService.getAllWorkspaceTables(workspace))
     }
 
     fun updateOrderSetting(
@@ -307,5 +308,26 @@ class WorkspaceFacade(
         val workspace = workspaceService.getWorkspace(workspaceId)
         val newOwner = userService.getUser(newOwnerLoginId)
         return WorkspaceAdminDetailDto.of(workspaceService.changeWorkspaceOwner(workspace, newOwner))
+    }
+
+    private fun toTableDto(table: WorkspaceTable): WorkspaceTableDto = toTableDtos(listOf(table)).first()
+
+    // 세션의 orderCount·totalOrderPrice는 종료 시에만 저장된다(OrderFacade.endOrderSession).
+    // 운영 중인 세션은 같은 규칙(취소 제외)으로 조회 시점에 계산해 채운다.
+    private fun toTableDtos(tables: List<WorkspaceTable>): List<WorkspaceTableDto> {
+        val activeSessionIds = tables.mapNotNull { it.orderSession?.id }
+        if (activeSessionIds.isEmpty()) return tables.map { WorkspaceTableDto.of(it) }
+
+        val statsBySessionId = orderRepository.sumValidOrdersByOrderSessionIds(activeSessionIds)
+            .associate { row ->
+                (row[0] as Number).toLong() to Pair((row[1] as Number).toInt(), (row[2] as Number).toLong())
+            }
+
+        return tables.map { table ->
+            val dto = WorkspaceTableDto.of(table)
+            val session = dto.orderSession ?: return@map dto
+            val (orderCount, totalOrderPrice) = statsBySessionId[session.id] ?: Pair(0, 0L)
+            dto.copy(orderSession = session.copy(orderCount = orderCount, totalOrderPrice = totalOrderPrice))
+        }
     }
 }
