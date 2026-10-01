@@ -35,6 +35,16 @@ interface OrderRepository : JpaRepository<Order, Long> {
     @Query("SELECT o.workspace.id, o.createdAt FROM Order o WHERE o.status != com.kioschool.kioschoolapi.global.common.enums.OrderStatus.CANCELLED")
     fun findAllValidOrderWorkspaceIdAndCreatedAt(): List<Array<Any>>
 
+    // 행: [orderSessionId, 유효 주문 수, 유효 주문 합계]. 유효 주문이 없는 세션은 행이 없다.
+    @Query("""
+        SELECT o.orderSession.id, COUNT(o), COALESCE(SUM(o.totalPrice), 0)
+        FROM Order o
+        WHERE o.orderSession.id IN :orderSessionIds
+          AND o.status != com.kioschool.kioschoolapi.global.common.enums.OrderStatus.CANCELLED
+        GROUP BY o.orderSession.id
+    """)
+    fun sumValidOrdersByOrderSessionIds(@Param("orderSessionIds") orderSessionIds: Collection<Long>): List<Array<Any>>
+
     fun findAllByWorkspaceId(workspaceId: Long): List<Order>
 
     fun countByStatusAndCreatedAtAfter(status: OrderStatus, createdAt: LocalDateTime): Long
