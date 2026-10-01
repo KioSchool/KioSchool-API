@@ -276,6 +276,19 @@ object SampleEntity {
         status = status,
     ).apply { setId(id) }
 
+    fun orderSessionWithId(
+        id: Long,
+        tableNumber: Int = 1,
+        orderCount: Int = 0,
+        totalOrderPrice: Long = 0
+    ) = OrderSession(
+        workspace = workspace,
+        tableNumber = tableNumber,
+        expectedEndAt = null,
+        orderCount = orderCount,
+        totalOrderPrice = totalOrderPrice
+    ).apply { setId(id) }
+
     private fun BaseEntity.setId(id: Long) {
         val f = this::class.superclasses.first().java.getDeclaredField("id")
         f.isAccessible = true
