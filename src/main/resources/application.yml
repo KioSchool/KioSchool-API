@@ -68,6 +68,8 @@ server:
       min-spare: 10
       max: 120
     accept-count: 100
+    mbeanregistry:
+      enabled: true # tomcat.threads.* 메트릭(바쁜 요청 스레드 수)은 Tomcat MBean이 켜져 있어야 나온다
     remoteip:
       internal-proxies: ".*"
       remote-ip-header: X-Forwarded-For
