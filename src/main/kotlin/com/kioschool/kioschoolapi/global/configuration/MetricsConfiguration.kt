@@ -1,5 +1,6 @@
 package com.kioschool.kioschoolapi.global.configuration
 
+import io.lettuce.core.metrics.MicrometerOptions
 import io.micrometer.core.instrument.Meter
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.config.MeterFilter
@@ -21,8 +22,9 @@ class MetricsConfiguration {
         "hikaricp.connections"
     )
 
-    // 평소 p50 7ms·p99 20ms 안팎이라 낮은 구간을 촘촘하게 둔다
-    private val httpServerRequestsBuckets = listOf(5L, 10, 15, 20, 30, 50, 100, 200, 500, 1000, 3000)
+    // 평소 p50 7ms·p99 20ms 안팎이라 낮은 구간을 촘촘하게, 장애 때 보이는 100ms~10s 구간도 p95·p99가 뭉개지지 않게 나눈다
+    private val httpServerRequestsBuckets =
+        listOf(5L, 10, 15, 20, 30, 50, 75, 100, 150, 200, 300, 500, 750, 1000, 2000, 3000, 5000, 10000)
         .map { Duration.ofMillis(it).toNanos().toDouble() }
         .toDoubleArray()
 
@@ -38,6 +40,13 @@ class MetricsConfiguration {
                 .meterFilter(httpServerRequestsHistogram())
         }
     }
+
+    // Redis 명령별 p95·p99를 보려고 히스토그램을 켠다 (기본은 평균·최대만). 명령 타임아웃이 3초라 상한은 5초면 충분
+    @Bean
+    fun lettuceMicrometerOptions(): MicrometerOptions = MicrometerOptions.builder()
+        .histogram(true)
+        .maxLatency(Duration.ofSeconds(5))
+        .build()
 
     private fun httpServerRequestsHistogram() = object : MeterFilter {
         override fun configure(id: Meter.Id, config: DistributionStatisticConfig): DistributionStatisticConfig {
