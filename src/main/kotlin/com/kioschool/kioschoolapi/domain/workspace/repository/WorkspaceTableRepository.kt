@@ -3,6 +3,7 @@ package com.kioschool.kioschoolapi.domain.workspace.repository
 import com.kioschool.kioschoolapi.domain.workspace.entity.Workspace
 import com.kioschool.kioschoolapi.domain.workspace.entity.WorkspaceTable
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 import java.util.*
 
@@ -12,6 +13,10 @@ interface WorkspaceTableRepository : JpaRepository<WorkspaceTable, Long> {
     fun findAllByWorkspaceOrderByTableNumber(workspace: Workspace): List<WorkspaceTable>
     fun countAllByWorkspace(workspace: Workspace): Long
     fun findAllByOrderSessionIsNotNull(): List<WorkspaceTable>
+    fun countByOrderSessionIsNotNull(): Long
+
+    @Query("select count(distinct t.workspace.id) from WorkspaceTable t where t.orderSession is not null")
+    fun countDistinctWorkspaceByOrderSessionIsNotNull(): Long
     fun findByTableHashAndWorkspace(
         tableHash: String,
         workspace: Workspace

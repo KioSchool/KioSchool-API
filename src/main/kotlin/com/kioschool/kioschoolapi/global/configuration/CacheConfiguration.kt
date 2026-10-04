@@ -19,6 +19,7 @@ import org.springframework.data.redis.connection.RedisConnectionFactory
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer
 import org.springframework.data.redis.serializer.RedisSerializationContext
 import org.springframework.data.redis.serializer.StringRedisSerializer
+import org.springframework.data.redis.cache.CacheStatisticsCollector
 import org.springframework.data.redis.cache.RedisCache
 import org.springframework.data.redis.cache.RedisCacheWriter
 import java.time.Duration
@@ -106,7 +107,9 @@ class CacheConfiguration : CachingConfigurer {
 
         val cacheConfigurations = CacheNames.ALL.associateWith { redisCacheConfiguration }
 
+        // 통계를 켜야 cache.gets{result=hit|miss} 메트릭에 값이 찬다 (꺼져 있으면 항상 0)
         val cacheWriter = RedisCacheWriter.nonLockingRedisCacheWriter(redisConnectionFactory)
+            .withStatisticsCollector(CacheStatisticsCollector.create())
         return CustomRedisCacheManager(cacheWriter, redisCacheConfiguration, cacheConfigurations)
     }
 }
