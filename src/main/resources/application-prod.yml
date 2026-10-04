@@ -30,6 +30,9 @@ management:
         step: 2m
   endpoints:
     web:
+      exposure:
+        # prometheus는 nginx가 외부 요청을 막고, 같은 도커 네트워크의 Prometheus만 직접 수집한다
+        include: health,prometheus
       cors:
         allowed-origins: "https://kio-school.com"
         allowed-methods: "*"
