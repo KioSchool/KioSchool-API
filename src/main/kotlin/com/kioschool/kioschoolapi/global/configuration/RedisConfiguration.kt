@@ -6,6 +6,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import io.lettuce.core.ClientOptions
 import io.lettuce.core.SocketOptions
+import io.lettuce.core.resource.ClientResources
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -33,7 +34,9 @@ class RedisConfiguration(
     // yml의 spring.data.redis.ssl.enabled는 커넥션 팩토리를 수동 빈으로 만들면
     // Boot 자동설정이 backoff 되어 무시된다. 여기서 직접 읽어 적용한다. (local은 미설정=false)
     @Value("\${spring.data.redis.ssl.enabled:false}")
-    private val sslEnabled: Boolean
+    private val sslEnabled: Boolean,
+    // Boot가 만든 리소스에 Redis 명령 지연 메트릭(lettuce.command.*) 기록기가 붙어 있다 — 직접 만들면 메트릭이 안 나온다
+    private val clientResources: ClientResources,
 ) {
     @Bean
     fun redisConnectionFactory(): RedisConnectionFactory {
@@ -62,6 +65,7 @@ class RedisConfiguration(
             .build()
 
         val clientConfigurationBuilder = LettuceClientConfiguration.builder()
+            .clientResources(clientResources)
             .clientOptions(clientOptions)
             .commandTimeout(Duration.ofSeconds(3))
         if (sslEnabled) clientConfigurationBuilder.useSsl()
