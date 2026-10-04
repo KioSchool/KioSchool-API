@@ -68,7 +68,10 @@ jobs:
           username: ${{ secrets.REMOTE_SSH_ID }}
           key: ${{ secrets.REMOTE_SSH_KEY }}
           port: ${{ secrets.REMOTE_SSH_PORT }}
+          # 서버 설정은 KioSchool-Infra 저장소(~/KioSchool-Infra)로 관리한다 — 최신 설정을 받은 뒤 배포
           script: |
+            cd ~/KioSchool-Infra/prod
+            git pull --ff-only || echo "⚠️ 서버 설정 git pull 실패 — 서버에 있는 설정 그대로 배포합니다"
             sudo bash update-server.sh
 
       - name: Check server
