@@ -13,6 +13,7 @@ import com.kioschool.kioschoolapi.domain.product.service.ProductService
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.global.cache.constant.CacheNames
 import com.kioschool.kioschoolapi.global.common.enums.OrderStatus
+import com.kioschool.kioschoolapi.global.common.enums.PaymentMethod
 import com.kioschool.kioschoolapi.global.common.enums.WebsocketType
 import com.kioschool.kioschoolapi.global.error.ErrorCode
 import com.kioschool.kioschoolapi.global.error.exception.CustomException
@@ -40,7 +41,8 @@ class OrderFacade(
         workspaceId: Long,
         tableHash: String,
         customerName: String,
-        rawOrderProducts: List<OrderProductRequestBody>
+        rawOrderProducts: List<OrderProductRequestBody>,
+        paymentMethod: PaymentMethod? = null
     ): OrderDto {
         val workspace = workspaceService.getWorkspace(workspaceId)
         val productIds = rawOrderProducts.map { it.productId }
@@ -57,6 +59,7 @@ class OrderFacade(
                 customerName = customerName,
                 orderNumber = orderNumber,
                 orderSession = currentOrderSession,
+                paymentMethod = paymentMethod,
             )
         )
 

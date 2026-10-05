@@ -14,6 +14,7 @@ import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.factory.SampleEntity
 import com.kioschool.kioschoolapi.global.common.entity.BaseEntity
 import com.kioschool.kioschoolapi.global.common.enums.OrderStatus
+import com.kioschool.kioschoolapi.global.common.enums.PaymentMethod
 import com.kioschool.kioschoolapi.global.common.enums.WebsocketType
 import com.kioschool.kioschoolapi.global.error.ErrorCode
 import com.kioschool.kioschoolapi.global.error.exception.CustomException
@@ -176,6 +177,58 @@ class OrderFacadeTest : DescribeSpec({
             verify(exactly = 0) { orderService.saveOrder(any<Order>()) }
             verify(exactly = 0) { productService.validateProducts(workspaceId, any()) }
             verify(exactly = 0) { productService.getAllProductsByCondition(workspaceId) }
+        }
+
+        it("should save the payment method the customer chose") {
+            val workspaceId = 1L
+            val savedOrder = slot<Order>()
+
+            every { workspaceService.getWorkspace(workspaceId) } returns SampleEntity.workspace
+            every {
+                workspaceService.getWorkspaceTableByHash(SampleEntity.workspace, "dummy_hash")
+            } returns SampleEntity.workspaceTable.apply { orderSession = SampleEntity.orderSession }
+            every { orderService.getOrderNumber(workspaceId) } returns 1
+            every { orderService.saveOrder(capture(savedOrder)) } answers { savedOrder.captured }
+            every { productService.validateProducts(workspaceId, any()) } just Runs
+            every { productService.getAllProductsByCondition(workspaceId) } returns listOf(
+                SampleEntity.productWithId(1L)
+            )
+            every {
+                orderService.saveOrderAndSendWebsocketMessage(any<Order>(), WebsocketType.CREATED)
+            } answers { it.invocation.args[0] as Order }
+
+            sut.createOrder(
+                workspaceId,
+                "dummy_hash",
+                "customer",
+                listOf(OrderProductRequestBody(1L, 1)),
+                PaymentMethod.TOSS
+            )
+
+            assertEquals(PaymentMethod.TOSS, savedOrder.captured.paymentMethod)
+        }
+
+        it("should save a null payment method when the request has none") {
+            val workspaceId = 1L
+            val savedOrder = slot<Order>()
+
+            every { workspaceService.getWorkspace(workspaceId) } returns SampleEntity.workspace
+            every {
+                workspaceService.getWorkspaceTableByHash(SampleEntity.workspace, "dummy_hash")
+            } returns SampleEntity.workspaceTable.apply { orderSession = SampleEntity.orderSession }
+            every { orderService.getOrderNumber(workspaceId) } returns 1
+            every { orderService.saveOrder(capture(savedOrder)) } answers { savedOrder.captured }
+            every { productService.validateProducts(workspaceId, any()) } just Runs
+            every { productService.getAllProductsByCondition(workspaceId) } returns listOf(
+                SampleEntity.productWithId(1L)
+            )
+            every {
+                orderService.saveOrderAndSendWebsocketMessage(any<Order>(), WebsocketType.CREATED)
+            } answers { it.invocation.args[0] as Order }
+
+            sut.createOrder(workspaceId, "dummy_hash", "customer", listOf(OrderProductRequestBody(1L, 1)))
+
+            assertEquals(null, savedOrder.captured.paymentMethod)
         }
     }
 
