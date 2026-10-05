@@ -14,6 +14,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Component
 import org.slf4j.LoggerFactory
+import java.time.Duration
 import java.util.*
 
 
@@ -21,12 +22,13 @@ import java.util.*
 class JwtProvider(
     @Value("\${jwt.secret-key}")
     private val salt: String,
+    @Value("\${jwt.access-token-validity}")
+    private val accessTokenValidity: Duration,
     private val userDetailService: CustomUserDetailService
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
     private val secretKey = Keys.hmacShaKeyFor(salt.toByteArray(StandardCharset.UTF_8))
-    private val expirationTime = 1000L * 60 * 60 * 24
 
     fun createToken(user: User): String {
         val now = Date()
@@ -36,7 +38,7 @@ class JwtProvider(
         return Jwts.builder()
             .setIssuedAt(now)
             .setClaims(claims)
-            .setExpiration(Date(now.time + expirationTime))
+            .setExpiration(Date(now.time + accessTokenValidity.toMillis()))
             .signWith(secretKey, SignatureAlgorithm.HS256)
             .compact()
     }

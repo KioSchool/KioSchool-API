@@ -22,12 +22,12 @@ class StompHandler(
         when (accessor.command) {
             StompCommand.CONNECT -> {
                 val token = sessionAttributes?.get("token") as String
-                if (!jwtProvider.isValidToken(token)) throw CustomException(ErrorCode.INVALID_JWT)
+                if (!isValidToken(token)) throw CustomException(ErrorCode.INVALID_JWT)
             }
 
             StompCommand.SUBSCRIBE -> {
                 val token = sessionAttributes?.get("token") as String
-                if (!jwtProvider.isValidToken(token)) throw CustomException(ErrorCode.INVALID_JWT)
+                if (!isValidToken(token)) throw CustomException(ErrorCode.INVALID_JWT)
                 if (!isAccessible(token, accessor)) throw CustomException(ErrorCode.WORKSPACE_INACCESSIBLE)
             }
 
@@ -36,6 +36,9 @@ class StompHandler(
 
         return message
     }
+
+    // 만료된 access 쿠키는 브라우저가 보내지 않으므로 빈 토큰은 흔하다. 파싱 경고 로그를 남기지 않고 거부한다.
+    private fun isValidToken(token: String) = token.isNotBlank() && jwtProvider.isValidToken(token)
 
     fun isAccessible(token: String, accessor: StompHeaderAccessor): Boolean {
         val username = jwtProvider.getLoginId(token)
