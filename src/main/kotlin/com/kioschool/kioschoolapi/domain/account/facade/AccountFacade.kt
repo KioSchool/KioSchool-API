@@ -11,6 +11,7 @@ import com.kioschool.kioschoolapi.global.error.ErrorCode
 import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import com.kioschool.kioschoolapi.global.portone.service.PortoneService
 import com.kioschool.kioschoolapi.global.toss.service.TossService
+import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Page
 import org.springframework.stereotype.Component
 
@@ -23,6 +24,8 @@ class AccountFacade(
     private val portoneService: PortoneService,
     private val tossService: TossService
 ) {
+    private val log = LoggerFactory.getLogger(javaClass)
+
     fun getBanks(name: String?, page: Int, size: Int): Page<BankDto> {
         return bankService.getBanks(name, page, size).map { BankDto.of(it) }
     }
@@ -32,19 +35,27 @@ class AccountFacade(
     }
 
     fun addBank(name: String, code: String): BankDto {
-        return BankDto.of(bankService.addBank(name, code))
+        val bank = bankService.addBank(name, code)
+        log.info("[AUDIT] action=ADD_BANK bankId={} name={} code={}", bank.id, bank.name, bank.code)
+        return BankDto.of(bank)
     }
 
     fun updateBankTossName(id: Long, tossName: String): BankDto {
-        return BankDto.of(bankService.updateTossName(id, tossName))
+        val bank = bankService.updateTossName(id, tossName)
+        log.info("[AUDIT] action=UPDATE_BANK_TOSS_NAME bankId={} tossName={}", id, tossName)
+        return BankDto.of(bank)
     }
 
     fun deleteBankTossName(id: Long): BankDto {
-        return BankDto.of(bankService.deleteTossName(id))
+        val bank = bankService.deleteTossName(id)
+        log.info("[AUDIT] action=DELETE_BANK_TOSS_NAME bankId={}", id)
+        return BankDto.of(bank)
     }
 
     fun deleteBank(id: Long): BankDto {
-        return BankDto.of(bankService.deleteBank(id))
+        val bank = bankService.deleteBank(id)
+        log.info("[AUDIT] action=DELETE_BANK bankId={} name={} code={}", id, bank.name, bank.code)
+        return BankDto.of(bank)
     }
 
     fun registerAccount(

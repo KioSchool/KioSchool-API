@@ -10,6 +10,7 @@ import com.kioschool.kioschoolapi.domain.user.repository.UserRepository
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepository
 import com.kioschool.kioschoolapi.global.cache.constant.CacheNames
 import com.kioschool.kioschoolapi.global.common.enums.OrderStatus
+import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.data.domain.PageRequest
@@ -26,6 +27,8 @@ class SuperAdminDashboardFacade(
     private val orderRepository: OrderRepository,
     private val emailDomainRepository: EmailDomainRepository
 ) {
+    private val log = LoggerFactory.getLogger(javaClass)
+
     fun getDashboard(): SuperAdminDashboardDto {
         val now = LocalDateTime.now()
         val sevenDaysAgo = now.minusDays(7)
@@ -176,6 +179,7 @@ class SuperAdminDashboardFacade(
             .orElseThrow { IllegalArgumentException("통계 데이터를 찾을 수 없습니다.") }
         stat.excludedFromCalendar = excluded
         dailyOrderStatisticRepository.save(stat)
+        log.info("[AUDIT] action=SET_FESTIVAL_CALENDAR_EXCLUSION statisticId={} excluded={}", statisticId, excluded)
     }
 
     @Cacheable(cacheNames = ["${CacheNames.FESTIVAL_CALENDAR}#1h"], key = "#year + '-' + #month")

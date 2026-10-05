@@ -11,6 +11,7 @@ import com.kioschool.kioschoolapi.global.discord.service.DiscordService
 import com.kioschool.kioschoolapi.global.security.JwtProvider
 import com.kioschool.kioschoolapi.global.template.TemplateService
 import jakarta.servlet.http.HttpServletResponse
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.web.server.Cookie.SameSite
 import org.springframework.http.HttpHeaders
@@ -29,6 +30,8 @@ class UserFacade(
     private val discordService: DiscordService,
     private val jwtProvider: JwtProvider
 ) {
+    private val log = LoggerFactory.getLogger(javaClass)
+
     fun login(
         loginId: String,
         loginPassword: String,
@@ -144,7 +147,9 @@ class UserFacade(
 
         val user = userService.getUser(id)
         user.role = UserRole.SUPER_ADMIN
-        return UserDto.of(userService.saveUser(user))
+        val saved = userService.saveUser(user)
+        log.info("[AUDIT] action=GRANT_SUPER_ADMIN loginId={}", id)
+        return UserDto.of(saved)
     }
 
     fun registerAccountUrl(username: String, accountUrl: String): UserDto {

@@ -9,6 +9,7 @@ import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepositor
 import com.kioschool.kioschoolapi.global.common.enums.OrderStatus
 import com.kioschool.kioschoolapi.global.error.ErrorCode
 import com.kioschool.kioschoolapi.global.error.exception.CustomException
+import org.slf4j.LoggerFactory
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import java.time.LocalDate
@@ -23,6 +24,8 @@ class SuperAdminDonationFacade(
     private val orderRepository: OrderRepository,
     private val workspaceRepository: WorkspaceRepository
 ) {
+    private val log = LoggerFactory.getLogger(javaClass)
+
     fun getCustomerClickStats(startDate: LocalDate, endDate: LocalDate): CustomerDonationClickStatsDto {
         if (startDate.isAfter(endDate) || ChronoUnit.DAYS.between(startDate, endDate) >= MAX_RANGE_DAYS) {
             throw CustomException(ErrorCode.INVALID_INPUT)
@@ -144,13 +147,19 @@ class SuperAdminDonationFacade(
 
         val click = findClick(clickId)
         click.confirmDeposit(amount, normalizedMemo, LocalDateTime.now())
-        return toItem(customerDonationClickRepository.save(click))
+        val saved = customerDonationClickRepository.save(click)
+        log.info("[AUDIT] action=CONFIRM_DONATION_DEPOSIT clickId={} amount={}", clickId, amount)
+        return toItem(saved)
     }
 
+    // 취소하면 엔티티의 확인 금액·시각이 지워지므로 이전 금액을 로그에 남긴다.
     fun cancelDeposit(clickId: Long): CustomerDonationClickItemDto {
         val click = findClick(clickId)
+        val previousAmount = click.depositAmount
         click.cancelDeposit()
-        return toItem(customerDonationClickRepository.save(click))
+        val saved = customerDonationClickRepository.save(click)
+        log.info("[AUDIT] action=CANCEL_DONATION_DEPOSIT clickId={} previousAmount={}", clickId, previousAmount)
+        return toItem(saved)
     }
 
     private fun findClick(clickId: Long): CustomerDonationClick =

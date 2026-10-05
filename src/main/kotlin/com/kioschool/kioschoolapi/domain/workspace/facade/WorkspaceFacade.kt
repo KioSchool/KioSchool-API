@@ -19,6 +19,7 @@ import com.kioschool.kioschoolapi.domain.workspace.entity.WorkspaceTable
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.global.cache.constant.CacheNames
 import com.kioschool.kioschoolapi.global.discord.service.DiscordService
+import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.cache.annotation.Caching
@@ -40,6 +41,8 @@ class WorkspaceFacade(
     val dailyInsightCardRepository: DailyInsightCardRepository,
     val changeLogRepository: ChangeLogRepository
 ) {
+    private val log = LoggerFactory.getLogger(javaClass)
+
     fun getAllWorkspaces(keyword: String?, page: Int, size: Int, updatedAfter: LocalDateTime? = null): Page<SuperAdminWorkspaceDto> {
         val schoolResolver = emailService.getSchoolResolver()
         return workspaceService.getAllWorkspaces(keyword, page, size, updatedAfter, schoolResolver.domainsMatching(keyword))
@@ -304,13 +307,31 @@ class WorkspaceFacade(
 
         // 6. Workspace 삭제 - cascade로 members, images, setting, products, productCategories, invitations 처리
         workspaceService.deleteWorkspace(workspace)
+
+        // 삭제 후에는 이름으로 찾을 수 없으므로 문의 대응에 필요한 요약을 남긴다.
+        log.info(
+            "[AUDIT] action=FORCE_DELETE_WORKSPACE workspaceId={} name={} ownerLoginId={} productCount={} orderCount={}",
+            workspaceId,
+            detail.name,
+            detail.ownerLoginId,
+            detail.productCount,
+            orders.size
+        )
         return detail
     }
 
     fun changeWorkspaceOwner(workspaceId: Long, newOwnerLoginId: String): WorkspaceAdminDetailDto {
         val workspace = workspaceService.getWorkspace(workspaceId)
+        val previousOwnerLoginId = workspace.owner.loginId
         val newOwner = userService.getUser(newOwnerLoginId)
-        return WorkspaceAdminDetailDto.of(workspaceService.changeWorkspaceOwner(workspace, newOwner))
+        val changed = workspaceService.changeWorkspaceOwner(workspace, newOwner)
+        log.info(
+            "[AUDIT] action=CHANGE_WORKSPACE_OWNER workspaceId={} previousOwnerLoginId={} newOwnerLoginId={}",
+            workspaceId,
+            previousOwnerLoginId,
+            newOwnerLoginId
+        )
+        return WorkspaceAdminDetailDto.of(changed)
     }
 
     private fun toTableDto(table: WorkspaceTable): WorkspaceTableDto = toTableDtos(listOf(table)).first()
