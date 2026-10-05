@@ -1,11 +1,16 @@
 package com.kioschool.kioschoolapi.product.facade
 
+import com.kioschool.kioschoolapi.domain.product.entity.Product
 import com.kioschool.kioschoolapi.domain.product.entity.ProductCategory
+import com.kioschool.kioschoolapi.domain.product.event.ProductChangedEvent
+import com.kioschool.kioschoolapi.domain.product.event.ProductDeletedEvent
+import com.kioschool.kioschoolapi.domain.product.event.ProductSnapshot
 import com.kioschool.kioschoolapi.domain.product.facade.ProductFacade
 import com.kioschool.kioschoolapi.domain.product.service.ProductService
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.factory.SampleEntity
 import com.kioschool.kioschoolapi.global.aws.S3Service
+import com.kioschool.kioschoolapi.global.common.entity.BaseEntity
 import com.kioschool.kioschoolapi.global.common.enums.ProductStatus
 import com.kioschool.kioschoolapi.global.error.ErrorCode
 import com.kioschool.kioschoolapi.global.error.exception.CustomException
@@ -13,14 +18,16 @@ import io.kotest.core.spec.style.DescribeSpec
 import io.mockk.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.assertThrows
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.web.multipart.MultipartFile
 
 class ProductFacadeTest : DescribeSpec({
     val productService = mockk<ProductService>()
     val workspaceService = mockk<WorkspaceService>()
     val s3Service = mockk<S3Service>()
+    val eventPublisher = mockk<ApplicationEventPublisher>(relaxed = true)
 
-    val sut = ProductFacade(productService, workspaceService, s3Service)
+    val sut = ProductFacade(productService, workspaceService, s3Service, eventPublisher)
 
     beforeTest {
         mockkObject(productService)
@@ -694,4 +701,87 @@ class ProductFacadeTest : DescribeSpec({
             verify(exactly = 0) { productService.saveProduct(any()) }
         }
     }
+
+    describe("change log events") {
+        // 요청의 workspaceId(1)와 다른 workspace(7)에 속한 상품으로, 이벤트가 엔티티 쪽 workspace를 쓰는지 본다.
+        fun productOfWorkspace7() = Product(
+            name = "감자전",
+            description = "description",
+            price = 5000,
+            status = ProductStatus.SELLING,
+            workspace = SampleEntity.workspace(SampleEntity.user).withId(7L)
+        ).withId(40L)
+
+        it("updateProductStatus should publish the before and after snapshots") {
+            val product = productOfWorkspace7()
+            every { productService.getProduct(40L) } returns product
+            every { workspaceService.checkAccessible("username", 1L) } just Runs
+            every { productService.saveProduct(product) } returns product
+
+            sut.updateProductStatus("username", 1L, 40L, ProductStatus.SOLD_OUT)
+
+            verify(exactly = 1) {
+                eventPublisher.publishEvent(
+                    ProductChangedEvent(
+                        7L,
+                        40L,
+                        ProductSnapshot("감자전", 5000, ProductStatus.SELLING, null),
+                        ProductSnapshot("감자전", 5000, ProductStatus.SOLD_OUT, null)
+                    )
+                )
+            }
+        }
+
+        it("updateProduct should publish the before and after snapshots") {
+            val product = productOfWorkspace7()
+            every { productService.getProduct(40L) } returns product
+            every { workspaceService.checkAccessible("username", 7L) } just Runs
+            every { productService.getImageUrl(7L, 40L, null) } returns null
+            every { productService.saveProduct(product) } returns product
+
+            sut.updateProduct("username", 1L, 40L, "감자전(마감)", null, 3000, null, null)
+
+            verify(exactly = 1) {
+                eventPublisher.publishEvent(
+                    ProductChangedEvent(
+                        7L,
+                        40L,
+                        ProductSnapshot("감자전", 5000, ProductStatus.SELLING, null),
+                        ProductSnapshot("감자전(마감)", 3000, ProductStatus.SELLING, null)
+                    )
+                )
+            }
+        }
+
+        it("deleteProduct should publish the snapshot after the delete succeeds") {
+            val product = productOfWorkspace7()
+            every { productService.getProduct(40L) } returns product
+            every { workspaceService.checkAccessible("username", 7L) } just Runs
+            every { productService.deleteProduct(product) } returns product
+
+            sut.deleteProduct("username", 40L)
+
+            verifyOrder {
+                productService.deleteProduct(product)
+                eventPublisher.publishEvent(
+                    ProductDeletedEvent(7L, 40L, ProductSnapshot("감자전", 5000, ProductStatus.SELLING, null))
+                )
+            }
+        }
+
+        it("deleteProduct should not publish when the delete fails") {
+            val product = productOfWorkspace7()
+            every { productService.getProduct(40L) } returns product
+            every { workspaceService.checkAccessible("username", 7L) } just Runs
+            every { productService.deleteProduct(product) } throws RuntimeException("delete failed")
+
+            assertThrows<RuntimeException> { sut.deleteProduct("username", 40L) }
+
+            verify(exactly = 0) { eventPublisher.publishEvent(any<Any>()) }
+        }
+    }
 })
+
+private fun <T : BaseEntity> T.withId(id: Long): T = apply {
+    BaseEntity::class.java.getDeclaredField("id").apply { isAccessible = true }.set(this, id)
+}
