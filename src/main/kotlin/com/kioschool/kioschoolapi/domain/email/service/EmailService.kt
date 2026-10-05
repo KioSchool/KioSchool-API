@@ -17,6 +17,7 @@ import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.mail.javamail.MimeMessageHelper
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
+import java.time.LocalDateTime
 import java.util.*
 
 @Service
@@ -121,6 +122,12 @@ class EmailService(
         val emailCode =
             emailCodeRepository.findByCodeAndKind(code, EmailKind.RESET_PASSWORD) ?: return
         emailCodeRepository.delete(emailCode)
+    }
+
+    // 가입을 끝내지 않았거나 재설정 링크를 쓰지 않으면 코드가 그대로 남는다. 코드를 다시 받으면 updatedAt이 갱신된다.
+    @Transactional
+    fun deleteCodesUpdatedBefore(cutoff: LocalDateTime): Int {
+        return emailCodeRepository.deleteAllUpdatedBefore(cutoff)
     }
 
     fun getAllEmailDomains(name: String?, page: Int, size: Int): Page<EmailDomain> {

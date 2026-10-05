@@ -126,6 +126,10 @@ order:
   customer-name:
     retention-days: 90
 
+email:
+  code:
+    retention-days: 7
+
 kioschool:
   insight:
     threshold-percentile: 80
