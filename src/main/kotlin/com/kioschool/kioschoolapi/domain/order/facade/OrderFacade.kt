@@ -5,6 +5,9 @@ import com.kioschool.kioschoolapi.domain.order.dto.request.OrderProductRequestBo
 import com.kioschool.kioschoolapi.domain.order.entity.GhostType
 import com.kioschool.kioschoolapi.domain.order.entity.Order
 import com.kioschool.kioschoolapi.domain.order.entity.OrderProduct
+import com.kioschool.kioschoolapi.domain.order.event.OrderProductServedCountChangedEvent
+import com.kioschool.kioschoolapi.domain.order.event.OrderSessionExpectedEndAtChangedEvent
+import com.kioschool.kioschoolapi.domain.order.event.OrderStatusChangedEvent
 import com.kioschool.kioschoolapi.domain.order.service.OrderService
 import com.kioschool.kioschoolapi.domain.product.service.ProductService
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
@@ -15,6 +18,7 @@ import com.kioschool.kioschoolapi.global.error.ErrorCode
 import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.Cacheable
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
@@ -26,7 +30,8 @@ import java.time.temporal.ChronoUnit
 class OrderFacade(
     private val orderService: OrderService,
     private val workspaceService: WorkspaceService,
-    private val productService: ProductService
+    private val productService: ProductService,
+    private val eventPublisher: ApplicationEventPublisher
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -153,14 +158,12 @@ class OrderFacade(
         workspaceService.checkAccessible(username, workspaceId)
 
         val order = orderService.getOrder(orderId)
+        val before = order.status
         order.status = OrderStatus.valueOf(status)
 
-        return OrderDto.of(
-            orderService.saveOrderAndSendWebsocketMessage(
-                order,
-                WebsocketType.UPDATED
-            )
-        )
+        val saved = orderService.saveOrderAndSendWebsocketMessage(order, WebsocketType.UPDATED)
+        eventPublisher.publishEvent(OrderStatusChangedEvent(order.workspace.id, order.id, before, order.status))
+        return OrderDto.of(saved)
     }
 
     fun getOrderSessionsByDate(
@@ -209,9 +212,20 @@ class OrderFacade(
         workspaceService.checkAccessible(username, workspaceId)
 
         val orderProduct = orderService.getOrderProduct(orderProductId)
+        val before = orderProduct.servedCount
         orderProduct.servedCount = servedCount
         orderProduct.isServed = orderProduct.servedCount == orderProduct.quantity
-        return OrderProductDto.of(orderService.saveOrderProductAndSendWebsocketMessage(orderProduct))
+
+        val saved = orderService.saveOrderProductAndSendWebsocketMessage(orderProduct)
+        eventPublisher.publishEvent(
+            OrderProductServedCountChangedEvent(
+                orderProduct.order.workspace.id,
+                orderProduct.id,
+                before,
+                orderProduct.servedCount
+            )
+        )
+        return OrderProductDto.of(saved)
     }
 
     fun resetOrderNumber(username: String, workspaceId: Long) {
@@ -312,9 +326,14 @@ class OrderFacade(
 
         val orderSession = orderService.getOrderSession(orderSessionId)
         workspaceService.checkAccessible(username, orderSession.workspace.id)
+        val before = orderSession.expectedEndAt
         orderSession.expectedEndAt = expectedEndAt
 
-        return OrderSessionDto.of(orderService.saveOrderSession(orderSession))
+        val saved = orderService.saveOrderSession(orderSession)
+        eventPublisher.publishEvent(
+            OrderSessionExpectedEndAtChangedEvent(orderSession.workspace.id, orderSession.id, before, expectedEndAt)
+        )
+        return OrderSessionDto.of(saved)
     }
 
     @Transactional(rollbackFor = [CustomException::class])
