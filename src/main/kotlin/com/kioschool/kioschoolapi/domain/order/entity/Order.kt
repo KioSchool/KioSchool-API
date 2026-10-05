@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.kioschool.kioschoolapi.domain.workspace.entity.Workspace
 import com.kioschool.kioschoolapi.global.common.entity.BaseEntity
 import com.kioschool.kioschoolapi.global.common.enums.OrderStatus
+import com.kioschool.kioschoolapi.global.common.enums.PaymentMethod
 import jakarta.persistence.*
 import jakarta.persistence.JoinColumn
 
@@ -31,5 +32,9 @@ class Order(
     val orderNumber: Long,
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_session_id")
-    val orderSession: OrderSession?
+    val orderSession: OrderSession?,
+    // 손님이 주문할 때 고른 송금수단. 실제 송금 방법과 다를 수 있다.
+    // null = 기록 없음(컬럼 추가 전 주문, 구버전 프론트에서 온 주문, 0원 주문).
+    @Enumerated(EnumType.STRING)
+    val paymentMethod: PaymentMethod? = null
 ) : BaseEntity()
