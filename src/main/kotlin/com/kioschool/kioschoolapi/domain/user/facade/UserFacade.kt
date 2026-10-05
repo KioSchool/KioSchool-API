@@ -152,11 +152,14 @@ class UserFacade(
         return UserDto.of(saved)
     }
 
+    // 예전 경로(/user/toss-account). 링크 형식이 정해져 있지 않아 계좌번호는 남기지 않는다.
     fun registerAccountUrl(username: String, accountUrl: String): UserDto {
         val user = userService.getUser(username)
         user.accountUrl = userService.removeAmountQueryFromAccountUrl(accountUrl)
 
-        return UserDto.of(userService.saveUser(user))
+        val saved = userService.saveUser(user)
+        log.info("[AUDIT] action=REGISTER_ACCOUNT_URL loginId={}", username)
+        return UserDto.of(saved)
     }
 
     fun getAllUsers(keyword: String?, accountFilter: UserAccountFilter?, page: Int, size: Int): Page<SuperAdminUserDto> {
