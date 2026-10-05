@@ -3,6 +3,7 @@ package com.kioschool.kioschoolapi.domain.insight.controller
 import com.kioschool.kioschoolapi.domain.insight.service.DailyInsightCardGenerationService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.slf4j.LoggerFactory
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
@@ -16,6 +17,8 @@ import java.time.LocalDate
 class SuperAdminInsightCardController(
     private val generationService: DailyInsightCardGenerationService
 ) {
+    private val log = LoggerFactory.getLogger(javaClass)
+
     @Operation(
         summary = "인사이트 카드 수동 재생성",
         description = "지정 날짜의 모든 워크스페이스 카드를 재생성합니다 (cron 실패 복구용)."
@@ -25,6 +28,7 @@ class SuperAdminInsightCardController(
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) date: LocalDate
     ): Map<String, Any> {
         generationService.generateForDate(date)
+        log.info("[AUDIT] action=REGENERATE_INSIGHT_CARDS date={}", date)
         return mapOf("status" to "ok", "date" to date.toString())
     }
 }

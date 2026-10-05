@@ -2,11 +2,17 @@ package com.kioschool.kioschoolapi.order.facade
 
 import com.kioschool.kioschoolapi.domain.order.dto.request.OrderProductRequestBody
 import com.kioschool.kioschoolapi.domain.order.entity.Order
+import com.kioschool.kioschoolapi.domain.order.entity.OrderProduct
+import com.kioschool.kioschoolapi.domain.order.entity.OrderSession
+import com.kioschool.kioschoolapi.domain.order.event.OrderProductServedCountChangedEvent
+import com.kioschool.kioschoolapi.domain.order.event.OrderSessionExpectedEndAtChangedEvent
+import com.kioschool.kioschoolapi.domain.order.event.OrderStatusChangedEvent
 import com.kioschool.kioschoolapi.domain.order.facade.OrderFacade
 import com.kioschool.kioschoolapi.domain.order.service.OrderService
 import com.kioschool.kioschoolapi.domain.product.service.ProductService
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.factory.SampleEntity
+import com.kioschool.kioschoolapi.global.common.entity.BaseEntity
 import com.kioschool.kioschoolapi.global.common.enums.OrderStatus
 import com.kioschool.kioschoolapi.global.common.enums.WebsocketType
 import com.kioschool.kioschoolapi.global.error.ErrorCode
@@ -15,6 +21,7 @@ import io.kotest.core.spec.style.DescribeSpec
 import io.mockk.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.assertThrows
+import org.springframework.context.ApplicationEventPublisher
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -22,8 +29,9 @@ class OrderFacadeTest : DescribeSpec({
     val orderService = mockk<OrderService>()
     val workspaceService = mockk<WorkspaceService>()
     val productService = mockk<ProductService>()
+    val eventPublisher = mockk<ApplicationEventPublisher>(relaxed = true)
 
-    val sut = OrderFacade(orderService, workspaceService, productService)
+    val sut = OrderFacade(orderService, workspaceService, productService, eventPublisher)
 
     afterTest {
         clearAllMocks()
@@ -497,6 +505,23 @@ class OrderFacadeTest : DescribeSpec({
         }
     }
 
+    describe("changeOrderStatus change log") {
+        it("should publish the status change with the order's own workspace, not the requested one") {
+            val workspace = SampleEntity.workspace(SampleEntity.user).withId(7L)
+            val order = Order(workspace, 1, "customer", orderNumber = 1, orderSession = null).withId(10L)
+
+            every { workspaceService.checkAccessible("test", 1L) } just Runs
+            every { orderService.getOrder(10L) } returns order
+            every { orderService.saveOrderAndSendWebsocketMessage(order, WebsocketType.UPDATED) } returns order
+
+            sut.changeOrderStatus("test", 1L, 10L, OrderStatus.PAID.name)
+
+            verify(exactly = 1) {
+                eventPublisher.publishEvent(OrderStatusChangedEvent(7L, 10L, OrderStatus.NOT_PAID, OrderStatus.PAID))
+            }
+        }
+    }
+
     describe("getOrdersByTable") {
         it("should return orders grouped by session") {
             // 1. Arrange
@@ -901,6 +926,51 @@ class OrderFacadeTest : DescribeSpec({
         }
     }
 
+    describe("changeOrderProductServedCount change log") {
+        it("should publish the served count change with the order's own workspace") {
+            val workspace = SampleEntity.workspace(SampleEntity.user).withId(7L)
+            val order = Order(workspace, 1, "customer", orderNumber = 1, orderSession = null).withId(10L)
+            val orderProduct = OrderProduct(
+                order = order,
+                productId = 1L,
+                productName = "product",
+                productPrice = 1000,
+                quantity = 3,
+                servedCount = 1
+            ).withId(20L)
+
+            every { workspaceService.checkAccessible("test", 1L) } just Runs
+            every { orderService.getOrderProduct(20L) } returns orderProduct
+            every { orderService.saveOrderProductAndSendWebsocketMessage(orderProduct) } returns orderProduct
+
+            sut.changeOrderProductServedCount("test", 1L, 20L, 2)
+
+            verify(exactly = 1) {
+                eventPublisher.publishEvent(OrderProductServedCountChangedEvent(7L, 20L, 1, 2))
+            }
+        }
+    }
+
+    describe("updateOrderSessionExpectedEndAt change log") {
+        it("should publish the expected end change with the session's own workspace") {
+            val workspace = SampleEntity.workspace(SampleEntity.user).withId(7L)
+            val before = LocalDateTime.of(2026, 10, 5, 21, 30)
+            val after = LocalDateTime.of(2026, 10, 5, 22, 0)
+            val orderSession = OrderSession(workspace, expectedEndAt = before, tableNumber = 1).withId(30L)
+
+            every { workspaceService.checkAccessible("test", 1L) } just Runs
+            every { workspaceService.checkAccessible("test", 7L) } just Runs
+            every { orderService.getOrderSession(30L) } returns orderSession
+            every { orderService.saveOrderSession(orderSession) } returns orderSession
+
+            sut.updateOrderSessionExpectedEndAt("test", 1L, 30L, after)
+
+            verify(exactly = 1) {
+                eventPublisher.publishEvent(OrderSessionExpectedEndAtChangedEvent(7L, 30L, before, after))
+            }
+        }
+    }
+
     describe("endOrderSession") {
         it("should throw CustomException when order session has no valid orders and isGhost is null") {
             val username = "test"
@@ -1044,3 +1114,7 @@ class OrderFacadeTest : DescribeSpec({
         }
     }
 })
+
+private fun <T : BaseEntity> T.withId(id: Long): T = apply {
+    BaseEntity::class.java.getDeclaredField("id").apply { isAccessible = true }.set(this, id)
+}
