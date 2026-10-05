@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS"
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+  <!-- 로그인한 기기 하나당 한 행. refresh token은 해시로만 저장하고, 갱신 때마다 같은 행을 덮어쓴다. -->
+  <changeSet author="ji-inpark" id="user-session-1">
+    <createTable tableName="user_session">
+      <column autoIncrement="true" name="id" type="BIGINT">
+        <constraints nullable="false" primaryKey="true" primaryKeyName="pk_user_session"/>
+      </column>
+      <column name="created_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+      <column name="updated_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+      <column name="user_id" type="BIGINT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="token_hash" type="VARCHAR(64)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="previous_token_hash" type="VARCHAR(64)"/>
+      <column name="rotated_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+      <column name="expires_at" type="TIMESTAMP WITHOUT TIME ZONE">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+    <createIndex indexName="idx_user_session_user" tableName="user_session">
+      <column name="user_id"/>
+    </createIndex>
+    <createIndex indexName="idx_user_session_expires_at" tableName="user_session">
+      <column name="expires_at"/>
+    </createIndex>
+  </changeSet>
+
+  <!-- 유저 하드 삭제를 막지 않도록 세션은 함께 지운다. -->
+  <changeSet author="ji-inpark" id="user-session-2">
+    <addForeignKeyConstraint
+      baseTableName="user_session" baseColumnNames="user_id"
+      constraintName="fk_user_session_user"
+      referencedTableName="user" referencedColumnNames="id"
+      onDelete="CASCADE"/>
+  </changeSet>
+
+</databaseChangeLog>
