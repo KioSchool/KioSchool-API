@@ -121,6 +121,11 @@ inquiry:
     unanswered-days: 180
     resolved-days: 90
 
+# 개인정보처리방침에 적은 보관 기간과 같아야 한다. 바꾸면 프론트 privacyPolicy.ts도 함께 고친다.
+order:
+  customer-name:
+    retention-days: 90
+
 kioschool:
   insight:
     threshold-percentile: 80

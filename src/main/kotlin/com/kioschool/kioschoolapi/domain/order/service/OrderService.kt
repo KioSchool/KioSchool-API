@@ -1,6 +1,7 @@
 package com.kioschool.kioschoolapi.domain.order.service
 
 import com.kioschool.kioschoolapi.domain.dashboard.dto.ProductIdQuantityDto
+import com.kioschool.kioschoolapi.domain.order.dto.common.MaskedCustomerNameCount
 import com.kioschool.kioschoolapi.domain.order.entity.Order
 import com.kioschool.kioschoolapi.domain.order.entity.OrderProduct
 import com.kioschool.kioschoolapi.domain.order.entity.OrderSession
@@ -15,6 +16,7 @@ import com.kioschool.kioschoolapi.global.common.enums.OrderStatus
 import com.kioschool.kioschoolapi.global.common.enums.WebsocketType
 import com.kioschool.kioschoolapi.global.websocket.service.CustomWebSocketService
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
 
 @Service
@@ -168,5 +170,18 @@ class OrderService(
         pageable: org.springframework.data.domain.Pageable
     ): org.springframework.data.domain.Page<Order> {
         return customOrderRepository.findAllGlobal(workspaceId, startDate, endDate, statuses, pageable)
+    }
+
+    // 주문 기록과 금액은 통계로 남기고 손님 입금자명만 가린다. 이미 가린 행은 건너뛰므로 여러 번 돌아도 결과가 같다.
+    @Transactional
+    fun maskCustomerNamesCreatedBefore(cutoff: LocalDateTime): MaskedCustomerNameCount {
+        return MaskedCustomerNameCount(
+            orders = orderRepository.maskCustomerNamesCreatedBefore(cutoff, MASKED_CUSTOMER_NAME),
+            orderSessions = orderSessionRepository.maskCustomerNamesCreatedBefore(cutoff, MASKED_CUSTOMER_NAME)
+        )
+    }
+
+    companion object {
+        const val MASKED_CUSTOMER_NAME = "***"
     }
 }

@@ -382,4 +382,18 @@ class OrderServiceTest : DescribeSpec({
             verify { orderSessionRepository.save(any()) }
         }
     }
+
+    describe("maskCustomerNamesCreatedBefore") {
+        it("주문과 세션의 입금자명을 같은 기준 시각으로 가리고 건수를 돌려준다") {
+            val cutoff = java.time.LocalDateTime.of(2026, 7, 8, 4, 50)
+            every { repository.maskCustomerNamesCreatedBefore(cutoff, "***") } returns 3
+            every { orderSessionRepository.maskCustomerNamesCreatedBefore(cutoff, "***") } returns 2
+
+            val result = sut.maskCustomerNamesCreatedBefore(cutoff)
+
+            result.orders shouldBe 3
+            result.orderSessions shouldBe 2
+            result.total shouldBe 5
+        }
+    }
 })
