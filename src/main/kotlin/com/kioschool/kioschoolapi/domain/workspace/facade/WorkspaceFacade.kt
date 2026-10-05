@@ -1,6 +1,7 @@
 package com.kioschool.kioschoolapi.domain.workspace.facade
 
 import com.kioschool.kioschoolapi.domain.account.dto.common.AccountDto
+import com.kioschool.kioschoolapi.domain.changelog.repository.ChangeLogRepository
 import com.kioschool.kioschoolapi.domain.email.service.EmailService
 import com.kioschool.kioschoolapi.domain.insight.repository.DailyInsightCardRepository
 import com.kioschool.kioschoolapi.domain.order.repository.OrderRepository
@@ -36,7 +37,8 @@ class WorkspaceFacade(
     val orderRepository: OrderRepository,
     val orderSessionRepository: OrderSessionRepository,
     val dailyOrderStatisticRepository: DailyOrderStatisticRepository,
-    val dailyInsightCardRepository: DailyInsightCardRepository
+    val dailyInsightCardRepository: DailyInsightCardRepository,
+    val changeLogRepository: ChangeLogRepository
 ) {
     fun getAllWorkspaces(keyword: String?, page: Int, size: Int, updatedAfter: LocalDateTime? = null): Page<SuperAdminWorkspaceDto> {
         val schoolResolver = emailService.getSchoolResolver()
@@ -277,9 +279,10 @@ class WorkspaceFacade(
         val workspace = workspaceService.getWorkspace(workspaceId)
         val detail = WorkspaceAdminDetailDto.of(workspace)
 
-        // 1. DailyOrderStatistic·DailyInsightCard 삭제 (Workspace FK)
+        // 1. DailyOrderStatistic·DailyInsightCard 삭제 (Workspace FK), ChangeLog 삭제 (FK 없음)
         dailyOrderStatisticRepository.deleteByWorkspaceId(workspaceId)
         dailyInsightCardRepository.deleteByWorkspaceId(workspaceId)
+        changeLogRepository.deleteByWorkspaceId(workspaceId)
 
         // 2. Order 삭제 - cascade로 OrderProduct도 함께 삭제됨 (Workspace + OrderSession FK)
         val orders = orderRepository.findAllByWorkspaceId(workspaceId)

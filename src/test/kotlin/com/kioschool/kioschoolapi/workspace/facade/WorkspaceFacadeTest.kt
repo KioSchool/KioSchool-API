@@ -1,5 +1,6 @@
 package com.kioschool.kioschoolapi.workspace.facade
 
+import com.kioschool.kioschoolapi.domain.changelog.repository.ChangeLogRepository
 import com.kioschool.kioschoolapi.domain.email.service.EmailService
 import com.kioschool.kioschoolapi.domain.insight.repository.DailyInsightCardRepository
 import com.kioschool.kioschoolapi.domain.user.service.UserService
@@ -33,8 +34,9 @@ class WorkspaceFacadeTest : DescribeSpec({
     val orderSessionRepository = mockk<OrderSessionRepository>()
     val dailyOrderStatisticRepository = mockk<DailyOrderStatisticRepository>()
     val dailyInsightCardRepository = mockk<DailyInsightCardRepository>()
+    val changeLogRepository = mockk<ChangeLogRepository>()
 
-    val sut = WorkspaceFacade(userService, emailService, discordService, workspaceService, orderRepository, orderSessionRepository, dailyOrderStatisticRepository, dailyInsightCardRepository)
+    val sut = WorkspaceFacade(userService, emailService, discordService, workspaceService, orderRepository, orderSessionRepository, dailyOrderStatisticRepository, dailyInsightCardRepository, changeLogRepository)
 
     beforeTest {
         mockkObject(userService)
@@ -974,6 +976,7 @@ class WorkspaceFacadeTest : DescribeSpec({
             every { workspaceService.getWorkspace(workspaceId) } returns workspace
             every { dailyOrderStatisticRepository.deleteByWorkspaceId(workspaceId) } just Runs
             every { dailyInsightCardRepository.deleteByWorkspaceId(workspaceId) } just Runs
+            every { changeLogRepository.deleteByWorkspaceId(workspaceId) } just Runs
             every { orderRepository.findAllByWorkspaceId(workspaceId) } returns orders
             every { orderRepository.deleteAll(orders) } just Runs
             every { workspaceService.getAllWorkspaceTablesIncludingOutOfRange(workspace) } returns allTables
@@ -988,9 +991,10 @@ class WorkspaceFacadeTest : DescribeSpec({
             assert(result.id == workspace.id)
             assert(outOfRangeTableWithSession.orderSession == null)
 
-            // 1. DailyOrderStatistic·DailyInsightCard 삭제
+            // 1. DailyOrderStatistic·DailyInsightCard·ChangeLog 삭제
             verify { dailyOrderStatisticRepository.deleteByWorkspaceId(workspaceId) }
             verify { dailyInsightCardRepository.deleteByWorkspaceId(workspaceId) }
+            verify { changeLogRepository.deleteByWorkspaceId(workspaceId) }
             // 2. Order 삭제
             verify { orderRepository.findAllByWorkspaceId(workspaceId) }
             verify { orderRepository.deleteAll(orders) }
