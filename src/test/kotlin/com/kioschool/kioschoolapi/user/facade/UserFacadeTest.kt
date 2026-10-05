@@ -4,42 +4,54 @@ import com.kioschool.kioschoolapi.domain.email.service.EmailService
 import com.kioschool.kioschoolapi.domain.user.entity.AcquisitionSurvey
 import com.kioschool.kioschoolapi.domain.email.service.SchoolResolver
 import com.kioschool.kioschoolapi.domain.user.facade.UserFacade
+import com.kioschool.kioschoolapi.domain.user.service.SessionRefreshResult
 import com.kioschool.kioschoolapi.domain.user.service.UserService
+import com.kioschool.kioschoolapi.domain.user.service.UserSessionService
 import com.kioschool.kioschoolapi.factory.SampleEntity
 import com.kioschool.kioschoolapi.global.common.enums.AcquisitionChannel
 import com.kioschool.kioschoolapi.global.common.enums.UserRole
 import com.kioschool.kioschoolapi.global.discord.service.DiscordService
 import com.kioschool.kioschoolapi.global.error.ErrorCode
 import com.kioschool.kioschoolapi.global.error.exception.CustomException
+import com.kioschool.kioschoolapi.global.security.AuthCookieManager
 import com.kioschool.kioschoolapi.global.security.JwtProvider
 import com.kioschool.kioschoolapi.global.template.TemplateService
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldStartWith
 import io.mockk.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.assertThrows
+import jakarta.servlet.http.Cookie
 import org.springframework.data.domain.PageImpl
+import org.springframework.mock.web.MockHttpServletRequest
 import org.springframework.mock.web.MockHttpServletResponse
+import java.time.Duration
 
 class UserFacadeTest : DescribeSpec({
-    val isSecure = true
     val userService = mockk<UserService>()
+    val userSessionService = mockk<UserSessionService>()
     val emailService = mockk<EmailService>()
     val templateService = mockk<TemplateService>()
     val discordService = mockk<DiscordService>()
     val jwtProvider = mockk<JwtProvider>()
+    val authCookieManager = AuthCookieManager(true, Duration.ofMinutes(30), Duration.ofDays(7))
 
     val sut = UserFacade(
-        isSecure,
         userService,
+        userSessionService,
         emailService,
         templateService,
         discordService,
-        jwtProvider
+        jwtProvider,
+        authCookieManager
     )
+
+    fun MockHttpServletResponse.setCookies() = getHeaders("Set-Cookie")
 
     beforeTest {
         mockkObject(userService)
+        mockkObject(userSessionService)
         mockkObject(emailService)
         mockkObject(templateService)
         mockkObject(discordService)
@@ -60,18 +72,20 @@ class UserFacadeTest : DescribeSpec({
             every { userService.getUser(loginId) } returns user
             every { userService.checkPassword(user, loginPassword) } just Runs
             every { jwtProvider.createToken(user) } returns "token"
+            every { userSessionService.create(user, any()) } returns "1.secret"
 
             val result = sut.login(loginId, loginPassword, response)
 
-
-            assert(response.headerNames.contains("Set-Cookie"))
-            assert(response.getHeaderValue("Set-Cookie") == "Authorization=token; Path=/; Secure; HttpOnly; SameSite=NONE")
+            val cookies = response.setCookies()
+            cookies.size shouldBe 2
+            cookies[0] shouldStartWith "Authorization=token; Path=/; Max-Age=1800;"
+            cookies[1] shouldStartWith "RefreshToken=1.secret; Path=/; Max-Age=604800;"
             assert(result.body == "login success")
-
 
             verify { userService.getUser(loginId) }
             verify { userService.checkPassword(user, loginPassword) }
             verify { jwtProvider.createToken(user) }
+            verify { userSessionService.create(user, any()) }
         }
 
         it("should throw exception when user not found") {
@@ -108,18 +122,78 @@ class UserFacadeTest : DescribeSpec({
             verify { userService.getUser(loginId) }
             verify { userService.checkPassword(user, loginPassword) }
             verify(exactly = 0) { jwtProvider.createToken(any()) }
+            verify(exactly = 0) { userSessionService.create(any(), any()) }
         }
     }
 
     describe("logout") {
-        it("should return logout success") {
+        it("should delete this device's session and clear both cookies") {
+            val request = MockHttpServletRequest().apply { setCookies(Cookie("RefreshToken", "1.secret")) }
             val response = MockHttpServletResponse()
 
-            val result = sut.logout(response)
+            every { userSessionService.delete("1.secret", any()) } just Runs
 
-            assert(response.headerNames.contains("Set-Cookie"))
-            assert(response.getHeaderValue("Set-Cookie") == "Authorization=; Path=/; Secure; HttpOnly; SameSite=NONE")
+            val result = sut.logout(request, response)
+
+            val cookies = response.setCookies()
+            cookies.size shouldBe 2
+            cookies[0] shouldStartWith "Authorization=; Path=/; Max-Age=0;"
+            cookies[1] shouldStartWith "RefreshToken=; Path=/; Max-Age=0;"
             assert(result.body == "logout success")
+
+            verify { userSessionService.delete("1.secret", any()) }
+        }
+    }
+
+    describe("refresh") {
+        val user = SampleEntity.user
+
+        fun requestWithRefreshToken() =
+            MockHttpServletRequest().apply { setCookies(Cookie("RefreshToken", "1.old")) }
+
+        it("should set both cookies when the token is rotated") {
+            val response = MockHttpServletResponse()
+
+            every { userSessionService.refresh("1.old", any()) } returns SessionRefreshResult.Rotated(user, "1.new")
+            every { jwtProvider.createToken(user) } returns "access"
+
+            val result = sut.refresh(requestWithRefreshToken(), response)
+
+            val cookies = response.setCookies()
+            cookies.size shouldBe 2
+            cookies[0] shouldStartWith "Authorization=access;"
+            cookies[1] shouldStartWith "RefreshToken=1.new;"
+            assert(result.body == "refresh success")
+        }
+
+        it("should set only the access cookie during the grace period") {
+            val response = MockHttpServletResponse()
+
+            every { userSessionService.refresh("1.old", any()) } returns SessionRefreshResult.Grace(user)
+            every { jwtProvider.createToken(user) } returns "access"
+
+            sut.refresh(requestWithRefreshToken(), response)
+
+            val cookies = response.setCookies()
+            cookies.size shouldBe 1
+            cookies[0] shouldStartWith "Authorization=access;"
+        }
+
+        it("should clear cookies and throw AUTHENTICATION_REQUIRED when rejected") {
+            val response = MockHttpServletResponse()
+
+            every { userSessionService.refresh("1.old", any()) } returns
+                SessionRefreshResult.Rejected(SessionRefreshResult.RejectReason.REUSED)
+
+            val ex = assertThrows<CustomException> {
+                sut.refresh(requestWithRefreshToken(), response)
+            }
+            assertEquals(ErrorCode.AUTHENTICATION_REQUIRED, ex.errorCode)
+
+            val cookies = response.setCookies()
+            cookies[0] shouldStartWith "Authorization=; Path=/; Max-Age=0;"
+            cookies[1] shouldStartWith "RefreshToken=; Path=/; Max-Age=0;"
+            verify(exactly = 0) { jwtProvider.createToken(any()) }
         }
     }
 
@@ -144,11 +218,13 @@ class UserFacadeTest : DescribeSpec({
             } returns SampleEntity.user
             every { discordService.sendUserRegister(any()) } just Runs
             every { jwtProvider.createToken(any()) } returns "token"
+            every { userSessionService.create(any(), any()) } returns "1.secret"
 
             val result = sut.register(response, loginId, loginPassword, name, email)
 
-            assert(response.headerNames.contains("Set-Cookie"))
-            assert(response.getHeaderValue("Set-Cookie") == "Authorization=token; Path=/; Secure; HttpOnly; SameSite=NONE")
+            val cookies = response.setCookies()
+            cookies[0] shouldStartWith "Authorization=token; Path=/; Max-Age=1800;"
+            cookies[1] shouldStartWith "RefreshToken=1.secret; Path=/; Max-Age=604800;"
             assert(result.body == "register success")
 
             verify { userService.validateLoginId(loginId) }
@@ -497,6 +573,7 @@ class UserFacadeTest : DescribeSpec({
             every { emailService.getEmailByCode(code) } returns email
             every { userService.getUserByEmail(email) } returns user
             every { userService.savePassword(user, password) } returns user
+            every { userSessionService.deleteAllOf(user) } just Runs
             every { emailService.deleteResetPasswordCode(code) } just Runs
 
             sut.resetPassword(code, password)
@@ -504,6 +581,7 @@ class UserFacadeTest : DescribeSpec({
             verify { emailService.getEmailByCode(code) }
             verify { userService.getUserByEmail(email) }
             verify { userService.savePassword(user, password) }
+            verify { userSessionService.deleteAllOf(user) }
             verify { emailService.deleteResetPasswordCode(code) }
         }
 

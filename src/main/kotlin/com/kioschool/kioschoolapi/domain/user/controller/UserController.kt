@@ -10,6 +10,7 @@ import com.kioschool.kioschoolapi.domain.user.dto.request.VerifyEmailCodeRequest
 import com.kioschool.kioschoolapi.domain.user.facade.UserFacade
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
@@ -23,7 +24,7 @@ import org.springframework.web.bind.annotation.RestController
 class UserController(
     private val userFacade: UserFacade
 ) {
-    @Operation(summary = "로그인", description = "로그인 성공 시 쿠키에 JWT 토큰을 담아 반환합니다.")
+    @Operation(summary = "로그인", description = "로그인 성공 시 쿠키에 access token과 refresh token을 담아 반환합니다.")
     @PostMapping("/login")
     @ResponseBody
     fun login(
@@ -33,16 +34,26 @@ class UserController(
         return userFacade.login(body.id, body.password, response)
     }
 
-    @Operation(summary = "로그아웃", description = "쿠키에 담긴 JWT 토큰을 삭제합니다.")
+    @Operation(summary = "로그아웃", description = "이 기기의 refresh token을 무효화하고 인증 쿠키를 삭제합니다.")
     @PostMapping("/logout")
     @ResponseBody
-    fun logout(response: HttpServletResponse): ResponseEntity<String> {
-        return userFacade.logout(response)
+    fun logout(request: HttpServletRequest, response: HttpServletResponse): ResponseEntity<String> {
+        return userFacade.logout(request, response)
+    }
+
+    @Operation(
+        summary = "토큰 갱신",
+        description = "refresh token 쿠키로 access token을 다시 발급하고 refresh token을 교체합니다.<br>실패하면 401(AUTHENTICATION_REQUIRED)을 반환합니다."
+    )
+    @PostMapping("/refresh")
+    @ResponseBody
+    fun refresh(request: HttpServletRequest, response: HttpServletResponse): ResponseEntity<String> {
+        return userFacade.refresh(request, response)
     }
 
     @Operation(
         summary = "회원가입",
-        description = "이메일 인증이 되어있어야지만 회원가입에 성공합니다.<br>회원가입 성공 시 쿠키에 JWT 토큰을 담아 반환합니다."
+        description = "이메일 인증이 되어있어야지만 회원가입에 성공합니다.<br>회원가입 성공 시 쿠키에 access token과 refresh token을 담아 반환합니다."
     )
     @PostMapping("/register")
     @ResponseBody

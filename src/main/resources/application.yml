@@ -51,6 +51,9 @@ spring:
             enable: true
 jwt:
   secret-key: "${JWT_SECRET_KEY}"
+  access-token-validity: 30m
+  # 마지막 갱신부터 센다. 이 기간 동안 안 쓰면 다시 로그인한다.
+  refresh-token-validity: 7d
 cloud:
   aws:
     s3:
