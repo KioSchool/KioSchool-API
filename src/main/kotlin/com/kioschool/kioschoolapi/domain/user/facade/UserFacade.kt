@@ -3,32 +3,35 @@ package com.kioschool.kioschoolapi.domain.user.facade
 import com.kioschool.kioschoolapi.domain.email.service.EmailService
 import com.kioschool.kioschoolapi.domain.user.dto.common.SuperAdminUserDto
 import com.kioschool.kioschoolapi.domain.user.dto.common.UserDto
+import com.kioschool.kioschoolapi.domain.user.entity.User
+import com.kioschool.kioschoolapi.domain.user.service.SessionRefreshResult
 import com.kioschool.kioschoolapi.domain.user.service.UserService
+import com.kioschool.kioschoolapi.domain.user.service.UserSessionService
 import com.kioschool.kioschoolapi.global.common.enums.AcquisitionChannel
 import com.kioschool.kioschoolapi.global.common.enums.UserAccountFilter
 import com.kioschool.kioschoolapi.global.common.enums.UserRole
 import com.kioschool.kioschoolapi.global.discord.service.DiscordService
+import com.kioschool.kioschoolapi.global.error.ErrorCode
+import com.kioschool.kioschoolapi.global.error.exception.CustomException
+import com.kioschool.kioschoolapi.global.security.AuthCookieManager
 import com.kioschool.kioschoolapi.global.security.JwtProvider
 import com.kioschool.kioschoolapi.global.template.TemplateService
+import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Value
-import org.springframework.boot.web.server.Cookie.SameSite
-import org.springframework.http.HttpHeaders
-import org.springframework.http.ResponseCookie
 import org.springframework.data.domain.Page
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Component
 
 @Component
 class UserFacade(
-    @Value("\${kioschool.cookie.secure}")
-    private val isSecure: Boolean,
     private val userService: UserService,
+    private val userSessionService: UserSessionService,
     private val emailService: EmailService,
     private val templateService: TemplateService,
     private val discordService: DiscordService,
-    private val jwtProvider: JwtProvider
+    private val jwtProvider: JwtProvider,
+    private val authCookieManager: AuthCookieManager,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -40,29 +43,30 @@ class UserFacade(
         val user = userService.getUser(loginId)
         userService.checkPassword(user, loginPassword)
 
-        val token = jwtProvider.createToken(user)
-        val authCookie =
-            ResponseCookie.from(HttpHeaders.AUTHORIZATION, token)
-                .httpOnly(true)
-                .secure(isSecure)
-                .path("/")
-                .sameSite(if (isSecure) SameSite.NONE.name else SameSite.LAX.name)
-                .build()
-
-        response.addHeader(HttpHeaders.SET_COOKIE, authCookie.toString())
+        issueTokens(user, response)
         return ResponseEntity.ok().body("login success")
     }
 
-    fun logout(response: HttpServletResponse): ResponseEntity<String> {
-        val authCookie = ResponseCookie.from(HttpHeaders.AUTHORIZATION, "")
-            .httpOnly(true)
-            .secure(isSecure)
-            .path("/")
-            .sameSite(if (isSecure) SameSite.NONE.name else SameSite.LAX.name)
-            .build()
-
-        response.addHeader(HttpHeaders.SET_COOKIE, authCookie.toString())
+    fun logout(request: HttpServletRequest, response: HttpServletResponse): ResponseEntity<String> {
+        userSessionService.delete(authCookieManager.resolveRefreshToken(request))
+        authCookieManager.clearTokens(response)
         return ResponseEntity.ok().body("logout success")
+    }
+
+    fun refresh(request: HttpServletRequest, response: HttpServletResponse): ResponseEntity<String> {
+        when (val result = userSessionService.refresh(authCookieManager.resolveRefreshToken(request))) {
+            is SessionRefreshResult.Rotated ->
+                authCookieManager.setTokens(response, jwtProvider.createToken(result.user), result.refreshToken)
+
+            is SessionRefreshResult.Grace ->
+                authCookieManager.setAccessToken(response, jwtProvider.createToken(result.user))
+
+            is SessionRefreshResult.Rejected -> {
+                authCookieManager.clearTokens(response)
+                throw CustomException(ErrorCode.AUTHENTICATION_REQUIRED)
+            }
+        }
+        return ResponseEntity.ok().body("refresh success")
     }
 
     fun register(
@@ -80,16 +84,12 @@ class UserFacade(
 
         discordService.sendUserRegister(user)
 
-        val token = jwtProvider.createToken(user)
-        val cookie = ResponseCookie.from(HttpHeaders.AUTHORIZATION, token)
-            .httpOnly(true)
-            .secure(true)
-            .path("/")
-            .sameSite(SameSite.NONE.name)
-            .build()
-
-        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString())
+        issueTokens(user, response)
         return ResponseEntity.ok().body("register success")
+    }
+
+    private fun issueTokens(user: User, response: HttpServletResponse) {
+        authCookieManager.setTokens(response, jwtProvider.createToken(user), userSessionService.create(user))
     }
 
     fun isDuplicateLoginId(loginId: String): Boolean {
@@ -131,6 +131,8 @@ class UserFacade(
         val email = emailService.getEmailByCode(code)
         val user = userService.getUserByEmail(email)
         userService.savePassword(user, password)
+        // 비밀번호가 새어 나가 재설정한 경우가 있으므로 모든 기기를 로그아웃시킨다.
+        userSessionService.deleteAllOf(user)
         emailService.deleteResetPasswordCode(code)
     }
 
