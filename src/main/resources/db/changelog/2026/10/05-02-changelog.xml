@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS"
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+  <!-- 손님이 고른 송금수단. 과거 주문은 백필하지 않고 NULL(기록 없음)로 둔다. -->
+  <changeSet author="ji-inpark" id="order-payment-method-1">
+    <addColumn schemaName="public" tableName="order">
+      <column name="payment_method" type="VARCHAR(30)"/>
+    </addColumn>
+  </changeSet>
+
+</databaseChangeLog>

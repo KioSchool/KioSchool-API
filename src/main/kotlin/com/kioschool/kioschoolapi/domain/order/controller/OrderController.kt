@@ -28,7 +28,8 @@ class OrderController(
             body.workspaceId,
             body.tableHash,
             body.customerName,
-            body.orderProducts
+            body.orderProducts,
+            body.paymentMethod
         )
     }
 
