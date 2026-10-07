@@ -15,6 +15,8 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
+import java.time.LocalDateTime
+import java.util.UUID
 
 @Service
 class UserService(
@@ -126,13 +128,31 @@ class UserService(
         if (user.email != email) throw CustomException(ErrorCode.USER_NOT_FOUND)
     }
 
-    fun deleteUser(user: User): User {
-        userRepository.delete(user)
-        return user
+    /**
+     * 탈퇴한 계정의 개인정보를 지우거나 익명값으로 바꾼다.
+     * 행은 남긴다 — 주점(owner)·문의 답변이 이 계정을 가리키고, 주점·주문 기록은 매출 통계로 보관한다.
+     */
+    fun withdraw(user: User, now: LocalDateTime = LocalDateTime.now()): User {
+        acquisitionSurveyRepository.findByUser(user)?.let { acquisitionSurveyRepository.delete(it) }
+        user.account = null
+        user.accountUrl = null
+        user.invitations.clear()
+        // 가입 아이디는 20자까지라 이보다 길면 새 가입 아이디와 겹치지 않는다
+        user.loginId = "$WITHDRAWN_LOGIN_ID_PREFIX${user.id}-${UUID.randomUUID()}"
+        user.loginPassword = passwordEncoder.encode(UUID.randomUUID().toString())
+        user.name = WITHDRAWN_NAME
+        user.email = null
+        user.withdrawnAt = now
+        return userRepository.save(user)
     }
 
     fun savePassword(user: User, password: String): User {
         user.loginPassword = passwordEncoder.encode(password)
         return userRepository.save(user)
+    }
+
+    companion object {
+        const val WITHDRAWN_LOGIN_ID_PREFIX = "withdrawn-"
+        const val WITHDRAWN_NAME = "탈퇴한 회원"
     }
 }

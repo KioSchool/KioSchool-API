@@ -1,5 +1,7 @@
 package com.kioschool.kioschoolapi.user.service
 
+import com.kioschool.kioschoolapi.domain.account.entity.Account
+import com.kioschool.kioschoolapi.domain.account.entity.Bank
 import com.kioschool.kioschoolapi.domain.email.service.EmailService
 import com.kioschool.kioschoolapi.domain.user.entity.AcquisitionSurvey
 import com.kioschool.kioschoolapi.domain.user.entity.User
@@ -16,10 +18,12 @@ import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldStartWith
 import io.mockk.*
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
 import org.springframework.security.crypto.password.PasswordEncoder
+import java.time.LocalDateTime
 
 class UserServiceTest : DescribeSpec({
     val repository = mockk<UserRepository>()
@@ -435,17 +439,54 @@ class UserServiceTest : DescribeSpec({
         }
     }
 
-    describe("deleteUser") {
-        it("should delete user") {
-            val user = SampleEntity.user
+    describe("withdraw") {
+        fun withdrawingUser() = User(
+            loginId = "kimop",
+            loginPassword = "old-hash",
+            name = "김운영",
+            email = "kim@korea.ac.kr",
+            role = UserRole.ADMIN,
+            accountUrl = "https://toss.me/kim",
+            account = Account(bank = Bank(name = "우리은행", code = "020"), accountNumber = "1002", accountHolder = "김운영"),
+            members = mutableListOf()
+        )
 
-            // Mock r
-            every { repository.delete(user) } returns Unit
+        it("erases personal data but keeps the row for workspaces and orders") {
+            val user = withdrawingUser()
+            val survey = AcquisitionSurvey(user = user, channel = AcquisitionChannel.SAME_SCHOOL)
+            val now = LocalDateTime.of(2026, 10, 7, 12, 0)
 
-            // Act & Assert
-            sut.deleteUser(user) shouldBe user
+            every { acquisitionSurveyRepository.findByUser(user) } returns survey
+            every { acquisitionSurveyRepository.delete(survey) } just Runs
+            every { passwordEncoder.encode(any()) } returns "random-hash"
+            every { repository.save(user) } returns user
 
-            verify { repository.delete(user) }
+            sut.withdraw(user, now)
+
+            user.loginId shouldStartWith "withdrawn-${user.id}-"
+            user.loginPassword shouldBe "random-hash"
+            user.name shouldBe "탈퇴한 회원"
+            user.email shouldBe null
+            user.account shouldBe null
+            user.accountUrl shouldBe null
+            user.withdrawnAt shouldBe now
+            verify { acquisitionSurveyRepository.delete(survey) }
+            verify { repository.save(user) }
+            verify(exactly = 0) { repository.delete(any()) }
+        }
+
+        // 가입 아이디는 20자까지라 더 길면 새 가입자와 겹치지 않는다
+        it("uses a login id longer than any id a new user can register") {
+            val user = withdrawingUser()
+
+            every { acquisitionSurveyRepository.findByUser(user) } returns null
+            every { passwordEncoder.encode(any()) } returns "random-hash"
+            every { repository.save(user) } returns user
+
+            sut.withdraw(user)
+
+            (user.loginId.length > 20) shouldBe true
+            verify(exactly = 0) { acquisitionSurveyRepository.delete(any()) }
         }
     }
 

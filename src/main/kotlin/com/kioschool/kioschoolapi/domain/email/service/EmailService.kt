@@ -81,6 +81,12 @@ class EmailService(
         emailCodeRepository.deleteByEmailAndKind(address, EmailKind.REGISTER)
     }
 
+    /** 탈퇴. 그 이메일로 발급한 가입·비밀번호 재설정 코드를 모두 지운다. */
+    @Transactional
+    fun deleteAllEmailCodes(address: String) {
+        emailCodeRepository.deleteAllByEmail(address)
+    }
+
     fun generateRegisterCode(): String {
         return (100000..999999).random().toString()
     }

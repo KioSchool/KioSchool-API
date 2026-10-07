@@ -73,6 +73,18 @@ class DiscordService(
         send(message)
     }
 
+    // 개인정보를 지운 뒤라 회원 번호와 주점 수만 보낸다
+    @Async
+    fun sendUserWithdraw(userId: Long, workspaceCount: Int) {
+        val message =
+            """## [회원 탈퇴]
+            |회원 번호: $userId
+            |운영한 주점: ${workspaceCount}개
+            """.trimMargin()
+
+        send(message)
+    }
+
     @Async
     fun sendInquiryPurgeSummary(purgedCount: Int, failedCount: Int) {
         if (purgedCount == 0 && failedCount == 0) return
