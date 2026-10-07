@@ -138,12 +138,19 @@ class UserService(
         user.accountUrl = null
         user.invitations.clear()
         // 가입 아이디는 20자까지라 이보다 길면 새 가입 아이디와 겹치지 않는다
-        user.loginId = "$WITHDRAWN_LOGIN_ID_PREFIX${user.id}-${UUID.randomUUID()}"
+        user.loginId = "$WITHDRAWN_PREFIX${user.id}-${UUID.randomUUID()}"
         user.loginPassword = passwordEncoder.encode(UUID.randomUUID().toString())
         user.name = WITHDRAWN_NAME
-        user.email = null
+        user.email = withdrawnEmail(user)
         user.withdrawnAt = now
         return userRepository.save(user)
+    }
+
+    // 학교 통계는 이메일 도메인으로 묶으므로 도메인만 남긴다. findByEmail이 한 행을 가정해 계정마다 다른 값을 쓴다
+    private fun withdrawnEmail(user: User): String? {
+        val domain = user.email?.substringAfter("@", missingDelimiterValue = "")
+        if (domain.isNullOrEmpty()) return null
+        return "$WITHDRAWN_PREFIX${user.id}@$domain"
     }
 
     fun savePassword(user: User, password: String): User {
@@ -152,7 +159,7 @@ class UserService(
     }
 
     companion object {
-        const val WITHDRAWN_LOGIN_ID_PREFIX = "withdrawn-"
+        const val WITHDRAWN_PREFIX = "withdrawn-"
         const val WITHDRAWN_NAME = "탈퇴한 회원"
     }
 }

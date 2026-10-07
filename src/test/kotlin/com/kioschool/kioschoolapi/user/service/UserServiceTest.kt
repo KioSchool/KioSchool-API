@@ -466,7 +466,7 @@ class UserServiceTest : DescribeSpec({
             user.loginId shouldStartWith "withdrawn-${user.id}-"
             user.loginPassword shouldBe "random-hash"
             user.name shouldBe "탈퇴한 회원"
-            user.email shouldBe null
+            user.email shouldBe "withdrawn-${user.id}@korea.ac.kr"
             user.account shouldBe null
             user.accountUrl shouldBe null
             user.withdrawnAt shouldBe now
@@ -487,6 +487,33 @@ class UserServiceTest : DescribeSpec({
 
             (user.loginId.length > 20) shouldBe true
             verify(exactly = 0) { acquisitionSurveyRepository.delete(any()) }
+        }
+
+        // 학교 통계는 이메일 도메인으로 묶는다. 주소는 지우고 도메인만 남긴다
+        it("keeps only the school domain of the email") {
+            val user = withdrawingUser().apply { email = "kim.op@gs.anyang.ac.kr" }
+
+            every { acquisitionSurveyRepository.findByUser(user) } returns null
+            every { passwordEncoder.encode(any()) } returns "random-hash"
+            every { repository.save(user) } returns user
+
+            sut.withdraw(user)
+
+            user.email shouldBe "withdrawn-${user.id}@gs.anyang.ac.kr"
+        }
+
+        it("leaves the email empty when there was no valid address") {
+            listOf(null, "not-an-email", "trailing@").forEach { original ->
+                val user = withdrawingUser().apply { email = original }
+
+                every { acquisitionSurveyRepository.findByUser(user) } returns null
+                every { passwordEncoder.encode(any()) } returns "random-hash"
+                every { repository.save(user) } returns user
+
+                sut.withdraw(user)
+
+                user.email shouldBe null
+            }
         }
     }
 
