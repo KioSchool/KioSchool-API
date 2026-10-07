@@ -7,6 +7,7 @@ import com.kioschool.kioschoolapi.domain.email.repository.EmailCodeRepository
 import com.kioschool.kioschoolapi.domain.email.repository.EmailDomainRepository
 import com.kioschool.kioschoolapi.global.error.ErrorCode
 import com.kioschool.kioschoolapi.global.error.exception.CustomException
+import com.kioschool.kioschoolapi.global.logging.util.LogMasking
 import jakarta.transaction.Transactional
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -60,7 +61,7 @@ class EmailService(
 
             javaMailSender.send(message)
         } catch (e: Exception) {
-            log.error("Failed to send email to {}", address, e)
+            log.error("Failed to send email to {}", LogMasking.maskEmail(address), e)
             throw CustomException(ErrorCode.EMAIL_SEND_FAILURE, cause = e)
         }
     }

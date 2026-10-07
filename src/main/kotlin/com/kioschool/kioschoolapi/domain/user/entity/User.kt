@@ -6,6 +6,7 @@ import com.kioschool.kioschoolapi.domain.workspace.entity.WorkspaceInvitation
 import com.kioschool.kioschoolapi.domain.workspace.entity.WorkspaceMember
 import com.kioschool.kioschoolapi.global.common.entity.BaseEntity
 import com.kioschool.kioschoolapi.global.common.enums.UserRole
+import com.kioschool.kioschoolapi.global.logging.annotation.LogMasked
 import jakarta.persistence.*
 
 @Entity
@@ -15,6 +16,7 @@ class User(
     var loginId: String,
     @JsonIgnore
     var loginPassword: String,
+    @LogMasked
     var name: String,
     var email: String?,
     var role: UserRole,
