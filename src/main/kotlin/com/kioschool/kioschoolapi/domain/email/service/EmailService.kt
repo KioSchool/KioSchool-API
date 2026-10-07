@@ -7,6 +7,7 @@ import com.kioschool.kioschoolapi.domain.email.repository.EmailCodeRepository
 import com.kioschool.kioschoolapi.domain.email.repository.EmailDomainRepository
 import com.kioschool.kioschoolapi.global.error.ErrorCode
 import com.kioschool.kioschoolapi.global.error.exception.CustomException
+import com.kioschool.kioschoolapi.global.logging.util.LogMasking
 import jakarta.transaction.Transactional
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -60,7 +61,7 @@ class EmailService(
 
             javaMailSender.send(message)
         } catch (e: Exception) {
-            log.error("Failed to send email to {}", address, e)
+            log.error("Failed to send email to {}", LogMasking.maskEmail(address), e)
             throw CustomException(ErrorCode.EMAIL_SEND_FAILURE, cause = e)
         }
     }
@@ -79,6 +80,12 @@ class EmailService(
     @Transactional
     fun deleteRegisterCode(address: String) {
         emailCodeRepository.deleteByEmailAndKind(address, EmailKind.REGISTER)
+    }
+
+    /** 탈퇴. 그 이메일로 발급한 가입·비밀번호 재설정 코드를 모두 지운다. */
+    @Transactional
+    fun deleteAllEmailCodes(address: String) {
+        emailCodeRepository.deleteAllByEmail(address)
     }
 
     fun generateRegisterCode(): String {

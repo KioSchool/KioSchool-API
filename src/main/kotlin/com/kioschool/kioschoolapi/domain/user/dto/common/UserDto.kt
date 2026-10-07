@@ -3,10 +3,12 @@ package com.kioschool.kioschoolapi.domain.user.dto.common
 import com.kioschool.kioschoolapi.domain.account.dto.common.AccountDto
 import com.kioschool.kioschoolapi.domain.user.entity.User
 import com.kioschool.kioschoolapi.global.common.enums.UserRole
+import com.kioschool.kioschoolapi.global.logging.annotation.LogMasked
 import java.time.LocalDateTime
 
 data class UserDto(
     val id: Long,
+    @LogMasked
     val name: String,
     val email: String?,
     val role: UserRole,
