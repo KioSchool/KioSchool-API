@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS"
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+  <!-- 상품 하드 삭제·주점 강제 삭제를 막지 않도록 대상 테이블에 FK를 걸지 않는다. -->
+  <changeSet author="ji-inpark" id="change-log-1">
+    <createTable tableName="change_log">
+      <column autoIncrement="true" name="id" type="BIGINT">
+        <constraints nullable="false" primaryKey="true" primaryKeyName="pk_change_log"/>
+      </column>
+      <column name="created_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+      <column name="updated_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+      <column name="workspace_id" type="BIGINT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="target_type" type="VARCHAR(30)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="target_id" type="BIGINT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="field" type="VARCHAR(30)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="old_value" type="TEXT"/>
+      <column name="new_value" type="TEXT"/>
+    </createTable>
+    <createIndex indexName="idx_change_log_workspace_created" tableName="change_log">
+      <column name="workspace_id"/>
+      <column name="created_at"/>
+    </createIndex>
+    <createIndex indexName="idx_change_log_target" tableName="change_log">
+      <column name="target_type"/>
+      <column name="target_id"/>
+    </createIndex>
+  </changeSet>
+
+</databaseChangeLog>

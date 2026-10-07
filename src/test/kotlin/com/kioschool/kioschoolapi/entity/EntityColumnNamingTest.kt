@@ -7,8 +7,11 @@ import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToMany
+import jakarta.persistence.ManyToOne
 import jakarta.persistence.MappedSuperclass
 import jakarta.persistence.OneToMany
+import jakarta.persistence.OneToOne
+import jakarta.persistence.Table
 import jakarta.persistence.Transient
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider
 import org.springframework.core.type.filter.AnnotationTypeFilter
@@ -94,6 +97,33 @@ private fun scanPersistenceClasses(): List<Class<*>> {
         .map { Class.forName(it.beanClassName) }
 }
 
+/**
+ * Hibernate resolves @Table(indexes = [Index(columnList = ...)]) entries against *logical* column
+ * names, not the physical snake_case ones. A basic property's logical name is its property name
+ * (workspaceId) unless @Column(name = ...) pins it, so writing columnList = "workspace_id" for an
+ * unannotated workspaceId fails at boot with "Unable to create index ... column 'workspace_id' was
+ * not found" -- again only at runtime, since nothing in this suite builds the metadata.
+ * Relations get "<property>_id" implicitly, which is why Order's "workspace_id" index works.
+ */
+private fun logicalColumnNames(clazz: Class<*>): Set<String> {
+    val names = mutableSetOf<String>()
+    var current: Class<*>? = clazz
+    while (current != null && current != Any::class.java) {
+        current.declaredFields.forEach { field ->
+            val explicit = field.getAnnotation(Column::class.java)?.name?.takeIf { it.isNotBlank() }
+                ?: field.getAnnotation(JoinColumn::class.java)?.name?.takeIf { it.isNotBlank() }
+            when {
+                explicit != null -> names += explicit
+                field.isAnnotationPresent(ManyToOne::class.java) ||
+                    field.isAnnotationPresent(OneToOne::class.java) -> names += "${field.name}_id"
+                else -> names += field.name
+            }
+        }
+        current = current.superclass
+    }
+    return names
+}
+
 class EntityColumnNamingTest : DescribeSpec({
     describe("reading @Column off the Java backing field") {
         it("sees the explicit column names already pinned on WorkspaceTable.positionX/positionY (sanity check)") {
@@ -141,6 +171,22 @@ class EntityColumnNamingTest : DescribeSpec({
                             "Add @Column(name = \"...\") (or @JoinColumn(name = \"...\") if this is a relation) " +
                             "with the intended snake_case name."
                     }
+                }
+            }
+
+            violations shouldBe emptyList()
+        }
+    }
+
+    describe("entity index column lists") {
+        it("names only columns Hibernate can resolve, so the index does not fail metadata building at boot") {
+            val violations = scanPersistenceClasses().flatMap { clazz ->
+                val known = logicalColumnNames(clazz)
+                clazz.getAnnotation(Table::class.java)?.indexes.orEmpty().flatMap { index ->
+                    index.columnList.split(",")
+                        .map { it.trim().split(" ").first() }
+                        .filter { it !in known }
+                        .map { "${clazz.simpleName} index ${index.name}: column \"$it\" is not a logical column name" }
                 }
             }
 

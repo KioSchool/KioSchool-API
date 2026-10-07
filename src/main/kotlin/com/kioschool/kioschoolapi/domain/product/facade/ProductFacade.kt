@@ -4,6 +4,9 @@ import com.kioschool.kioschoolapi.domain.product.dto.common.ProductCategoryDto
 import com.kioschool.kioschoolapi.domain.product.dto.common.ProductDto
 import com.kioschool.kioschoolapi.domain.product.dto.request.CategoryProductSortInfo
 import com.kioschool.kioschoolapi.domain.product.entity.ProductCategory
+import com.kioschool.kioschoolapi.domain.product.event.ProductChangedEvent
+import com.kioschool.kioschoolapi.domain.product.event.ProductDeletedEvent
+import com.kioschool.kioschoolapi.domain.product.event.ProductSnapshot
 import com.kioschool.kioschoolapi.domain.product.service.ProductService
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.global.aws.S3Service
@@ -12,6 +15,7 @@ import com.kioschool.kioschoolapi.global.common.enums.ProductStatus
 import com.kioschool.kioschoolapi.global.error.ErrorCode
 import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import org.springframework.cache.annotation.Cacheable
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Component
 import org.springframework.web.multipart.MultipartFile
 
@@ -19,7 +23,8 @@ import org.springframework.web.multipart.MultipartFile
 class ProductFacade(
     private val productService: ProductService,
     private val workspaceService: WorkspaceService,
-    private val s3Service: S3Service
+    private val s3Service: S3Service,
+    private val eventPublisher: ApplicationEventPublisher
 ) {
     fun getProduct(username: String, productId: Long): ProductDto {
         val product = productService.getProduct(productId)
@@ -84,6 +89,7 @@ class ProductFacade(
     ): ProductDto {
         val product = productService.getProduct(productId)
         workspaceService.checkAccessible(username, product.workspace.id)
+        val before = ProductSnapshot.of(product)
 
         name?.let { product.name = it }
         description?.let { product.description = it }
@@ -103,13 +109,22 @@ class ProductFacade(
             product.productCategory = null
         }
 
-        return ProductDto.of(productService.saveProduct(product))
+        val saved = productService.saveProduct(product)
+        eventPublisher.publishEvent(
+            ProductChangedEvent(product.workspace.id, product.id, before, ProductSnapshot.of(product))
+        )
+        return ProductDto.of(saved)
     }
 
     fun deleteProduct(username: String, productId: Long): ProductDto {
         val product = productService.getProduct(productId)
         workspaceService.checkAccessible(username, product.workspace.id)
-        return ProductDto.of(productService.deleteProduct(product))
+        val snapshot = ProductSnapshot.of(product)
+
+        // 삭제가 실패했는데 '삭제됨' 이력만 남지 않도록 삭제가 끝난 뒤에 발행한다.
+        val deleted = productService.deleteProduct(product)
+        eventPublisher.publishEvent(ProductDeletedEvent(product.workspace.id, product.id, snapshot))
+        return ProductDto.of(deleted)
     }
 
     fun createProductCategory(
@@ -204,8 +219,13 @@ class ProductFacade(
     ): ProductDto {
         val product = productService.getProduct(productId)
         workspaceService.checkAccessible(username, workspaceId)
+        val before = ProductSnapshot.of(product)
 
         product.status = status
-        return ProductDto.of(productService.saveProduct(product))
+        val saved = productService.saveProduct(product)
+        eventPublisher.publishEvent(
+            ProductChangedEvent(product.workspace.id, product.id, before, ProductSnapshot.of(product))
+        )
+        return ProductDto.of(saved)
     }
 }

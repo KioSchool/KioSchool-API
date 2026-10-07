@@ -13,6 +13,7 @@ import com.kioschool.kioschoolapi.domain.order.entity.OrderSession
 import com.kioschool.kioschoolapi.domain.product.entity.Product
 import com.kioschool.kioschoolapi.domain.product.entity.ProductCategory
 import com.kioschool.kioschoolapi.domain.user.entity.User
+import com.kioschool.kioschoolapi.domain.user.entity.UserSession
 import com.kioschool.kioschoolapi.domain.workspace.entity.*
 import com.kioschool.kioschoolapi.global.common.entity.BaseEntity
 import com.kioschool.kioschoolapi.global.common.enums.UserRole
@@ -287,6 +288,20 @@ object SampleEntity {
         expectedEndAt = null,
         orderCount = orderCount,
         totalOrderPrice = totalOrderPrice
+    ).apply { setId(id) }
+
+    fun userSession(
+        id: Long = 1L,
+        tokenHash: String,
+        expiresAt: LocalDateTime,
+        previousTokenHash: String? = null,
+        rotatedAt: LocalDateTime? = null,
+    ) = UserSession(
+        user = user,
+        tokenHash = tokenHash,
+        expiresAt = expiresAt,
+        previousTokenHash = previousTokenHash,
+        rotatedAt = rotatedAt,
     ).apply { setId(id) }
 
     private fun BaseEntity.setId(id: Long) {

@@ -1,6 +1,7 @@
 package com.kioschool.kioschoolapi.domain.workspace.facade
 
 import com.kioschool.kioschoolapi.domain.account.dto.common.AccountDto
+import com.kioschool.kioschoolapi.domain.changelog.repository.ChangeLogRepository
 import com.kioschool.kioschoolapi.domain.email.service.EmailService
 import com.kioschool.kioschoolapi.domain.insight.repository.DailyInsightCardRepository
 import com.kioschool.kioschoolapi.domain.order.repository.OrderRepository
@@ -18,6 +19,7 @@ import com.kioschool.kioschoolapi.domain.workspace.entity.WorkspaceTable
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.global.cache.constant.CacheNames
 import com.kioschool.kioschoolapi.global.discord.service.DiscordService
+import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.cache.annotation.Caching
@@ -36,8 +38,11 @@ class WorkspaceFacade(
     val orderRepository: OrderRepository,
     val orderSessionRepository: OrderSessionRepository,
     val dailyOrderStatisticRepository: DailyOrderStatisticRepository,
-    val dailyInsightCardRepository: DailyInsightCardRepository
+    val dailyInsightCardRepository: DailyInsightCardRepository,
+    val changeLogRepository: ChangeLogRepository
 ) {
+    private val log = LoggerFactory.getLogger(javaClass)
+
     fun getAllWorkspaces(keyword: String?, page: Int, size: Int, updatedAfter: LocalDateTime? = null): Page<SuperAdminWorkspaceDto> {
         val schoolResolver = emailService.getSchoolResolver()
         return workspaceService.getAllWorkspaces(keyword, page, size, updatedAfter, schoolResolver.domainsMatching(keyword))
@@ -277,9 +282,10 @@ class WorkspaceFacade(
         val workspace = workspaceService.getWorkspace(workspaceId)
         val detail = WorkspaceAdminDetailDto.of(workspace)
 
-        // 1. DailyOrderStatistic·DailyInsightCard 삭제 (Workspace FK)
+        // 1. DailyOrderStatistic·DailyInsightCard 삭제 (Workspace FK), ChangeLog 삭제 (FK 없음)
         dailyOrderStatisticRepository.deleteByWorkspaceId(workspaceId)
         dailyInsightCardRepository.deleteByWorkspaceId(workspaceId)
+        changeLogRepository.deleteByWorkspaceId(workspaceId)
 
         // 2. Order 삭제 - cascade로 OrderProduct도 함께 삭제됨 (Workspace + OrderSession FK)
         val orders = orderRepository.findAllByWorkspaceId(workspaceId)
@@ -301,13 +307,31 @@ class WorkspaceFacade(
 
         // 6. Workspace 삭제 - cascade로 members, images, setting, products, productCategories, invitations 처리
         workspaceService.deleteWorkspace(workspace)
+
+        // 삭제 후에는 이름으로 찾을 수 없으므로 문의 대응에 필요한 요약을 남긴다.
+        log.info(
+            "[AUDIT] action=FORCE_DELETE_WORKSPACE workspaceId={} name={} ownerLoginId={} productCount={} orderCount={}",
+            workspaceId,
+            detail.name,
+            detail.ownerLoginId,
+            detail.productCount,
+            orders.size
+        )
         return detail
     }
 
     fun changeWorkspaceOwner(workspaceId: Long, newOwnerLoginId: String): WorkspaceAdminDetailDto {
         val workspace = workspaceService.getWorkspace(workspaceId)
+        val previousOwnerLoginId = workspace.owner.loginId
         val newOwner = userService.getUser(newOwnerLoginId)
-        return WorkspaceAdminDetailDto.of(workspaceService.changeWorkspaceOwner(workspace, newOwner))
+        val changed = workspaceService.changeWorkspaceOwner(workspace, newOwner)
+        log.info(
+            "[AUDIT] action=CHANGE_WORKSPACE_OWNER workspaceId={} previousOwnerLoginId={} newOwnerLoginId={}",
+            workspaceId,
+            previousOwnerLoginId,
+            newOwnerLoginId
+        )
+        return WorkspaceAdminDetailDto.of(changed)
     }
 
     private fun toTableDto(table: WorkspaceTable): WorkspaceTableDto = toTableDtos(listOf(table)).first()

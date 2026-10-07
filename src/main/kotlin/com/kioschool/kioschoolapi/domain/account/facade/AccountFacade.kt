@@ -11,6 +11,7 @@ import com.kioschool.kioschoolapi.global.error.ErrorCode
 import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import com.kioschool.kioschoolapi.global.portone.service.PortoneService
 import com.kioschool.kioschoolapi.global.toss.service.TossService
+import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Page
 import org.springframework.stereotype.Component
 
@@ -23,6 +24,8 @@ class AccountFacade(
     private val portoneService: PortoneService,
     private val tossService: TossService
 ) {
+    private val log = LoggerFactory.getLogger(javaClass)
+
     fun getBanks(name: String?, page: Int, size: Int): Page<BankDto> {
         return bankService.getBanks(name, page, size).map { BankDto.of(it) }
     }
@@ -32,19 +35,27 @@ class AccountFacade(
     }
 
     fun addBank(name: String, code: String): BankDto {
-        return BankDto.of(bankService.addBank(name, code))
+        val bank = bankService.addBank(name, code)
+        log.info("[AUDIT] action=ADD_BANK bankId={} name={} code={}", bank.id, bank.name, bank.code)
+        return BankDto.of(bank)
     }
 
     fun updateBankTossName(id: Long, tossName: String): BankDto {
-        return BankDto.of(bankService.updateTossName(id, tossName))
+        val bank = bankService.updateTossName(id, tossName)
+        log.info("[AUDIT] action=UPDATE_BANK_TOSS_NAME bankId={} tossName={}", id, tossName)
+        return BankDto.of(bank)
     }
 
     fun deleteBankTossName(id: Long): BankDto {
-        return BankDto.of(bankService.deleteTossName(id))
+        val bank = bankService.deleteTossName(id)
+        log.info("[AUDIT] action=DELETE_BANK_TOSS_NAME bankId={}", id)
+        return BankDto.of(bank)
     }
 
     fun deleteBank(id: Long): BankDto {
-        return BankDto.of(bankService.deleteBank(id))
+        val bank = bankService.deleteBank(id)
+        log.info("[AUDIT] action=DELETE_BANK bankId={} name={} code={}", id, bank.name, bank.code)
+        return BankDto.of(bank)
     }
 
     fun registerAccount(
@@ -57,7 +68,14 @@ class AccountFacade(
 
         val user = userService.getUser(username)
         user.account = accountService.createAccount(bank, accountNumber, accountHolder)
-        return UserDto.of(userService.saveUser(user))
+        val saved = userService.saveUser(user)
+        log.info(
+            "[AUDIT] action=REGISTER_ACCOUNT loginId={} bankId={} accountLast4={}",
+            username,
+            bankId,
+            accountNumber.takeLast(4)
+        )
+        return UserDto.of(saved)
     }
 
     fun registerTossAccount(username: String, accountUrl: String): UserDto {
@@ -71,7 +89,14 @@ class AccountFacade(
                 ?.let { bankService.fillTossNameIfAbsent(bank, it) }
         }
 
-        return UserDto.of(userService.saveUser(user))
+        val saved = userService.saveUser(user)
+        // validateAccountUrl이 링크의 계좌번호를 등록 계좌와 맞춰 보므로 등록 계좌 끝자리를 남긴다.
+        log.info(
+            "[AUDIT] action=REGISTER_TOSS_ACCOUNT loginId={} accountLast4={}",
+            username,
+            user.account?.accountNumber?.takeLast(4)
+        )
+        return UserDto.of(saved)
     }
 
     fun registerTossAccountAuto(username: String): UserDto {
@@ -79,19 +104,30 @@ class AccountFacade(
         val account = user.account ?: throw IllegalStateException("계좌가 등록되어 있지 않습니다.")
         val tossName = account.bank.tossName ?: throw CustomException(ErrorCode.BANK_TOSS_NAME_NOT_FOUND)
         account.tossAccountUrl = tossService.generateTossAccountUrl(tossName, account.accountNumber)
-        return UserDto.of(userService.saveUser(user))
+        val saved = userService.saveUser(user)
+        log.info(
+            "[AUDIT] action=REGISTER_TOSS_ACCOUNT_AUTO loginId={} accountLast4={}",
+            username,
+            account.accountNumber.takeLast(4)
+        )
+        return UserDto.of(saved)
     }
 
     fun deleteAccount(username: String): UserDto {
         val user = userService.getUser(username)
+        val accountLast4 = user.account?.accountNumber?.takeLast(4)
         accountService.deleteAccount(user)
-        return UserDto.of(userService.saveUser(user))
+        val saved = userService.saveUser(user)
+        log.info("[AUDIT] action=DELETE_ACCOUNT loginId={} accountLast4={}", username, accountLast4)
+        return UserDto.of(saved)
     }
 
     fun deleteTossAccount(username: String): UserDto {
         val user = userService.getUser(username)
         user.account?.tossAccountUrl = null
-        return UserDto.of(userService.saveUser(user))
+        val saved = userService.saveUser(user)
+        log.info("[AUDIT] action=DELETE_TOSS_ACCOUNT loginId={}", username)
+        return UserDto.of(saved)
     }
 
     fun getAccountConnectionStatus(): AccountConnectionStatusDto {
