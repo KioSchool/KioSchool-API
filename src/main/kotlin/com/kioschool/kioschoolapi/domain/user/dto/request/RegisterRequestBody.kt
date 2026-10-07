@@ -1,5 +1,6 @@
 package com.kioschool.kioschoolapi.domain.user.dto.request
 
+import com.kioschool.kioschoolapi.global.logging.annotation.LogMasked
 import com.kioschool.kioschoolapi.global.logging.annotation.Masked
 import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.NotBlank
@@ -14,6 +15,7 @@ data class RegisterRequestBody(
     @Masked
     val password: String,
     @field:NotBlank(message = "이름은 필수 입력값입니다.")
+    @LogMasked
     val name: String,
     @field:Email(message = "이메일 형식이 올바르지 않습니다.")
     val email: String,
