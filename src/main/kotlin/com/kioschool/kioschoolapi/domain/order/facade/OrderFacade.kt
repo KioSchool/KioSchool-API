@@ -161,6 +161,7 @@ class OrderFacade(
         workspaceService.checkAccessible(username, workspaceId)
 
         val order = orderService.getOrder(orderId)
+        if (order.workspace.id != workspaceId) throw CustomException(ErrorCode.WORKSPACE_INACCESSIBLE)
         val before = order.status
         order.status = OrderStatus.valueOf(status)
 
@@ -215,6 +216,7 @@ class OrderFacade(
         workspaceService.checkAccessible(username, workspaceId)
 
         val orderProduct = orderService.getOrderProduct(orderProductId)
+        if (orderProduct.order.workspace.id != workspaceId) throw CustomException(ErrorCode.WORKSPACE_INACCESSIBLE)
         val before = orderProduct.servedCount
         orderProduct.servedCount = servedCount
         orderProduct.isServed = orderProduct.servedCount == orderProduct.quantity
@@ -349,6 +351,9 @@ class OrderFacade(
     ): OrderSessionDto {
         workspaceService.checkAccessible(username, workspaceId)
 
+        val orderSession = orderService.getOrderSession(orderSessionId)
+        if (orderSession.workspace.id != workspaceId) throw CustomException(ErrorCode.WORKSPACE_INACCESSIBLE)
+
         val table = workspaceService.getWorkspaceTable(
             workspaceService.getWorkspace(workspaceId),
             tableNumber
@@ -356,7 +361,6 @@ class OrderFacade(
         table.orderSession = null
         workspaceService.saveWorkspaceTable(table)
 
-        val orderSession = orderService.getOrderSession(orderSessionId)
         orderSession.endAt = LocalDateTime.now()
 
         val orders = orderService.getAllOrdersByOrderSession(orderSession)

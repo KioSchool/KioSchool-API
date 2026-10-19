@@ -507,8 +507,9 @@ class OrderFacadeTest : DescribeSpec({
         it("should call orderService.getOrder and orderService.saveOrderAndSendWebsocketMessage") {
             val orderId = 1L
             val status = OrderStatus.PAID.name
+            val workspaceId = SampleEntity.order1.workspace.id
 
-            every { workspaceService.checkAccessible("test", 1L) } just Runs
+            every { workspaceService.checkAccessible("test", workspaceId) } just Runs
             every { orderService.getOrder(orderId) } returns SampleEntity.order1
             every {
                 orderService.saveOrderAndSendWebsocketMessage(
@@ -517,11 +518,11 @@ class OrderFacadeTest : DescribeSpec({
                 )
             } returns SampleEntity.order1
 
-            val result = sut.changeOrderStatus("test", 1L, orderId, status)
+            val result = sut.changeOrderStatus("test", workspaceId, orderId, status)
 
             assert(result.id == SampleEntity.order1.id)
 
-            verify { workspaceService.checkAccessible("test", 1L) }
+            verify { workspaceService.checkAccessible("test", workspaceId) }
             verify { orderService.getOrder(orderId) }
             verify {
                 orderService.saveOrderAndSendWebsocketMessage(
@@ -556,18 +557,35 @@ class OrderFacadeTest : DescribeSpec({
                 )
             }
         }
-    }
 
-    describe("changeOrderStatus change log") {
-        it("should publish the status change with the order's own workspace, not the requested one") {
-            val workspace = SampleEntity.workspace(SampleEntity.user).withId(7L)
-            val order = Order(workspace, 1, "customer", orderNumber = 1, orderSession = null).withId(10L)
+        it("should throw CustomException(WORKSPACE_INACCESSIBLE) when the order belongs to another workspace") {
+            val otherWorkspace = SampleEntity.workspace(SampleEntity.user).withId(7L)
+            val order = Order(otherWorkspace, 1, "customer", orderNumber = 1, orderSession = null).withId(10L)
 
             every { workspaceService.checkAccessible("test", 1L) } just Runs
             every { orderService.getOrder(10L) } returns order
+
+            val ex = assertThrows<CustomException> {
+                sut.changeOrderStatus("test", 1L, 10L, OrderStatus.PAID.name)
+            }
+            assertEquals(ErrorCode.WORKSPACE_INACCESSIBLE, ex.errorCode)
+
+            assertEquals(OrderStatus.NOT_PAID, order.status)
+            verify(exactly = 0) { orderService.saveOrderAndSendWebsocketMessage(any(), any()) }
+            verify(exactly = 0) { eventPublisher.publishEvent(any<Any>()) }
+        }
+    }
+
+    describe("changeOrderStatus change log") {
+        it("should publish the status change with the order's workspace") {
+            val workspace = SampleEntity.workspace(SampleEntity.user).withId(7L)
+            val order = Order(workspace, 1, "customer", orderNumber = 1, orderSession = null).withId(10L)
+
+            every { workspaceService.checkAccessible("test", 7L) } just Runs
+            every { orderService.getOrder(10L) } returns order
             every { orderService.saveOrderAndSendWebsocketMessage(order, WebsocketType.UPDATED) } returns order
 
-            sut.changeOrderStatus("test", 1L, 10L, OrderStatus.PAID.name)
+            sut.changeOrderStatus("test", 7L, 10L, OrderStatus.PAID.name)
 
             verify(exactly = 1) {
                 eventPublisher.publishEvent(OrderStatusChangedEvent(7L, 10L, OrderStatus.NOT_PAID, OrderStatus.PAID))
@@ -699,18 +717,19 @@ class OrderFacadeTest : DescribeSpec({
                 this.servedCount = 0
                 this.quantity = 1
             }
+            val workspaceId = orderProduct.order.workspace.id
 
-            every { workspaceService.checkAccessible("test", 1L) } just Runs
+            every { workspaceService.checkAccessible("test", workspaceId) } just Runs
             every { orderService.getOrderProduct(orderProductId) } returns orderProduct
             every { orderService.saveOrderProductAndSendWebsocketMessage(orderProduct) } returns orderProduct
 
-            val result = sut.changeOrderProductServedCount("test", 1L, orderProductId, servedCount)
+            val result = sut.changeOrderProductServedCount("test", workspaceId, orderProductId, servedCount)
 
             assert(result.id == orderProduct.id)
             assert(result.servedCount == servedCount)
             assert(result.isServed)
 
-            verify { workspaceService.checkAccessible("test", 1L) }
+            verify { workspaceService.checkAccessible("test", workspaceId) }
             verify { orderService.getOrderProduct(orderProductId) }
             verify { orderService.saveOrderProductAndSendWebsocketMessage(orderProduct) }
         }
@@ -722,18 +741,19 @@ class OrderFacadeTest : DescribeSpec({
                 this.servedCount = 0
                 this.quantity = 2
             }
+            val workspaceId = orderProduct.order.workspace.id
 
-            every { workspaceService.checkAccessible("test", 1L) } just Runs
+            every { workspaceService.checkAccessible("test", workspaceId) } just Runs
             every { orderService.getOrderProduct(orderProductId) } returns orderProduct
             every { orderService.saveOrderProductAndSendWebsocketMessage(orderProduct) } returns orderProduct
 
-            val result = sut.changeOrderProductServedCount("test", 1L, orderProductId, servedCount)
+            val result = sut.changeOrderProductServedCount("test", workspaceId, orderProductId, servedCount)
 
             assert(result.id == orderProduct.id)
             assert(result.servedCount == servedCount)
             assert(!result.isServed)
 
-            verify { workspaceService.checkAccessible("test", 1L) }
+            verify { workspaceService.checkAccessible("test", workspaceId) }
             verify { orderService.getOrderProduct(orderProductId) }
             verify { orderService.saveOrderProductAndSendWebsocketMessage(orderProduct) }
         }
@@ -757,6 +777,31 @@ class OrderFacadeTest : DescribeSpec({
             verify { workspaceService.checkAccessible("test", 1L) }
             verify(exactly = 0) { orderService.getOrderProduct(orderProductId) }
             verify(exactly = 0) { orderService.saveOrderProductAndSendWebsocketMessage(any()) }
+        }
+
+        it("should throw CustomException(WORKSPACE_INACCESSIBLE) when the order product belongs to another workspace") {
+            val otherWorkspace = SampleEntity.workspace(SampleEntity.user).withId(7L)
+            val order = Order(otherWorkspace, 1, "customer", orderNumber = 1, orderSession = null).withId(10L)
+            val orderProduct = OrderProduct(
+                order = order,
+                productId = 1L,
+                productName = "product",
+                productPrice = 1000,
+                quantity = 3,
+                servedCount = 1
+            ).withId(20L)
+
+            every { workspaceService.checkAccessible("test", 1L) } just Runs
+            every { orderService.getOrderProduct(20L) } returns orderProduct
+
+            val ex = assertThrows<CustomException> {
+                sut.changeOrderProductServedCount("test", 1L, 20L, 3)
+            }
+            assertEquals(ErrorCode.WORKSPACE_INACCESSIBLE, ex.errorCode)
+
+            assertEquals(1, orderProduct.servedCount)
+            verify(exactly = 0) { orderService.saveOrderProductAndSendWebsocketMessage(any()) }
+            verify(exactly = 0) { eventPublisher.publishEvent(any<Any>()) }
         }
     }
 
@@ -992,11 +1037,11 @@ class OrderFacadeTest : DescribeSpec({
                 servedCount = 1
             ).withId(20L)
 
-            every { workspaceService.checkAccessible("test", 1L) } just Runs
+            every { workspaceService.checkAccessible("test", 7L) } just Runs
             every { orderService.getOrderProduct(20L) } returns orderProduct
             every { orderService.saveOrderProductAndSendWebsocketMessage(orderProduct) } returns orderProduct
 
-            sut.changeOrderProductServedCount("test", 1L, 20L, 2)
+            sut.changeOrderProductServedCount("test", 7L, 20L, 2)
 
             verify(exactly = 1) {
                 eventPublisher.publishEvent(OrderProductServedCountChangedEvent(7L, 20L, 1, 2))
@@ -1027,7 +1072,7 @@ class OrderFacadeTest : DescribeSpec({
     describe("endOrderSession") {
         it("should throw CustomException when order session has no valid orders and isGhost is null") {
             val username = "test"
-            val workspaceId = 1L
+            val workspaceId = SampleEntity.orderSession.workspace.id
             val tableNumber = 1
             val orderSessionId = 1L
 
@@ -1059,7 +1104,7 @@ class OrderFacadeTest : DescribeSpec({
 
         it("should end order session when order session has no valid orders and isGhost is true") {
             val username = "test"
-            val workspaceId = 1L
+            val workspaceId = SampleEntity.orderSession.workspace.id
             val tableNumber = 1
             val orderSessionId = 1L
 
@@ -1088,6 +1133,23 @@ class OrderFacadeTest : DescribeSpec({
             verify { orderService.getOrderSession(orderSessionId) }
             verify { orderService.getAllOrdersByOrderSession(SampleEntity.orderSession) }
             verify { orderService.saveOrderSession(any()) }
+        }
+
+        it("should throw CustomException(WORKSPACE_INACCESSIBLE) when the order session belongs to another workspace") {
+            val otherWorkspace = SampleEntity.workspace(SampleEntity.user).withId(7L)
+            val orderSession = OrderSession(otherWorkspace, expectedEndAt = null, tableNumber = 1).withId(30L)
+
+            every { workspaceService.checkAccessible("test", 1L) } just Runs
+            every { orderService.getOrderSession(30L) } returns orderSession
+
+            val ex = assertThrows<CustomException> {
+                sut.endOrderSession("test", 1L, 1, 30L, true)
+            }
+            assertEquals(ErrorCode.WORKSPACE_INACCESSIBLE, ex.errorCode)
+
+            assertEquals(null, orderSession.endAt)
+            verify(exactly = 0) { workspaceService.saveWorkspaceTable(any()) }
+            verify(exactly = 0) { orderService.saveOrderSession(any()) }
         }
     }
 
