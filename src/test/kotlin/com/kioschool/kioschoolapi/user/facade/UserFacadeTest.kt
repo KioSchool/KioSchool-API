@@ -2,6 +2,7 @@ package com.kioschool.kioschoolapi.user.facade
 
 import com.kioschool.kioschoolapi.domain.email.service.EmailService
 import com.kioschool.kioschoolapi.domain.user.entity.AcquisitionSurvey
+import com.kioschool.kioschoolapi.domain.user.entity.User
 import com.kioschool.kioschoolapi.domain.email.service.SchoolResolver
 import com.kioschool.kioschoolapi.domain.user.facade.UserFacade
 import com.kioschool.kioschoolapi.domain.user.service.SessionRefreshResult
@@ -23,6 +24,7 @@ import io.mockk.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.assertThrows
 import jakarta.servlet.http.Cookie
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.domain.PageImpl
 import org.springframework.mock.web.MockHttpServletRequest
 import org.springframework.mock.web.MockHttpServletResponse
@@ -37,6 +39,8 @@ class UserFacadeTest : DescribeSpec({
     val jwtProvider = mockk<JwtProvider>()
     val authCookieManager = AuthCookieManager(true, Duration.ofMinutes(30), Duration.ofDays(7))
 
+    val eventPublisher = mockk<ApplicationEventPublisher>(relaxed = true)
+
     val sut = UserFacade(
         userService,
         userSessionService,
@@ -44,7 +48,8 @@ class UserFacadeTest : DescribeSpec({
         templateService,
         discordService,
         jwtProvider,
-        authCookieManager
+        authCookieManager,
+        eventPublisher
     )
 
     fun MockHttpServletResponse.setCookies() = getHeaders("Set-Cookie")
@@ -650,34 +655,66 @@ class UserFacadeTest : DescribeSpec({
         }
     }
 
-    describe("deleteUser") {
-        it("should delete user") {
-            val loginId = "test"
-            val user = SampleEntity.user
+    describe("withdraw") {
+        fun withdrawingUser() = User(
+            loginId = "kimop",
+            loginPassword = "hash",
+            name = "김운영",
+            email = "kim@korea.ac.kr",
+            role = UserRole.ADMIN,
+            members = mutableListOf()
+        )
 
-            every { userService.getUser(loginId) } returns user
-            every { userService.deleteUser(user) } returns user
+        it("erases the account, logs out every device and clears the auth cookies") {
+            val user = withdrawingUser()
+            val response = MockHttpServletResponse()
 
-            val result = sut.deleteUser(loginId)
+            every { userService.getUser("kimop") } returns user
+            every { userService.checkPassword(user, "pw") } just Runs
+            every { userSessionService.deleteAllOf(user) } just Runs
+            every { emailService.deleteAllEmailCodes("kim@korea.ac.kr") } just Runs
+            every { userService.withdraw(user, any()) } returns user
+            every { discordService.sendUserWithdraw(user.id, 0) } just Runs
 
-            assert(result.id == user.id)
+            sut.withdraw("kimop", "pw", response)
 
-            verify { userService.getUser(loginId) }
-            verify { userService.deleteUser(user) }
+            verifyOrder {
+                userService.checkPassword(user, "pw")
+                userSessionService.deleteAllOf(user)
+                emailService.deleteAllEmailCodes("kim@korea.ac.kr")
+                userService.withdraw(user, any())
+            }
+            verify { discordService.sendUserWithdraw(user.id, 0) }
+            response.setCookies().forEach { it.contains("Max-Age=0") shouldBe true }
+            response.setCookies().size shouldBe 2
         }
 
-        it("should throw CustomException(USER_NOT_FOUND) when user not found") {
-            val loginId = "test"
+        it("does nothing when the password is wrong") {
+            val user = withdrawingUser()
 
-            every { userService.getUser(loginId) } throws CustomException(ErrorCode.USER_NOT_FOUND)
+            every { userService.getUser("kimop") } returns user
+            every { userService.checkPassword(user, "wrong") } throws CustomException(ErrorCode.LOGIN_FAILED)
 
-            val ex = assertThrows<CustomException> {
-                sut.deleteUser(loginId)
-            }
-            assertEquals(ErrorCode.USER_NOT_FOUND, ex.errorCode)
+            val ex = assertThrows<CustomException> { sut.withdraw("kimop", "wrong", MockHttpServletResponse()) }
 
-            verify { userService.getUser(loginId) }
-            verify(exactly = 0) { userService.deleteUser(any()) }
+            ex.errorCode shouldBe ErrorCode.LOGIN_FAILED
+            verify(exactly = 0) { userSessionService.deleteAllOf(any()) }
+            verify(exactly = 0) { userService.withdraw(any(), any()) }
+        }
+
+        // 수동 가입한 고등학생처럼 이메일이 없는 계정도 있다
+        it("skips email codes when the account has no email") {
+            val user = withdrawingUser().apply { email = null }
+
+            every { userService.getUser("kimop") } returns user
+            every { userService.checkPassword(user, "pw") } just Runs
+            every { userSessionService.deleteAllOf(user) } just Runs
+            every { userService.withdraw(user, any()) } returns user
+            every { discordService.sendUserWithdraw(user.id, 0) } just Runs
+
+            sut.withdraw("kimop", "pw", MockHttpServletResponse())
+
+            verify(exactly = 0) { emailService.deleteAllEmailCodes(any()) }
         }
     }
 

@@ -4,6 +4,7 @@ import com.kioschool.kioschoolapi.global.error.dto.ErrorResponse
 import com.kioschool.kioschoolapi.global.error.dto.FieldErrorDetail
 import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import com.kioschool.kioschoolapi.global.logging.annotation.Masked
+import com.kioschool.kioschoolapi.global.logging.util.LogMasking
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.ConstraintViolationException
 import org.slf4j.LoggerFactory
@@ -51,7 +52,7 @@ class GlobalExceptionHandler : ResponseEntityExceptionHandler() {
                 reason = it.message,
             )
         }
-        log.warn("Constraint violation at {}: {}", request.requestURI, errors)
+        log.warn("Constraint violation at {}: {}", request.requestURI, errors.maskedForLog())
         return ResponseEntity.status(ErrorCode.INVALID_INPUT.status)
             .body(ErrorResponse.of(ErrorCode.INVALID_INPUT, request.requestURI, errors = errors))
     }
@@ -83,7 +84,7 @@ class GlobalExceptionHandler : ResponseEntityExceptionHandler() {
                 reason = it.defaultMessage,
             )
         }
-        log.warn("Validation failed at {}: {}", path, errors)
+        log.warn("Validation failed at {}: {}", path, errors.maskedForLog())
         return ResponseEntity.status(ErrorCode.INVALID_INPUT.status)
             .body(ErrorResponse.of(ErrorCode.INVALID_INPUT, path, errors = errors))
     }
@@ -123,6 +124,9 @@ class GlobalExceptionHandler : ResponseEntityExceptionHandler() {
             targetClass.getDeclaredField(fieldName).isAnnotationPresent(Masked::class.java)
         }.getOrDefault(false)
     }
+
+    // 응답에는 사용자가 보낸 값을 그대로 돌려주되, 로그에는 이메일·이름 같은 개인정보를 남기지 않는다
+    private fun List<FieldErrorDetail>.maskedForLog() = map { it.copy(value = LogMasking.maskValue(it.field, it.value)) }
 
     private fun WebRequest.servletPath(): String =
         (this as? ServletWebRequest)?.request?.requestURI ?: ""

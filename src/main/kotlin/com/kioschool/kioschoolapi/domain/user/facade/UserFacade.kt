@@ -7,6 +7,7 @@ import com.kioschool.kioschoolapi.domain.user.entity.User
 import com.kioschool.kioschoolapi.domain.user.service.SessionRefreshResult
 import com.kioschool.kioschoolapi.domain.user.service.UserService
 import com.kioschool.kioschoolapi.domain.user.service.UserSessionService
+import com.kioschool.kioschoolapi.domain.workspace.event.WorkspaceUpdatedEvent
 import com.kioschool.kioschoolapi.global.common.enums.AcquisitionChannel
 import com.kioschool.kioschoolapi.global.common.enums.UserAccountFilter
 import com.kioschool.kioschoolapi.global.common.enums.UserRole
@@ -19,9 +20,13 @@ import com.kioschool.kioschoolapi.global.template.TemplateService
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.slf4j.LoggerFactory
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.domain.Page
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.support.TransactionSynchronization
+import org.springframework.transaction.support.TransactionSynchronizationManager
 
 @Component
 class UserFacade(
@@ -32,6 +37,7 @@ class UserFacade(
     private val discordService: DiscordService,
     private val jwtProvider: JwtProvider,
     private val authCookieManager: AuthCookieManager,
+    private val eventPublisher: ApplicationEventPublisher,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -138,9 +144,34 @@ class UserFacade(
 
     fun getUser(loginId: String) = UserDto.of(userService.getUser(loginId))
 
-    fun deleteUser(loginId: String): UserDto {
+    /**
+     * 탈퇴. 계정의 개인정보는 지우거나 익명값으로 바꾸고, 운영한 주점과 주문 기록은 매출 통계로 남긴다.
+     */
+    @Transactional
+    fun withdraw(loginId: String, password: String, response: HttpServletResponse) {
         val user = userService.getUser(loginId)
-        return UserDto.of(userService.deleteUser(user))
+        userService.checkPassword(user, password)
+
+        val workspaceIds = user.getWorkspaces().map { it.id }
+        userSessionService.deleteAllOf(user)
+        user.email?.let { emailService.deleteAllEmailCodes(it) }
+        userService.withdraw(user)
+
+        evictWorkspaceCachesAfterCommit(workspaceIds)
+        authCookieManager.clearTokens(response)
+
+        log.info("[AUDIT] action=WITHDRAW_USER userId={} workspaceCount={}", user.id, workspaceIds.size)
+        discordService.sendUserWithdraw(user.id, workspaceIds.size)
+    }
+
+    // 주점 캐시(WorkspaceDto)에 주인 이름·이메일이 들어 있다. 커밋 전에 지우면 그 사이 요청이 옛 값을 다시 캐시한다.
+    private fun evictWorkspaceCachesAfterCommit(workspaceIds: List<Long>) {
+        val evict = { workspaceIds.forEach { eventPublisher.publishEvent(WorkspaceUpdatedEvent(it)) } }
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) return evict()
+
+        TransactionSynchronizationManager.registerSynchronization(object : TransactionSynchronization {
+            override fun afterCommit() = evict()
+        })
     }
 
     fun createSuperAdminUser(username: String, id: String): UserDto {

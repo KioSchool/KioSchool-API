@@ -89,6 +89,8 @@ class ProductFacade(
     ): ProductDto {
         val product = productService.getProduct(productId)
         workspaceService.checkAccessible(username, product.workspace.id)
+        // 아래 카테고리 확인이 요청 workspaceId 기준이라, 상품 소속과 다르면 남의 카테고리를 붙일 수 있다.
+        if (product.workspace.id != workspaceId) throw CustomException(ErrorCode.WORKSPACE_INACCESSIBLE)
         val before = ProductSnapshot.of(product)
 
         name?.let { product.name = it }
@@ -165,6 +167,9 @@ class ProductFacade(
         workspaceService.checkAccessible(username, workspaceId)
 
         val productCategories = productService.getProductCategories(productCategoryIds)
+        productCategories.forEach {
+            if (it.workspace.id != workspaceId) throw CustomException(ErrorCode.WORKSPACE_INACCESSIBLE)
+        }
         val productCategoryMap = productCategories.associateBy { it.id }
         productCategoryIds.forEachIndexed { index, productCategoryId ->
             productCategoryMap[productCategoryId]!!.index = index
@@ -219,6 +224,7 @@ class ProductFacade(
     ): ProductDto {
         val product = productService.getProduct(productId)
         workspaceService.checkAccessible(username, workspaceId)
+        if (product.workspace.id != workspaceId) throw CustomException(ErrorCode.WORKSPACE_INACCESSIBLE)
         val before = ProductSnapshot.of(product)
 
         product.status = status

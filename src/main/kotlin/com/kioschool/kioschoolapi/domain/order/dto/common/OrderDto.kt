@@ -2,6 +2,7 @@ package com.kioschool.kioschoolapi.domain.order.dto.common
 
 import com.kioschool.kioschoolapi.domain.order.entity.Order
 import com.kioschool.kioschoolapi.global.common.enums.OrderStatus
+import com.kioschool.kioschoolapi.global.common.enums.PaymentMethod
 import java.time.LocalDateTime
 
 import com.kioschool.kioschoolapi.domain.order.dto.common.OrderProductDto
@@ -14,6 +15,7 @@ data class OrderDto(
     val orderProducts: List<OrderProductDto>,
     val totalPrice: Int,
     val status: OrderStatus,
+    val paymentMethod: PaymentMethod?,
     val orderNumber: Long,
     val orderSession: OrderSessionDto?,
     val createdAt: LocalDateTime?,
@@ -28,6 +30,7 @@ data class OrderDto(
                 orderProducts = order.orderProducts.map { OrderProductDto.of(it) },
                 totalPrice = order.totalPrice,
                 status = order.status,
+                paymentMethod = order.paymentMethod,
                 orderNumber = order.orderNumber,
                 orderSession = order.orderSession?.let { OrderSessionDto.of(it) },
                 createdAt = order.createdAt,

@@ -24,6 +24,8 @@ class DashboardFacade(
     private val productService: ProductService
 ) {
     fun getDashboard(username: String, workspaceId: Long): DashboardDto {
+        workspaceService.checkAccessible(username, workspaceId)
+
         val now = LocalDateTime.now()
         val startOfBusinessDay = if (now.hour < 9) {
             now.minusDays(1).withHour(9).withMinute(0).withSecond(0).withNano(0)

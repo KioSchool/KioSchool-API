@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS"
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+  <!-- 탈퇴 시각. 탈퇴하면 계정을 지우지 않고 개인정보만 익명값으로 바꾸므로(주점·주문 기록 보존) 탈퇴 계정을 가리는 표시가 된다. -->
+  <changeSet author="ji-inpark" id="user-withdrawn-at-1">
+    <addColumn schemaName="public" tableName="user">
+      <column name="withdrawn_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+    </addColumn>
+  </changeSet>
+
+</databaseChangeLog>

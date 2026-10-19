@@ -4,12 +4,15 @@ import com.kioschool.kioschoolapi.domain.user.dto.admin.AcquisitionRequestBody
 import com.kioschool.kioschoolapi.domain.user.dto.admin.AcquisitionSurveyStatusResponse
 import com.kioschool.kioschoolapi.domain.user.dto.admin.CreateSuperUserRequestBody
 import com.kioschool.kioschoolapi.domain.user.dto.admin.RegisterAccountUrlRequestBody
+import com.kioschool.kioschoolapi.domain.user.dto.admin.WithdrawRequestBody
 import com.kioschool.kioschoolapi.domain.user.dto.common.UserDto
 import com.kioschool.kioschoolapi.domain.user.facade.UserFacade
 import com.kioschool.kioschoolapi.global.security.annotation.AdminUsername
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.servlet.http.HttpServletResponse
 import jakarta.validation.Valid
+import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.*
 
 @Tag(name = "Admin User Controller")
@@ -24,10 +27,18 @@ class AdminUserController(
         return userFacade.getUser(username)
     }
 
-    @Operation(summary = "유저 탈퇴")
-    @DeleteMapping("/user")
-    fun deleteUser(@AdminUsername username: String): UserDto {
-        return userFacade.deleteUser(username)
+    @Operation(
+        summary = "회원 탈퇴",
+        description = "비밀번호를 확인한 뒤 계정의 개인정보를 지우거나 익명값으로 바꾸고 인증 쿠키를 삭제합니다.<br>운영한 주점과 주문 기록은 매출 통계로 남습니다.<br>비밀번호가 틀리면 401(LOGIN_FAILED)을 반환합니다."
+    )
+    @PostMapping("/user/withdraw")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun withdraw(
+        @AdminUsername username: String,
+        @Valid @RequestBody body: WithdrawRequestBody,
+        response: HttpServletResponse
+    ) {
+        userFacade.withdraw(username, body.password, response)
     }
 
     @Operation(summary = "슈퍼 유저 생성", description = "슈퍼 유저를 생성합니다.<br>슈퍼 유저는 슈퍼 유저만 지정할 수 있습니다.")

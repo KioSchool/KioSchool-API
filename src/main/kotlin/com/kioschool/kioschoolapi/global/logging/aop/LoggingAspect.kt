@@ -1,6 +1,7 @@
 package com.kioschool.kioschoolapi.global.logging.aop
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.kioschool.kioschoolapi.global.logging.util.LogMasking
 import jakarta.servlet.ServletRequest
 import jakarta.servlet.ServletResponse
 import org.aspectj.lang.ProceedingJoinPoint
@@ -23,6 +24,9 @@ import kotlin.coroutines.Continuation
 class LoggingAspect(private val objectMapper: ObjectMapper) {
 
     private val log = LoggerFactory.getLogger(this.javaClass)
+
+    // 로그 전용 직렬화. 입금자명·이메일·계좌 같은 개인정보를 가린다(HTTP 응답은 원래 objectMapper를 쓰므로 그대로).
+    private val logMapper = LogMasking.loggingMapper(objectMapper)
 
     @Pointcut("within(@org.springframework.web.bind.annotation.RestController *)")
     fun isApiService() {
@@ -54,7 +58,7 @@ class LoggingAspect(private val objectMapper: ObjectMapper) {
         val stopWatch = StopWatch().apply { start() }
         val className = joinPoint.signature.declaringType.simpleName
         val methodName = joinPoint.signature.name
-        val filteredArgs = filterWebObjects(joinPoint.args)
+        val filteredArgs = filterWebObjects(maskNamedArgs(joinPoint))
 
         log.info(
             "--> [{}] {}#{}() called with args: {}",
@@ -96,8 +100,8 @@ class LoggingAspect(private val objectMapper: ObjectMapper) {
 
         val className = joinPoint.signature.declaringType.simpleName
         val methodName = joinPoint.signature.name
-        val filteredArgs =
-            filterWebObjects(joinPoint.args.take(joinPoint.args.size - 1).toTypedArray())
+        val maskedArgs = maskNamedArgs(joinPoint)
+        val filteredArgs = filterWebObjects(maskedArgs.take(maskedArgs.size - 1).toTypedArray())
 
         log.info(
             "--> [SUSPEND] [{}] {}#{}() called with args: {}",
@@ -142,11 +146,20 @@ class LoggingAspect(private val objectMapper: ObjectMapper) {
 
     private fun safeSerialize(obj: Any?): String {
         return try {
-            objectMapper.writeValueAsString(obj)
+            logMapper.writeValueAsString(obj)
         } catch (e: Exception) {
             log.warn("Failed to serialize object: {}", e.message)
             "[SERIALIZATION_ERROR]"
         }
+    }
+
+    // 맨 문자열 인자(@RequestParam email 등)는 속성 이름이 없으니 파라미터 이름으로 가린다
+    private fun maskNamedArgs(joinPoint: ProceedingJoinPoint): Array<Any?> {
+        val names = (joinPoint.signature as? MethodSignature)?.parameterNames
+        return joinPoint.args.mapIndexed { i, arg ->
+            val name = names?.getOrNull(i)
+            if (arg is String && name != null) LogMasking.maskValue(name, arg) else arg
+        }.toTypedArray()
     }
 
     private fun filterWebObjects(obj: Any?): Any? {

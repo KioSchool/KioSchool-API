@@ -1,10 +1,12 @@
 package com.kioschool.kioschoolapi.domain.workspace.dto.common
 
 import com.kioschool.kioschoolapi.domain.user.entity.User
+import com.kioschool.kioschoolapi.global.logging.annotation.LogMasked
 
 data class WorkspaceUserSummaryDto(
     val id: Long,
     val loginId: String,
+    @LogMasked
     val name: String,
     val email: String?
 ) {

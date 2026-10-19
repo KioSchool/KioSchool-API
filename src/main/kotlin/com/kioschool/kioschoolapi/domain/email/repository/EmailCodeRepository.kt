@@ -10,6 +10,7 @@ interface EmailCodeRepository : JpaRepository<EmailCode, Long> {
     fun findByEmailAndKind(email: String, kind: EmailKind): EmailCode?
 
     fun deleteByEmailAndKind(email: String, kind: EmailKind)
+    fun deleteAllByEmail(email: String)
 
     fun findByCodeAndKind(code: String, kind: EmailKind): EmailCode?
 }
