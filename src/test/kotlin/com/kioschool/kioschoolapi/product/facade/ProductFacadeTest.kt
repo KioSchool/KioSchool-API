@@ -409,39 +409,55 @@ class ProductFacadeTest : DescribeSpec({
 
         it("should throw CustomException(WORKSPACE_INACCESSIBLE) if product category is in another workspace") {
             val username = "username"
-            val workspaceId = 2L
-            val productId = 1L
-            val name = "name"
-            val description = "description"
-            val price = 100
-            val productCategoryId = 1L
+            val workspace = SampleEntity.workspace(SampleEntity.user).withId(1L)
+            val product = Product(
+                name = "감자전",
+                description = "description",
+                price = 5000,
+                workspace = workspace
+            ).withId(40L)
+            val otherCategory = ProductCategory(
+                name = "other",
+                workspace = SampleEntity.workspace(SampleEntity.user).withId(2L)
+            ).withId(5L)
             val file = mockk<MultipartFile>()
-            val workspace = SampleEntity.workspace
-            val product = SampleEntity.product
-            every { productService.getProduct(productId) } returns product
-            every { workspaceService.checkAccessible(username, workspace.id) } just Runs
-            every { productService.getImageUrl(workspace.id, product.id, file) } returns null
-            every { productService.getProductCategory(productCategoryId) } returns SampleEntity.productCategory
+            every { productService.getProduct(40L) } returns product
+            every { workspaceService.checkAccessible(username, 1L) } just Runs
+            every { productService.getImageUrl(1L, 40L, file) } returns null
+            every { productService.getProductCategory(5L) } returns otherCategory
 
             val ex = assertThrows<CustomException> {
-                sut.updateProduct(
-                    username,
-                    workspaceId,
-                    productId,
-                    name,
-                    description,
-                    price,
-                    productCategoryId,
-                    file
-                )
+                sut.updateProduct(username, 1L, 40L, "name", "description", 100, 5L, file)
             }
             assertEquals(ErrorCode.WORKSPACE_INACCESSIBLE, ex.errorCode)
 
-            verify { productService.getProduct(productId) }
-            verify { workspaceService.checkAccessible(username, workspace.id) }
-            verify { productService.getImageUrl(workspace.id, product.id, file) }
+            verify { productService.getProduct(40L) }
+            verify { workspaceService.checkAccessible(username, 1L) }
+            verify { productService.getImageUrl(1L, 40L, file) }
             verify(exactly = 0) { s3Service.deleteFile(any()) }
-            verify { productService.getProductCategory(productCategoryId) }
+            verify { productService.getProductCategory(5L) }
+            verify(exactly = 0) { productService.saveProduct(any()) }
+        }
+
+        it("should throw CustomException(WORKSPACE_INACCESSIBLE) if the product is not in the requested workspace") {
+            // 두 주점 모두 접근할 수 있는 계정이 한 주점 id로 다른 주점 상품을 고치려는 경우
+            val username = "username"
+            val product = Product(
+                name = "감자전",
+                description = "description",
+                price = 5000,
+                workspace = SampleEntity.workspace(SampleEntity.user).withId(7L)
+            ).withId(40L)
+            every { productService.getProduct(40L) } returns product
+            every { workspaceService.checkAccessible(username, 7L) } just Runs
+
+            val ex = assertThrows<CustomException> {
+                sut.updateProduct(username, 1L, 40L, "name", null, null, 5L, null)
+            }
+            assertEquals(ErrorCode.WORKSPACE_INACCESSIBLE, ex.errorCode)
+
+            assertEquals("감자전", product.name)
+            verify(exactly = 0) { productService.getProductCategory(any()) }
             verify(exactly = 0) { productService.saveProduct(any()) }
         }
     }
@@ -614,7 +630,7 @@ class ProductFacadeTest : DescribeSpec({
     describe("sortProductCategories") {
         it("should sort product categories") {
             val username = "username"
-            val workspaceId = 1L
+            val workspaceId = SampleEntity.productCategory.workspace.id
             val productCategoryIds = listOf(1L, 2L, 3L)
             val productCategories = SampleEntity.productCategories
 
@@ -654,12 +670,34 @@ class ProductFacadeTest : DescribeSpec({
             verify(exactly = 0) { productService.getProductCategories(any()) }
             verify(exactly = 0) { productService.saveProductCategories(any()) }
         }
+
+        it("should throw CustomException(WORKSPACE_INACCESSIBLE) if a category is in another workspace") {
+            val username = "username"
+            val ownCategory = ProductCategory(
+                name = "own",
+                workspace = SampleEntity.workspace(SampleEntity.user).withId(1L)
+            ).withId(5L)
+            val otherCategory = ProductCategory(
+                name = "other",
+                workspace = SampleEntity.workspace(SampleEntity.user).withId(7L)
+            ).withId(6L)
+            every { workspaceService.checkAccessible(username, 1L) } just Runs
+            every { productService.getProductCategories(listOf(5L, 6L)) } returns listOf(ownCategory, otherCategory)
+
+            val ex = assertThrows<CustomException> {
+                sut.sortProductCategories(username, 1L, listOf(5L, 6L))
+            }
+            assertEquals(ErrorCode.WORKSPACE_INACCESSIBLE, ex.errorCode)
+
+            assertEquals(null, otherCategory.index)
+            verify(exactly = 0) { productService.saveProductCategories(any()) }
+        }
     }
 
     describe("updateProductStatus") {
         it("should update product status") {
             val username = "username"
-            val workspaceId = 1L
+            val workspaceId = SampleEntity.product.workspace.id
             val productId = 1L
             val status = ProductStatus.SOLD_OUT
             val product = SampleEntity.product
@@ -700,10 +738,31 @@ class ProductFacadeTest : DescribeSpec({
             verify { workspaceService.checkAccessible(username, workspaceId) }
             verify(exactly = 0) { productService.saveProduct(any()) }
         }
+
+        it("should throw CustomException(WORKSPACE_INACCESSIBLE) if the product is in another workspace") {
+            val username = "username"
+            val product = Product(
+                name = "감자전",
+                description = "description",
+                price = 5000,
+                workspace = SampleEntity.workspace(SampleEntity.user).withId(7L)
+            ).withId(40L)
+            every { productService.getProduct(40L) } returns product
+            every { workspaceService.checkAccessible(username, 1L) } just Runs
+
+            val ex = assertThrows<CustomException> {
+                sut.updateProductStatus(username, 1L, 40L, ProductStatus.SOLD_OUT)
+            }
+            assertEquals(ErrorCode.WORKSPACE_INACCESSIBLE, ex.errorCode)
+
+            assertEquals(ProductStatus.SELLING, product.status)
+            verify(exactly = 0) { productService.saveProduct(any()) }
+            verify(exactly = 0) { eventPublisher.publishEvent(any<Any>()) }
+        }
     }
 
     describe("change log events") {
-        // 요청의 workspaceId(1)와 다른 workspace(7)에 속한 상품으로, 이벤트가 엔티티 쪽 workspace를 쓰는지 본다.
+        // 이벤트가 엔티티 쪽 workspace(7)를 쓰는지 본다. 요청 workspaceId가 다르면 그 전에 거절된다.
         fun productOfWorkspace7() = Product(
             name = "감자전",
             description = "description",
@@ -715,10 +774,10 @@ class ProductFacadeTest : DescribeSpec({
         it("updateProductStatus should publish the before and after snapshots") {
             val product = productOfWorkspace7()
             every { productService.getProduct(40L) } returns product
-            every { workspaceService.checkAccessible("username", 1L) } just Runs
+            every { workspaceService.checkAccessible("username", 7L) } just Runs
             every { productService.saveProduct(product) } returns product
 
-            sut.updateProductStatus("username", 1L, 40L, ProductStatus.SOLD_OUT)
+            sut.updateProductStatus("username", 7L, 40L, ProductStatus.SOLD_OUT)
 
             verify(exactly = 1) {
                 eventPublisher.publishEvent(
@@ -739,7 +798,7 @@ class ProductFacadeTest : DescribeSpec({
             every { productService.getImageUrl(7L, 40L, null) } returns null
             every { productService.saveProduct(product) } returns product
 
-            sut.updateProduct("username", 1L, 40L, "감자전(마감)", null, 3000, null, null)
+            sut.updateProduct("username", 7L, 40L, "감자전(마감)", null, 3000, null, null)
 
             verify(exactly = 1) {
                 eventPublisher.publishEvent(

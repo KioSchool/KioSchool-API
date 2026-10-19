@@ -10,11 +10,17 @@ import com.kioschool.kioschoolapi.domain.workspace.entity.WorkspaceTable
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.global.common.enums.OrderStatus
 import com.kioschool.kioschoolapi.global.common.enums.ProductStatus
+import com.kioschool.kioschoolapi.global.error.ErrorCode
+import com.kioschool.kioschoolapi.global.error.exception.CustomException
+import io.mockk.Runs
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.verify
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import java.time.LocalDateTime
 
 class DashboardFacadeTest {
@@ -49,6 +55,7 @@ class DashboardFacadeTest {
             every { orderSession } returns null // Empty
         }
 
+        every { workspaceService.checkAccessible(username, workspaceId) } just Runs
         every { workspaceService.getWorkspace(workspaceId) } returns mockWorkspace
         every { workspaceService.getAllWorkspaceTables(mockWorkspace) } returns listOf(
             table1,
@@ -131,5 +138,18 @@ class DashboardFacadeTest {
         // Out of Stock
         assertEquals(1, result.outOfStockProducts.size)
         assertEquals("SoldOutItem", result.outOfStockProducts[0].name)
+    }
+
+    @Test
+    fun `getDashboard rejects a workspace the admin cannot access`() {
+        every {
+            workspaceService.checkAccessible("admin", 2L)
+        } throws CustomException(ErrorCode.WORKSPACE_INACCESSIBLE)
+
+        val ex = assertThrows<CustomException> { dashboardFacade.getDashboard("admin", 2L) }
+
+        assertEquals(ErrorCode.WORKSPACE_INACCESSIBLE, ex.errorCode)
+        verify(exactly = 0) { workspaceService.getWorkspace(any()) }
+        verify(exactly = 0) { orderService.getAllOrdersByCondition(any(), any(), any(), any(), any()) }
     }
 }
