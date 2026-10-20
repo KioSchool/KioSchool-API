@@ -51,12 +51,15 @@ enum class ErrorCode(
     NO_ORDER_SESSION(HttpStatus.BAD_REQUEST, "테이블이 사용상태가 아니라 주문을 받을 수 없습니다. 주점 관리자에게 문의하세요."),
     ORDER_SESSION_ALREADY_EXIST(HttpStatus.BAD_REQUEST, "이미 테이블이 사용상태입니다."),
     TABLE_HASH_IS_NULL(HttpStatus.BAD_REQUEST, "주문 URL이 유효하지 않습니다. 주점 관리자에게 문의하세요."),
+    ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 주문입니다."),
+    INVALID_ORDER_QUANTITY(HttpStatus.BAD_REQUEST, "주문 수량이 올바르지 않습니다."),
 
     // Account / Toss
     BANK_NOT_FOUND(HttpStatus.NOT_FOUND, "은행을 찾을 수 없습니다."),
     BANK_TOSS_NAME_NOT_FOUND(HttpStatus.BAD_REQUEST, "해당 은행은 토스 명칭이 등록되어 있지 않습니다."),
     ACCOUNT_HOLDER_NOT_FOUND(HttpStatus.NOT_FOUND, "계좌 정보를 조회할 수 없습니다. 은행과 계좌번호를 다시 확인해주세요. 은행 점검 시간일 수도 있습니다."),
     DIFFERENT_ACCOUNT_NUMBER(HttpStatus.BAD_REQUEST, "토스 계좌와 사용자 계좌가 일치하지 않습니다."),
+    INVALID_TOSS_ACCOUNT_URL(HttpStatus.BAD_REQUEST, "토스 송금 QR이 아닙니다. 토스 앱의 송금 QR 코드를 올려주세요."),
 
     // Donation
     DONATION_CLICK_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 후원 클릭입니다."),

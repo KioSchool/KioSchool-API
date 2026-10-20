@@ -9,7 +9,9 @@ import com.kioschool.kioschoolapi.domain.order.event.OrderSessionExpectedEndAtCh
 import com.kioschool.kioschoolapi.domain.order.event.OrderStatusChangedEvent
 import com.kioschool.kioschoolapi.domain.order.facade.OrderFacade
 import com.kioschool.kioschoolapi.domain.order.service.OrderService
+import com.kioschool.kioschoolapi.domain.product.entity.Product
 import com.kioschool.kioschoolapi.domain.product.service.ProductService
+import com.kioschool.kioschoolapi.domain.workspace.entity.WorkspaceTable
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.factory.SampleEntity
 import com.kioschool.kioschoolapi.global.common.entity.BaseEntity
@@ -232,17 +234,103 @@ class OrderFacadeTest : DescribeSpec({
         }
     }
 
+    describe("createOrder 수량 검증") {
+        val workspaceId = 1L
+
+        beforeTest {
+            every { workspaceService.getWorkspace(workspaceId) } returns SampleEntity.workspace
+            every {
+                workspaceService.getWorkspaceTableByHash(SampleEntity.workspace, "dummy_hash")
+            } returns SampleEntity.workspaceTable.apply { orderSession = SampleEntity.orderSession }
+        }
+
+        listOf(0, -1, OrderFacade.MAX_ORDER_QUANTITY + 1).forEach { quantity ->
+            it("수량이 $quantity 이면 주문을 만들지 않는다") {
+                val ex = assertThrows<CustomException> {
+                    sut.createOrder(workspaceId, "dummy_hash", "customer", listOf(OrderProductRequestBody(1L, quantity)))
+                }
+                assertEquals(ErrorCode.INVALID_ORDER_QUANTITY, ex.errorCode)
+
+                verify(exactly = 0) { orderService.getOrderNumber(any()) }
+                verify(exactly = 0) { orderService.saveOrder(any<Order>()) }
+            }
+        }
+
+        it("합계가 Int 범위를 넘으면 주문을 만들지 않는다") {
+            val expensive = Product(
+                name = "expensive",
+                description = "",
+                price = Int.MAX_VALUE / 2,
+                workspace = SampleEntity.workspace
+            )
+
+            every { orderService.getOrderNumber(workspaceId) } returns 1
+            every { orderService.saveOrder(any<Order>()) } answers { it.invocation.args[0] as Order }
+            every { productService.validateProducts(workspaceId, any()) } just Runs
+            every { productService.getAllProductsByCondition(workspaceId) } returns listOf(expensive)
+
+            val ex = assertThrows<CustomException> {
+                sut.createOrder(workspaceId, "dummy_hash", "customer", listOf(OrderProductRequestBody(expensive.id, 3)))
+            }
+            assertEquals(ErrorCode.INVALID_ORDER_QUANTITY, ex.errorCode)
+
+            verify(exactly = 0) { orderService.saveOrderAndSendWebsocketMessage(any<Order>(), any()) }
+        }
+    }
+
     describe("getOrder") {
-        it("should call orderService.getOrder") {
-            val orderId = 1L
+        val orderId = 1L
+        val workspaceId = SampleEntity.order1.workspace.id
+        val tableHash = "orderTableHash"
 
-            every { orderService.getOrder(orderId) } returns SampleEntity.order1
+        fun tableOf(tableNumber: Int) =
+            WorkspaceTable(workspace = SampleEntity.workspace, tableNumber = tableNumber, tableHash = tableHash)
 
-            val result = sut.getOrder(orderId)
+        it("주문한 테이블의 tableHash면 주문을 돌려준다") {
+            every { workspaceService.getWorkspace(workspaceId) } returns SampleEntity.workspace
+            every {
+                workspaceService.getWorkspaceTableByHash(SampleEntity.workspace, tableHash)
+            } returns tableOf(SampleEntity.order1.tableNumber)
+            every { orderService.getOrderOrNull(orderId) } returns SampleEntity.order1
 
-            assert(result.id == SampleEntity.order1.id)
+            val result = sut.getOrder(workspaceId, tableHash, orderId)
 
-            verify { orderService.getOrder(orderId) }
+            assertEquals(SampleEntity.order1.id, result.id)
+        }
+
+        it("다른 테이블의 tableHash면 ORDER_NOT_FOUND") {
+            every { workspaceService.getWorkspace(workspaceId) } returns SampleEntity.workspace
+            every {
+                workspaceService.getWorkspaceTableByHash(SampleEntity.workspace, tableHash)
+            } returns tableOf(SampleEntity.order1.tableNumber + 1)
+            every { orderService.getOrderOrNull(orderId) } returns SampleEntity.order1
+
+            val ex = assertThrows<CustomException> { sut.getOrder(workspaceId, tableHash, orderId) }
+            assertEquals(ErrorCode.ORDER_NOT_FOUND, ex.errorCode)
+        }
+
+        it("다른 주점의 주문이면 ORDER_NOT_FOUND") {
+            val otherWorkspaceId = workspaceId + 1
+
+            every { workspaceService.getWorkspace(otherWorkspaceId) } returns SampleEntity.workspace
+            every {
+                workspaceService.getWorkspaceTableByHash(SampleEntity.workspace, tableHash)
+            } returns tableOf(SampleEntity.order1.tableNumber)
+            every { orderService.getOrderOrNull(orderId) } returns SampleEntity.order1
+
+            val ex = assertThrows<CustomException> { sut.getOrder(otherWorkspaceId, tableHash, orderId) }
+            assertEquals(ErrorCode.ORDER_NOT_FOUND, ex.errorCode)
+        }
+
+        it("없는 주문이면 ORDER_NOT_FOUND") {
+            every { workspaceService.getWorkspace(workspaceId) } returns SampleEntity.workspace
+            every {
+                workspaceService.getWorkspaceTableByHash(SampleEntity.workspace, tableHash)
+            } returns tableOf(SampleEntity.order1.tableNumber)
+            every { orderService.getOrderOrNull(orderId) } returns null
+
+            val ex = assertThrows<CustomException> { sut.getOrder(workspaceId, tableHash, orderId) }
+            assertEquals(ErrorCode.ORDER_NOT_FOUND, ex.errorCode)
         }
     }
 

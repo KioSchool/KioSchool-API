@@ -1,6 +1,12 @@
 package com.kioschool.kioschoolapi.toss.service
 
+import com.kioschool.kioschoolapi.domain.user.entity.User
+import com.kioschool.kioschoolapi.factory.SampleEntity
+import com.kioschool.kioschoolapi.global.common.enums.UserRole
+import com.kioschool.kioschoolapi.global.error.ErrorCode
+import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import com.kioschool.kioschoolapi.global.toss.service.TossService
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -45,6 +51,42 @@ class TossServiceTest : DescribeSpec({
             val tossName = "IBK기업은행"
             val url = sut.generateTossAccountUrl(tossName, "12345")
             sut.extractBankNameFromUrl(url) shouldBe tossName
+        }
+    }
+
+    describe("validateAccountUrl") {
+        val user = User(
+            loginId = "toss",
+            loginPassword = "toss",
+            name = "toss",
+            email = "toss@test.com",
+            role = UserRole.ADMIN,
+            account = SampleEntity.account,
+            members = mutableListOf()
+        )
+        val accountNumber = SampleEntity.account.accountNumber
+
+        it("토스 송금 QR 링크는 통과한다") {
+            sut.validateAccountUrl(user, "supertoss://send?bank=%EC%B9%B4&accountNo=$accountNumber&origin=qr")
+        }
+
+        it("계좌번호가 다르면 거부한다") {
+            val ex = shouldThrow<CustomException> {
+                sut.validateAccountUrl(user, "supertoss://send?bank=%EC%B9%B4&accountNo=000&origin=qr")
+            }
+            ex.errorCode shouldBe ErrorCode.DIFFERENT_ACCOUNT_NUMBER
+        }
+
+        listOf(
+            "javascript:alert(1)//accountNo=$accountNumber",
+            "https://example.com/send?accountNo=$accountNumber",
+            " supertoss://send?accountNo=$accountNumber",
+            "supertoss://other?accountNo=$accountNumber",
+        ).forEach { url ->
+            it("토스 송금 링크가 아니면 거부한다: $url") {
+                val ex = shouldThrow<CustomException> { sut.validateAccountUrl(user, url) }
+                ex.errorCode shouldBe ErrorCode.INVALID_TOSS_ACCOUNT_URL
+            }
         }
     }
 })

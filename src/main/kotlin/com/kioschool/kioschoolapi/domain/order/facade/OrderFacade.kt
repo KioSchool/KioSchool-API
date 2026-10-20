@@ -11,14 +11,12 @@ import com.kioschool.kioschoolapi.domain.order.event.OrderStatusChangedEvent
 import com.kioschool.kioschoolapi.domain.order.service.OrderService
 import com.kioschool.kioschoolapi.domain.product.service.ProductService
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
-import com.kioschool.kioschoolapi.global.cache.constant.CacheNames
 import com.kioschool.kioschoolapi.global.common.enums.OrderStatus
 import com.kioschool.kioschoolapi.global.common.enums.PaymentMethod
 import com.kioschool.kioschoolapi.global.common.enums.WebsocketType
 import com.kioschool.kioschoolapi.global.error.ErrorCode
 import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import org.slf4j.LoggerFactory
-import org.springframework.cache.annotation.Cacheable
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
@@ -49,6 +47,9 @@ class OrderFacade(
         val table = workspaceService.getWorkspaceTableByHash(workspace, tableHash)
         val currentOrderSession = table.orderSession ?: throw CustomException(ErrorCode.NO_ORDER_SESSION)
 
+        if (rawOrderProducts.any { it.quantity !in 1..MAX_ORDER_QUANTITY }) {
+            throw CustomException(ErrorCode.INVALID_ORDER_QUANTITY)
+        }
         productService.validateProducts(workspaceId, productIds)
 
         val orderNumber = orderService.getOrderNumber(workspaceId)
@@ -77,8 +78,11 @@ class OrderFacade(
             )
         }
 
+        val totalPrice = orderProducts.sumOf { it.productPrice.toLong() * it.quantity }
+        if (totalPrice > Int.MAX_VALUE) throw CustomException(ErrorCode.INVALID_ORDER_QUANTITY)
+
         order.orderProducts.addAll(orderProducts)
-        order.totalPrice = orderProducts.sumOf { it.totalPrice }
+        order.totalPrice = totalPrice.toInt()
         return OrderDto.of(
             orderService.saveOrderAndSendWebsocketMessage(
                 order,
@@ -87,9 +91,16 @@ class OrderFacade(
         )
     }
 
-    @Cacheable(cacheNames = [CacheNames.ORDERS], key = "#orderId")
-    fun getOrder(orderId: Long): OrderDto {
-        return OrderDto.of(orderService.getOrder(orderId))
+    // 손님 주문 대기·완료 화면용. 주문을 넣은 테이블의 QR(tableHash)로만 조회한다.
+    fun getOrder(workspaceId: Long, tableHash: String, orderId: Long): OrderDto {
+        val workspace = workspaceService.getWorkspace(workspaceId)
+        val table = workspaceService.getWorkspaceTableByHash(workspace, tableHash)
+        val order = orderService.getOrderOrNull(orderId)
+
+        if (order == null || order.workspace.id != workspaceId || order.tableNumber != table.tableNumber) {
+            throw CustomException(ErrorCode.ORDER_NOT_FOUND)
+        }
+        return OrderDto.of(order)
     }
 
     fun getSessionOrders(
@@ -420,5 +431,10 @@ class OrderFacade(
         val pageable = org.springframework.data.domain.PageRequest.of(page, size)
         return orderService.getAllOrdersGlobal(workspaceId, startDate, endDate, parsedStatuses, pageable)
             .map { SuperAdminOrderDto.of(it) }
+    }
+
+    companion object {
+        // 한 주문에서 상품 하나를 이보다 많이 담는 경우는 없다.
+        const val MAX_ORDER_QUANTITY = 999
     }
 }
