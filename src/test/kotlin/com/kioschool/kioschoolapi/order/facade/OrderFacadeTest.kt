@@ -11,7 +11,6 @@ import com.kioschool.kioschoolapi.domain.order.facade.OrderFacade
 import com.kioschool.kioschoolapi.domain.order.service.OrderService
 import com.kioschool.kioschoolapi.domain.product.entity.Product
 import com.kioschool.kioschoolapi.domain.product.service.ProductService
-import com.kioschool.kioschoolapi.domain.workspace.entity.WorkspaceTable
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.factory.SampleEntity
 import com.kioschool.kioschoolapi.global.common.entity.BaseEntity
@@ -279,58 +278,16 @@ class OrderFacadeTest : DescribeSpec({
     }
 
     describe("getOrder") {
-        val orderId = 1L
-        val workspaceId = SampleEntity.order1.workspace.id
-        val tableHash = "orderTableHash"
+        it("should call orderService.getOrder") {
+            val orderId = 1L
 
-        fun tableOf(tableNumber: Int) =
-            WorkspaceTable(workspace = SampleEntity.workspace, tableNumber = tableNumber, tableHash = tableHash)
+            every { orderService.getOrder(orderId) } returns SampleEntity.order1
 
-        it("주문한 테이블의 tableHash면 주문을 돌려준다") {
-            every { workspaceService.getWorkspace(workspaceId) } returns SampleEntity.workspace
-            every {
-                workspaceService.getWorkspaceTableByHash(SampleEntity.workspace, tableHash)
-            } returns tableOf(SampleEntity.order1.tableNumber)
-            every { orderService.getOrderOrNull(orderId) } returns SampleEntity.order1
+            val result = sut.getOrder(orderId)
 
-            val result = sut.getOrder(workspaceId, tableHash, orderId)
+            assert(result.id == SampleEntity.order1.id)
 
-            assertEquals(SampleEntity.order1.id, result.id)
-        }
-
-        it("다른 테이블의 tableHash면 ORDER_NOT_FOUND") {
-            every { workspaceService.getWorkspace(workspaceId) } returns SampleEntity.workspace
-            every {
-                workspaceService.getWorkspaceTableByHash(SampleEntity.workspace, tableHash)
-            } returns tableOf(SampleEntity.order1.tableNumber + 1)
-            every { orderService.getOrderOrNull(orderId) } returns SampleEntity.order1
-
-            val ex = assertThrows<CustomException> { sut.getOrder(workspaceId, tableHash, orderId) }
-            assertEquals(ErrorCode.ORDER_NOT_FOUND, ex.errorCode)
-        }
-
-        it("다른 주점의 주문이면 ORDER_NOT_FOUND") {
-            val otherWorkspaceId = workspaceId + 1
-
-            every { workspaceService.getWorkspace(otherWorkspaceId) } returns SampleEntity.workspace
-            every {
-                workspaceService.getWorkspaceTableByHash(SampleEntity.workspace, tableHash)
-            } returns tableOf(SampleEntity.order1.tableNumber)
-            every { orderService.getOrderOrNull(orderId) } returns SampleEntity.order1
-
-            val ex = assertThrows<CustomException> { sut.getOrder(otherWorkspaceId, tableHash, orderId) }
-            assertEquals(ErrorCode.ORDER_NOT_FOUND, ex.errorCode)
-        }
-
-        it("없는 주문이면 ORDER_NOT_FOUND") {
-            every { workspaceService.getWorkspace(workspaceId) } returns SampleEntity.workspace
-            every {
-                workspaceService.getWorkspaceTableByHash(SampleEntity.workspace, tableHash)
-            } returns tableOf(SampleEntity.order1.tableNumber)
-            every { orderService.getOrderOrNull(orderId) } returns null
-
-            val ex = assertThrows<CustomException> { sut.getOrder(workspaceId, tableHash, orderId) }
-            assertEquals(ErrorCode.ORDER_NOT_FOUND, ex.errorCode)
+            verify { orderService.getOrder(orderId) }
         }
     }
 

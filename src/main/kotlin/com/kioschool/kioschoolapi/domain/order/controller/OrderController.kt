@@ -33,14 +33,12 @@ class OrderController(
         )
     }
 
-    @Operation(summary = "주문 조회", description = "주문한 테이블의 tableHash로 주문을 조회합니다.")
+    @Operation(summary = "주문 조회", description = "주문을 조회합니다.")
     @GetMapping("/order")
     fun getOrder(
-        @RequestParam("workspaceId") workspaceId: Long,
-        @RequestParam("tableHash") tableHash: String,
         @RequestParam("orderId") orderId: Long
     ): OrderDto {
-        return orderFacade.getOrder(workspaceId, tableHash, orderId)
+        return orderFacade.getOrder(orderId)
     }
 
     @Operation(
