@@ -65,6 +65,8 @@ enum class ErrorCode(
     DUPLICATE_EMAIL_DOMAIN(HttpStatus.BAD_REQUEST, "이미 등록된 도메인입니다."),
     NOT_VERIFIED_EMAIL_DOMAIN(HttpStatus.UNPROCESSABLE_ENTITY, "허용되지 않은 이메일 도메인입니다."),
     EMAIL_SEND_FAILURE(HttpStatus.INTERNAL_SERVER_ERROR, "이메일 전송에 실패했습니다."),
+    EMAIL_CODE_EXPIRED(HttpStatus.BAD_REQUEST, "인증 코드가 만료되었습니다. 인증 코드를 다시 받아 주세요."),
+    EMAIL_CODE_ATTEMPTS_EXCEEDED(HttpStatus.BAD_REQUEST, "인증 코드를 여러 번 틀렸습니다. 인증 코드를 다시 받아 주세요."),
 
     // Inquiry
     INQUIRY_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 문의입니다."),
