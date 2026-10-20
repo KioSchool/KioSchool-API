@@ -32,11 +32,20 @@ class TossService {
     }
 
     fun validateAccountUrl(user: User, accountUrl: String) {
+        // 손님 화면이 이 링크를 그대로 연다. 토스 송금 QR 링크만 받는다.
+        if (!accountUrl.startsWith(TOSS_SEND_URL_PREFIX)) {
+            throw CustomException(ErrorCode.INVALID_TOSS_ACCOUNT_URL)
+        }
+
         val tossAccountNumber = getAccountNumberFromAccountUrl(accountUrl)
         val userAccountNumber = user.account?.accountNumber
 
         if (tossAccountNumber != userAccountNumber) {
             throw CustomException(ErrorCode.DIFFERENT_ACCOUNT_NUMBER)
         }
+    }
+
+    companion object {
+        const val TOSS_SEND_URL_PREFIX = "supertoss://send?"
     }
 }
