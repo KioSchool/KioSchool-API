@@ -18,6 +18,8 @@ import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.mail.javamail.MimeMessageHelper
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
+import java.time.Duration
+import java.time.LocalDateTime
 import java.util.*
 
 @Service
@@ -38,6 +40,8 @@ class EmailService(
                 kind = EmailKind.REGISTER
             )
         emailCode.code = code
+        emailCode.attemptCount = 0
+        emailCode.expiresAt = LocalDateTime.now().plus(REGISTER_CODE_TTL)
         return emailCodeRepository.save(emailCode)
     }
 
@@ -96,13 +100,23 @@ class EmailService(
         return UUID.randomUUID().toString()
     }
 
+    // 만료·시도 초과는 예외로 알리고 상태를 바꾸지 않는다. 틀린 코드는 시도 횟수를 남겨야 하므로 false로 돌려준다.
+    @Transactional
     fun verifyRegisterCode(email: String, code: String): Boolean {
         val emailCode =
-            emailCodeRepository.findByEmailAndKind(email, EmailKind.REGISTER) ?: return false
-        if (emailCode.code != code) return false
-        emailCode.isVerified = true
+            emailCodeRepository.findLockedByEmailAndKind(email, EmailKind.REGISTER) ?: return false
+        if (emailCode.expiresAt?.isAfter(LocalDateTime.now()) != true) {
+            throw CustomException(ErrorCode.EMAIL_CODE_EXPIRED)
+        }
+        if (emailCode.attemptCount >= MAX_REGISTER_CODE_ATTEMPTS) {
+            throw CustomException(ErrorCode.EMAIL_CODE_ATTEMPTS_EXCEEDED)
+        }
+
+        emailCode.attemptCount += 1
+        val isMatched = emailCode.code == code
+        if (isMatched) emailCode.isVerified = true
         emailCodeRepository.save(emailCode)
-        return true
+        return isMatched
     }
 
     fun getEmailByCode(code: String): String {
@@ -173,4 +187,9 @@ class EmailService(
     }
 
     fun getSchoolResolver(): SchoolResolver = SchoolResolver.of(emailDomainRepository.findAll())
+
+    companion object {
+        val REGISTER_CODE_TTL: Duration = Duration.ofMinutes(10)
+        const val MAX_REGISTER_CODE_ATTEMPTS = 5
+    }
 }

@@ -1,5 +1,6 @@
 package com.kioschool.kioschoolapi.email.service
 
+import com.kioschool.kioschoolapi.domain.email.entity.EmailCode
 import com.kioschool.kioschoolapi.domain.email.enum.EmailKind
 import com.kioschool.kioschoolapi.domain.email.repository.EmailCodeRepository
 import com.kioschool.kioschoolapi.domain.email.repository.EmailDomainRepository
@@ -15,6 +16,7 @@ import org.junit.jupiter.api.assertThrows
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
 import org.springframework.mail.javamail.JavaMailSender
+import java.time.LocalDateTime
 import java.util.*
 
 class EmailServiceTest : DescribeSpec({
@@ -79,6 +81,25 @@ class EmailServiceTest : DescribeSpec({
             assert(result.code == code)
             assert(result.kind == EmailKind.REGISTER)
             assert(result == SampleEntity.emailCode)
+        }
+
+        it("코드를 다시 발급하면 만료 시각과 시도 횟수를 새로 잡는다") {
+            val emailAddress = "reissue@test.com"
+            val existing = EmailCode(emailAddress, "111111", kind = EmailKind.REGISTER).apply {
+                attemptCount = EmailService.MAX_REGISTER_CODE_ATTEMPTS
+                expiresAt = LocalDateTime.now().minusHours(1)
+            }
+
+            every { emailCodeRepository.findByEmailAndKind(emailAddress, EmailKind.REGISTER) } returns existing
+            every { emailCodeRepository.save(any()) } answers { firstArg() }
+
+            val before = LocalDateTime.now()
+            val result = sut.createOrUpdateRegisterEmailCode(emailAddress, "222222")
+
+            assertEquals(0, result.attemptCount)
+            val expiresAt = result.expiresAt!!
+            assert(!expiresAt.isBefore(before.plus(EmailService.REGISTER_CODE_TTL)))
+            assert(!expiresAt.isAfter(LocalDateTime.now().plus(EmailService.REGISTER_CODE_TTL)))
         }
     }
 
@@ -187,62 +208,86 @@ class EmailServiceTest : DescribeSpec({
     }
 
     describe("verifyRegisterCode") {
-        it("should return true if emailCode's code is same with input code") {
-            val emailCode = SampleEntity.emailCode.apply { isVerified = false }
-            val email = SampleEntity.emailCode.email
-            val code = SampleEntity.emailCode.code
+        val email = "verify@test.com"
+        val code = "123456"
 
-            every {
-                emailCodeRepository.findByEmailAndKind(
-                    email,
-                    EmailKind.REGISTER
-                )
-            } returns SampleEntity.emailCode
-            every { emailCodeRepository.save(emailCode) } answers { firstArg() }
+        fun issuedCode(
+            expiresAt: LocalDateTime? = LocalDateTime.now().plusMinutes(5),
+            attemptCount: Int = 0
+        ) = EmailCode(email, code, kind = EmailKind.REGISTER).apply {
+            this.expiresAt = expiresAt
+            this.attemptCount = attemptCount
+        }
+
+        fun givenCode(emailCode: EmailCode?) {
+            every { emailCodeRepository.findLockedByEmailAndKind(email, EmailKind.REGISTER) } returns emailCode
+            every { emailCodeRepository.save(any()) } answers { firstArg() }
+        }
+
+        it("맞는 코드면 인증하고 시도 1회로 센다") {
+            val emailCode = issuedCode()
+            givenCode(emailCode)
 
             val result = sut.verifyRegisterCode(email, code)
 
-            assert(result)
-            assert(emailCode.isVerified)
-
+            assertEquals(true, result)
+            assertEquals(true, emailCode.isVerified)
+            assertEquals(1, emailCode.attemptCount)
             verify { emailCodeRepository.save(emailCode) }
         }
 
-        it("should return false if emailCode's code is not same with input code") {
-            val emailCode = SampleEntity.emailCode.apply { isVerified = false }
-            val email = SampleEntity.emailCode.email
-            val code = "different code"
+        it("틀린 코드면 false를 돌려주고 시도 횟수를 저장한다") {
+            val emailCode = issuedCode(attemptCount = 2)
+            givenCode(emailCode)
 
-            every {
-                emailCodeRepository.findByEmailAndKind(
-                    email,
-                    EmailKind.REGISTER
-                )
-            } returns SampleEntity.emailCode
+            val result = sut.verifyRegisterCode(email, "000000")
 
-            val result = sut.verifyRegisterCode(email, code)
-
-            assert(!result)
-            assert(!emailCode.isVerified)
-
-            verify(exactly = 0) { emailCodeRepository.save(emailCode) }
+            assertEquals(false, result)
+            assertEquals(false, emailCode.isVerified)
+            assertEquals(3, emailCode.attemptCount)
+            verify { emailCodeRepository.save(emailCode) }
         }
 
-        it("should return false if emailCode is not exists") {
-            val email = "test@test.com"
-            val code = "123456"
+        it("시도 횟수를 다 쓰면 맞는 코드도 받지 않는다") {
+            val emailCode = issuedCode(attemptCount = EmailService.MAX_REGISTER_CODE_ATTEMPTS)
+            givenCode(emailCode)
 
-            every {
-                emailCodeRepository.findByEmailAndKind(
-                    email,
-                    EmailKind.REGISTER
-                )
-            } returns null
+            val ex = assertThrows<CustomException> { sut.verifyRegisterCode(email, code) }
 
-            val result = sut.verifyRegisterCode(email, code)
+            assertEquals(ErrorCode.EMAIL_CODE_ATTEMPTS_EXCEEDED, ex.errorCode)
+            assertEquals(false, emailCode.isVerified)
+        }
 
-            assert(!result)
+        it("마지막 남은 시도에서는 맞는 코드를 받는다") {
+            val emailCode = issuedCode(attemptCount = EmailService.MAX_REGISTER_CODE_ATTEMPTS - 1)
+            givenCode(emailCode)
 
+            assertEquals(true, sut.verifyRegisterCode(email, code))
+        }
+
+        it("만료된 코드는 맞아도 받지 않고 시도로 세지 않는다") {
+            val emailCode = issuedCode(expiresAt = LocalDateTime.now().minusSeconds(1))
+            givenCode(emailCode)
+
+            val ex = assertThrows<CustomException> { sut.verifyRegisterCode(email, code) }
+
+            assertEquals(ErrorCode.EMAIL_CODE_EXPIRED, ex.errorCode)
+            assertEquals(false, emailCode.isVerified)
+            assertEquals(0, emailCode.attemptCount)
+        }
+
+        it("만료 시각이 없는 코드(배포 전 발급분)는 만료로 본다") {
+            givenCode(issuedCode(expiresAt = null))
+
+            val ex = assertThrows<CustomException> { sut.verifyRegisterCode(email, code) }
+
+            assertEquals(ErrorCode.EMAIL_CODE_EXPIRED, ex.errorCode)
+        }
+
+        it("발급한 코드가 없으면 false") {
+            givenCode(null)
+
+            assertEquals(false, sut.verifyRegisterCode(email, code))
             verify(exactly = 0) { emailCodeRepository.save(any()) }
         }
     }
