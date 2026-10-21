@@ -192,9 +192,17 @@ class ProductFacade(
     fun deleteProduct(username: String, productId: Long): AdminProductDto {
         val product = productService.getProduct(productId)
         workspaceService.checkAccessible(username, product.workspace.id)
+        // 세트 구성품의 연결 상품은 지우지 못하게 막는다. 세트를 먼저 고치거나 지워야 한다.
+        val linkedSets = productService.getLinkedSets(listOf(product.id))[product.id].orEmpty()
+        if (linkedSets.isNotEmpty()) {
+            throw CustomException(
+                ErrorCode.PRODUCT_USED_AS_SET_CONDITION,
+                details = mapOf("linkedSets" to linkedSets.map { mapOf("id" to it.id, "name" to it.name) })
+            )
+        }
         val snapshot = ProductSnapshot.of(product)
         // 지운 뒤에는 구성품·연결 상품을 지연 로딩할 수 없으므로 응답을 먼저 만든다.
-        val response = toAdminDto(product)
+        val response = AdminProductDto.of(product, linkedSets)
 
         // 삭제가 실패했는데 '삭제됨' 이력만 남지 않도록 삭제가 끝난 뒤에 발행한다.
         productService.deleteProduct(product)
