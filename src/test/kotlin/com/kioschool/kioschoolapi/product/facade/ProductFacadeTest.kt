@@ -681,6 +681,37 @@ class ProductFacadeTest : DescribeSpec({
             verify { workspaceService.checkAccessible(username, product.workspace.id) }
             verify(exactly = 0) { productService.deleteProduct(any()) }
         }
+
+        it("세트 구성품의 연결 상품이면 PRODUCT_USED_AS_SET_CONDITION과 연결 세트 목록") {
+            val single = SampleEntity.newProduct(10)
+            val set = SampleEntity.newSetProduct(20, listOf(single)).apply { name = "족발 막국수 세트" }
+            every { productService.getProduct(10L) } returns single
+            every { workspaceService.checkAccessible("username", 1L) } just Runs
+            every { productService.getLinkedSets(listOf(10L)) } returns mapOf(10L to listOf(set))
+
+            val ex = assertThrows<CustomException> {
+                sut.deleteProduct("username", 10L)
+            }
+
+            ex.errorCode shouldBe ErrorCode.PRODUCT_USED_AS_SET_CONDITION
+            ex.details shouldBe mapOf("linkedSets" to listOf(mapOf("id" to 20L, "name" to "족발 막국수 세트")))
+            verify(exactly = 0) { productService.deleteProduct(any()) }
+            verify(exactly = 0) { eventPublisher.publishEvent(any<ProductDeletedEvent>()) }
+        }
+
+        it("세트는 구성품과 함께 지운다") {
+            val set = SampleEntity.newSetProduct(20, listOf(SampleEntity.newProduct(10)))
+            every { productService.getProduct(20L) } returns set
+            every { workspaceService.checkAccessible("username", 1L) } just Runs
+            every { productService.deleteProduct(set) } returns set
+
+            val result = sut.deleteProduct("username", 20L)
+
+            result.type shouldBe ProductType.SET
+            result.components.size shouldBe 1
+            verify { productService.deleteProduct(set) }
+            verify { eventPublisher.publishEvent(any<ProductDeletedEvent>()) }
+        }
     }
 
     describe("createProductCategory") {
