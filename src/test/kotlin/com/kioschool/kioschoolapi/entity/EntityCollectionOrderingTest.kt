@@ -25,4 +25,14 @@ class EntityCollectionOrderingTest : DescribeSpec({
             }
         }
     }
+
+    describe("세트 구성품 컬렉션") {
+        it("Product.components를 displayOrder 순으로 읽는다") {
+            val product = Class.forName("com.kioschool.kioschoolapi.domain.product.entity.Product").kotlin
+
+            val property = product.declaredMemberProperties.first { it.name == "components" }
+
+            property.javaField?.getAnnotation(OrderBy::class.java)?.value shouldBe "displayOrder"
+        }
+    }
 })

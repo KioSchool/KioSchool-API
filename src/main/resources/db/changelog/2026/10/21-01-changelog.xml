@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS"
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+  <!-- 세트 상품. 기존 행은 기본값으로 SINGLE이 된다. 금액 두 칸은 세트만 채운다. -->
+  <changeSet author="ji-inpark" id="set-menu-1">
+    <addColumn schemaName="public" tableName="product">
+      <column name="type" type="VARCHAR(20)" defaultValue="SINGLE">
+        <constraints nullable="false"/>
+      </column>
+      <column name="original_price" type="INTEGER"/>
+      <column name="discount_price" type="INTEGER"/>
+    </addColumn>
+  </changeSet>
+
+  <!-- 세트 구성품. 연결 상품은 앱에서 삭제를 막고, 주점 강제 삭제처럼 한꺼번에 지울 때만 NULL로 풀린다. -->
+  <changeSet author="ji-inpark" id="set-menu-2">
+    <createTable tableName="set_component">
+      <column autoIncrement="true" name="id" type="BIGINT">
+        <constraints nullable="false" primaryKey="true" primaryKeyName="pk_set_component"/>
+      </column>
+      <column name="created_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+      <column name="updated_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+      <column name="set_product_id" type="BIGINT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="name" type="VARCHAR(255)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="quantity" type="INTEGER">
+        <constraints nullable="false"/>
+      </column>
+      <column name="display_order" type="INTEGER">
+        <constraints nullable="false"/>
+      </column>
+      <column name="condition_product_id" type="BIGINT"/>
+    </createTable>
+    <createIndex indexName="idx_set_component_set_product_id" tableName="set_component">
+      <column name="set_product_id"/>
+    </createIndex>
+    <createIndex indexName="idx_set_component_condition_product_id" tableName="set_component">
+      <column name="condition_product_id"/>
+    </createIndex>
+    <addForeignKeyConstraint
+      baseTableName="set_component" baseColumnNames="set_product_id"
+      constraintName="fk_set_component_set_product"
+      referencedTableName="product" referencedColumnNames="id"
+      onDelete="CASCADE"/>
+    <addForeignKeyConstraint
+      baseTableName="set_component" baseColumnNames="condition_product_id"
+      constraintName="fk_set_component_condition_product"
+      referencedTableName="product" referencedColumnNames="id"
+      onDelete="SET NULL"/>
+  </changeSet>
+
+  <!-- 주문 당시 세트 1개당 할인 금액. 일반 상품은 NULL. -->
+  <changeSet author="ji-inpark" id="set-menu-3">
+    <addColumn schemaName="public" tableName="order_product">
+      <column name="discount_price" type="INTEGER"/>
+    </addColumn>
+  </changeSet>
+
+  <!-- 주문 당시 세트 구성품 복사본과 구성품별 서빙 수. 주문을 지우면 같이 지운다. -->
+  <changeSet author="ji-inpark" id="set-menu-4">
+    <createTable tableName="order_product_component">
+      <column autoIncrement="true" name="id" type="BIGINT">
+        <constraints nullable="false" primaryKey="true" primaryKeyName="pk_order_product_component"/>
+      </column>
+      <column name="created_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+      <column name="updated_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+      <column name="order_product_id" type="BIGINT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="name" type="VARCHAR(255)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="quantity" type="INTEGER">
+        <constraints nullable="false"/>
+      </column>
+      <column name="display_order" type="INTEGER">
+        <constraints nullable="false"/>
+      </column>
+      <column name="served_count" type="INTEGER" defaultValueNumeric="0">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+    <createIndex indexName="idx_order_product_component_order_product_id" tableName="order_product_component">
+      <column name="order_product_id"/>
+    </createIndex>
+    <addForeignKeyConstraint
+      baseTableName="order_product_component" baseColumnNames="order_product_id"
+      constraintName="fk_order_product_component_order_product"
+      referencedTableName="order_product" referencedColumnNames="id"
+      onDelete="CASCADE"/>
+  </changeSet>
+
+</databaseChangeLog>
