@@ -6,6 +6,7 @@ import com.kioschool.kioschoolapi.domain.order.entity.GhostType
 import com.kioschool.kioschoolapi.domain.order.entity.Order
 import com.kioschool.kioschoolapi.domain.order.entity.OrderProduct
 import com.kioschool.kioschoolapi.domain.order.entity.OrderProductComponent
+import com.kioschool.kioschoolapi.domain.order.event.OrderProductComponentServedCountChangedEvent
 import com.kioschool.kioschoolapi.domain.order.event.OrderProductServedCountChangedEvent
 import com.kioschool.kioschoolapi.domain.order.event.OrderSessionExpectedEndAtChangedEvent
 import com.kioschool.kioschoolapi.domain.order.event.OrderStatusChangedEvent
@@ -238,8 +239,14 @@ class OrderFacade(
         val orderProduct = orderService.getOrderProduct(orderProductId)
         if (orderProduct.order.workspace.id != workspaceId) throw CustomException(ErrorCode.WORKSPACE_INACCESSIBLE)
         val before = orderProduct.servedCount
-        orderProduct.servedCount = servedCount
-        orderProduct.isServed = orderProduct.servedCount == orderProduct.quantity
+        if (orderProduct.isSet()) {
+            // 세트는 "세트 n개분"으로 모든 구성품을 맞춘다. 일반 상품은 지금처럼 범위 검사를 하지 않는다.
+            if (servedCount !in 0..orderProduct.quantity) throw CustomException(ErrorCode.INVALID_INPUT)
+            orderProduct.serveAllComponents(servedCount)
+        } else {
+            orderProduct.servedCount = servedCount
+            orderProduct.isServed = orderProduct.servedCount == orderProduct.quantity
+        }
 
         val saved = orderService.saveOrderProductAndSendWebsocketMessage(orderProduct)
         eventPublisher.publishEvent(
@@ -249,6 +256,36 @@ class OrderFacade(
                 before,
                 orderProduct.servedCount
             )
+        )
+        return OrderProductDto.of(saved)
+    }
+
+    @Transactional
+    fun changeOrderProductComponentServedCount(
+        username: String,
+        workspaceId: Long,
+        orderProductComponentId: Long,
+        servedCount: Int
+    ): OrderProductDto {
+        workspaceService.checkAccessible(username, workspaceId)
+
+        val component = orderService.getOrderProductComponent(orderProductComponentId)
+        val orderProduct = component.orderProduct
+        if (orderProduct.order.workspace.id != workspaceId) throw CustomException(ErrorCode.WORKSPACE_INACCESSIBLE)
+        if (servedCount !in 0..component.totalQuantity()) throw CustomException(ErrorCode.INVALID_INPUT)
+
+        val componentBefore = component.servedCount
+        val setBefore = orderProduct.servedCount
+        component.servedCount = servedCount
+        orderProduct.recalculateServedCountFromComponents()
+
+        val saved = orderService.saveOrderProductAndSendWebsocketMessage(orderProduct)
+        // 같은 값이면 ChangeLogService.record가 거르므로 항상 발행한다.
+        eventPublisher.publishEvent(
+            OrderProductComponentServedCountChangedEvent(workspaceId, component.id, componentBefore, servedCount)
+        )
+        eventPublisher.publishEvent(
+            OrderProductServedCountChangedEvent(workspaceId, orderProduct.id, setBefore, orderProduct.servedCount)
         )
         return OrderProductDto.of(saved)
     }

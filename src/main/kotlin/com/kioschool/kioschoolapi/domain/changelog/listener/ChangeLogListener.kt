@@ -3,6 +3,7 @@ package com.kioschool.kioschoolapi.domain.changelog.listener
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.kioschool.kioschoolapi.domain.changelog.entity.ChangeTargetType
 import com.kioschool.kioschoolapi.domain.changelog.service.ChangeLogService
+import com.kioschool.kioschoolapi.domain.order.event.OrderProductComponentServedCountChangedEvent
 import com.kioschool.kioschoolapi.domain.order.event.OrderProductServedCountChangedEvent
 import com.kioschool.kioschoolapi.domain.order.event.OrderSessionExpectedEndAtChangedEvent
 import com.kioschool.kioschoolapi.domain.order.event.OrderStatusChangedEvent
@@ -40,6 +41,18 @@ class ChangeLogListener(
             event.workspaceId,
             ChangeTargetType.ORDER_PRODUCT,
             event.orderProductId,
+            "served_count",
+            event.before.toString(),
+            event.after.toString()
+        )
+    }
+
+    @EventListener
+    fun handle(event: OrderProductComponentServedCountChangedEvent) {
+        changeLogService.record(
+            event.workspaceId,
+            ChangeTargetType.ORDER_PRODUCT_COMPONENT,
+            event.orderProductComponentId,
             "served_count",
             event.before.toString(),
             event.after.toString()
