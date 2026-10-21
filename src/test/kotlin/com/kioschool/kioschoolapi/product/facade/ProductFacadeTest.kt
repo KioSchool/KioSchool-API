@@ -1,7 +1,7 @@
 package com.kioschool.kioschoolapi.product.facade
 
+import com.kioschool.kioschoolapi.domain.product.dto.common.AdminProductDto
 import com.kioschool.kioschoolapi.domain.product.dto.common.ProductCategoryDto
-import com.kioschool.kioschoolapi.domain.product.dto.common.ProductDto
 import com.kioschool.kioschoolapi.domain.product.entity.Product
 import com.kioschool.kioschoolapi.domain.product.entity.ProductCategory
 import com.kioschool.kioschoolapi.domain.product.event.ProductChangedEvent
@@ -17,6 +17,7 @@ import com.kioschool.kioschoolapi.global.common.enums.ProductStatus
 import com.kioschool.kioschoolapi.global.error.ErrorCode
 import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import io.kotest.core.spec.style.DescribeSpec
+import io.kotest.matchers.shouldBe
 import io.mockk.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.assertThrows
@@ -35,6 +36,7 @@ class ProductFacadeTest : DescribeSpec({
         mockkObject(productService)
         mockkObject(workspaceService)
         mockkObject(s3Service)
+        every { productService.getLinkedSets(any()) } returns emptyMap()
     }
 
     afterTest {
@@ -81,7 +83,7 @@ class ProductFacadeTest : DescribeSpec({
         it("should return products") {
             val username = "username"
             val workspaceId = 1L
-            val products = listOf(ProductDto.of(SampleEntity.product))
+            val products = listOf(AdminProductDto.of(SampleEntity.product, emptyList()))
             every { workspaceService.checkAccessible(username, workspaceId) } just Runs
             every { productService.getCachedProducts(workspaceId) } returns products
 
