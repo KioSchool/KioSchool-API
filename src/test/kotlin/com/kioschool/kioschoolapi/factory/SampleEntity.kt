@@ -9,6 +9,7 @@ import com.kioschool.kioschoolapi.domain.inquiry.entity.Inquiry
 import com.kioschool.kioschoolapi.domain.inquiry.enum.InquiryStatus
 import com.kioschool.kioschoolapi.domain.order.entity.Order
 import com.kioschool.kioschoolapi.domain.order.entity.OrderProduct
+import com.kioschool.kioschoolapi.domain.order.entity.OrderProductComponent
 import com.kioschool.kioschoolapi.domain.order.entity.OrderSession
 import com.kioschool.kioschoolapi.domain.product.entity.Product
 import com.kioschool.kioschoolapi.domain.product.entity.ProductCategory
@@ -340,6 +341,35 @@ object SampleEntity {
         setId(id)
         conditionProducts.forEachIndexed { i, condition ->
             components.add(SetComponent(this, "component$i", 1, i, condition).apply { setId(100L + i) })
+        }
+    }
+
+    // 세트 20(25000원, 할인 3000원)을 quantity개 주문한 항목. 구성품 수량은 componentQuantities 순서대로
+    fun newSetOrderProduct(
+        id: Long,
+        quantity: Int,
+        componentQuantities: List<Int>,
+        order: Order = Order(
+            workspace = newWorkspace(1),
+            tableNumber = 1,
+            customerName = "test",
+            orderNumber = 1,
+            orderSession = null
+        ),
+    ) = OrderProduct(
+        order = order,
+        productId = 20,
+        productName = "set20",
+        productPrice = 25000,
+        quantity = quantity,
+        totalPrice = 25000 * quantity,
+        discountPrice = 3000,
+    ).apply {
+        setId(id)
+        componentQuantities.forEachIndexed { i, componentQuantity ->
+            components.add(
+                OrderProductComponent(this, "component$i", componentQuantity, i).apply { setId(200L + i) }
+            )
         }
     }
 
