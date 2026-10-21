@@ -801,10 +801,11 @@ class OrderFacadeTest : DescribeSpec({
     }
 
     describe("changeOrderProductServedCount on set") {
-        it("세트에 n을 보내면 모든 구성품을 quantity × n으로 맞춘다") {
+        it("세트에 n을 보내면 부모 주문 항목을 잠그고 모든 구성품을 quantity × n으로 맞춘다") {
             val orderProduct = SampleEntity.newSetOrderProduct(1, quantity = 2, componentQuantities = listOf(1, 2))
             every { workspaceService.checkAccessible("test", 1L) } just Runs
             every { orderService.getOrderProduct(1L) } returns orderProduct
+            every { orderService.lockOrderProduct(1L) } returns orderProduct
             every { orderService.saveOrderProductAndSendWebsocketMessage(orderProduct) } returns orderProduct
 
             val result = sut.changeOrderProductServedCount("test", 1L, 1L, 1)
@@ -812,7 +813,10 @@ class OrderFacadeTest : DescribeSpec({
             result.components.map { it.servedCount } shouldBe listOf(1, 2)
             result.servedCount shouldBe 1
             result.isServed shouldBe false
-            verify { orderService.saveOrderProductAndSendWebsocketMessage(orderProduct) }
+            verifyOrder {
+                orderService.lockOrderProduct(1L)
+                orderService.saveOrderProductAndSendWebsocketMessage(orderProduct)
+            }
         }
 
         listOf(3, -1).forEach { servedCount ->
@@ -843,6 +847,7 @@ class OrderFacadeTest : DescribeSpec({
             val result = sut.changeOrderProductServedCount("test", workspaceId, 1L, 5)
 
             result.servedCount shouldBe 5
+            verify(exactly = 0) { orderService.lockOrderProduct(any()) }
         }
     }
 
@@ -861,6 +866,7 @@ class OrderFacadeTest : DescribeSpec({
             val component = orderProduct.components[1]
             every { workspaceService.checkAccessible("test", 1L) } just Runs
             every { orderService.getOrderProductComponent(201L) } returns component
+            every { orderService.lockOrderProduct(1L) } returns orderProduct
             every { orderService.saveOrderProductAndSendWebsocketMessage(orderProduct) } returns orderProduct
 
             val result = sut.changeOrderProductComponentServedCount("test", 1L, 201L, 2)
@@ -871,6 +877,29 @@ class OrderFacadeTest : DescribeSpec({
             verify { orderService.saveOrderProductAndSendWebsocketMessage(orderProduct) }
             verify { eventPublisher.publishEvent(OrderProductComponentServedCountChangedEvent(1L, 201L, 1, 2)) }
             verify { eventPublisher.publishEvent(OrderProductServedCountChangedEvent(1L, 1L, 1, 2)) }
+        }
+
+        it("부모 주문 항목을 잠근 뒤 읽은 다른 구성품 값으로 세트 서빙 수를 계산한다") {
+            // 동시에 들어온 다른 구성품 서빙이 먼저 커밋됐다면 잠금을 얻은 뒤에야 그 값이 보인다.
+            val orderProduct = SampleEntity.newSetOrderProduct(1, quantity = 1, componentQuantities = listOf(1, 1))
+            val component = orderProduct.components[1]
+            every { workspaceService.checkAccessible("test", 1L) } just Runs
+            every { orderService.getOrderProductComponent(201L) } returns component
+            every { orderService.lockOrderProduct(1L) } answers {
+                orderProduct.components[0].servedCount = 1
+                orderProduct
+            }
+            every { orderService.saveOrderProductAndSendWebsocketMessage(orderProduct) } returns orderProduct
+
+            val result = sut.changeOrderProductComponentServedCount("test", 1L, 201L, 1)
+
+            result.servedCount shouldBe 1
+            result.isServed shouldBe true
+            verifyOrder {
+                orderService.getOrderProductComponent(201L)
+                orderService.lockOrderProduct(1L)
+                orderService.saveOrderProductAndSendWebsocketMessage(orderProduct)
+            }
         }
 
         listOf(3, -1).forEach { servedCount ->

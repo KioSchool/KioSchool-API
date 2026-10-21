@@ -173,6 +173,15 @@ class OrderServiceTest : DescribeSpec({
         }
     }
 
+    describe("lockOrderProduct") {
+        it("주문 항목을 쓰기 잠금으로 다시 읽는다") {
+            val orderProduct = SampleEntity.newSetOrderProduct(1, quantity = 1, componentQuantities = listOf(1))
+            every { orderProductRepository.findForUpdateById(1L) } returns orderProduct
+
+            sut.lockOrderProduct(1L) shouldBe orderProduct
+        }
+    }
+
     describe("getOrderProductComponent") {
         it("구성품을 돌려준다") {
             val component = SampleEntity.newSetOrderProduct(1, quantity = 1, componentQuantities = listOf(1)).components[0]

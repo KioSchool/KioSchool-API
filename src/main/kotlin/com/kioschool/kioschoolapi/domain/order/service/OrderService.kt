@@ -85,6 +85,11 @@ class OrderService(
         return orderProductRepository.findWithOrderById(orderProductId) ?: throw NoSuchElementException()
     }
 
+    // 트랜잭션 안에서 불러야 커밋까지 잠금이 유지된다.
+    fun lockOrderProduct(orderProductId: Long): OrderProduct {
+        return orderProductRepository.findForUpdateById(orderProductId) ?: throw NoSuchElementException()
+    }
+
     fun getOrderProductComponent(orderProductComponentId: Long): OrderProductComponent {
         return orderProductComponentRepository.findWithOrderProductById(orderProductComponentId)
             ?: throw CustomException(ErrorCode.NOT_FOUND_ORDER_PRODUCT_COMPONENT)
