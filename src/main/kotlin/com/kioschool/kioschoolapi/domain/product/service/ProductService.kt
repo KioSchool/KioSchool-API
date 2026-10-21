@@ -174,8 +174,17 @@ class ProductService(
         if (products.size != productIds.size) {
             throw CustomException(ErrorCode.NOT_FOUND_PRODUCT)
         }
-        if (products.any { it.status != ProductStatus.SELLING }) {
-            throw CustomException(ErrorCode.NOT_SELLABLE_PRODUCT)
+        // 세트는 연결 상품까지 보고 판단한다. 손님 화면은 details의 id로 장바구니 상품을 표시한다.
+        val notSellableProductIds = products
+            .filter { it.effectiveStatus() != ProductStatus.SELLING }
+            .map { it.id }
+            .distinct()
+            .sorted()
+        if (notSellableProductIds.isNotEmpty()) {
+            throw CustomException(
+                ErrorCode.NOT_SELLABLE_PRODUCT,
+                details = mapOf("notSellableProductIds" to notSellableProductIds)
+            )
         }
     }
 }

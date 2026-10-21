@@ -20,6 +20,7 @@ import com.kioschool.kioschoolapi.global.common.enums.WebsocketType
 import com.kioschool.kioschoolapi.global.error.ErrorCode
 import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import io.kotest.core.spec.style.DescribeSpec
+import io.kotest.matchers.shouldBe
 import io.mockk.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.assertThrows
@@ -95,6 +96,50 @@ class OrderFacadeTest : DescribeSpec({
                     WebsocketType.CREATED
                 )
             }
+        }
+
+        it("세트는 판매가·할인 금액과 구성품을 주문에 복사한다") {
+            val workspaceId = 1L
+            val set = SampleEntity.newSetProduct(20, listOf(SampleEntity.newProduct(10), SampleEntity.newProduct(11)))
+            set.components[0].name = "족발 소"
+            set.components[1].name = "막국수"
+            val saved = slot<Order>()
+
+            every { workspaceService.getWorkspace(workspaceId) } returns SampleEntity.workspace
+            every {
+                workspaceService.getWorkspaceTableByHash(SampleEntity.workspace, "dummy_hash")
+            } returns SampleEntity.workspaceTable.apply { orderSession = SampleEntity.orderSession }
+            every { orderService.getOrderNumber(workspaceId) } returns 1
+            every { orderService.saveOrder(any<Order>()) } answers { it.invocation.args[0] as Order }
+            every { productService.validateProducts(workspaceId, any()) } just Runs
+            every { productService.getAllProductsByCondition(workspaceId) } returns
+                listOf(set, SampleEntity.newProduct(10))
+            every {
+                orderService.saveOrderAndSendWebsocketMessage(capture(saved), WebsocketType.CREATED)
+            } answers { firstArg() }
+
+            sut.createOrder(
+                workspaceId,
+                "dummy_hash",
+                "customer",
+                listOf(OrderProductRequestBody(20L, 2), OrderProductRequestBody(10L, 1))
+            )
+
+            val setItem = saved.captured.orderProducts[0]
+            setItem.productPrice shouldBe 25000
+            setItem.discountPrice shouldBe 3000
+            setItem.totalPrice shouldBe 50000
+            setItem.components.map { it.name } shouldBe listOf("족발 소", "막국수")
+            setItem.components.map { it.displayOrder } shouldBe listOf(0, 1)
+            setItem.components.map { it.quantity } shouldBe listOf(1, 1)
+            setItem.components.all { it.servedCount == 0 } shouldBe true
+            setItem.components.all { it.orderProduct === setItem } shouldBe true
+
+            val singleItem = saved.captured.orderProducts[1]
+            singleItem.discountPrice shouldBe null
+            singleItem.components shouldBe emptyList()
+
+            saved.captured.totalPrice shouldBe 51000
         }
 
         it("should add only exists products to order products") {

@@ -5,6 +5,7 @@ import com.kioschool.kioschoolapi.domain.order.dto.request.OrderProductRequestBo
 import com.kioschool.kioschoolapi.domain.order.entity.GhostType
 import com.kioschool.kioschoolapi.domain.order.entity.Order
 import com.kioschool.kioschoolapi.domain.order.entity.OrderProduct
+import com.kioschool.kioschoolapi.domain.order.entity.OrderProductComponent
 import com.kioschool.kioschoolapi.domain.order.event.OrderProductServedCountChangedEvent
 import com.kioschool.kioschoolapi.domain.order.event.OrderSessionExpectedEndAtChangedEvent
 import com.kioschool.kioschoolapi.domain.order.event.OrderStatusChangedEvent
@@ -76,8 +77,21 @@ class OrderFacade(
                 productName = product.name,
                 productPrice = product.price,
                 quantity = it.quantity,
-                totalPrice = product.price * it.quantity
-            )
+                totalPrice = product.price * it.quantity,
+                discountPrice = product.discountPrice
+            ).apply {
+                // 세트는 그 시점 구성품을 복사한다. 연결 상품은 복사하지 않는다.
+                product.components.sortedBy { component -> component.displayOrder }.forEach { component ->
+                    components.add(
+                        OrderProductComponent(
+                            orderProduct = this,
+                            name = component.name,
+                            quantity = component.quantity,
+                            displayOrder = component.displayOrder
+                        )
+                    )
+                }
+            }
         }
 
         val totalPrice = orderProducts.sumOf { it.productPrice.toLong() * it.quantity }
