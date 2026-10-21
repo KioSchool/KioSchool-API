@@ -4,6 +4,7 @@ import com.kioschool.kioschoolapi.domain.order.dto.request.OrderProductRequestBo
 import com.kioschool.kioschoolapi.domain.order.entity.Order
 import com.kioschool.kioschoolapi.domain.order.entity.OrderProduct
 import com.kioschool.kioschoolapi.domain.order.entity.OrderSession
+import com.kioschool.kioschoolapi.domain.order.event.OrderProductComponentServedCountChangedEvent
 import com.kioschool.kioschoolapi.domain.order.event.OrderProductServedCountChangedEvent
 import com.kioschool.kioschoolapi.domain.order.event.OrderSessionExpectedEndAtChangedEvent
 import com.kioschool.kioschoolapi.domain.order.event.OrderStatusChangedEvent
@@ -796,6 +797,115 @@ class OrderFacadeTest : DescribeSpec({
                     any()
                 )
             }
+        }
+    }
+
+    describe("changeOrderProductServedCount on set") {
+        it("세트에 n을 보내면 모든 구성품을 quantity × n으로 맞춘다") {
+            val orderProduct = SampleEntity.newSetOrderProduct(1, quantity = 2, componentQuantities = listOf(1, 2))
+            every { workspaceService.checkAccessible("test", 1L) } just Runs
+            every { orderService.getOrderProduct(1L) } returns orderProduct
+            every { orderService.saveOrderProductAndSendWebsocketMessage(orderProduct) } returns orderProduct
+
+            val result = sut.changeOrderProductServedCount("test", 1L, 1L, 1)
+
+            result.components.map { it.servedCount } shouldBe listOf(1, 2)
+            result.servedCount shouldBe 1
+            result.isServed shouldBe false
+            verify { orderService.saveOrderProductAndSendWebsocketMessage(orderProduct) }
+        }
+
+        listOf(3, -1).forEach { servedCount ->
+            it("세트에 범위 밖 값($servedCount)을 보내면 INVALID_INPUT") {
+                val orderProduct = SampleEntity.newSetOrderProduct(1, quantity = 2, componentQuantities = listOf(1, 2))
+                every { workspaceService.checkAccessible("test", 1L) } just Runs
+                every { orderService.getOrderProduct(1L) } returns orderProduct
+
+                val ex = assertThrows<CustomException> {
+                    sut.changeOrderProductServedCount("test", 1L, 1L, servedCount)
+                }
+
+                ex.errorCode shouldBe ErrorCode.INVALID_INPUT
+                verify(exactly = 0) { orderService.saveOrderProductAndSendWebsocketMessage(any()) }
+            }
+        }
+
+        it("일반 상품은 지금처럼 범위 검사 없이 저장한다") {
+            val orderProduct = SampleEntity.orderProduct1.apply {
+                this.servedCount = 0
+                this.quantity = 1
+            }
+            val workspaceId = orderProduct.order.workspace.id
+            every { workspaceService.checkAccessible("test", workspaceId) } just Runs
+            every { orderService.getOrderProduct(1L) } returns orderProduct
+            every { orderService.saveOrderProductAndSendWebsocketMessage(orderProduct) } returns orderProduct
+
+            val result = sut.changeOrderProductServedCount("test", workspaceId, 1L, 5)
+
+            result.servedCount shouldBe 5
+        }
+    }
+
+    describe("changeOrderProductComponentServedCount") {
+        fun setOrderProduct(order: Order? = null) =
+            (if (order == null) SampleEntity.newSetOrderProduct(1, quantity = 2, componentQuantities = listOf(1, 1))
+            else SampleEntity.newSetOrderProduct(1, quantity = 2, componentQuantities = listOf(1, 1), order = order))
+                .apply {
+                    components[0].servedCount = 2
+                    components[1].servedCount = 1
+                    recalculateServedCountFromComponents()
+                }
+
+        it("구성품 서빙 수를 바꾸고 세트 서빙 수를 다시 계산한다") {
+            val orderProduct = setOrderProduct()
+            val component = orderProduct.components[1]
+            every { workspaceService.checkAccessible("test", 1L) } just Runs
+            every { orderService.getOrderProductComponent(201L) } returns component
+            every { orderService.saveOrderProductAndSendWebsocketMessage(orderProduct) } returns orderProduct
+
+            val result = sut.changeOrderProductComponentServedCount("test", 1L, 201L, 2)
+
+            result.servedCount shouldBe 2
+            result.isServed shouldBe true
+            result.components[1].servedCount shouldBe 2
+            verify { orderService.saveOrderProductAndSendWebsocketMessage(orderProduct) }
+            verify { eventPublisher.publishEvent(OrderProductComponentServedCountChangedEvent(1L, 201L, 1, 2)) }
+            verify { eventPublisher.publishEvent(OrderProductServedCountChangedEvent(1L, 1L, 1, 2)) }
+        }
+
+        listOf(3, -1).forEach { servedCount ->
+            it("구성품 전체 수량 밖 값($servedCount)이면 INVALID_INPUT") {
+                val orderProduct = setOrderProduct()
+                every { workspaceService.checkAccessible("test", 1L) } just Runs
+                every { orderService.getOrderProductComponent(201L) } returns orderProduct.components[1]
+
+                val ex = assertThrows<CustomException> {
+                    sut.changeOrderProductComponentServedCount("test", 1L, 201L, servedCount)
+                }
+
+                ex.errorCode shouldBe ErrorCode.INVALID_INPUT
+                verify(exactly = 0) { orderService.saveOrderProductAndSendWebsocketMessage(any()) }
+            }
+        }
+
+        it("구성품 주문이 다른 주점이면 WORKSPACE_INACCESSIBLE") {
+            val otherOrder = Order(
+                workspace = SampleEntity.newWorkspace(2),
+                tableNumber = 1,
+                customerName = "test",
+                orderNumber = 1,
+                orderSession = null
+            )
+            val orderProduct = setOrderProduct(otherOrder)
+            every { workspaceService.checkAccessible("test", 1L) } just Runs
+            every { orderService.getOrderProductComponent(201L) } returns orderProduct.components[1]
+
+            val ex = assertThrows<CustomException> {
+                sut.changeOrderProductComponentServedCount("test", 1L, 201L, 2)
+            }
+
+            ex.errorCode shouldBe ErrorCode.WORKSPACE_INACCESSIBLE
+            verify(exactly = 0) { orderService.saveOrderProductAndSendWebsocketMessage(any()) }
         }
     }
 
