@@ -10,11 +10,9 @@ import com.kioschool.kioschoolapi.domain.product.event.ProductSnapshot
 import com.kioschool.kioschoolapi.domain.product.service.ProductService
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.global.aws.S3Service
-import com.kioschool.kioschoolapi.global.cache.constant.CacheNames
 import com.kioschool.kioschoolapi.global.common.enums.ProductStatus
 import com.kioschool.kioschoolapi.global.error.ErrorCode
 import com.kioschool.kioschoolapi.global.error.exception.CustomException
-import org.springframework.cache.annotation.Cacheable
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Component
 import org.springframework.web.multipart.MultipartFile
@@ -34,23 +32,21 @@ class ProductFacade(
         )
     }
 
-    @Cacheable(cacheNames = [CacheNames.PRODUCTS], key = "#workspaceId")
+    // 캐시는 ProductService에 둔다. 여기에 두면 캐시가 맞을 때 접근 확인까지 건너뛴다.
     fun getProducts(username: String, workspaceId: Long): List<ProductDto> {
         workspaceService.checkAccessible(username, workspaceId)
-        return productService.getAllProductsByCondition(workspaceId).map { ProductDto.of(it) }
+        return productService.getCachedProducts(workspaceId)
     }
 
     fun getProducts(workspaceId: Long, categoryId: Long?) =
         productService.getAllProductsByCondition(workspaceId, categoryId).map { ProductDto.of(it) }
 
-    @Cacheable(cacheNames = [CacheNames.PRODUCT_CATEGORIES], key = "#workspaceId")
     fun getProductCategories(workspaceId: Long) =
-        productService.getAllProductCategories(workspaceId).map { ProductCategoryDto.of(it) }
+        productService.getCachedProductCategories(workspaceId)
 
-    @Cacheable(cacheNames = [CacheNames.PRODUCT_CATEGORIES], key = "#workspaceId")
     fun getProductCategories(username: String, workspaceId: Long): List<ProductCategoryDto> {
         workspaceService.checkAccessible(username, workspaceId)
-        return productService.getAllProductCategories(workspaceId).map { ProductCategoryDto.of(it) }
+        return productService.getCachedProductCategories(workspaceId)
     }
 
     fun createProduct(
