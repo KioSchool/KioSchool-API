@@ -6,11 +6,12 @@ import com.kioschool.kioschoolapi.domain.dashboard.dto.TopSellingProductDto
 import com.kioschool.kioschoolapi.domain.dashboard.dto.WorkspaceInfoDto
 import com.kioschool.kioschoolapi.domain.order.dto.common.OrderDto
 import com.kioschool.kioschoolapi.domain.order.service.OrderService
-import com.kioschool.kioschoolapi.domain.product.dto.common.ProductDto
+import com.kioschool.kioschoolapi.domain.product.dto.common.AdminProductDto
 import com.kioschool.kioschoolapi.domain.product.service.ProductService
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.global.common.enums.OrderStatus
 import com.kioschool.kioschoolapi.global.common.enums.ProductStatus
+import com.kioschool.kioschoolapi.global.common.enums.ProductType
 
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
@@ -69,13 +70,6 @@ class DashboardFacade(
         )
         val productMap =
             productService.getProducts(topSelling.map { it.productId }).associateBy { it.id }
-        val topSellingDtoList = topSelling.mapNotNull {
-            val product = productMap[it.productId] ?: return@mapNotNull null
-            TopSellingProductDto(
-                product = ProductDto.of(product),
-                totalQuantity = it.totalQuantity
-            )
-        }
 
         // Recent Orders
         val recentOrdersDtoList = orderService.getAllOrdersByCondition(
@@ -84,10 +78,22 @@ class DashboardFacade(
         )
             .map { OrderDto.of(it) }
 
-        // Out of Stock
-        val outOfStockDtoList = productService.getAllProductsByCondition(workspaceId)
+        // Out of Stock - 저장된 status 기준. 연결 상품 때문에 자동으로 멈춘 세트는 넣지 않는다.
+        val outOfStockProducts = productService.getAllProductsByCondition(workspaceId)
             .filter { it.status == ProductStatus.SOLD_OUT }
-            .map { ProductDto.of(it) }
+
+        // 두 목록의 연결 세트를 한 번에 조회한다.
+        val linkedSets = productService.getLinkedSets(
+            (productMap.values + outOfStockProducts).filter { it.type == ProductType.SINGLE }.map { it.id }.distinct()
+        )
+        val topSellingDtoList = topSelling.mapNotNull {
+            val product = productMap[it.productId] ?: return@mapNotNull null
+            TopSellingProductDto(
+                product = AdminProductDto.of(product, linkedSets[product.id].orEmpty()),
+                totalQuantity = it.totalQuantity
+            )
+        }
+        val outOfStockDtoList = outOfStockProducts.map { AdminProductDto.of(it, linkedSets[it.id].orEmpty()) }
 
         return DashboardDto(
             dashboardWorkspaceInfo = workspaceDto,

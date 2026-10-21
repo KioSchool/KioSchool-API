@@ -1,12 +1,13 @@
 package com.kioschool.kioschoolapi.domain.product.service
 
+import com.kioschool.kioschoolapi.domain.product.dto.common.AdminProductDto
 import com.kioschool.kioschoolapi.domain.product.dto.common.ProductCategoryDto
-import com.kioschool.kioschoolapi.domain.product.dto.common.ProductDto
 import com.kioschool.kioschoolapi.domain.product.entity.Product
 import com.kioschool.kioschoolapi.domain.product.entity.ProductCategory
 import com.kioschool.kioschoolapi.domain.product.repository.CustomProductRepository
 import com.kioschool.kioschoolapi.domain.product.repository.ProductCategoryRepository
 import com.kioschool.kioschoolapi.domain.product.repository.ProductRepository
+import com.kioschool.kioschoolapi.domain.product.repository.SetComponentRepository
 import com.kioschool.kioschoolapi.domain.workspace.entity.Workspace
 import com.kioschool.kioschoolapi.global.aws.S3Service
 import com.kioschool.kioschoolapi.global.cache.annotation.ProductCategoriesUpdateEvent
@@ -15,6 +16,7 @@ import com.kioschool.kioschoolapi.global.cache.annotation.ProductUpdateEvent
 import com.kioschool.kioschoolapi.global.cache.annotation.ProductsUpdateEvent
 import com.kioschool.kioschoolapi.global.cache.constant.CacheNames
 import com.kioschool.kioschoolapi.global.common.enums.ProductStatus
+import com.kioschool.kioschoolapi.global.common.enums.ProductType
 import com.kioschool.kioschoolapi.global.error.ErrorCode
 import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import jakarta.transaction.Transactional
@@ -30,7 +32,8 @@ class ProductService(
     private val productRepository: ProductRepository,
     private val customProductRepository: CustomProductRepository,
     private val productCategoryRepository: ProductCategoryRepository,
-    private val s3Service: S3Service
+    private val s3Service: S3Service,
+    private val setComponentRepository: SetComponentRepository
 ) {
     fun getAllProductsByCondition(
         workspaceId: Long,
@@ -40,6 +43,14 @@ class ProductService(
             workspaceId,
             productCategoryId
         )
+    }
+
+    // 키는 연결 상품 id, 값은 그 상품을 구성품의 연결 상품으로 쓰는 세트(중복 없이 id 순)
+    fun getLinkedSets(productIds: Collection<Long>): Map<Long, List<Product>> {
+        if (productIds.isEmpty()) return emptyMap()
+        return setComponentRepository.findAllByConditionProductIdIn(productIds)
+            .groupBy({ it.conditionProduct!!.id }, { it.setProduct })
+            .mapValues { (_, sets) -> sets.distinctBy { it.id }.sortedBy { it.id } }
     }
 
     fun getProduct(productId: Long): Product {
@@ -99,10 +110,13 @@ class ProductService(
         return productCategoryRepository.findAllByWorkspaceIdOrderByIndexAsc(workspaceId)
     }
 
-    // 캐시가 맞으면 본문을 건너뛰므로 접근 확인은 부르는 쪽에서 먼저 한다.
+    // 관리자 상품 목록. 캐시가 맞으면 본문을 건너뛰므로 접근 확인은 부르는 쪽에서 먼저 한다.
+    // 연결 세트는 일반 상품에만 있으므로 일반 상품 id로 한 번만 조회한다.
     @Cacheable(cacheNames = [CacheNames.PRODUCTS], key = "#workspaceId")
-    fun getCachedProducts(workspaceId: Long): List<ProductDto> {
-        return getAllProductsByCondition(workspaceId).map { ProductDto.of(it) }
+    fun getCachedProducts(workspaceId: Long): List<AdminProductDto> {
+        val products = getAllProductsByCondition(workspaceId)
+        val linkedSets = getLinkedSets(products.filter { it.type == ProductType.SINGLE }.map { it.id })
+        return products.map { AdminProductDto.of(it, linkedSets[it.id].orEmpty()) }
     }
 
     @Cacheable(cacheNames = [CacheNames.PRODUCT_CATEGORIES], key = "#workspaceId")

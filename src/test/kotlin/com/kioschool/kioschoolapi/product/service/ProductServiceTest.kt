@@ -4,8 +4,11 @@ import com.kioschool.kioschoolapi.domain.product.entity.Product
 import com.kioschool.kioschoolapi.domain.product.repository.CustomProductRepository
 import com.kioschool.kioschoolapi.domain.product.repository.ProductCategoryRepository
 import com.kioschool.kioschoolapi.domain.product.repository.ProductRepository
+import com.kioschool.kioschoolapi.domain.product.repository.SetComponentRepository
 import com.kioschool.kioschoolapi.domain.product.service.ProductService
 import com.kioschool.kioschoolapi.factory.SampleEntity
+import com.kioschool.kioschoolapi.factory.SampleEntity.newProduct
+import com.kioschool.kioschoolapi.factory.SampleEntity.newSetProduct
 import com.kioschool.kioschoolapi.global.aws.S3Service
 import com.kioschool.kioschoolapi.global.common.enums.ProductStatus
 import com.kioschool.kioschoolapi.global.error.ErrorCode
@@ -22,12 +25,14 @@ class ProductServiceTest : DescribeSpec({
     val customRepository = mockk<CustomProductRepository>()
     val categoryRepository = mockk<ProductCategoryRepository>()
     val s3Service = mockk<S3Service>()
+    val setComponentRepository = mockk<SetComponentRepository>()
     val sut = ProductService(
         "test",
         repository,
         customRepository,
         categoryRepository,
-        s3Service
+        s3Service,
+        setComponentRepository
     )
 
     beforeTest {
@@ -275,6 +280,42 @@ class ProductServiceTest : DescribeSpec({
             sut.deleteProduct(product) shouldBe product
 
             verify { repository.delete(product) }
+        }
+    }
+
+    describe("getCachedProducts") {
+        it("관리자 상품 응답을 만들고, 연결 세트는 일반 상품 id로만 한 번 조회해 싣는다") {
+            val single = newProduct(10)
+            val set = newSetProduct(20, listOf(single))
+            every { customRepository.findAllByCondition(1L, null) } returns listOf(single, set)
+            every { setComponentRepository.findAllByConditionProductIdIn(listOf(10L)) } returns set.components
+
+            val result = sut.getCachedProducts(1L)
+
+            result.first { it.id == 10L }.linkedSets.map { it.id } shouldBe listOf(20L)
+            result.first { it.id == 20L }.linkedSets shouldBe emptyList()
+            result.first { it.id == 20L }.effectiveStatus shouldBe ProductStatus.SELLING
+            verify(exactly = 1) { setComponentRepository.findAllByConditionProductIdIn(any()) }
+        }
+    }
+
+    describe("getLinkedSets") {
+        it("연결 상품별로 그 상품을 쓰는 세트를 중복 없이 id 순으로 준다") {
+            val single = newProduct(10)
+            val set20 = newSetProduct(20, listOf(single, single))
+            val set21 = newSetProduct(21, listOf(single))
+            every { setComponentRepository.findAllByConditionProductIdIn(listOf(10L)) } returns
+                set21.components + set20.components
+
+            val result = sut.getLinkedSets(listOf(10L))
+
+            result[10L]!!.map { it.id } shouldBe listOf(20L, 21L)
+        }
+
+        it("빈 입력이면 저장소를 부르지 않는다") {
+            sut.getLinkedSets(emptyList()) shouldBe emptyMap()
+
+            verify(exactly = 0) { setComponentRepository.findAllByConditionProductIdIn(any()) }
         }
     }
 

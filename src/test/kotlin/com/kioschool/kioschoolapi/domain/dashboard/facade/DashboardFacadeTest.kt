@@ -79,6 +79,7 @@ class DashboardFacadeTest {
         )
 
         every { productService.getProducts(listOf(10L)) } returns pizzaProducts
+        every { productService.getLinkedSets(any()) } returns emptyMap()
 
         // Mock Recent Orders (Returns Entities)
         val mockOrder = mockk<Order>(relaxed = true) {
