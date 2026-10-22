@@ -2,6 +2,7 @@ package com.kioschool.kioschoolapi.order.service
 
 import com.kioschool.kioschoolapi.domain.order.repository.CustomOrderRepository
 import com.kioschool.kioschoolapi.domain.order.repository.CustomOrderSessionRepository
+import com.kioschool.kioschoolapi.domain.order.repository.OrderProductComponentRepository
 import com.kioschool.kioschoolapi.domain.order.repository.OrderProductRepository
 import com.kioschool.kioschoolapi.domain.order.repository.OrderRedisRepository
 import com.kioschool.kioschoolapi.domain.order.repository.OrderRepository
@@ -10,7 +11,10 @@ import com.kioschool.kioschoolapi.domain.order.service.OrderService
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.factory.SampleEntity
 import com.kioschool.kioschoolapi.global.common.enums.WebsocketType
+import com.kioschool.kioschoolapi.global.error.ErrorCode
+import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import com.kioschool.kioschoolapi.global.websocket.service.CustomWebSocketService
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.*
@@ -26,6 +30,7 @@ class OrderServiceTest : DescribeSpec({
     val orderProductRepository = mockk<OrderProductRepository>()
     val orderSessionRepository = mockk<OrderSessionRepository>()
     val customOrderSessionRepository = mockk<CustomOrderSessionRepository>()
+    val orderProductComponentRepository = mockk<OrderProductComponentRepository>()
     val eventPublisher = mockk<org.springframework.context.ApplicationEventPublisher>()
 
     val sut = OrderService(
@@ -36,7 +41,8 @@ class OrderServiceTest : DescribeSpec({
         orderProductRepository,
         orderSessionRepository,
         customOrderSessionRepository,
-        eventPublisher
+        eventPublisher,
+        orderProductComponentRepository
     )
 
     beforeTest {
@@ -164,6 +170,32 @@ class OrderServiceTest : DescribeSpec({
 
             // Assert
             verify { repository.findWithDetailsById(orderId) }
+        }
+    }
+
+    describe("lockOrderProduct") {
+        it("주문 항목을 쓰기 잠금으로 다시 읽는다") {
+            val orderProduct = SampleEntity.newSetOrderProduct(1, quantity = 1, componentQuantities = listOf(1))
+            every { orderProductRepository.findForUpdateById(1L) } returns orderProduct
+
+            sut.lockOrderProduct(1L) shouldBe orderProduct
+        }
+    }
+
+    describe("getOrderProductComponent") {
+        it("구성품을 돌려준다") {
+            val component = SampleEntity.newSetOrderProduct(1, quantity = 1, componentQuantities = listOf(1)).components[0]
+            every { orderProductComponentRepository.findWithOrderProductById(200L) } returns component
+
+            sut.getOrderProductComponent(200L) shouldBe component
+        }
+
+        it("없으면 NOT_FOUND_ORDER_PRODUCT_COMPONENT") {
+            every { orderProductComponentRepository.findWithOrderProductById(9L) } returns null
+
+            val ex = shouldThrow<CustomException> { sut.getOrderProductComponent(9L) }
+
+            ex.errorCode shouldBe ErrorCode.NOT_FOUND_ORDER_PRODUCT_COMPONENT
         }
     }
 

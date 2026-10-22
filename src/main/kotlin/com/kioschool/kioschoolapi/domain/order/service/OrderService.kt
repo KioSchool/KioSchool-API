@@ -3,6 +3,7 @@ package com.kioschool.kioschoolapi.domain.order.service
 import com.kioschool.kioschoolapi.domain.dashboard.dto.ProductIdQuantityDto
 import com.kioschool.kioschoolapi.domain.order.entity.Order
 import com.kioschool.kioschoolapi.domain.order.entity.OrderProduct
+import com.kioschool.kioschoolapi.domain.order.entity.OrderProductComponent
 import com.kioschool.kioschoolapi.domain.order.entity.OrderSession
 import com.kioschool.kioschoolapi.domain.order.event.OrderWebsocketEvent
 import com.kioschool.kioschoolapi.domain.order.repository.*
@@ -13,6 +14,8 @@ import com.kioschool.kioschoolapi.global.cache.annotation.OrderProductUpdateEven
 import com.kioschool.kioschoolapi.global.cache.annotation.OrderUpdateEvent
 import com.kioschool.kioschoolapi.global.common.enums.OrderStatus
 import com.kioschool.kioschoolapi.global.common.enums.WebsocketType
+import com.kioschool.kioschoolapi.global.error.ErrorCode
+import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import com.kioschool.kioschoolapi.global.websocket.service.CustomWebSocketService
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
@@ -26,7 +29,8 @@ class OrderService(
     private val orderProductRepository: OrderProductRepository,
     private val orderSessionRepository: OrderSessionRepository,
     private val customOrderSessionRepository: CustomOrderSessionRepository,
-    private val eventPublisher: org.springframework.context.ApplicationEventPublisher
+    private val eventPublisher: org.springframework.context.ApplicationEventPublisher,
+    private val orderProductComponentRepository: OrderProductComponentRepository
 ) {
     @OrderUpdateEvent
     fun saveOrder(order: Order): Order {
@@ -79,6 +83,16 @@ class OrderService(
 
     fun getOrderProduct(orderProductId: Long): OrderProduct {
         return orderProductRepository.findWithOrderById(orderProductId) ?: throw NoSuchElementException()
+    }
+
+    // 트랜잭션 안에서 불러야 커밋까지 잠금이 유지된다.
+    fun lockOrderProduct(orderProductId: Long): OrderProduct {
+        return orderProductRepository.findForUpdateById(orderProductId) ?: throw NoSuchElementException()
+    }
+
+    fun getOrderProductComponent(orderProductComponentId: Long): OrderProductComponent {
+        return orderProductComponentRepository.findWithOrderProductById(orderProductComponentId)
+            ?: throw CustomException(ErrorCode.NOT_FOUND_ORDER_PRODUCT_COMPONENT)
     }
 
     fun getOrderNumber(workspaceId: Long): Long {

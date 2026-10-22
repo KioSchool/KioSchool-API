@@ -3,6 +3,7 @@ package com.kioschool.kioschoolapi.changelog.listener
 import com.kioschool.kioschoolapi.domain.changelog.entity.ChangeTargetType
 import com.kioschool.kioschoolapi.domain.changelog.listener.ChangeLogListener
 import com.kioschool.kioschoolapi.domain.changelog.service.ChangeLogService
+import com.kioschool.kioschoolapi.domain.order.event.OrderProductComponentServedCountChangedEvent
 import com.kioschool.kioschoolapi.domain.order.event.OrderProductServedCountChangedEvent
 import com.kioschool.kioschoolapi.domain.order.event.OrderSessionExpectedEndAtChangedEvent
 import com.kioschool.kioschoolapi.domain.order.event.OrderStatusChangedEvent
@@ -45,6 +46,16 @@ class ChangeLogListenerTest : DescribeSpec({
 
             verify(exactly = 1) {
                 changeLogService.record(1L, ChangeTargetType.ORDER_PRODUCT, 20L, "served_count", "1", "2")
+            }
+        }
+    }
+
+    describe("OrderProductComponentServedCountChangedEvent") {
+        it("should record the component served count change") {
+            sut.handle(OrderProductComponentServedCountChangedEvent(1L, 901L, 1, 2))
+
+            verify(exactly = 1) {
+                changeLogService.record(1L, ChangeTargetType.ORDER_PRODUCT_COMPONENT, 901L, "served_count", "1", "2")
             }
         }
     }

@@ -129,6 +129,23 @@ class AdminOrderController(
         )
     }
 
+    @Operation(
+        summary = "세트 구성품 서빙 개수 변경",
+        description = "세트 구성품 하나의 서빙 개수를 변경하고, 세트 항목의 서빙 개수를 다시 계산해 돌려줍니다."
+    )
+    @PutMapping("/order/product/component")
+    fun changeOrderProductComponentServedCount(
+        @AdminUsername username: String,
+        @RequestBody body: ChangeOrderProductComponentServedCount
+    ): OrderProductDto {
+        return orderFacade.changeOrderProductComponentServedCount(
+            username,
+            body.workspaceId,
+            body.orderProductComponentId,
+            body.servedCount
+        )
+    }
+
     @Operation(summary = "주문 번호 초기화", description = "주문 번호를 초기화합니다.")
     @PostMapping("/order/number/reset")
     fun resetOrderNumber(

@@ -319,6 +319,40 @@ class ProductServiceTest : DescribeSpec({
         }
     }
 
+    describe("validateProducts with sets") {
+        it("연결 상품이 품절인 세트는 NOT_SELLABLE_PRODUCT와 주문할 수 없는 상품 id") {
+            val set = newSetProduct(20, listOf(newProduct(11, status = ProductStatus.SOLD_OUT)))
+            every { repository.findAllByIdInAndWorkspaceId(listOf(10L, 20L), 1L) } returns listOf(newProduct(10), set)
+
+            val ex = shouldThrow<CustomException> {
+                sut.validateProducts(1L, listOf(10L, 20L))
+            }
+
+            ex.errorCode shouldBe ErrorCode.NOT_SELLABLE_PRODUCT
+            ex.details shouldBe mapOf("notSellableProductIds" to listOf(20L))
+        }
+
+        it("주문할 수 없는 상품 id는 중복 없이 오름차순") {
+            every { repository.findAllByIdInAndWorkspaceId(listOf(30L, 10L), 1L) } returns listOf(
+                newProduct(30, status = ProductStatus.HIDDEN),
+                newProduct(10, status = ProductStatus.SOLD_OUT)
+            )
+
+            val ex = shouldThrow<CustomException> {
+                sut.validateProducts(1L, listOf(30L, 10L))
+            }
+
+            ex.details shouldBe mapOf("notSellableProductIds" to listOf(10L, 30L))
+        }
+
+        it("연결 상품이 HIDDEN인 세트는 주문할 수 있다") {
+            val set = newSetProduct(20, listOf(newProduct(11, status = ProductStatus.HIDDEN)))
+            every { repository.findAllByIdInAndWorkspaceId(listOf(20L), 1L) } returns listOf(set)
+
+            sut.validateProducts(1L, listOf(20L))
+        }
+    }
+
     describe("validateProducts") {
         it("should run") {
             val workspaceId = 1L

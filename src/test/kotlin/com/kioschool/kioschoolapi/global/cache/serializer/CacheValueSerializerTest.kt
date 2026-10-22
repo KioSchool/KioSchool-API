@@ -2,9 +2,11 @@ package com.kioschool.kioschoolapi.global.cache.serializer
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
+import com.kioschool.kioschoolapi.domain.order.dto.common.OrderProductDto
 import com.kioschool.kioschoolapi.domain.product.dto.common.ProductDto
 import com.kioschool.kioschoolapi.domain.workspace.dto.common.FocalPointDto
 import com.kioschool.kioschoolapi.domain.workspace.dto.common.WorkspaceImageDto
+import com.kioschool.kioschoolapi.factory.SampleEntity
 import com.kioschool.kioschoolapi.factory.SampleEntity.newProduct
 import com.kioschool.kioschoolapi.global.configuration.CacheConfiguration
 import io.kotest.core.spec.style.DescribeSpec
@@ -38,6 +40,16 @@ class CacheValueSerializerTest : DescribeSpec({
             val legacy = withoutKeys(serializer.serialize(ProductDto.of(newProduct(1))), "discountPrice")
 
             (serializer.deserialize(legacy) as ProductDto).discountPrice shouldBe null
+        }
+
+        it("discountPrice·components가 없던 OrderProductDto 캐시를 읽는다") {
+            val legacy = withoutKeys(
+                serializer.serialize(OrderProductDto.of(SampleEntity.orderProduct1)), "discountPrice", "components"
+            )
+
+            val dto = serializer.deserialize(legacy) as OrderProductDto
+            dto.discountPrice shouldBe null
+            dto.components shouldBe emptyList()
         }
     }
 })
