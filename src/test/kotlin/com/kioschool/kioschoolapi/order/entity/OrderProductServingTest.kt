@@ -15,7 +15,7 @@ class OrderProductServingTest : DescribeSpec({
             op.isServed shouldBe false
         }
 
-        it("모든 구성품이 다 나가면 isServed") {
+        it("세트(B 1개, C 2개)를 2개 주문해 B 2개, C 4개를 내주면 세트 2개 완료") {
             val op = newSetOrderProduct(1, quantity = 2, componentQuantities = listOf(1, 2))
             op.components[0].servedCount = 2
             op.components[1].servedCount = 4
@@ -24,7 +24,7 @@ class OrderProductServingTest : DescribeSpec({
             op.isServed shouldBe true
         }
 
-        it("serveAllComponents(n)은 구성품을 quantity × n으로 맞춤") {
+        it("serveAllComponents(n)은 구성품을 세트 1개당 수량 × n으로 맞춤") {
             val op = newSetOrderProduct(1, quantity = 2, componentQuantities = listOf(1, 2))
             op.serveAllComponents(2)
             op.components.map { it.servedCount } shouldBe listOf(2, 4)
