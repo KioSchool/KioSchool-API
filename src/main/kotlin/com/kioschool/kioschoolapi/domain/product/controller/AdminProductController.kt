@@ -1,7 +1,7 @@
 package com.kioschool.kioschoolapi.domain.product.controller
 
+import com.kioschool.kioschoolapi.domain.product.dto.common.AdminProductDto
 import com.kioschool.kioschoolapi.domain.product.dto.common.ProductCategoryDto
-import com.kioschool.kioschoolapi.domain.product.dto.common.ProductDto
 import com.kioschool.kioschoolapi.domain.product.dto.request.*
 import com.kioschool.kioschoolapi.domain.product.facade.ProductFacade
 import com.kioschool.kioschoolapi.global.security.annotation.AdminUsername
@@ -22,7 +22,7 @@ class AdminProductController(
     fun getProducts(
         @AdminUsername username: String,
         @RequestParam workspaceId: Long
-    ): List<ProductDto> {
+    ): List<AdminProductDto> {
         return productFacade.getProducts(username, workspaceId)
     }
 
@@ -31,7 +31,7 @@ class AdminProductController(
     fun getProduct(
         @AdminUsername username: String,
         @RequestParam productId: Long
-    ): ProductDto {
+    ): AdminProductDto {
         return productFacade.getProduct(username, productId)
     }
 
@@ -50,7 +50,7 @@ class AdminProductController(
         @AdminUsername username: String,
         @RequestPart body: CreateProductRequestBody,
         @RequestPart file: MultipartFile?
-    ): ProductDto {
+    ): AdminProductDto {
         return productFacade.createProduct(
             username,
             body.workspaceId,
@@ -69,7 +69,7 @@ class AdminProductController(
         @AdminUsername username: String,
         @RequestPart body: UpdateProductRequestBody,
         @RequestPart file: MultipartFile?
-    ): ProductDto {
+    ): AdminProductDto {
         return productFacade.updateProduct(
             username,
             body.workspaceId,
@@ -87,7 +87,7 @@ class AdminProductController(
     fun updateProductStatus(
         @AdminUsername username: String,
         @RequestBody body: UpdateProductStatusRequestBody,
-    ): ProductDto {
+    ): AdminProductDto {
         return productFacade.updateProductStatus(
             username,
             body.workspaceId,
@@ -108,7 +108,7 @@ class AdminProductController(
     fun sortProducts(
         @AdminUsername username: String,
         @RequestBody body: SortProductsRequestBody
-    ): List<ProductDto> {
+    ): List<AdminProductDto> {
         return productFacade.sortProducts(
             username,
             body.workspaceId,

@@ -1,14 +1,14 @@
 package com.kioschool.kioschoolapi.domain.dashboard.dto
 
 import com.kioschool.kioschoolapi.domain.order.dto.common.OrderDto
-import com.kioschool.kioschoolapi.domain.product.dto.common.ProductDto
+import com.kioschool.kioschoolapi.domain.product.dto.common.AdminProductDto
 
 data class DashboardDto(
     val dashboardWorkspaceInfo: WorkspaceInfoDto,
     val stats: DashboardStatsDto,
     val topSellingProducts: List<TopSellingProductDto>,
     val recentOrders: List<OrderDto>,
-    val outOfStockProducts: List<ProductDto>
+    val outOfStockProducts: List<AdminProductDto>
 )
 
 data class WorkspaceInfoDto(
@@ -26,6 +26,6 @@ data class DashboardStatsDto(
 )
 
 data class TopSellingProductDto(
-    val product: ProductDto,
+    val product: AdminProductDto,
     val totalQuantity: Long
 )

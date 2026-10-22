@@ -4,6 +4,7 @@ import com.kioschool.kioschoolapi.domain.product.facade.ProductFacade
 import com.kioschool.kioschoolapi.domain.product.repository.CustomProductRepository
 import com.kioschool.kioschoolapi.domain.product.repository.ProductCategoryRepository
 import com.kioschool.kioschoolapi.domain.product.repository.ProductRepository
+import com.kioschool.kioschoolapi.domain.product.repository.SetComponentRepository
 import com.kioschool.kioschoolapi.domain.product.service.ProductService
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.factory.SampleEntity
@@ -29,6 +30,7 @@ class ProductFacadeCacheTest : DescribeSpec({
     val productRepository = mockk<ProductRepository>()
     val customProductRepository = mockk<CustomProductRepository>()
     val productCategoryRepository = mockk<ProductCategoryRepository>()
+    val setComponentRepository = mockk<SetComponentRepository>()
     val workspaceService = mockk<WorkspaceService>()
     val s3Service = mockk<S3Service>()
 
@@ -48,11 +50,19 @@ class ProductFacadeCacheTest : DescribeSpec({
         every {
             productCategoryRepository.findAllByWorkspaceIdOrderByIndexAsc(workspaceId)
         } returns listOf(SampleEntity.productCategory)
+        every { setComponentRepository.findAllByConditionProductIdIn(any()) } returns emptyList()
 
         context = AnnotationConfigApplicationContext().apply {
             register(ProductFacadeCacheTestConfiguration::class.java)
             registerBean(ProductService::class.java, Supplier {
-                ProductService("test", productRepository, customProductRepository, productCategoryRepository, s3Service)
+                ProductService(
+                    "test",
+                    productRepository,
+                    customProductRepository,
+                    productCategoryRepository,
+                    s3Service,
+                    setComponentRepository
+                )
             })
             registerBean(WorkspaceService::class.java, Supplier { workspaceService })
             registerBean(S3Service::class.java, Supplier { s3Service })
