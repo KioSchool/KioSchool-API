@@ -2,6 +2,9 @@ package com.kioschool.kioschoolapi.product.facade
 
 import com.kioschool.kioschoolapi.domain.product.dto.common.AdminProductDto
 import com.kioschool.kioschoolapi.domain.product.dto.common.ProductCategoryDto
+import com.kioschool.kioschoolapi.domain.product.dto.request.CreateSetProductRequestBody
+import com.kioschool.kioschoolapi.domain.product.dto.request.SetComponentRequestBody
+import com.kioschool.kioschoolapi.domain.product.dto.request.UpdateSetProductRequestBody
 import com.kioschool.kioschoolapi.domain.product.entity.Product
 import com.kioschool.kioschoolapi.domain.product.entity.ProductCategory
 import com.kioschool.kioschoolapi.domain.product.event.ProductChangedEvent
@@ -14,6 +17,7 @@ import com.kioschool.kioschoolapi.factory.SampleEntity
 import com.kioschool.kioschoolapi.global.aws.S3Service
 import com.kioschool.kioschoolapi.global.common.entity.BaseEntity
 import com.kioschool.kioschoolapi.global.common.enums.ProductStatus
+import com.kioschool.kioschoolapi.global.common.enums.ProductType
 import com.kioschool.kioschoolapi.global.error.ErrorCode
 import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import io.kotest.core.spec.style.DescribeSpec
@@ -111,6 +115,177 @@ class ProductFacadeTest : DescribeSpec({
 
             verify { workspaceService.checkAccessible(username, workspaceId) }
             verify(exactly = 0) { productService.getCachedProducts(workspaceId) }
+        }
+    }
+
+    describe("createSetProduct") {
+        fun body(name: String = "족발 막국수 세트", components: List<SetComponentRequestBody>) = CreateSetProductRequestBody(
+            workspaceId = 1L,
+            name = name,
+            description = "족발 소와 막국수를 함께",
+            productCategoryId = null,
+            originalPrice = 28000,
+            discountPrice = 3000,
+            components = components
+        )
+
+        fun stubCreate(conditionProducts: List<Product>): CapturingSlot<Product> {
+            val saved = slot<Product>()
+            every { workspaceService.checkAccessible("username", 1L) } just Runs
+            every { workspaceService.getWorkspace(1L) } returns SampleEntity.newWorkspace(1)
+            every { productService.getProducts(any()) } returns conditionProducts
+            every { productService.saveProduct(capture(saved)) } answers { firstArg() }
+            every { productService.getImageUrl(1L, any(), null) } returns null
+            return saved
+        }
+
+        it("세트를 SELLING으로 만들고 판매가를 서버가 계산한다") {
+            val saved = stubCreate(listOf(SampleEntity.newProduct(10), SampleEntity.newProduct(11)))
+
+            val result = sut.createSetProduct(
+                "username",
+                body(components = listOf(SetComponentRequestBody("족발 소", 1, 10), SetComponentRequestBody("막국수", 1, 11))),
+                null
+            )
+
+            saved.captured.type shouldBe ProductType.SET
+            saved.captured.price shouldBe 25000
+            saved.captured.originalPrice shouldBe 28000
+            saved.captured.discountPrice shouldBe 3000
+            saved.captured.status shouldBe ProductStatus.SELLING
+            saved.captured.components.map { it.name } shouldBe listOf("족발 소", "막국수")
+            saved.captured.components.map { it.displayOrder } shouldBe listOf(0, 1)
+            saved.captured.components.map { it.conditionProduct?.id } shouldBe listOf(10L, 11L)
+            saved.captured.components.all { it.setProduct === saved.captured } shouldBe true
+            result.effectiveStatus shouldBe ProductStatus.SELLING
+        }
+
+        it("세트를 연결 상품으로 지정하면 INVALID_INPUT") {
+            stubCreate(listOf(SampleEntity.newProduct(10), SampleEntity.newSetProduct(21, listOf(null))))
+
+            val ex = assertThrows<CustomException> {
+                sut.createSetProduct(
+                    "username",
+                    body(components = listOf(SetComponentRequestBody("족발 소", 1, 10), SetComponentRequestBody("세트", 1, 21))),
+                    null
+                )
+            }
+
+            ex.errorCode shouldBe ErrorCode.INVALID_INPUT
+            ex.errors.single().field shouldBe "components[1].conditionProductId"
+            ex.errors.single().index shouldBe 1
+            ex.errors.single().reason shouldBe "같은 주점의 일반 상품만 연결할 수 있습니다."
+            verify(exactly = 0) { productService.saveProduct(any<Product>()) }
+        }
+
+        it("다른 주점 상품이나 없는 상품을 연결하면 INVALID_INPUT") {
+            stubCreate(listOf(SampleEntity.newProduct(10, workspace = SampleEntity.newWorkspace(2))))
+
+            val ex = assertThrows<CustomException> {
+                sut.createSetProduct(
+                    "username",
+                    body(components = listOf(SetComponentRequestBody("족발 소", 1, 10), SetComponentRequestBody("막국수", 1, 99))),
+                    null
+                )
+            }
+
+            ex.errorCode shouldBe ErrorCode.INVALID_INPUT
+            ex.errors.map { it.field } shouldBe listOf("components[0].conditionProductId", "components[1].conditionProductId")
+        }
+
+        it("검증기 오류와 연결 상품 오류를 한 번에 돌려준다") {
+            stubCreate(emptyList())
+
+            val ex = assertThrows<CustomException> {
+                sut.createSetProduct("username", body(name = " ", components = listOf(SetComponentRequestBody("족발 소", 1, 99))), null)
+            }
+
+            ex.errors.map { it.field } shouldBe listOf("name", "components[0].conditionProductId")
+        }
+    }
+
+    describe("updateSetProduct") {
+        fun body(workspaceId: Long = 1L, components: List<SetComponentRequestBody>) = UpdateSetProductRequestBody(
+            productId = 20L,
+            workspaceId = workspaceId,
+            name = "새 세트",
+            description = "설명",
+            productCategoryId = null,
+            originalPrice = 30000,
+            discountPrice = 5000,
+            components = components
+        )
+
+        it("일반 상품이면 PRODUCT_TYPE_MISMATCH") {
+            every { productService.getProduct(20L) } returns SampleEntity.newProduct(20)
+            every { workspaceService.checkAccessible("username", 1L) } just Runs
+
+            val ex = assertThrows<CustomException> {
+                sut.updateSetProduct("username", body(components = listOf(SetComponentRequestBody("a", 1, null))), null)
+            }
+
+            ex.errorCode shouldBe ErrorCode.PRODUCT_TYPE_MISMATCH
+            verify(exactly = 0) { productService.saveProduct(any<Product>()) }
+        }
+
+        it("세트의 실제 주점과 요청 workspaceId가 다르면 WORKSPACE_INACCESSIBLE") {
+            every { productService.getProduct(20L) } returns SampleEntity.newSetProduct(20, listOf(null))
+            every { workspaceService.checkAccessible("username", 1L) } just Runs
+
+            val ex = assertThrows<CustomException> {
+                sut.updateSetProduct("username", body(workspaceId = 2L, components = listOf(SetComponentRequestBody("a", 1, null))), null)
+            }
+
+            ex.errorCode shouldBe ErrorCode.WORKSPACE_INACCESSIBLE
+            verify { workspaceService.checkAccessible("username", 1L) }
+        }
+
+        it("세트 자신을 연결 상품으로 지정하면 INVALID_INPUT") {
+            val set = SampleEntity.newSetProduct(20, listOf(null))
+            every { productService.getProduct(20L) } returns set
+            every { workspaceService.checkAccessible("username", 1L) } just Runs
+            every { productService.getProducts(any()) } returns listOf(set)
+
+            val ex = assertThrows<CustomException> {
+                sut.updateSetProduct("username", body(components = listOf(SetComponentRequestBody("a", 1, 20))), null)
+            }
+
+            ex.errorCode shouldBe ErrorCode.INVALID_INPUT
+            ex.errors.single().field shouldBe "components[0].conditionProductId"
+        }
+
+        it("구성품을 보낸 목록으로 통째로 바꾸고 판매가를 다시 계산한다") {
+            val set = SampleEntity.newSetProduct(20, listOf(SampleEntity.newProduct(10), SampleEntity.newProduct(11)))
+            every { productService.getProduct(20L) } returns set
+            every { workspaceService.checkAccessible("username", 1L) } just Runs
+            every { productService.getProducts(any()) } returns listOf(SampleEntity.newProduct(12))
+            every { productService.getImageUrl(1L, 20L, null) } returns null
+            every { productService.saveProduct(set) } returns set
+
+            val result = sut.updateSetProduct("username", body(components = listOf(SetComponentRequestBody("보쌈", 2, 12))), null)
+
+            set.components.map { it.name } shouldBe listOf("보쌈")
+            set.components.single().conditionProduct?.id shouldBe 12L
+            set.price shouldBe 25000
+            set.originalPrice shouldBe 30000
+            set.discountPrice shouldBe 5000
+            set.name shouldBe "새 세트"
+            result.components.single().quantity shouldBe 2
+            verify { eventPublisher.publishEvent(any<ProductChangedEvent>()) }
+        }
+    }
+
+    describe("updateProduct on set") {
+        it("세트는 일반 상품 수정 API로 고칠 수 없다") {
+            every { productService.getProduct(20L) } returns SampleEntity.newSetProduct(20, listOf(null))
+            every { workspaceService.checkAccessible("username", 1L) } just Runs
+
+            val ex = assertThrows<CustomException> {
+                sut.updateProduct("username", 1L, 20L, "이름", null, 1000, null, null)
+            }
+
+            ex.errorCode shouldBe ErrorCode.PRODUCT_TYPE_MISMATCH
+            verify(exactly = 0) { productService.saveProduct(any<Product>()) }
         }
     }
 
@@ -505,6 +680,37 @@ class ProductFacadeTest : DescribeSpec({
             verify { productService.getProduct(productId) }
             verify { workspaceService.checkAccessible(username, product.workspace.id) }
             verify(exactly = 0) { productService.deleteProduct(any()) }
+        }
+
+        it("세트 구성품의 연결 상품이면 PRODUCT_USED_AS_SET_CONDITION과 연결 세트 목록") {
+            val single = SampleEntity.newProduct(10)
+            val set = SampleEntity.newSetProduct(20, listOf(single)).apply { name = "족발 막국수 세트" }
+            every { productService.getProduct(10L) } returns single
+            every { workspaceService.checkAccessible("username", 1L) } just Runs
+            every { productService.getLinkedSets(listOf(10L)) } returns mapOf(10L to listOf(set))
+
+            val ex = assertThrows<CustomException> {
+                sut.deleteProduct("username", 10L)
+            }
+
+            ex.errorCode shouldBe ErrorCode.PRODUCT_USED_AS_SET_CONDITION
+            ex.details shouldBe mapOf("linkedSets" to listOf(mapOf("id" to 20L, "name" to "족발 막국수 세트")))
+            verify(exactly = 0) { productService.deleteProduct(any()) }
+            verify(exactly = 0) { eventPublisher.publishEvent(any<ProductDeletedEvent>()) }
+        }
+
+        it("세트는 구성품과 함께 지운다") {
+            val set = SampleEntity.newSetProduct(20, listOf(SampleEntity.newProduct(10)))
+            every { productService.getProduct(20L) } returns set
+            every { workspaceService.checkAccessible("username", 1L) } just Runs
+            every { productService.deleteProduct(set) } returns set
+
+            val result = sut.deleteProduct("username", 20L)
+
+            result.type shouldBe ProductType.SET
+            result.components.size shouldBe 1
+            verify { productService.deleteProduct(set) }
+            verify { eventPublisher.publishEvent(any<ProductDeletedEvent>()) }
         }
     }
 

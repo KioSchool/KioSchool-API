@@ -4,17 +4,23 @@ import com.kioschool.kioschoolapi.domain.product.dto.common.AdminProductDto
 import com.kioschool.kioschoolapi.domain.product.dto.common.ProductCategoryDto
 import com.kioschool.kioschoolapi.domain.product.dto.common.ProductDto
 import com.kioschool.kioschoolapi.domain.product.dto.request.CategoryProductSortInfo
+import com.kioschool.kioschoolapi.domain.product.dto.request.CreateSetProductRequestBody
+import com.kioschool.kioschoolapi.domain.product.dto.request.SetComponentRequestBody
+import com.kioschool.kioschoolapi.domain.product.dto.request.UpdateSetProductRequestBody
 import com.kioschool.kioschoolapi.domain.product.entity.Product
 import com.kioschool.kioschoolapi.domain.product.entity.ProductCategory
+import com.kioschool.kioschoolapi.domain.product.entity.SetComponent
 import com.kioschool.kioschoolapi.domain.product.event.ProductChangedEvent
 import com.kioschool.kioschoolapi.domain.product.event.ProductDeletedEvent
 import com.kioschool.kioschoolapi.domain.product.event.ProductSnapshot
 import com.kioschool.kioschoolapi.domain.product.service.ProductService
+import com.kioschool.kioschoolapi.domain.product.util.SetProductValidator
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.global.aws.S3Service
 import com.kioschool.kioschoolapi.global.common.enums.ProductStatus
 import com.kioschool.kioschoolapi.global.common.enums.ProductType
 import com.kioschool.kioschoolapi.global.error.ErrorCode
+import com.kioschool.kioschoolapi.global.error.dto.FieldErrorDetail
 import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Component
@@ -88,6 +94,8 @@ class ProductFacade(
         workspaceService.checkAccessible(username, product.workspace.id)
         // 아래 카테고리 확인이 요청 workspaceId 기준이라, 상품 소속과 다르면 남의 카테고리를 붙일 수 있다.
         if (product.workspace.id != workspaceId) throw CustomException(ErrorCode.WORKSPACE_INACCESSIBLE)
+        // 세트는 금액을 서버가 계산하고 구성품이 있어서 세트 수정 API로만 고친다.
+        if (product.type == ProductType.SET) throw CustomException(ErrorCode.PRODUCT_TYPE_MISMATCH)
         val before = ProductSnapshot.of(product)
 
         name?.let { product.name = it }
@@ -115,12 +123,86 @@ class ProductFacade(
         return toAdminDto(saved)
     }
 
+    fun createSetProduct(
+        username: String,
+        body: CreateSetProductRequestBody,
+        file: MultipartFile?
+    ): AdminProductDto {
+        workspaceService.checkAccessible(username, body.workspaceId)
+        val workspace = workspaceService.getWorkspace(body.workspaceId)
+        val conditionProducts = validateSetRequest(
+            body.workspaceId, body.name, body.originalPrice, body.discountPrice, body.components
+        )
+
+        val product = Product(
+            name = body.name,
+            description = body.description,
+            price = body.originalPrice - body.discountPrice,
+            workspace = workspace,
+            productCategory = body.productCategoryId?.let { getProductCategoryInWorkspace(it, body.workspaceId) },
+            type = ProductType.SET,
+            originalPrice = body.originalPrice,
+            discountPrice = body.discountPrice
+        )
+        product.components.addAll(buildSetComponents(product, body.components, conditionProducts))
+
+        // 캐시를 비우도록 반드시 saveProduct(Product)를 거친다. 이미지는 id가 생긴 뒤에 올린다.
+        val saved = productService.saveProduct(product)
+        saved.imageUrl = productService.getImageUrl(body.workspaceId, saved.id, file)
+        return toAdminDto(productService.saveProduct(saved))
+    }
+
+    fun updateSetProduct(
+        username: String,
+        body: UpdateSetProductRequestBody,
+        file: MultipartFile?
+    ): AdminProductDto {
+        val product = productService.getProduct(body.productId)
+        workspaceService.checkAccessible(username, product.workspace.id)
+        if (product.workspace.id != body.workspaceId) throw CustomException(ErrorCode.WORKSPACE_INACCESSIBLE)
+        if (product.type != ProductType.SET) throw CustomException(ErrorCode.PRODUCT_TYPE_MISMATCH)
+        val conditionProducts = validateSetRequest(
+            body.workspaceId, body.name, body.originalPrice, body.discountPrice, body.components
+        )
+        val productCategory = body.productCategoryId?.let { getProductCategoryInWorkspace(it, body.workspaceId) }
+        val before = ProductSnapshot.of(product)
+
+        product.name = body.name
+        product.description = body.description
+        product.originalPrice = body.originalPrice
+        product.discountPrice = body.discountPrice
+        product.price = body.originalPrice - body.discountPrice
+        product.productCategory = productCategory
+        // 이전 구성품은 orphanRemoval로 지워진다. 이미 들어온 주문은 복사본이라 영향이 없다.
+        product.components.clear()
+        product.components.addAll(buildSetComponents(product, body.components, conditionProducts))
+
+        productService.getImageUrl(product.workspace.id, product.id, file)?.let { imageUrl ->
+            product.imageUrl?.let { s3Service.deleteFile(it) }
+            product.imageUrl = imageUrl
+        }
+
+        val saved = productService.saveProduct(product)
+        eventPublisher.publishEvent(
+            ProductChangedEvent(product.workspace.id, product.id, before, ProductSnapshot.of(product))
+        )
+        return toAdminDto(saved)
+    }
+
     fun deleteProduct(username: String, productId: Long): AdminProductDto {
         val product = productService.getProduct(productId)
         workspaceService.checkAccessible(username, product.workspace.id)
+        // 세트 구성품의 연결 상품은 지우지 못하게 막는다. 세트를 먼저 고치거나 지워야 한다.
+        val linkedSets = productService.getLinkedSets(listOf(product.id))[product.id].orEmpty()
+        if (linkedSets.isNotEmpty()) {
+            throw CustomException(
+                ErrorCode.PRODUCT_USED_AS_SET_CONDITION,
+                details = mapOf("linkedSets" to linkedSets.map { mapOf("id" to it.id, "name" to it.name) })
+            )
+        }
         val snapshot = ProductSnapshot.of(product)
         // 지운 뒤에는 구성품·연결 상품을 지연 로딩할 수 없으므로 응답을 먼저 만든다.
-        val response = toAdminDto(product)
+        val response = AdminProductDto.of(product, linkedSets)
 
         // 삭제가 실패했는데 '삭제됨' 이력만 남지 않도록 삭제가 끝난 뒤에 발행한다.
         productService.deleteProduct(product)
@@ -232,6 +314,59 @@ class ProductFacade(
             ProductChangedEvent(product.workspace.id, product.id, before, ProductSnapshot.of(product))
         )
         return toAdminDto(saved)
+    }
+
+    // 검증기 오류와 연결 상품 오류를 모아 INVALID_INPUT 하나로 던진다. 통과하면 id별 연결 상품을 돌려준다.
+    private fun validateSetRequest(
+        workspaceId: Long,
+        name: String,
+        originalPrice: Int,
+        discountPrice: Int,
+        components: List<SetComponentRequestBody>
+    ): Map<Long, Product> {
+        val conditionProductIds = components.mapNotNull { it.conditionProductId }.distinct()
+        val conditionProducts =
+            if (conditionProductIds.isEmpty()) emptyMap()
+            else productService.getProducts(conditionProductIds).associateBy { it.id }
+
+        val conditionErrors = components.mapIndexedNotNull { i, component ->
+            val conditionProductId = component.conditionProductId ?: return@mapIndexedNotNull null
+            val conditionProduct = conditionProducts[conditionProductId]
+            val linkable = conditionProduct != null &&
+                conditionProduct.workspace.id == workspaceId &&
+                conditionProduct.type == ProductType.SINGLE
+            if (linkable) null
+            else FieldErrorDetail(
+                "components[$i].conditionProductId",
+                conditionProductId.toString(),
+                "같은 주점의 일반 상품만 연결할 수 있습니다.",
+                i
+            )
+        }
+
+        val errors = SetProductValidator.validate(name, originalPrice, discountPrice, components) + conditionErrors
+        if (errors.isNotEmpty()) throw CustomException(ErrorCode.INVALID_INPUT, errors = errors)
+        return conditionProducts
+    }
+
+    private fun buildSetComponents(
+        setProduct: Product,
+        requests: List<SetComponentRequestBody>,
+        conditionProducts: Map<Long, Product>
+    ) = requests.mapIndexed { i, request ->
+        SetComponent(
+            setProduct = setProduct,
+            name = request.name,
+            quantity = request.quantity,
+            displayOrder = i,
+            conditionProduct = request.conditionProductId?.let { conditionProducts[it] }
+        )
+    }
+
+    private fun getProductCategoryInWorkspace(productCategoryId: Long, workspaceId: Long): ProductCategory {
+        val productCategory = productService.getProductCategory(productCategoryId)
+        if (productCategory.workspace.id != workspaceId) throw CustomException(ErrorCode.WORKSPACE_INACCESSIBLE)
+        return productCategory
     }
 
     private fun toAdminDto(product: Product): AdminProductDto = toAdminDtos(listOf(product)).single()

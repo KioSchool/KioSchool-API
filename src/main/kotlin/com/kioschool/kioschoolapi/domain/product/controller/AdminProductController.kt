@@ -82,6 +82,29 @@ class AdminProductController(
         )
     }
 
+    @Operation(
+        summary = "세트 상품 생성",
+        description = "세트 상품을 생성합니다. 판매가는 기존 금액에서 할인 금액을 빼서 계산합니다."
+    )
+    @PostMapping("/product/set", consumes = [MediaType.ALL_VALUE])
+    fun createSetProduct(
+        @AdminUsername username: String,
+        @RequestPart body: CreateSetProductRequestBody,
+        @RequestPart file: MultipartFile?
+    ): AdminProductDto {
+        return productFacade.createSetProduct(username, body, file)
+    }
+
+    @Operation(summary = "세트 상품 수정", description = "세트 상품을 수정합니다. 구성품은 보낸 목록으로 통째로 바뀝니다.")
+    @PutMapping("/product/set", consumes = [MediaType.ALL_VALUE])
+    fun updateSetProduct(
+        @AdminUsername username: String,
+        @RequestPart body: UpdateSetProductRequestBody,
+        @RequestPart file: MultipartFile?
+    ): AdminProductDto {
+        return productFacade.updateSetProduct(username, body, file)
+    }
+
     @Operation(summary = "상품 상태 수정", description = "상품의 상태를 수정합니다.")
     @PutMapping("/product/status")
     fun updateProductStatus(
