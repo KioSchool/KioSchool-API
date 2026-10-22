@@ -9,13 +9,17 @@ import com.kioschool.kioschoolapi.domain.inquiry.entity.Inquiry
 import com.kioschool.kioschoolapi.domain.inquiry.enum.InquiryStatus
 import com.kioschool.kioschoolapi.domain.order.entity.Order
 import com.kioschool.kioschoolapi.domain.order.entity.OrderProduct
+import com.kioschool.kioschoolapi.domain.order.entity.OrderProductComponent
 import com.kioschool.kioschoolapi.domain.order.entity.OrderSession
 import com.kioschool.kioschoolapi.domain.product.entity.Product
 import com.kioschool.kioschoolapi.domain.product.entity.ProductCategory
+import com.kioschool.kioschoolapi.domain.product.entity.SetComponent
 import com.kioschool.kioschoolapi.domain.user.entity.User
 import com.kioschool.kioschoolapi.domain.user.entity.UserSession
 import com.kioschool.kioschoolapi.domain.workspace.entity.*
 import com.kioschool.kioschoolapi.global.common.entity.BaseEntity
+import com.kioschool.kioschoolapi.global.common.enums.ProductStatus
+import com.kioschool.kioschoolapi.global.common.enums.ProductType
 import com.kioschool.kioschoolapi.global.common.enums.UserRole
 import java.time.LocalDateTime
 import kotlin.reflect.full.superclasses
@@ -303,6 +307,71 @@ object SampleEntity {
         previousTokenHash = previousTokenHash,
         rotatedAt = rotatedAt,
     ).apply { setId(id) }
+
+    // 공유 workspace는 다른 테스트가 id를 바꾸므로 세트 메뉴 팩토리는 id 1짜리 새 주점을 기본으로 쓴다.
+    fun newWorkspace(id: Long) = workspace(user).apply { setId(id) }
+
+    fun newProduct(
+        id: Long,
+        name: String = "product$id",
+        status: ProductStatus = ProductStatus.SELLING,
+        price: Int = 1000,
+        workspace: Workspace = newWorkspace(1),
+    ) = Product(name = name, description = "", price = price, status = status, workspace = workspace)
+        .apply { setId(id) }
+
+    // 연결 상품 목록의 원소 하나가 구성품 하나. null이면 연결 상품 없는 구성품
+    fun newSetProduct(
+        id: Long,
+        conditionProducts: List<Product?>,
+        status: ProductStatus = ProductStatus.SELLING,
+        originalPrice: Int = 28000,
+        discountPrice: Int = 3000,
+        workspace: Workspace = newWorkspace(1),
+    ) = Product(
+        name = "set$id",
+        description = "",
+        price = originalPrice - discountPrice,
+        status = status,
+        workspace = workspace,
+        type = ProductType.SET,
+        originalPrice = originalPrice,
+        discountPrice = discountPrice,
+    ).apply {
+        setId(id)
+        conditionProducts.forEachIndexed { i, condition ->
+            components.add(SetComponent(this, "component$i", 1, i, condition).apply { setId(100L + i) })
+        }
+    }
+
+    // 세트 20(25000원, 할인 3000원)을 quantity개 주문한 항목. 구성품 수량은 componentQuantities 순서대로
+    fun newSetOrderProduct(
+        id: Long,
+        quantity: Int,
+        componentQuantities: List<Int>,
+        order: Order = Order(
+            workspace = newWorkspace(1),
+            tableNumber = 1,
+            customerName = "test",
+            orderNumber = 1,
+            orderSession = null
+        ),
+    ) = OrderProduct(
+        order = order,
+        productId = 20,
+        productName = "set20",
+        productPrice = 25000,
+        quantity = quantity,
+        totalPrice = 25000 * quantity,
+        discountPrice = 3000,
+    ).apply {
+        setId(id)
+        componentQuantities.forEachIndexed { i, componentQuantity ->
+            components.add(
+                OrderProductComponent(this, "component$i", componentQuantity, i).apply { setId(200L + i) }
+            )
+        }
+    }
 
     private fun BaseEntity.setId(id: Long) {
         val f = this::class.superclasses.first().java.getDeclaredField("id")
