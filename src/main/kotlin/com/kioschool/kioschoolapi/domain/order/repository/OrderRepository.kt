@@ -45,6 +45,22 @@ interface OrderRepository : JpaRepository<Order, Long> {
     """)
     fun sumValidOrdersByOrderSessionIds(@Param("orderSessionIds") orderSessionIds: Collection<Long>): List<Array<Any>>
 
+    // 기간 안에 취소 아닌 주문이 minOrders건 이상인 주점. daily_order_statistic은 0건 생략과 집계 시점 차이가 있어 쓰지 않는다.
+    @Query("""
+        SELECT o.workspace.id
+        FROM Order o
+        WHERE o.createdAt >= :start
+          AND o.createdAt < :end
+          AND o.status != com.kioschool.kioschoolapi.global.common.enums.OrderStatus.CANCELLED
+        GROUP BY o.workspace.id
+        HAVING COUNT(o) >= :minOrders
+    """)
+    fun findWorkspaceIdsWithOrders(
+        @Param("start") start: LocalDateTime,
+        @Param("end") end: LocalDateTime,
+        @Param("minOrders") minOrders: Long,
+    ): List<Long>
+
     fun findAllByWorkspaceId(workspaceId: Long): List<Order>
 
     fun countByStatusAndCreatedAtAfter(status: OrderStatus, createdAt: LocalDateTime): Long
