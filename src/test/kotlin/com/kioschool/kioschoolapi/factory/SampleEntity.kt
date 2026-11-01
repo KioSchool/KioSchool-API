@@ -7,6 +7,8 @@ import com.kioschool.kioschoolapi.domain.email.entity.EmailDomain
 import com.kioschool.kioschoolapi.domain.email.enum.EmailKind
 import com.kioschool.kioschoolapi.domain.inquiry.entity.Inquiry
 import com.kioschool.kioschoolapi.domain.inquiry.enum.InquiryStatus
+import com.kioschool.kioschoolapi.domain.mailbox.entity.MailThread
+import com.kioschool.kioschoolapi.domain.mailbox.enum.MailDirection
 import com.kioschool.kioschoolapi.domain.order.entity.Order
 import com.kioschool.kioschoolapi.domain.order.entity.OrderProduct
 import com.kioschool.kioschoolapi.domain.order.entity.OrderSession
@@ -42,6 +44,28 @@ object SampleEntity {
     )
 
     fun userWithId(id: Long) = user.apply { setId(id) }
+
+    fun newMailThread(
+        resendThreadId: String = "thread-1",
+        workspace: Workspace? = null,
+        lastMessageAt: LocalDateTime = LocalDateTime.of(2026, 11, 1, 12, 0),
+        lastDirection: MailDirection = MailDirection.INBOUND,
+        lastReadAt: LocalDateTime? = null,
+        resolvedAt: LocalDateTime? = null,
+        spamAt: LocalDateTime? = null,
+    ) = MailThread(
+        resendThreadId = resendThreadId,
+        subject = "제목",
+        workspace = workspace,
+        counterpartEmail = "owner@test.com",
+        counterpartName = "사장",
+        lastMessageAt = lastMessageAt,
+        lastDirection = lastDirection,
+        lastReadAt = lastReadAt,
+        resolvedAt = resolvedAt,
+        spamAt = spamAt,
+        purgeAt = lastMessageAt.plusDays(365),
+    )
 
     val workspaceSetting = WorkspaceSetting()
 
