@@ -1,158 +1,138 @@
-# KioSchool API
+<p align="center">
+  <img src="https://raw.githubusercontent.com/KioSchool/KioSchool/master/public/preview.png" alt="KIO" width="180" />
+</p>
 
-키오스쿨(대학 축제 주점을 위한 QR 테이블 주문 서비스)의 백엔드 서버.
+<h1 align="center">KioSchool API</h1>
 
-- 서비스: https://kio-school.com
-- 프론트엔드: [KioSchool](https://github.com/KioSchool/KioSchool)
-- 운영 API: `https://api.kio-school.com`, 개발 API: `https://dev-api.kio-school.com`
+<p align="center">대학 축제 주점 QR 테이블 주문 서비스 <a href="https://kio-school.com">키오스쿨</a>의 백엔드 서버</p>
 
-## 하는 일
+<p align="center">
+  <img src="https://img.shields.io/badge/Kotlin-1.9-7F52FF?style=flat-square&logo=kotlin&logoColor=white" alt="Kotlin" />
+  <img src="https://img.shields.io/badge/Spring_Boot-3.1-6DB33F?style=flat-square&logo=springboot&logoColor=white" alt="Spring Boot" />
+  <img src="https://img.shields.io/badge/PostgreSQL-17-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL" />
+  <img src="https://img.shields.io/badge/Redis-DC382D?style=flat-square&logo=redis&logoColor=white" alt="Redis" />
+  <img src="https://img.shields.io/badge/Liquibase-2962FF?style=flat-square&logo=liquibase&logoColor=white" alt="Liquibase" />
+  <br />
+  <img src="https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker" />
+  <img src="https://img.shields.io/badge/GitHub_Actions-2088FF?style=flat-square&logo=githubactions&logoColor=white" alt="GitHub Actions" />
+  <img src="https://img.shields.io/badge/NGINX-009639?style=flat-square&logo=nginx&logoColor=white" alt="NGINX" />
+  <img src="https://img.shields.io/badge/Prometheus-E6522C?style=flat-square&logo=prometheus&logoColor=white" alt="Prometheus" />
+  <img src="https://img.shields.io/badge/Grafana-F46800?style=flat-square&logo=grafana&logoColor=white" alt="Grafana" />
+  <img src="https://img.shields.io/badge/Google_Cloud-4285F4?style=flat-square&logo=googlecloud&logoColor=white" alt="Google Cloud" />
+</p>
 
-- 손님 주문 접수, 주문 상태 변경(미결제, 결제완료, 서빙완료, 취소), 운영진 화면으로 실시간 주문 전달
-- 운영진 가입(학교 이메일 인증), 로그인(JWT 쿠키, refresh token)
-- 주점, 메뉴·카테고리, 테이블과 테이블별 QR, 테이블 사용 세션 관리
-- 손님이 송금할 주점 계좌 등록(예금주 조회)
-- 일별 주문 통계, 운영진 대시보드, 인사이트 카드
-- 문의 접수(봇 차단, 디스코드 알림), 변경 이력, 후원 클릭 기록
-- 슈퍼어드민: 주점·사용자 관리, 가입 가능한 이메일 도메인, 은행 목록, 문의, 축제 달력, 캐시
+<p align="center">
+  <a href="https://kio-school.com">서비스</a> ·
+  <a href="https://github.com/KioSchool/KioSchool">프론트엔드 저장소</a>
+</p>
 
-경로 앞부분으로 권한을 나눈다. `/admin/**`은 운영진, `/super-admin/**`은 슈퍼어드민, 나머지는 손님용 공개 API다.
+## 키오스쿨
+
+손님은 테이블에 붙은 QR을 찍어 휴대폰으로 주문하고, 주점 운영진은 들어오는 주문과 테이블, 매출을 실시간으로 관리한다. 대학 축제처럼 짧은 시간에 주문이 몰리는 현장에서 쓰인다.
+
+| 누적 이용자 | 누적 주문 | 사용 주점 | 주점 누적 매출 |
+|:---:|:---:|:---:|:---:|
+| 36,000명+ | 30,000건+ | 179곳+ | 6억 1천만 원+ |
+
+<sub>2026년 10월, kio-school.com 공개 수치 기준</sub>
 
 ## 기술 스택
 
 | 구분 | 사용 |
 |---|---|
-| 기본 | Kotlin 1.9, Spring Boot 3.1, Java 17 |
+| 언어·프레임워크 | Kotlin 1.9, Spring Boot 3.1, Java 17 |
 | 데이터 | PostgreSQL 17, Spring Data JPA, QueryDSL, Liquibase |
-| 캐시·메시징 | Redis (캐시, 실시간 메시지 pub/sub) |
-| 실시간 | WebSocket + STOMP (SockJS) |
-| 인증 | Spring Security, JWT |
-| 외부 연동 | AWS S3(이미지), Resend SMTP(메일), PortOne(예금주 조회), Discord 웹훅, Cloudflare Turnstile |
-| 모니터링 | Actuator, Micrometer + Prometheus, GCP Cloud Logging·Trace |
+| 캐시·메시징 | Redis (캐시, pub/sub) |
+| 실시간 | WebSocket, STOMP, SockJS |
+| 인증 | Spring Security, JWT (access token + refresh token) |
+| 파일 | AWS S3, Scrimage (WebP 변환, OG 카드 생성) |
+| 외부 연동 | Resend(메일), PortOne(예금주 조회), Cloudflare Turnstile(봇 차단), Discord 웹훅 |
+| 관측 | Micrometer, Prometheus, Grafana, GCP Cloud Logging·Cloud Trace |
+| 인프라 | Docker, NGINX, Oracle Cloud(ARM), GitHub Actions, Docker Hub |
 | 테스트 | Kotest, MockK |
-| API 문서 | springdoc-openapi (Swagger UI) |
 
-## 로컬에서 실행하기
+## 아키텍처
 
-필요한 것: JDK 17, Docker
+```mermaid
+flowchart LR
+    Customer["손님<br/>모바일 웹"]
+    Admin["운영진<br/>PC 웹"]
+    Web["프론트엔드<br/>S3 + CloudFront"]
+    Nginx["NGINX<br/>블루그린 전환"]
+    Api["Spring Boot API<br/>Docker · Oracle Cloud ARM"]
+    Db[("PostgreSQL 17")]
+    Redis[("Redis<br/>캐시 · pub/sub")]
+    S3[("AWS S3<br/>이미지")]
+    Ext["Resend · PortOne<br/>Turnstile · Discord"]
+    Obs["Prometheus · Grafana<br/>Cloud Logging · Cloud Trace"]
 
-### 1. DB와 Redis 띄우기
-
-```bash
-docker compose -f src/main/resources/db/docker/docker-compose.yml up -d --build
+    Customer --> Web
+    Admin --> Web
+    Customer -- "REST" --> Nginx
+    Admin -- "REST · WebSocket" --> Nginx
+    Nginx --> Api
+    Api --> Db
+    Api <--> Redis
+    Api --> S3
+    Api -.-> Ext
+    Api -.-> Obs
 ```
 
-- PostgreSQL 17(ko_KR 로케일)이 `localhost:2345`, Redis가 `localhost:6379`에 뜬다
-- PostgreSQL은 prod와 같은 메이저 버전(17)으로 고정했다. 버전이 다르면 prod 백업 덤프를 로컬에 복원할 수 없다
+## 주요 구현
 
-### 2. 환경 변수
+### 실시간 주문 전달
 
-`local` 프로필로 실행한다. DB·Redis 접속 정보는 `application-local.yml`에 들어 있고, 아래 값은 직접 넣어야 한다. 해당 기능을 쓰지 않으면 아무 값이나 넣어도 서버는 뜬다.
+- 주문이 생기거나 상태가 바뀌면 도메인 이벤트를 발행하고, 트랜잭션 커밋 뒤에(`@TransactionalEventListener(AFTER_COMMIT)`) 비동기로 운영진 화면에 보낸다. 롤백된 주문이 화면에 뜨는 일이 없다
+- 메시지는 Redis pub/sub을 거쳐 STOMP 구독자에게 전달된다. 블루그린 전환 중처럼 서버가 둘 떠 있어도, 클라이언트는 어느 서버에 연결돼 있든 같은 메시지를 받는다
+- 구독할 때 JWT와 주점 소속을 확인해 자기 주점의 주문 채널(`/sub/order/{주점 ID}`)만 구독할 수 있다
 
-| 변수 | 쓰는 곳 |
-|---|---|
-| `MAIL_FROM`, `MAIL_PASSWORD` | 메일 발송(가입 인증 메일 등) |
-| `AWS_S3_BUCKET`, `AWS_S3_ACCESS_KEY`, `AWS_S3_SECRET_KEY` | 주점·상품 이미지 업로드 |
-| `PORTONE_API_KEY`, `PORTONE_API_SECRET` | 계좌 등록 시 예금주 조회 |
-| `DISCORD_WEBHOOK_URL` | 문의 접수 등 운영 알림 |
-| `JWT_SECRET_KEY` | 선택. 넣으면 `application-local.yml`의 키 대신 이 값으로 토큰을 서명한다 |
-| `TURNSTILE_SECRET_KEY` | 선택. 비워 두면 문의 봇 검증을 건너뛴다 |
+### 캐시
 
-dev·prod 서버는 여기에 `DATABASE_URL`, `DATABASE_USERNAME`, `DATABASE_PASSWORD`, `REDIS_HOST`, `REDIS_PASSWORD`를 더 쓴다.
+- 주점, 상품, 카테고리, 주문, 통계 조회를 Redis에 캐시한다
+- 변경 메서드에 커스텀 어노테이션을 붙이면 AOP가 변경 이벤트를 발행하고, 리스너가 관련 캐시만 무효화한다
+- Redis에 장애가 나도 `CacheErrorHandler`가 예외를 로그로만 남기고 DB 조회로 넘어간다. 캐시 정합성보다 가용성을 우선하고, 모든 캐시에 TTL을 둬 스스로 회복되게 했다
 
-### 3. 서버 실행
+### 인증과 보안
 
-위 환경 변수를 넣은 상태에서 실행한다. IntelliJ에서는 실행 설정에 active profile `local`과 환경 변수를 넣으면 된다.
+- JWT access token과 refresh token을 HttpOnly 쿠키로 주고받는다
+- refresh token은 쓸 때마다 새로 발급(rotation)한다. 이미 쓴 토큰이 다시 들어오면 탈취로 보고 그 로그인 세션을 지운다
+- `/admin/**`은 운영진, `/super-admin/**`은 슈퍼어드민으로 경로별 권한을 나누고, 운영진 API는 요청한 주점의 소속인지 확인한다
+- 로그에 찍히는 이름 같은 개인정보는 `@LogMasked`로 가리고, 탈퇴한 계정은 주문 기록을 지키면서 개인정보만 익명값으로 바꾼다
+- 공개 문의 폼은 Cloudflare Turnstile 검증, 이메일별 접수 횟수 제한, 보관 기간이 지난 문의 자동 삭제를 적용했다. 가입 인증 코드에는 만료 시간과 시도 횟수 제한을 뒀다
 
-```bash
-SPRING_PROFILES_ACTIVE=local ./gradlew bootRun
-```
+### 데이터 관리
 
-- 주소는 `http://localhost:8080/api`다(`local` 프로필은 context path가 `/api`)
-- 서버가 뜰 때 Liquibase가 DB 마이그레이션을 실행한다
-- Swagger UI: http://localhost:8080/api/swagger-ui/index.html (prod에서는 꺼져 있다)
-- 프론트엔드 개발 서버(`localhost:3000`)가 `/api` 요청을 이 서버로 넘긴다. local 프로필의 CORS·WebSocket 허용 주소도 `localhost:3000` 기준이다
-- 실시간 주문은 SockJS 엔드포인트 `/ws`(local은 `/api/ws`)에 연결해 `/sub/order/{주점 ID}`를 구독하면 받는다. 새 주문이나 주문 변경이 생기면 서버가 Redis pub/sub으로 이 주소에 보낸다
+- 스키마는 2023년부터 Liquibase changelog로 이력을 관리한다(63개)
+- 기존 데이터 보정은 `V01__`부터 번호를 붙인 일회성 Kotlin 스크립트로 처리한다. 서버가 뜰 때 아직 실행되지 않은 스크립트만 순서대로 한 번 실행하고, 실행 기록을 DB에 남긴다
+- 매일 아침 스케줄러가 주문 번호와 테이블 세션을 정리하고, 전날 주문으로 일별 통계와 운영진 인사이트 카드를 만든다
+- 주문, 주문 상품, 테이블 세션, 상품의 변경 이력을 남긴다
+- 상품·주점 사진은 업로드할 때 WebP로 줄여 S3에 저장하고, 주점 공유 링크용 미리보기 이미지(1200×630)는 서버에서 만든다
 
-### 4. 기본 데이터 넣기
+### 관측
 
-Liquibase는 테이블만 만들고 기준 데이터는 넣지 않는다. 화면을 써 보려면 아래 데이터가 필요하다.
+- 로그는 JSON 구조로 GCP Cloud Logging에 모으고, 요청 일부를 Cloud Trace로 추적한다
+- Micrometer 지표를 Prometheus가 수집하고 Grafana에서 본다. JVM, Tomcat 스레드, 커넥션 풀, 쿼리 지표에 더해 사용 중인 테이블 수, 운영 중인 주점 수, WebSocket 세션 수를 직접 지표로 만들었다
+- 커넥션 풀이 차기 시작할 때만 경고 로그를 남기고, 오래 반납되지 않은 커넥션은 누수 감지 로그로 잡는다
+- 문의 접수 같은 운영 이벤트는 Discord로 알린다
 
-- 가입: `email_domain`에 있는 도메인의 이메일로만 가입할 수 있다. 인증 메일은 `MAIL_*`에 실제 값이 있어야 발송된다
-- 계좌 등록: `bank`에 은행 목록이 있어야 한다
-- 슈퍼어드민: 가입한 계정의 `role`을 `0`으로 바꾼다. `role`은 `UserRole` enum의 순서로 저장된다(`0` = `SUPER_ADMIN`, `1` = `ADMIN`)
+### 배포
 
-```bash
-docker exec -it kioschool-database psql -U myuser -d kio-school-database
-```
+- `main`에 push하면 GitHub Actions가 테스트를 돌린다
+- 버전 태그를 push하면 jar를 빌드해 amd64·arm64 Docker 이미지를 Docker Hub에 올리고, 서버에 접속해 배포한다
+- 운영 서버는 NGINX 앞단에서 블루그린 방식으로 무중단 배포하고, 배포 뒤 health check로 상태를 확인한다
+- 서버의 docker compose, NGINX, 모니터링 설정은 별도 인프라 저장소에서 git으로 관리한다
 
-```sql
-INSERT INTO email_domain (created_at, updated_at, domain, name) VALUES (now(), now(), 'kio-univ.ac.kr', '키오대학교');
-INSERT INTO bank (created_at, updated_at, name, code, toss_name) VALUES (now(), now(), 'KB국민은행', '004', 'KB국민은행');
-UPDATE "user" SET role = 0 WHERE login_id = '<아이디>';
-```
-
-## 테스트
-
-```bash
-./gradlew test
-```
-
-Kotest·MockK로 작성한 단위 테스트라 DB나 Redis 없이 돈다. `main`에 push하면 GitHub Actions에서도 실행된다.
-
-## 폴더 구조
+## 프로젝트 구조
 
 ```
 src/main/kotlin/com/kioschool/kioschoolapi/
-├── domain/           도메인별 패키지
-│   ├── order/        주문, 주문 상품, 테이블 사용 세션, 실시간 주문 이벤트
-│   ├── workspace/    주점, 테이블, 주점 설정·이미지, 멤버
-│   ├── product/      상품, 카테고리
-│   ├── user/         가입, 로그인, 로그인 세션, 유입 경로 설문
-│   ├── account/      계좌, 은행
-│   ├── email/        이메일 인증 코드, 가입 가능한 도메인
-│   ├── statistics/   일별 주문 통계
-│   ├── dashboard/    운영진·슈퍼어드민 대시보드
-│   ├── insight/      인사이트 카드
-│   ├── inquiry/      문의
-│   ├── donation/     후원 클릭
-│   └── changelog/    변경 이력
-└── global/           보안(JWT), WebSocket, 캐시, 스케줄러, 에러 처리, 로깅·모니터링,
-                      외부 연동(S3, PortOne, Discord, Turnstile, Toss)
-
-src/main/resources/
-├── application.yml, application-{local,dev,prod}.yml
-└── db/
-    ├── changelog-master.yaml   changelog/ 아래 파일을 이름 순서로 모두 적용
-    ├── changelog/YYYY/MM/      Liquibase changelog
-    └── docker/                 로컬 DB·Redis
+├── domain/      order, workspace, product, user, account, email, statistics,
+│                dashboard, insight, inquiry, donation, changelog
+└── global/      security, websocket, cache, schedule, error, logging, monitoring,
+                 aws, og, portone, discord, turnstile, toss
 ```
 
-도메인 패키지는 `controller`, `facade`, `service`, `repository`, `entity`, `dto`로 나뉜다. 컨트롤러는 facade를 부르고, facade가 여러 service를 묶는다.
-
-## 개발할 때 주의할 점
-
-- 스키마는 Liquibase changelog로만 바꾼다(JPA `ddl-auto`는 쓰지 않는다). 새 파일은 `db/changelog/<연>/<월>/<일>-<번호>-changelog.xml` 형식으로 만든다. 파일 이름 순서대로 적용되므로 이름 규칙을 지켜야 한다
-- 엔티티 필드 이름이 대문자 한 글자로 끝나면(`positionX` 등) `@Column(name = "...")`을 꼭 붙인다. Hibernate가 `positionx`로 매핑해 실행 중에야 오류가 난다
-- `spring.jpa.open-in-view`는 켜 둔다. 여러 API가 응답을 만들 때 지연 로딩에 기대고 있어서, 끄면 `LazyInitializationException`으로 500이 난다
-- `UserRole` 같은 enum이 순서 값으로 저장되는 컬럼이 있다. enum 항목의 순서를 바꾸지 않는다
-
-## 브랜치와 배포
-
-| 브랜치 | 역할 |
-|---|---|
-| `main` | 기본 브랜치. 기능 브랜치를 여기서 따서 여기로 PR을 보낸다 |
-| `development` | 개발 서버. `main`을 머지한 뒤 `dev-x.y.z` 태그를 push하면 배포된다 |
-| `release` | 운영 서버. `main`을 머지한 뒤 `x.y.z` 태그를 push하면 배포된다 |
-
-태그가 push되면 GitHub Actions가 jar를 빌드해 Docker 이미지(`kioschool-server`, amd64·arm64)를 Docker Hub에 올리고, 서버에 접속해 배포 스크립트를 실행한다. 서버의 docker compose·nginx·모니터링 설정은 비공개 저장소 KioSchool-Infra에서 관리한다. 운영 배포는 블루그린 방식이고, 끝나면 `/actuator/health`로 서버 상태를 확인한다.
-
-## PR 규칙
-
-- 제목은 `종류 - 설명` 형식으로 쓴다. 종류는 `ADD`, `FIX`, `EDIT`, `REFACTOR`, `REMOVE`, `DEPLOY`, `REVERT` 중 하나다(프론트엔드와 같은 규칙)
-- 본문은 PR 템플릿의 개요, 리뷰 예상 시간, 중요한 변경점을 채운다
-- 브랜치 이름에 노션 태스크 번호(`KIO-123`)를 넣으면, PR을 열 때 태스크가 '진행 중', 머지되면 '완료'로 바뀐다
-- 공개 저장소이므로 보안 문제의 재현 방법은 커밋 메시지나 PR에 적지 않는다
+도메인마다 `controller`, `facade`, `service`, `repository`, `entity`, `dto`로 나눈다. 컨트롤러는 facade를 부르고, facade가 여러 service를 묶어 하나의 유스케이스를 처리한다.
 
 ## 라이선스
 
