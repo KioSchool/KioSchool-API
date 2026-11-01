@@ -14,6 +14,8 @@ interface WorkspaceRepository : JpaRepository<Workspace, Long> {
 
     fun countByCreatedAtAfter(createdAt: LocalDateTime): Long
 
+    fun findFirstByOwnerEmailIgnoreCaseOrderByIdDesc(email: String): Workspace?
+
     @Query("SELECT COUNT(DISTINCT w.id) FROM Workspace w WHERE w.isOnboarding = false AND SIZE(w.members) > 0")
     fun countOnboardingCompletedWithMembers(): Long
 

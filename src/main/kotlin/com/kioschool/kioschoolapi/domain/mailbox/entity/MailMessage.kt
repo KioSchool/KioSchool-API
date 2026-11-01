@@ -16,9 +16,11 @@ class MailMessage(
     var thread: MailThread? = null,
     @Enumerated(EnumType.STRING)
     var direction: MailDirection? = null,
+    @Column(columnDefinition = "TEXT")
     var fromEmail: String? = null,
     @Column(columnDefinition = "TEXT")
     var fromName: String? = null,
+    @Column(columnDefinition = "TEXT")
     var toEmail: String? = null,
     @Column(columnDefinition = "TEXT")
     var subject: String? = null,

@@ -16,7 +16,7 @@
       </column>
       <column name="subject" type="TEXT"/>
       <column name="workspace_id" type="BIGINT"/>
-      <column name="counterpart_email" type="VARCHAR(320)">
+      <column name="counterpart_email" type="TEXT">
         <constraints nullable="false"/>
       </column>
       <column name="counterpart_name" type="TEXT"/>
@@ -67,9 +67,9 @@
       </column>
       <column name="thread_id" type="BIGINT"/>
       <column name="direction" type="VARCHAR(20)"/>
-      <column name="from_email" type="VARCHAR(320)"/>
+      <column name="from_email" type="TEXT"/>
       <column name="from_name" type="TEXT"/>
-      <column name="to_email" type="VARCHAR(320)"/>
+      <column name="to_email" type="TEXT"/>
       <column name="subject" type="TEXT"/>
       <column name="text_body" type="TEXT"/>
       <column name="html_body" type="TEXT"/>

@@ -15,6 +15,7 @@ class MailThread(
     var subject: String?,
     @ManyToOne(fetch = FetchType.LAZY)
     var workspace: Workspace?,
+    @Column(columnDefinition = "TEXT")
     var counterpartEmail: String,
     @Column(columnDefinition = "TEXT")
     var counterpartName: String?,
