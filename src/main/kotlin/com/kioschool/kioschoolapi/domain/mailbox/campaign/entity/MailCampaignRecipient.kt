@@ -1,6 +1,6 @@
 package com.kioschool.kioschoolapi.domain.mailbox.campaign.entity
 
-import com.kioschool.kioschoolapi.domain.mailbox.campaign.enum.MailRecipientStatus
+import com.kioschool.kioschoolapi.domain.mailbox.campaign.enums.MailRecipientStatus
 import com.kioschool.kioschoolapi.domain.workspace.entity.Workspace
 import com.kioschool.kioschoolapi.global.common.entity.BaseEntity
 import jakarta.persistence.*

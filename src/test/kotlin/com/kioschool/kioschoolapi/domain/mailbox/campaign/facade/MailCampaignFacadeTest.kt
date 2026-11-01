@@ -1,0 +1,199 @@
+package com.kioschool.kioschoolapi.domain.mailbox.campaign.facade
+
+import ch.qos.logback.classic.Logger
+import ch.qos.logback.classic.spi.ILoggingEvent
+import ch.qos.logback.core.read.ListAppender
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailAudienceFilter
+import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailAudienceRow
+import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailCampaignRequestBody
+import com.kioschool.kioschoolapi.domain.mailbox.campaign.entity.MailCampaign
+import com.kioschool.kioschoolapi.domain.mailbox.campaign.entity.MailCampaignRecipient
+import com.kioschool.kioschoolapi.domain.mailbox.campaign.enums.MailCampaignStatus
+import com.kioschool.kioschoolapi.domain.mailbox.campaign.enums.MailRecipientStatus
+import com.kioschool.kioschoolapi.domain.mailbox.campaign.repository.MailCampaignRecipientRepository
+import com.kioschool.kioschoolapi.domain.mailbox.campaign.repository.MailCampaignRepository
+import com.kioschool.kioschoolapi.domain.mailbox.campaign.service.MailAudienceService
+import com.kioschool.kioschoolapi.domain.mailbox.campaign.service.MailCampaignComposer
+import com.kioschool.kioschoolapi.domain.mailbox.campaign.service.MailCampaignSender
+import com.kioschool.kioschoolapi.domain.mailbox.campaign.service.MailCampaignService
+import com.kioschool.kioschoolapi.domain.mailbox.campaign.service.MailTemplateRenderer
+import com.kioschool.kioschoolapi.domain.mailbox.service.MailBodyRenderer
+import com.kioschool.kioschoolapi.domain.mailbox.service.MailUnsubscribeService
+import com.kioschool.kioschoolapi.domain.user.entity.User
+import com.kioschool.kioschoolapi.domain.user.service.UserService
+import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepository
+import com.kioschool.kioschoolapi.factory.SampleEntity
+import com.kioschool.kioschoolapi.global.common.enums.UserRole
+import com.kioschool.kioschoolapi.global.error.ErrorCode
+import com.kioschool.kioschoolapi.global.error.exception.CustomException
+import com.kioschool.kioschoolapi.global.resend.service.MailRecipientGuard
+import com.kioschool.kioschoolapi.global.resend.service.ResendInboxClient
+import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.core.spec.style.DescribeSpec
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotContain
+import io.kotest.matchers.string.shouldStartWith
+import io.mockk.*
+import org.slf4j.LoggerFactory
+import org.springframework.data.repository.findByIdOrNull
+import java.time.LocalDate
+
+class MailCampaignFacadeTest : DescribeSpec({
+    val campaignRepository = mockk<MailCampaignRepository>()
+    val recipientRepository = mockk<MailCampaignRecipientRepository>()
+    val workspaceRepository = mockk<WorkspaceRepository>()
+    val audience = mockk<MailAudienceService>()
+    val sender = mockk<MailCampaignSender>(relaxed = true)
+    val userService = mockk<UserService>()
+    val unsubscribe = mockk<MailUnsubscribeService>()
+    val client = mockk<ResendInboxClient>()
+    val bodyRenderer = mockk<MailBodyRenderer>()
+    val renderer = MailTemplateRenderer()
+    val service = MailCampaignService(campaignRepository, recipientRepository, workspaceRepository, ObjectMapper().findAndRegisterModules(), 365)
+    val composer = MailCampaignComposer(renderer, bodyRenderer, "https://kio-school.com", "https://api.kio-school.com")
+
+    fun sut(guard: MailRecipientGuard = MailRecipientGuard("*")) =
+        MailCampaignFacade(service, audience, renderer, composer, sender, userService, unsubscribe, client, guard, 70)
+
+    val filter = MailAudienceFilter(LocalDate.of(2026, 9, 1), LocalDate.of(2026, 10, 31), 15)
+    val body = MailCampaignRequestBody(filter, "{주점 이름} 안내", "{사장 이름}님", null, null)
+    val rows = listOf(MailAudienceRow(1, "달빛", "건국대학교", "김사장", "a@konkuk.ac.kr"), MailAudienceRow(2, "별빛", "건국대학교", "이사장", "b@konkuk.ac.kr"))
+    val appender = ListAppender<ILoggingEvent>().apply { start() }
+    (LoggerFactory.getLogger(MailCampaignFacade::class.java) as Logger).addAppender(appender)
+
+    fun campaign(status: MailCampaignStatus = MailCampaignStatus.SENDING) = MailCampaign(
+        subject = "s", bodyTemplate = "b", buttonLabel = null, buttonUrlTemplate = null, filterJson = "{}", createdBy = null,
+        purgeAt = java.time.LocalDateTime.of(2027, 1, 1, 0, 0), status = status,
+    )
+
+    beforeTest {
+        clearAllMocks()
+        appender.list.clear()
+        every { userService.getUser("admin") } returns SampleEntity.user
+        every { audience.resolve(filter) } returns rows
+        every { campaignRepository.save(any<MailCampaign>()) } answers { firstArg() }
+        every { recipientRepository.saveAll(any<List<MailCampaignRecipient>>()) } answers { firstArg() }
+        every { recipientRepository.countByCampaignGroupByStatus(any()) } returns emptyList()
+        every { workspaceRepository.getReferenceById(any()) } returns SampleEntity.workspace
+        every { bodyRenderer.render(any(), any(), any()) } returns "<html/>"
+        every { unsubscribe.tokenFor(any()) } returns "tok"
+    }
+
+    describe("start") {
+        it("시작 시 대상을 수신자 행으로 고정하고 [AUDIT] 로그를 남긴다") {
+            val saved = slot<List<MailCampaignRecipient>>()
+            every { recipientRepository.saveAll(capture(saved)) } answers { firstArg() }
+            every { campaignRepository.findById(any()) } returns java.util.Optional.of(campaign())
+
+            sut().start("admin", body)
+
+            saved.captured.map { it.email } shouldBe listOf("a@konkuk.ac.kr", "b@konkuk.ac.kr")
+            saved.captured.map { it.workspaceName } shouldBe listOf("달빛", "별빛")
+            saved.captured.all { it.status == MailRecipientStatus.PENDING } shouldBe true
+            val logged = appender.list.joinToString("\n") { it.formattedMessage }
+            logged shouldContain "[AUDIT] action=START_MAIL_CAMPAIGN"
+            logged shouldContain "targetCount=2"
+            logged shouldNotContain "a@konkuk"
+            verify(exactly = 1) { sender.sendDueAsync() }
+        }
+
+        it("대상이 0곳이면 만들지 않는다") {
+            every { audience.resolve(filter) } returns emptyList()
+
+            shouldThrow<CustomException> { sut().start("admin", body) }.errorCode shouldBe ErrorCode.MAIL_RECIPIENT_UNAVAILABLE
+
+            verify(exactly = 0) { campaignRepository.save(any<MailCampaign>()) }
+            verify(exactly = 0) { sender.sendDueAsync() }
+        }
+
+        it("템플릿이 잘못되면 만들지 않는다") {
+            shouldThrow<CustomException> { sut().start("admin", body.copy(subject = "{학교}")) }
+                .errorCode shouldBe ErrorCode.MAIL_TEMPLATE_INVALID
+
+            verify(exactly = 0) { campaignRepository.save(any<MailCampaign>()) }
+        }
+    }
+
+    describe("stop") {
+        it("멈추면 STOPPED로 바꾸고 [AUDIT] 로그를 남긴다") {
+            val target = campaign()
+            every { campaignRepository.findByIdOrNull(1) } returns target
+            every { recipientRepository.findAllByCampaignOrderByIdAsc(any(), any()) } returns org.springframework.data.domain.PageImpl(emptyList())
+
+            sut().stop("admin", 1, 0, 20)
+
+            target.status shouldBe MailCampaignStatus.STOPPED
+            appender.list.joinToString("\n") { it.formattedMessage } shouldContain "[AUDIT] action=STOP_MAIL_CAMPAIGN"
+        }
+
+        it("없는 발송이면 MAIL_CAMPAIGN_NOT_FOUND") {
+            every { campaignRepository.findByIdOrNull(404) } returns null
+
+            shouldThrow<CustomException> { sut().stop("admin", 404, 0, 20) }.errorCode shouldBe ErrorCode.MAIL_CAMPAIGN_NOT_FOUND
+        }
+    }
+
+    describe("retryFailed") {
+        it("attempt를 올리고 PENDING으로 돌린다") {
+            val target = campaign(MailCampaignStatus.DONE)
+            val failed = MailCampaignRecipient(target, null, "달빛", "a@konkuk.ac.kr", "김사장", status = MailRecipientStatus.FAILED, failureReason = "x", attempt = 1)
+            every { campaignRepository.findByIdOrNull(1) } returns target
+            every { recipientRepository.findAllByCampaignAndStatus(target, MailRecipientStatus.FAILED) } returns listOf(failed)
+            every { recipientRepository.findAllByCampaignOrderByIdAsc(any(), any()) } returns org.springframework.data.domain.PageImpl(listOf(failed))
+
+            sut().retryFailed(1, 0, 20)
+
+            failed.status shouldBe MailRecipientStatus.PENDING
+            failed.attempt shouldBe 2
+            failed.failureReason shouldBe null
+            target.status shouldBe MailCampaignStatus.SENDING
+            verify(exactly = 1) { sender.sendDueAsync() }
+        }
+
+        it("멈춘 발송은 다시 시작하지 않는다") {
+            val target = campaign(MailCampaignStatus.STOPPED)
+            every { campaignRepository.findByIdOrNull(1) } returns target
+            every { recipientRepository.findAllByCampaignOrderByIdAsc(any(), any()) } returns org.springframework.data.domain.PageImpl(emptyList())
+
+            sut().retryFailed(1, 0, 20)
+
+            target.status shouldBe MailCampaignStatus.STOPPED
+            verify(exactly = 0) { sender.sendDueAsync() }
+        }
+    }
+
+    describe("test") {
+        it("본인 이메일이 없으면 MAIL_RECIPIENT_UNAVAILABLE") {
+            every { userService.getUser("admin") } returns User(
+                loginId = "a", loginPassword = "p", name = "관리자", email = null, role = UserRole.SUPER_ADMIN, members = mutableListOf(),
+            )
+
+            shouldThrow<CustomException> { sut().test("admin", body) }.errorCode shouldBe ErrorCode.MAIL_RECIPIENT_UNAVAILABLE
+            verify { client wasNot Called }
+        }
+
+        it("대상이 없으면 MAIL_RECIPIENT_UNAVAILABLE") {
+            every { audience.resolve(filter) } returns emptyList()
+
+            shouldThrow<CustomException> { sut().test("admin", body) }.errorCode shouldBe ErrorCode.MAIL_RECIPIENT_UNAVAILABLE
+        }
+
+        it("본인 이메일로 첫 주점 값을 넣어 [테스트]를 제목 앞에 붙여 보낸다") {
+            val subject = slot<String>()
+            every { client.sendNew("test@test.com", capture(subject), any(), any(), any(), any()) } returns "e"
+
+            sut().test("admin", body)
+
+            subject.captured shouldStartWith "[테스트] 달빛 안내"
+            verify(exactly = 0) { campaignRepository.save(any<MailCampaign>()) }
+        }
+
+        it("허용 도메인 밖이면 보내지 않는다") {
+            shouldThrow<CustomException> { sut(MailRecipientGuard("kio-school.com")).test("admin", body) }
+                .errorCode shouldBe ErrorCode.MAIL_RECIPIENT_UNAVAILABLE
+            verify { client wasNot Called }
+        }
+    }
+})

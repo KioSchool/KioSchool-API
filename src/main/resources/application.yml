@@ -113,6 +113,7 @@ turnstile:
   secret-key: "${TURNSTILE_SECRET_KEY:}"
 
 resend:
+  base-url: "${RESEND_BASE_URL:https://api.resend.com/}"
   api-key: "${RESEND_API_KEY:}"
   webhook-secret: "${RESEND_WEBHOOK_SECRET:}"
 

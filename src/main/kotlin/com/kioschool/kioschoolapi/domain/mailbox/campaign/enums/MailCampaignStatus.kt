@@ -1,4 +1,4 @@
-package com.kioschool.kioschoolapi.domain.mailbox.campaign.enum
+package com.kioschool.kioschoolapi.domain.mailbox.campaign.enums
 
 enum class MailCampaignStatus {
     SENDING,

@@ -1,5 +1,7 @@
 package com.kioschool.kioschoolapi.domain.mailbox.schedule
 
+import com.kioschool.kioschoolapi.domain.mailbox.campaign.enums.MailCampaignStatus
+import com.kioschool.kioschoolapi.domain.mailbox.campaign.repository.MailCampaignRepository
 import com.kioschool.kioschoolapi.domain.mailbox.repository.MailMessageRepository
 import com.kioschool.kioschoolapi.domain.mailbox.repository.MailThreadRepository
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailPurgeService
@@ -16,6 +18,7 @@ class MailPurgeScheduler(
     private val mailThreadRepository: MailThreadRepository,
     private val mailPurgeService: MailPurgeService,
     private val mailMessageRepository: MailMessageRepository,
+    private val mailCampaignRepository: MailCampaignRepository,
     @Value("\${mail.retention-days}")
     private val retentionDays: Long,
 ) {
@@ -25,6 +28,18 @@ class MailPurgeScheduler(
     fun purgeExpired() {
         purgeThreads()
         mailMessageRepository.deleteOrphansCreatedBefore(LocalDateTime.now().minusDays(retentionDays))
+        purgeCampaigns()
+    }
+
+    private fun purgeCampaigns() {
+        mailCampaignRepository.findAllByPurgeAtBeforeAndStatusNot(
+            LocalDateTime.now(),
+            MailCampaignStatus.SENDING,
+            PageRequest.of(0, BATCH_SIZE, Sort.by("purgeAt"))
+        ).forEach { campaign ->
+            runCatching { mailCampaignRepository.delete(campaign) }
+                .onFailure { log.error("Failed to purge mailCampaignId={}", campaign.id, it) }
+        }
     }
 
     private fun purgeThreads() {

@@ -1,5 +1,8 @@
 package com.kioschool.kioschoolapi.domain.mailbox.schedule
 
+import com.kioschool.kioschoolapi.domain.mailbox.campaign.entity.MailCampaign
+import com.kioschool.kioschoolapi.domain.mailbox.campaign.enums.MailCampaignStatus
+import com.kioschool.kioschoolapi.domain.mailbox.campaign.repository.MailCampaignRepository
 import com.kioschool.kioschoolapi.domain.mailbox.repository.MailMessageRepository
 import com.kioschool.kioschoolapi.domain.mailbox.repository.MailThreadRepository
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailThreadWriter
@@ -48,11 +51,17 @@ class MailPurgeTest : DescribeSpec({
     describe("MailPurgeScheduler.purgeExpired") {
         val service = mockk<MailPurgeService>(relaxed = true)
         val messageRepository = mockk<MailMessageRepository>(relaxed = true)
-        val sut = MailPurgeScheduler(repository, service, messageRepository, 365)
+        val campaignRepository = mockk<MailCampaignRepository>(relaxed = true)
+        val sut = MailPurgeScheduler(repository, service, messageRepository, campaignRepository, 365)
+
+        fun stubNoCampaigns() {
+            every { campaignRepository.findAllByPurgeAtBeforeAndStatusNot(any(), any(), any()) } returns emptyList()
+        }
 
         it("Resend 실패는 그 대화만 건너뛰고 다음 대화를 처리한다") {
             val first = SampleEntity.newMailThread(resendThreadId = "t1")
             val second = SampleEntity.newMailThread(resendThreadId = "t2")
+            stubNoCampaigns()
             every { repository.findAllByPurgeAtBefore(any(), any()) } returns listOf(first, second)
             every { service.purgeOne(first.id) } throws ResendSendException("x") andThen Unit
 
@@ -61,7 +70,18 @@ class MailPurgeTest : DescribeSpec({
             verify(exactly = 2) { service.purgeOne(any()) }
         }
 
+        it("purgeAt이 지난 캠페인과 수신자를 지운다. SENDING 캠페인은 조회에서 뺀다") {
+            val expired = MailCampaign("s", "b", null, null, "{}", null, java.time.LocalDateTime.of(2026, 1, 1, 0, 0), MailCampaignStatus.DONE)
+            every { repository.findAllByPurgeAtBefore(any(), any()) } returns emptyList()
+            every { campaignRepository.findAllByPurgeAtBeforeAndStatusNot(any(), MailCampaignStatus.SENDING, any()) } returns listOf(expired)
+
+            sut.purgeExpired()
+
+            verify(exactly = 1) { campaignRepository.delete(expired) }
+        }
+
         it("대화에 연결되지 않은 채 보유 기간이 지난 메일을 지운다") {
+            stubNoCampaigns()
             every { repository.findAllByPurgeAtBefore(any(), any()) } returns emptyList()
             val before = slot<java.time.LocalDateTime>()
             every { messageRepository.deleteOrphansCreatedBefore(capture(before)) } returns 2
@@ -73,6 +93,7 @@ class MailPurgeTest : DescribeSpec({
         }
 
         it("만료 안 된 대화는 건드리지 않는다") {
+            stubNoCampaigns()
             every { repository.findAllByPurgeAtBefore(any(), any()) } returns emptyList()
 
             sut.purgeExpired()
