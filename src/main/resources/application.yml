@@ -112,6 +112,15 @@ turnstile:
   # 비어 있으면 검증을 건너뛴다. 프론트 site key 배포 후에 설정해야 정상 접수가 막히지 않는다
   secret-key: "${TURNSTILE_SECRET_KEY:}"
 
+resend:
+  api-key: "${RESEND_API_KEY:}"
+  webhook-secret: "${RESEND_WEBHOOK_SECRET:}"
+
+mail:
+  inbox-id: "${MAIL_INBOX_ID:}"
+  # 이 도메인으로만 보낸다. 비어 있으면 제한이 없으므로 prod에서만 비운다
+  allowed-recipient-domains: "${MAIL_ALLOWED_RECIPIENT_DOMAINS:kio-school.com}"
+
 inquiry:
   guard:
     email:

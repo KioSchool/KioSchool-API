@@ -79,6 +79,17 @@ enum class ErrorCode(
     INQUIRY_IMAGE_TYPE_NOT_ALLOWED(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "JPEG, PNG, WebP 이미지만 첨부할 수 있습니다."),
     INQUIRY_RATE_LIMIT_EXCEEDED(HttpStatus.TOO_MANY_REQUESTS, "문의 접수 횟수 제한을 초과했습니다. 잠시 후 다시 시도해 주세요."),
 
+    // Mail
+    MAIL_THREAD_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 대화입니다."),
+    MAIL_THREAD_STALE(HttpStatus.CONFLICT, "그사이 새 메일이 왔습니다. 새 메일을 확인한 뒤 다시 보내 주세요."),
+    MAIL_RECIPIENT_UNAVAILABLE(HttpStatus.BAD_REQUEST, "메일을 받을 수 있는 주소가 없습니다."),
+    MAIL_DAILY_LIMIT_EXCEEDED(HttpStatus.TOO_MANY_REQUESTS, "오늘 보낼 수 있는 메일을 모두 보냈습니다. 내일 다시 시도해 주세요."),
+    MAIL_SEND_FAILURE(HttpStatus.BAD_GATEWAY, "메일 서비스와 연결하지 못했습니다. 잠시 후 다시 시도해 주세요."),
+    MAIL_ATTACHMENT_UNAVAILABLE(HttpStatus.GONE, "내려받을 수 없는 파일입니다."),
+    MAIL_CAMPAIGN_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 발송입니다."),
+    MAIL_TEMPLATE_INVALID(HttpStatus.BAD_REQUEST, "메일 내용을 확인해 주세요. 쓸 수 없는 값이 있거나 링크가 올바르지 않습니다."),
+    MAIL_UNSUBSCRIBE_TOKEN_INVALID(HttpStatus.NOT_FOUND, "링크가 올바르지 않습니다."),
+
     // Security
     AUTHENTICATION_REQUIRED(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다."),
     ACCESS_DENIED(HttpStatus.FORBIDDEN, "접근 권한이 없습니다."),
