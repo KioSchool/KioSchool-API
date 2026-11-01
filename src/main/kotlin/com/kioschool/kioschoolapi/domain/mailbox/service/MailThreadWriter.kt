@@ -9,6 +9,8 @@ import com.kioschool.kioschoolapi.domain.mailbox.repository.MailThreadRepository
 import com.kioschool.kioschoolapi.domain.user.entity.User
 import com.kioschool.kioschoolapi.domain.workspace.entity.Workspace
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepository
+import com.kioschool.kioschoolapi.global.error.ErrorCode
+import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import com.kioschool.kioschoolapi.global.resend.dto.ResendThreadEmail
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.repository.findByIdOrNull
@@ -117,6 +119,28 @@ class MailThreadWriter(
             if (campaignRecipientId != null) linked.fromCampaign = true
         }
         mailMessageRepository.save(message)
+    }
+
+    @Transactional
+    fun markRead(threadId: Long): MailThread = changeThread(threadId) { it.lastReadAt = LocalDateTime.now() }
+
+    @Transactional
+    fun resolve(threadId: Long): MailThread = changeThread(threadId) {
+        it.resolvedAt = LocalDateTime.now()
+        it.renewPurgeAt(retentionDays)
+    }
+
+    @Transactional
+    fun markSpam(threadId: Long): MailThread = changeThread(threadId) { it.spamAt = LocalDateTime.now() }
+
+    @Transactional
+    fun unmarkSpam(threadId: Long): MailThread = changeThread(threadId) { it.spamAt = null }
+
+    private fun changeThread(threadId: Long, change: (MailThread) -> Unit): MailThread {
+        val thread = mailThreadRepository.findByIdOrNull(threadId)
+            ?: throw CustomException(ErrorCode.MAIL_THREAD_NOT_FOUND)
+        change(thread)
+        return mailThreadRepository.save(thread)
     }
 
     /** SMTP로 보낸 인증 메일의 반송도 같은 웹훅으로 오므로, 메일함에 없는 메일이면 아무것도 하지 않는다. */

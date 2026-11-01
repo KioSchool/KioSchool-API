@@ -238,6 +238,44 @@ class MailThreadWriterTest : DescribeSpec({
         }
     }
 
+    describe("상태 바꾸기") {
+        val thread = SampleEntity.newMailThread(resendThreadId = "t1")
+
+        beforeTest {
+            thread.spamAt = null
+            thread.resolvedAt = null
+            every { threadRepository.findByIdOrNull(1) } returns thread
+        }
+
+        it("markRead는 읽은 시각을 남긴다") {
+            sut.markRead(1)
+
+            thread.isUnread() shouldBe false
+        }
+
+        it("resolve는 완료 시각을 남기고 purgeAt을 그 시각 기준으로 늦춘다") {
+            sut.resolve(1)
+
+            val resolvedAt = thread.resolvedAt.shouldNotBeNull()
+            thread.purgeAt shouldBe resolvedAt.plusDays(365)
+        }
+
+        it("markSpam과 unmarkSpam으로 스팸 표시를 바꾼다") {
+            sut.markSpam(1)
+            thread.spamAt.shouldNotBeNull()
+
+            sut.unmarkSpam(1)
+            thread.spamAt.shouldBeNull()
+        }
+
+        it("없는 대화면 MAIL_THREAD_NOT_FOUND") {
+            every { threadRepository.findByIdOrNull(404) } returns null
+
+            io.kotest.assertions.throwables.shouldThrow<com.kioschool.kioschoolapi.global.error.exception.CustomException> { sut.markRead(404) }
+                .errorCode shouldBe com.kioschool.kioschoolapi.global.error.ErrorCode.MAIL_THREAD_NOT_FOUND
+        }
+    }
+
     describe("markBounced") {
         it("저장된 메일에 시각을 남긴다") {
             val at = LocalDateTime.of(2026, 11, 2, 0, 0)
