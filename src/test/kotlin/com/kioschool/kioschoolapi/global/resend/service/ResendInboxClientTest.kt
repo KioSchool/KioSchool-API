@@ -17,14 +17,14 @@ import java.io.IOException
 
 class ResendInboxClientTest : DescribeSpec({
     val api = mockk<ResendInboxApi>()
-    val sut = ResendInboxClient("key", "inbox", api, MailRecipientGuard(""))
+    val sut = ResendInboxClient("key", "inbox", api, MailRecipientGuard("*"), 0)
 
     afterTest { clearAllMocks() }
 
     fun <T> ok(body: T): Call<T> = mockk<Call<T>>().also { every { it.execute() } returns Response.success(body) }
 
-    fun <T> fail(code: Int): Call<T> = mockk<Call<T>>().also {
-        every { it.execute() } returns Response.error(code, "{}".toResponseBody())
+    fun <T> fail(code: Int, body: String = "{}"): Call<T> = mockk<Call<T>>().also {
+        every { it.execute() } returns Response.error(code, body.toResponseBody())
     }
 
     fun email(id: String) = ResendThreadEmail(
@@ -41,7 +41,7 @@ class ResendInboxClientTest : DescribeSpec({
 
     describe("sendNew") {
         it("허용되지 않은 주소면 호출하지 않고 ResendSendException을 던진다") {
-            val guarded = ResendInboxClient("key", "inbox", api, MailRecipientGuard("kio-school.com"))
+            val guarded = ResendInboxClient("key", "inbox", api, MailRecipientGuard("kio-school.com"), 0)
 
             shouldThrow<ResendSendException> {
                 guarded.sendNew("a@konkuk.ac.kr", "s", "h", "t", emptyMap(), "k")
@@ -80,10 +80,31 @@ class ResendInboxClientTest : DescribeSpec({
             body.captured.headers shouldBe mapOf("List-Unsubscribe" to "<u>")
         }
 
-        it("429를 받으면 ResendDailyLimitException을 던진다") {
-            every { api.createDraft(any(), any(), any(), any()) } returns fail(429)
+        listOf("daily_quota_exceeded", "monthly_quota_exceeded").forEach { name ->
+            it("429 $name 이면 ResendDailyLimitException을 던진다") {
+                every { api.createDraft(any(), any(), any(), any()) } returns fail(429, """{"statusCode":429,"name":"$name"}""")
 
-            shouldThrow<ResendDailyLimitException> {
+                shouldThrow<ResendDailyLimitException> {
+                    sut.sendNew("a@b.com", "s", "h", "t", emptyMap(), "k")
+                }
+            }
+        }
+
+        it("429 rate_limit_exceeded면 잠시 뒤 다시 시도해 성공한다") {
+            val limited = fail<ResendIdResponse>(429, """{"name":"rate_limit_exceeded"}""")
+            every { limited.clone() } returns ok(ResendIdResponse("draft"))
+            every { api.createDraft(any(), any(), any(), any()) } returns limited
+            every { api.sendDraft(any(), any(), any(), any(), any()) } returns ok(ResendIdResponse("email"))
+
+            sut.sendNew("a@b.com", "s", "h", "t", emptyMap(), "k") shouldBe "email"
+        }
+
+        it("rate_limit_exceeded가 계속되면 한도 초과가 아니라 ResendSendException이다") {
+            val limited = fail<ResendIdResponse>(429, """{"name":"rate_limit_exceeded"}""")
+            every { limited.clone() } returns limited
+            every { api.createDraft(any(), any(), any(), any()) } returns limited
+
+            shouldThrow<ResendSendException> {
                 sut.sendNew("a@b.com", "s", "h", "t", emptyMap(), "k")
             }
         }
@@ -128,6 +149,27 @@ class ResendInboxClientTest : DescribeSpec({
             sut.listThreadEmails("thread").map { it.id } shouldBe listOf("1", "2", "3")
         }
 
+        val mapper = Jackson2ObjectMapperBuilder.json().build<com.fasterxml.jackson.databind.ObjectMapper>()
+
+        it("attachments·to가 없거나 null이어도 읽는다") {
+            val parsed = mapper.readValue(
+                """{"id":"m","direction":"inbound","from":"a@b.com","to":null,"received_at":"2026-08-05T14:03:11.229Z"}""",
+                ResendThreadEmail::class.java,
+            )
+
+            parsed.to shouldBe emptyList()
+            parsed.attachments shouldBe emptyList()
+        }
+
+        it("received_at 대신 created_at이 와도 읽고 공백 형식 시각도 읽는다") {
+            val parsed = mapper.readValue(
+                """{"id":"m","direction":"outbound","from":"a@b.com","to":["c@d.com"],"created_at":"2026-08-05 14:03:11.229+00"}""",
+                ResendThreadEmail::class.java,
+            )
+
+            parsed.receivedAt.toInstant().toString() shouldBe "2026-08-05T14:03:11.229Z"
+        }
+
         it("문서의 응답 예시를 읽는다") {
             val json = """
                 {"object":"list","has_more":false,"data":[{
@@ -137,7 +179,6 @@ class ResendInboxClientTest : DescribeSpec({
                   "attachments":[{"id":"a1","filename":"receipt.pdf","size":20841},{"id":"a2","filename":null,"size":null}],
                   "read":false,"received_at":"2026-08-05T14:03:11.229Z"}]}
             """.trimIndent()
-            val mapper = Jackson2ObjectMapperBuilder.json().build<com.fasterxml.jackson.databind.ObjectMapper>()
             val type = mapper.typeFactory.constructParametricType(ResendListResponse::class.java, ResendThreadEmail::class.java)
 
             val parsed = mapper.readValue<ResendListResponse<ResendThreadEmail>>(json, type)

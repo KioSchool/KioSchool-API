@@ -73,7 +73,7 @@ class MailFacade(
         val sender = userService.getUser(username)
 
         val emailId = callResend {
-            resendInboxClient.sendNew(to, subject, html, content, emptyMap(), "mail-new-${UUID.randomUUID()}")
+            resendInboxClient.sendNew(to, subject, html, content, emptyMap(), "mail-new-${body.requestId ?: UUID.randomUUID()}")
         }
 
         record(emailId, sender, workspace, null, subject, content, html, to)

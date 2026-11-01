@@ -2,6 +2,7 @@ package com.kioschool.kioschoolapi.domain.mailbox.dto.request
 
 import com.kioschool.kioschoolapi.global.logging.annotation.LogMasked
 import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
 
 data class SendMailRequestBody(
@@ -16,6 +17,10 @@ data class SendMailRequestBody(
     @field:NotBlank(message = "내용을 입력해 주세요.")
     @field:Size(max = 10000, message = "내용은 10000자를 넘을 수 없습니다.")
     val content: String,
+
+    // 응답을 못 받아 다시 눌러도 같은 메일이 두 번 나가지 않도록 화면이 만든 요청 번호
+    @field:Pattern(regexp = "^[A-Za-z0-9-]{1,64}$", message = "요청 번호가 올바르지 않습니다.")
+    val requestId: String? = null,
 ) {
     fun normalizedSubject(): String = subject.trim()
     fun normalizedContent(): String = content.trim()

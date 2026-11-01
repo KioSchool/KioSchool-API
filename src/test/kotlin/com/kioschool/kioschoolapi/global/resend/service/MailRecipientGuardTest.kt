@@ -5,8 +5,13 @@ import io.kotest.matchers.shouldBe
 
 class MailRecipientGuardTest : DescribeSpec({
     describe("isAllowed") {
-        it("허용 도메인이 비어 있으면 모두 허용한다") {
-            MailRecipientGuard("").isAllowed("a@konkuk.ac.kr") shouldBe true
+        it("*이면 모두 허용한다") {
+            MailRecipientGuard("*").isAllowed("a@konkuk.ac.kr") shouldBe true
+        }
+
+        it("설정이 비어 있으면 모두 막는다") {
+            MailRecipientGuard("").isAllowed("a@konkuk.ac.kr") shouldBe false
+            MailRecipientGuard(" ").isAllowed("a@kio-school.com") shouldBe false
         }
 
         it("허용 도메인이 있으면 그 밖은 막는다") {

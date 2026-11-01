@@ -6,6 +6,7 @@ import com.kioschool.kioschoolapi.domain.mailbox.listener.ResendWebhookEvent
 import com.kioschool.kioschoolapi.domain.mailbox.listener.ResendWebhookHandler
 import com.kioschool.kioschoolapi.global.resend.service.ResendWebhookVerifier
 import io.swagger.v3.oas.annotations.Hidden
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
@@ -22,6 +23,8 @@ class ResendWebhookController(
     @Value("\${mail.inbox-id}")
     private val inboxId: String,
 ) {
+    private val log = LoggerFactory.getLogger(javaClass)
+
     // 서명은 받은 바이트 그대로 확인해야 하므로 객체로 바꾸기 전 원문을 받는다
     @PostMapping("/webhook/resend")
     fun receive(
@@ -35,7 +38,12 @@ class ResendWebhookController(
         }
 
         val event = parse(body) ?: return ResponseEntity.ok().build()
-        if (event.inboxId == null || event.inboxId == inboxId) resendWebhookHandler.handle(event)
+        if (event.inboxId == null || event.inboxId == inboxId) {
+            resendWebhookHandler.handle(event)
+        } else {
+            // 설정의 메일함 ID가 틀리면 받은 메일이 모두 여기서 버려지므로 알아챌 수 있게 남긴다
+            log.warn("Ignored Resend webhook from another inbox: type={}", event.type)
+        }
         return ResponseEntity.ok().build()
     }
 

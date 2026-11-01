@@ -1,8 +1,10 @@
 package com.kioschool.kioschoolapi.domain.mailbox.schedule
 
+import com.kioschool.kioschoolapi.domain.mailbox.repository.MailMessageRepository
 import com.kioschool.kioschoolapi.domain.mailbox.repository.MailThreadRepository
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailPurgeService
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.scheduling.annotation.Scheduled
@@ -13,11 +15,19 @@ import java.time.LocalDateTime
 class MailPurgeScheduler(
     private val mailThreadRepository: MailThreadRepository,
     private val mailPurgeService: MailPurgeService,
+    private val mailMessageRepository: MailMessageRepository,
+    @Value("\${mail.retention-days}")
+    private val retentionDays: Long,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
     @Scheduled(cron = "0 40 4 * * *", zone = "Asia/Seoul")
     fun purgeExpired() {
+        purgeThreads()
+        mailMessageRepository.deleteOrphansCreatedBefore(LocalDateTime.now().minusDays(retentionDays))
+    }
+
+    private fun purgeThreads() {
         val expired = mailThreadRepository.findAllByPurgeAtBefore(
             LocalDateTime.now(),
             PageRequest.of(0, BATCH_SIZE, Sort.by("purgeAt"))

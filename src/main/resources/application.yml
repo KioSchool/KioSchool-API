@@ -117,8 +117,9 @@ resend:
   webhook-secret: "${RESEND_WEBHOOK_SECRET:}"
 
 mail:
+  # 메일함 주소가 아니라 ID여야 한다. 웹훅의 inbox_id와 비교한다
   inbox-id: "${MAIL_INBOX_ID:}"
-  # 이 도메인으로만 보낸다. 비어 있으면 제한이 없으므로 prod에서만 비운다
+  # 이 도메인으로만 보낸다. 비어 있으면 모두 막고, prod만 *로 모두 허용한다
   allowed-recipient-domains: "${MAIL_ALLOWED_RECIPIENT_DOMAINS:kio-school.com}"
   retention-days: 365
 

@@ -122,6 +122,16 @@ class DiscordService(
         send(message)
     }
 
+    // 제목과 보낸 사람은 넣지 않는다
+    fun sendMailSyncFailed() {
+        val message =
+            """## [메일 동기화 실패]
+            |새 메일을 가져오지 못했어요. 서버 로그와 Resend 메일함을 확인해 주세요.
+            """.trimMargin()
+
+        send(message)
+    }
+
     private fun send(message: String) {
         discordApi.executeWebhook(webhookUrl, DiscordWebhookRequest(message)).execute()
     }

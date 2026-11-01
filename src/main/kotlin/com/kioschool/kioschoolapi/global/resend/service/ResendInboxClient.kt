@@ -16,6 +16,8 @@ class ResendInboxClient(
     private val inboxId: String,
     private val resendInboxApi: ResendInboxApi,
     private val mailRecipientGuard: MailRecipientGuard,
+    @Value("\${resend.rate-limit-retry-delay-millis:1000}")
+    private val rateLimitRetryDelayMillis: Long,
 ) {
     private val authorization = "Bearer $apiKey"
 
@@ -92,7 +94,23 @@ class ResendInboxClient(
         return response.body() ?: throw ResendSendException("Resend 응답 본문 없음")
     }
 
+    // 실패한 요청은 Idempotency-Key에 저장되지 않으므로 초당 제한은 같은 키로 다시 시도해도 된다
     private fun <T> execute(call: Call<T>): Response<T> {
+        var current = call
+        repeat(RATE_LIMIT_ATTEMPTS) {
+            val response = executeOnce(current)
+            if (response.code() != TOO_MANY_REQUESTS) return response
+
+            val error = response.errorBody()?.string().orEmpty()
+            if (QUOTA_ERRORS.any { it in error }) throw ResendDailyLimitException()
+
+            sleep(retryDelayOf(response))
+            current = current.clone()
+        }
+        throw ResendSendException("Resend 응답 $TOO_MANY_REQUESTS")
+    }
+
+    private fun <T> executeOnce(call: Call<T>): Response<T> {
         return try {
             call.execute()
         } catch (e: IOException) {
@@ -100,9 +118,16 @@ class ResendInboxClient(
         }
     }
 
+    private fun retryDelayOf(response: Response<*>): Long =
+        response.headers()["retry-after"]?.toLongOrNull()?.let { minOf(it * 1000, MAX_RETRY_DELAY_MILLIS) }
+            ?: rateLimitRetryDelayMillis
+
+    private fun sleep(millis: Long) {
+        if (millis > 0) Thread.sleep(millis)
+    }
+
     private fun ensureSuccess(response: Response<*>) {
         if (response.isSuccessful) return
-        if (response.code() == TOO_MANY_REQUESTS) throw ResendDailyLimitException()
         throw ResendSendException("Resend 응답 ${response.code()}")
     }
 
@@ -110,6 +135,9 @@ class ResendInboxClient(
         private const val PAGE_SIZE = 100
         private const val NOT_FOUND = 404
         private const val TOO_MANY_REQUESTS = 429
+        private const val RATE_LIMIT_ATTEMPTS = 3
+        private const val MAX_RETRY_DELAY_MILLIS = 5000L
+        private val QUOTA_ERRORS = listOf("daily_quota_exceeded", "monthly_quota_exceeded")
         private val LINE_BREAKS = Regex("[\\r\\n]+")
     }
 }

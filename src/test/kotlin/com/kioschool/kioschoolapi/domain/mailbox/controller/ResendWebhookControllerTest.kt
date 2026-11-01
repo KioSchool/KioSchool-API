@@ -1,11 +1,17 @@
 package com.kioschool.kioschoolapi.domain.mailbox.controller
 
+import ch.qos.logback.classic.Level
+import ch.qos.logback.classic.Logger
+import ch.qos.logback.classic.spi.ILoggingEvent
+import ch.qos.logback.core.read.ListAppender
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.kioschool.kioschoolapi.domain.mailbox.listener.ResendWebhookEvent
 import com.kioschool.kioschoolapi.domain.mailbox.listener.ResendWebhookHandler
 import com.kioschool.kioschoolapi.global.resend.service.ResendWebhookVerifier
 import io.kotest.core.spec.style.DescribeSpec
+import io.kotest.matchers.shouldBe
 import io.mockk.*
+import org.slf4j.LoggerFactory
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.post
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
@@ -60,12 +66,15 @@ class ResendWebhookControllerTest : DescribeSpec({
             }
         }
 
-        it("inbox_id가 설정값과 다르면 200이지만 핸들러를 부르지 않는다") {
+        it("inbox_id가 설정값과 다르면 200이지만 핸들러를 부르지 않고 경고를 남긴다") {
+            val appender = ListAppender<ILoggingEvent>().apply { start() }
+            (LoggerFactory.getLogger(ResendWebhookController::class.java) as Logger).addAppender(appender)
             every { verifier.verify(any(), any(), any(), any(), any()) } returns true
 
             post(body("other")).andExpect { status { isOk() } }
 
             verify { handler wasNot Called }
+            appender.list.any { it.level == Level.WARN && it.formattedMessage.contains("inbox.email.received") } shouldBe true
         }
 
         it("inbox_id가 없는 이벤트(email.bounced)도 핸들러를 부른다") {

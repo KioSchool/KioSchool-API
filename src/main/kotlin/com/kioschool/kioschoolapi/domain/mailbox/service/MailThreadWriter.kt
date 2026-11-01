@@ -1,9 +1,11 @@
 package com.kioschool.kioschoolapi.domain.mailbox.service
 
 import com.kioschool.kioschoolapi.domain.mailbox.entity.MailAttachment
+import com.kioschool.kioschoolapi.domain.mailbox.entity.MailDeletedThread
 import com.kioschool.kioschoolapi.domain.mailbox.entity.MailMessage
 import com.kioschool.kioschoolapi.domain.mailbox.entity.MailThread
 import com.kioschool.kioschoolapi.domain.mailbox.enum.MailDirection
+import com.kioschool.kioschoolapi.domain.mailbox.repository.MailDeletedThreadRepository
 import com.kioschool.kioschoolapi.domain.mailbox.repository.MailMessageRepository
 import com.kioschool.kioschoolapi.domain.mailbox.repository.MailThreadRepository
 import com.kioschool.kioschoolapi.domain.user.entity.User
@@ -12,6 +14,7 @@ import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepositor
 import com.kioschool.kioschoolapi.global.error.ErrorCode
 import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import com.kioschool.kioschoolapi.global.resend.dto.ResendThreadEmail
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
@@ -25,15 +28,20 @@ class MailThreadWriter(
     private val mailThreadRepository: MailThreadRepository,
     private val mailMessageRepository: MailMessageRepository,
     private val workspaceRepository: WorkspaceRepository,
+    private val mailDeletedThreadRepository: MailDeletedThreadRepository,
     @Value("\${mail.retention-days}")
     private val retentionDays: Long,
 ) {
+    private val log = LoggerFactory.getLogger(javaClass)
+
     /** 이벤트 종류를 가리지 않고 스레드 전체를 맞추므로 재시도·중복·순서 뒤바뀜에 안전하다. */
     @Transactional
     fun upsert(resendThreadId: String, emails: List<ResendThreadEmail>): MailSyncResult {
-        if (emails.isEmpty()) return MailSyncResult(0)
+        val deletedAt = mailDeletedThreadRepository.findByResendThreadId(resendThreadId)?.deletedAt
+        val liveEmails = if (deletedAt == null) emails else emails.filter { it.receivedAt.toKst().isAfter(deletedAt) }
+        if (liveEmails.isEmpty()) return MailSyncResult(0)
 
-        val sorted = emails.sortedBy { it.receivedAt }
+        val sorted = liveEmails.sortedBy { it.receivedAt }
         val latest = sorted.last()
         val existingMessages = sorted.associate { it.id to mailMessageRepository.findByResendEmailId(it.id) }
         val newInboundCount = sorted.count { it.isInbound() && existingMessages[it.id] == null }
@@ -121,6 +129,18 @@ class MailThreadWriter(
         mailMessageRepository.save(message)
     }
 
+    /** Resend는 삭제한 대화를 30일간 휴지통에 두므로, 늦게 온 웹훅이 옛 메일을 되살리지 못하게 기록을 남긴다. */
+    @Transactional
+    fun delete(threadId: Long) {
+        val thread = mailThreadRepository.findByIdOrNull(threadId) ?: return
+        val now = LocalDateTime.now()
+        val tombstone = mailDeletedThreadRepository.findByResendThreadId(thread.resendThreadId)
+            ?.apply { deletedAt = now }
+            ?: MailDeletedThread(thread.resendThreadId, now)
+        mailDeletedThreadRepository.save(tombstone)
+        mailThreadRepository.delete(thread)
+    }
+
     @Transactional
     fun markRead(threadId: Long): MailThread = changeThread(threadId) { it.lastReadAt = LocalDateTime.now() }
 
@@ -158,9 +178,10 @@ class MailThreadWriter(
         message.fromEmail = from.email
         message.fromName = from.name?.withoutNul()
         message.toEmail = email.to.firstOrNull()?.let { MailAddressParser.parse(it).email }
-        message.subject = email.subject?.withoutNul()
-        message.textBody = email.text?.withoutNul()
-        message.htmlBody = email.html?.withoutNul()
+        // 목록 응답에 본문이 빠져도 보낼 때 저장한 내용을 지우지 않는다
+        message.subject = email.subject?.withoutNul() ?: message.subject
+        message.textBody = email.text?.withoutNul() ?: message.textBody
+        message.htmlBody = email.html?.withoutNul() ?: message.htmlBody
         message.sentAt = email.receivedAt.toKst()
 
         val saved = message.attachments.map { it.resendAttachmentId }.toSet()
@@ -178,7 +199,11 @@ class MailThreadWriter(
 
     private fun ParsedMailAddress.clean() = copy(name = name?.withoutNul())
 
-    private fun ResendThreadEmail.isInbound() = direction == INBOUND
+    // 모르는 값이면 받은 메일로 본다. 잘못 봐도 답장 필요로 보일 뿐이지만, 반대면 받은 메일을 놓친다.
+    private fun ResendThreadEmail.isInbound(): Boolean {
+        if (direction != INBOUND && direction != OUTBOUND) log.warn("Unknown mail direction: emailId={}", id)
+        return direction != OUTBOUND
+    }
 
     private fun ResendThreadEmail.direction() = if (isInbound()) MailDirection.INBOUND else MailDirection.OUTBOUND
 
@@ -189,6 +214,7 @@ class MailThreadWriter(
 
     companion object {
         private const val INBOUND = "inbound"
+        private const val OUTBOUND = "outbound"
         private val KST = ZoneId.of("Asia/Seoul")
     }
 }

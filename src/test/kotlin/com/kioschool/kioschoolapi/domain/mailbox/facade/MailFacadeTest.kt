@@ -50,7 +50,7 @@ class MailFacadeTest : DescribeSpec({
     val userService = mockk<UserService>()
     val emailService = mockk<EmailService>()
 
-    fun sut(guard: MailRecipientGuard = MailRecipientGuard("")) = MailFacade(
+    fun sut(guard: MailRecipientGuard = MailRecipientGuard("*")) = MailFacade(
         threadRepository, messageRepository, attachmentRepository, writer, sync, purge, renderer, client,
         downloader, guard, workspaceService, userService, emailService,
     )
@@ -115,6 +115,15 @@ class MailFacadeTest : DescribeSpec({
             sut().sendNew("admin", body)
 
             verify(exactly = 1) { client.sendNew("owner@test.com", "제목", "<html/>", "내용", emptyMap(), any()) }
+        }
+
+        it("같은 요청 번호로 다시 보내면 같은 Idempotency-Key를 쓴다") {
+            every { workspaceService.getWorkspace(9) } returns owner()
+            every { client.sendNew(any(), any(), any(), any(), any(), any()) } returns "email"
+
+            sut().sendNew("admin", SendMailRequestBody(9, "제목", "내용", "req-1"))
+
+            verify { client.sendNew(any(), any(), any(), any(), any(), "mail-new-req-1") }
         }
 
         it("사장 이메일이 null이면 MAIL_RECIPIENT_UNAVAILABLE") {

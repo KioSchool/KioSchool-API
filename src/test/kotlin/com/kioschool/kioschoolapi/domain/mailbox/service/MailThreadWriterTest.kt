@@ -3,6 +3,8 @@ package com.kioschool.kioschoolapi.domain.mailbox.service
 import com.kioschool.kioschoolapi.domain.mailbox.entity.MailMessage
 import com.kioschool.kioschoolapi.domain.mailbox.entity.MailThread
 import com.kioschool.kioschoolapi.domain.mailbox.enum.MailDirection
+import com.kioschool.kioschoolapi.domain.mailbox.entity.MailDeletedThread
+import com.kioschool.kioschoolapi.domain.mailbox.repository.MailDeletedThreadRepository
 import com.kioschool.kioschoolapi.domain.mailbox.repository.MailMessageRepository
 import com.kioschool.kioschoolapi.domain.mailbox.repository.MailThreadRepository
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepository
@@ -13,9 +15,12 @@ import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.mockk.Runs
 import io.mockk.clearAllMocks
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.slot
 import io.mockk.verify
 import org.springframework.data.repository.findByIdOrNull
 import java.time.LocalDateTime
@@ -25,7 +30,8 @@ class MailThreadWriterTest : DescribeSpec({
     val threadRepository = mockk<MailThreadRepository>()
     val messageRepository = mockk<MailMessageRepository>()
     val workspaceRepository = mockk<WorkspaceRepository>()
-    val sut = MailThreadWriter(threadRepository, messageRepository, workspaceRepository, 365)
+    val deletedRepository = mockk<MailDeletedThreadRepository>()
+    val sut = MailThreadWriter(threadRepository, messageRepository, workspaceRepository, deletedRepository, 365)
 
     val threads = mutableMapOf<String, MailThread>()
     val messages = mutableMapOf<String, MailMessage>()
@@ -43,6 +49,7 @@ class MailThreadWriterTest : DescribeSpec({
             firstArg<MailMessage>().also { messages[it.resendEmailId] = it }
         }
         every { workspaceRepository.findFirstByOwnerEmailIgnoreCaseOrderByIdDesc(any()) } returns null
+        every { deletedRepository.findByResendThreadId(any()) } returns null
     }
 
     fun email(
@@ -231,6 +238,50 @@ class MailThreadWriterTest : DescribeSpec({
             recorded.sentBy shouldBe SampleEntity.user
         }
 
+        it("목록 응답에 본문이 없어도 저장된 내용을 지우지 않는다") {
+            messages["m1"] = MailMessage(
+                resendEmailId = "m1", direction = MailDirection.OUTBOUND,
+                subject = "저장된 제목", textBody = "저장된 본문", htmlBody = "<p>저장된 본문</p>",
+            )
+
+            sut.upsert("t1", listOf(email(id = "m1", direction = "outbound", to = listOf("owner@test.com"), subject = null, html = null, text = null)))
+
+            messages.getValue("m1").subject shouldBe "저장된 제목"
+            messages.getValue("m1").textBody shouldBe "저장된 본문"
+            messages.getValue("m1").htmlBody shouldBe "<p>저장된 본문</p>"
+        }
+
+        it("direction이 outbound가 아니면 받은 메일로 본다") {
+            val result = sut.upsert("t1", listOf(email(direction = "received")))
+
+            result.newInboundCount shouldBe 1
+            messages.getValue("m1").direction shouldBe MailDirection.INBOUND
+        }
+
+        it("삭제한 대화에 늦게 온 웹훅은 옛 메일을 되살리지 않는다") {
+            every { deletedRepository.findByResendThreadId("t1") } returns
+                MailDeletedThread("t1", LocalDateTime.of(2026, 11, 2, 9, 0))
+
+            val result = sut.upsert("t1", listOf(email(at = "2026-11-01T03:00:00Z")))
+
+            result.newInboundCount shouldBe 0
+            threads.size shouldBe 0
+            messages.size shouldBe 0
+        }
+
+        it("삭제한 뒤에 온 새 메일만 저장한다") {
+            every { deletedRepository.findByResendThreadId("t1") } returns
+                MailDeletedThread("t1", LocalDateTime.of(2026, 11, 2, 9, 0))
+
+            val result = sut.upsert(
+                "t1",
+                listOf(email(id = "old", at = "2026-11-01T03:00:00Z"), email(id = "new", at = "2026-11-03T00:00:00Z")),
+            )
+
+            result.newInboundCount shouldBe 1
+            messages.keys shouldBe setOf("new")
+        }
+
         it("메일이 없으면 아무것도 저장하지 않는다") {
             sut.upsert("t1", emptyList()).newInboundCount shouldBe 0
 
@@ -273,6 +324,35 @@ class MailThreadWriterTest : DescribeSpec({
 
             io.kotest.assertions.throwables.shouldThrow<com.kioschool.kioschoolapi.global.error.exception.CustomException> { sut.markRead(404) }
                 .errorCode shouldBe com.kioschool.kioschoolapi.global.error.ErrorCode.MAIL_THREAD_NOT_FOUND
+        }
+    }
+
+    describe("delete") {
+        it("대화를 지우고 삭제 기록을 남긴다") {
+            val thread = SampleEntity.newMailThread(resendThreadId = "t1")
+            every { threadRepository.findByIdOrNull(1) } returns thread
+            every { threadRepository.delete(thread) } just Runs
+            val saved = slot<MailDeletedThread>()
+            every { deletedRepository.save(capture(saved)) } answers { firstArg() }
+
+            sut.delete(1)
+
+            verify { threadRepository.delete(thread) }
+            saved.captured.resendThreadId shouldBe "t1"
+            saved.captured.deletedAt.shouldNotBeNull()
+        }
+
+        it("이미 기록이 있으면 시각을 새로 맞춘다") {
+            val thread = SampleEntity.newMailThread(resendThreadId = "t1")
+            val tombstone = MailDeletedThread("t1", LocalDateTime.of(2026, 1, 1, 0, 0))
+            every { threadRepository.findByIdOrNull(1) } returns thread
+            every { threadRepository.delete(thread) } just Runs
+            every { deletedRepository.findByResendThreadId("t1") } returns tombstone
+            every { deletedRepository.save(tombstone) } returns tombstone
+
+            sut.delete(1)
+
+            (tombstone.deletedAt > LocalDateTime.of(2026, 1, 1, 0, 0)) shouldBe true
         }
     }
 
