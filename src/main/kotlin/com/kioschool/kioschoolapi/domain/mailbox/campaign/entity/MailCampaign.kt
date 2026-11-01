@@ -25,4 +25,5 @@ class MailCampaign(
     var purgeAt: LocalDateTime,
     @Enumerated(EnumType.STRING)
     var status: MailCampaignStatus = MailCampaignStatus.SENDING,
+    var requestId: String? = null,
 ) : BaseEntity()

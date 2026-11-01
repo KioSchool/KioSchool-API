@@ -29,6 +29,9 @@
       <column name="status" type="VARCHAR(20)">
         <constraints nullable="false"/>
       </column>
+      <column name="request_id" type="VARCHAR(64)">
+        <constraints unique="true" uniqueConstraintName="uk_mail_campaign_request_id"/>
+      </column>
       <column name="created_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
       <column name="updated_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
     </createTable>

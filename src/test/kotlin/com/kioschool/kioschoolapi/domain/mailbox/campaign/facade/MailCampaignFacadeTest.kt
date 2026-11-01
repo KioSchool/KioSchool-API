@@ -58,7 +58,7 @@ class MailCampaignFacadeTest : DescribeSpec({
         MailCampaignFacade(service, audience, renderer, composer, sender, userService, unsubscribe, client, guard, 70)
 
     val filter = MailAudienceFilter(LocalDate.of(2026, 9, 1), LocalDate.of(2026, 10, 31), 15)
-    val body = MailCampaignRequestBody(filter, "{주점 이름} 안내", "{사장 이름}님", null, null)
+    val body = MailCampaignRequestBody(filter, "{주점 이름} 안내", "{사장 이름}님", null, null, 2, "req-1")
     val rows = listOf(MailAudienceRow(1, "달빛", "건국대학교", "김사장", "a@konkuk.ac.kr"), MailAudienceRow(2, "별빛", "건국대학교", "이사장", "b@konkuk.ac.kr"))
     val appender = ListAppender<ILoggingEvent>().apply { start() }
     (LoggerFactory.getLogger(MailCampaignFacade::class.java) as Logger).addAppender(appender)
@@ -74,6 +74,8 @@ class MailCampaignFacadeTest : DescribeSpec({
         every { userService.getUser("admin") } returns SampleEntity.user
         every { audience.resolve(filter) } returns rows
         every { campaignRepository.save(any<MailCampaign>()) } answers { firstArg() }
+        every { campaignRepository.findByRequestId(any()) } returns null
+        every { campaignRepository.findById(any()) } returns java.util.Optional.of(campaign())
         every { recipientRepository.saveAll(any<List<MailCampaignRecipient>>()) } answers { firstArg() }
         every { recipientRepository.countByCampaignGroupByStatus(any()) } returns emptyList()
         every { workspaceRepository.getReferenceById(any()) } returns SampleEntity.workspace
@@ -97,6 +99,48 @@ class MailCampaignFacadeTest : DescribeSpec({
             logged shouldContain "targetCount=2"
             logged shouldNotContain "a@konkuk"
             verify(exactly = 1) { sender.sendDueAsync() }
+        }
+
+        it("확인한 곳 수와 지금 대상 수가 다르면 만들지 않는다") {
+            shouldThrow<CustomException> { sut().start("admin", body.copy(expectedCount = 3)) }
+                .errorCode shouldBe ErrorCode.MAIL_AUDIENCE_CHANGED
+
+            verify(exactly = 0) { campaignRepository.save(any<MailCampaign>()) }
+            verify(exactly = 0) { sender.sendDueAsync() }
+        }
+
+        it("확인한 곳 수가 없으면 만들지 않는다") {
+            shouldThrow<CustomException> { sut().start("admin", body.copy(expectedCount = null)) }
+                .errorCode shouldBe ErrorCode.MAIL_AUDIENCE_CHANGED
+
+            verify(exactly = 0) { campaignRepository.save(any<MailCampaign>()) }
+        }
+
+        it("같은 요청 번호로 다시 시작하면 새로 만들지 않고 기존 발송을 돌려준다") {
+            every { campaignRepository.findByRequestId("req-1") } returns campaign()
+
+            sut().start("admin", body).subject shouldBe "s"
+
+            verify(exactly = 0) { campaignRepository.save(any<MailCampaign>()) }
+            verify(exactly = 0) { sender.sendDueAsync() }
+        }
+
+        it("같은 요청 번호가 동시에 들어와 unique에 걸리면 기존 발송을 돌려준다") {
+            every { campaignRepository.findByRequestId("req-1") } returns null andThen campaign()
+            every { campaignRepository.save(any<MailCampaign>()) } throws org.springframework.dao.DataIntegrityViolationException("dup")
+
+            sut().start("admin", body).subject shouldBe "s"
+
+            verify(exactly = 0) { sender.sendDueAsync() }
+        }
+
+        it("요청 번호를 발송에 저장한다") {
+            val saved = slot<MailCampaign>()
+            every { campaignRepository.save(capture(saved)) } answers { firstArg() }
+
+            sut().start("admin", body)
+
+            saved.captured.requestId shouldBe "req-1"
         }
 
         it("대상이 0곳이면 만들지 않는다") {
@@ -138,7 +182,8 @@ class MailCampaignFacadeTest : DescribeSpec({
     describe("retryFailed") {
         it("attempt를 올리고 PENDING으로 돌린다") {
             val target = campaign(MailCampaignStatus.DONE)
-            val failed = MailCampaignRecipient(target, null, "달빛", "a@konkuk.ac.kr", "김사장", status = MailRecipientStatus.FAILED, failureReason = "x", attempt = 1)
+            val claimed = java.time.LocalDateTime.of(2026, 11, 2, 12, 0)
+            val failed = MailCampaignRecipient(target, null, "달빛", "a@konkuk.ac.kr", "김사장", status = MailRecipientStatus.FAILED, failureReason = "x", attempt = 1, claimedAt = claimed)
             every { campaignRepository.findByIdOrNull(1) } returns target
             every { recipientRepository.findAllByCampaignAndStatus(target, MailRecipientStatus.FAILED) } returns listOf(failed)
             every { recipientRepository.findAllByCampaignOrderByIdAsc(any(), any()) } returns org.springframework.data.domain.PageImpl(listOf(failed))
@@ -148,6 +193,7 @@ class MailCampaignFacadeTest : DescribeSpec({
             failed.status shouldBe MailRecipientStatus.PENDING
             failed.attempt shouldBe 2
             failed.failureReason shouldBe null
+            failed.claimedAt shouldBe claimed
             target.status shouldBe MailCampaignStatus.SENDING
             verify(exactly = 1) { sender.sendDueAsync() }
         }

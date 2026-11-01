@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
@@ -30,13 +31,17 @@ class MailCampaignSender(
     // 시작 요청과 스케줄러가 겹쳐도 한도를 넘지 않도록 한 번에 하나만 돌린다
     private val sendLock = ReentrantLock()
 
+    // 스케줄러가 10분마다 도니, 일일 한도를 다 쓴 날은 다시 호출하지 않는다
+    @Volatile
+    private var quotaExhaustedOn: LocalDate? = null
+
     @Async("taskExecutor")
     fun sendDueAsync() {
         runCatching { sendDue() }.onFailure { log.error("Mail campaign sending failed", it) }
     }
 
     fun sendDue(now: LocalDateTime = LocalDateTime.now(KST)) {
-        if (!isSendingHour(now)) return
+        if (!isSendingHour(now) || quotaExhaustedOn == now.toLocalDate()) return
 
         sendLock.withLock {
             mailCampaignQueue.releaseStale(now.minusMinutes(STALE_MINUTES))
@@ -75,6 +80,7 @@ class MailCampaignSender(
         } catch (e: ResendDailyLimitException) {
             log.warn("Mail campaign paused by Resend limit: recipientId={}", claim.recipientId)
             mailCampaignQueue.returnToPending(claim.recipientId)
+            quotaExhaustedOn = now.toLocalDate()
             return false
         } catch (e: ResendSendException) {
             log.error("Mail campaign send failed: recipientId={}, reason={}", claim.recipientId, e.message)

@@ -144,6 +144,14 @@ class MailCampaignQueue(
 
     companion object {
         private const val BOUNCED_REASON = "메일 주소를 찾을 수 없어요"
-        private val ATTEMPTED_STATUSES = setOf(MailRecipientStatus.SENT, MailRecipientStatus.FAILED, MailRecipientStatus.SENDING)
+
+        // 처음 대기 중인 행과 한도 초과로 되돌린 행은 claimedAt이 비어 있어 세지 않는다.
+        // PENDING은 실패를 다시 보내려고 되돌린 행이다. 재시도로 하루 한도를 넘지 않도록 센다.
+        private val ATTEMPTED_STATUSES = setOf(
+            MailRecipientStatus.SENT,
+            MailRecipientStatus.FAILED,
+            MailRecipientStatus.SENDING,
+            MailRecipientStatus.PENDING,
+        )
     }
 }

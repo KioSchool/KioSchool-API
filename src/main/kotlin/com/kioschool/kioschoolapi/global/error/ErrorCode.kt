@@ -87,6 +87,7 @@ enum class ErrorCode(
     MAIL_SEND_FAILURE(HttpStatus.BAD_GATEWAY, "메일 서비스와 연결하지 못했습니다. 잠시 후 다시 시도해 주세요."),
     MAIL_ATTACHMENT_UNAVAILABLE(HttpStatus.GONE, "내려받을 수 없는 파일입니다."),
     MAIL_CAMPAIGN_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 발송입니다."),
+    MAIL_AUDIENCE_CHANGED(HttpStatus.CONFLICT, "받을 주점이 바뀌었습니다. 다시 확인한 뒤 보내 주세요."),
     MAIL_TEMPLATE_INVALID(HttpStatus.BAD_REQUEST, "메일 내용을 확인해 주세요. 쓸 수 없는 값이 있거나 링크가 올바르지 않습니다."),
     MAIL_UNSUBSCRIBE_TOKEN_INVALID(HttpStatus.NOT_FOUND, "링크가 올바르지 않습니다."),
 

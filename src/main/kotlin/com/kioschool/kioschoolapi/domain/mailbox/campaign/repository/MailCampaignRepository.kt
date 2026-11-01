@@ -12,6 +12,8 @@ import java.time.LocalDateTime
 interface MailCampaignRepository : JpaRepository<MailCampaign, Long> {
     fun findAllByStatus(status: MailCampaignStatus): List<MailCampaign>
 
+    fun findByRequestId(requestId: String): MailCampaign?
+
     fun findAllByPurgeAtBeforeAndStatusNot(
         purgeAt: LocalDateTime,
         status: MailCampaignStatus,

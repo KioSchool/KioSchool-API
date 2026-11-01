@@ -43,6 +43,7 @@ class MailCampaignService(
                 filterJson = objectMapper.writeValueAsString(body.filter),
                 createdBy = createdBy,
                 purgeAt = LocalDateTime.now().plusDays(retentionDays),
+                requestId = body.requestId,
             )
         )
         mailCampaignRecipientRepository.saveAll(
@@ -82,7 +83,6 @@ class MailCampaignService(
             it.status = MailRecipientStatus.PENDING
             it.attempt += 1
             it.failureReason = null
-            it.claimedAt = null
         }
         mailCampaignRecipientRepository.saveAll(failed)
 
@@ -94,6 +94,10 @@ class MailCampaignService(
     @Transactional(readOnly = true)
     fun getSummaries(page: Int, size: Int): Page<MailCampaignSummaryDto> =
         mailCampaignRepository.findAllByOrderByIdDesc(PageRequest.of(page, size)).map { toSummary(it) }
+
+    @Transactional(readOnly = true)
+    fun findSummaryByRequestId(requestId: String): MailCampaignSummaryDto? =
+        mailCampaignRepository.findByRequestId(requestId)?.let { toSummary(it) }
 
     @Transactional(readOnly = true)
     fun getSummary(campaignId: Long): MailCampaignSummaryDto = toSummary(getCampaign(campaignId))

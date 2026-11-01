@@ -47,7 +47,7 @@ class MailCampaignSenderTest : DescribeSpec({
     }
     val queue = MailCampaignQueue(campaignRepository, recipientRepository, unsubscribeService, 365)
     val composer = MailCampaignComposer(MailTemplateRenderer(), MailBodyRenderer(engine), "https://kio-school.com", "https://api.kio-school.com")
-    val sut = MailCampaignSender(queue, composer, client, sync, 70, 0)
+    lateinit var sut: MailCampaignSender
 
     val noon = LocalDateTime.of(2026, 11, 2, 12, 0)
     val recipients = mutableListOf<MailCampaignRecipient>()
@@ -82,6 +82,7 @@ class MailCampaignSenderTest : DescribeSpec({
 
     beforeTest {
         clearAllMocks()
+        sut = MailCampaignSender(queue, composer, client, sync, 70, 0)
         recipients.clear()
         campaign.status = MailCampaignStatus.SENDING
         campaign.purgeAt = noon.plusDays(1)
@@ -131,7 +132,7 @@ class MailCampaignSenderTest : DescribeSpec({
                 recipientRepository.countAttempts(
                     LocalDateTime.of(2026, 11, 2, 0, 0),
                     LocalDateTime.of(2026, 11, 3, 0, 0),
-                    setOf(MailRecipientStatus.SENT, MailRecipientStatus.FAILED, MailRecipientStatus.SENDING),
+                    setOf(MailRecipientStatus.SENT, MailRecipientStatus.FAILED, MailRecipientStatus.SENDING, MailRecipientStatus.PENDING),
                 )
             }
         }
@@ -179,6 +180,20 @@ class MailCampaignSenderTest : DescribeSpec({
             verify(exactly = 1) { client.sendNew(any(), any(), any(), any(), any(), any()) }
             recipients.all { it.status == MailRecipientStatus.PENDING } shouldBe true
             recipients[0].claimedAt.shouldBeNull()
+        }
+
+        it("한도 초과가 나면 같은 날 다시 불러도 보내지 않고 다음 날 다시 보낸다") {
+            val tomorrow = noon.plusDays(1)
+            addRecipient(1)
+            every { client.sendNew(any(), any(), any(), any(), any(), any()) } throws ResendDailyLimitException() andThen "email-id"
+
+            sut.sendDue(noon)
+            sut.sendDue(noon.plusMinutes(10))
+            verify(exactly = 1) { client.sendNew(any(), any(), any(), any(), any(), any()) }
+
+            sut.sendDue(tomorrow)
+            verify(exactly = 2) { client.sendNew(any(), any(), any(), any(), any(), any()) }
+            recipients.single().status shouldBe MailRecipientStatus.SENT
         }
 
         it("ResendSendException이면 FAILED와 사유를 남기고 다음 곳으로 넘어간다") {

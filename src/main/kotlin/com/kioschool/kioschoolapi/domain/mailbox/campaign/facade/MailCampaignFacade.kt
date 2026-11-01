@@ -22,6 +22,7 @@ import com.kioschool.kioschoolapi.global.resend.service.ResendInboxClient
 import com.kioschool.kioschoolapi.global.resend.service.ResendSendException
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.data.domain.Page
 import org.springframework.stereotype.Component
 import java.util.UUID
@@ -81,10 +82,20 @@ class MailCampaignFacade(
     fun start(username: String, body: MailCampaignRequestBody): MailCampaignSummaryDto {
         validate(body)
 
+        body.requestId?.let { requestId ->
+            mailCampaignService.findSummaryByRequestId(requestId)?.let { return it }
+        }
+
         val rows = mailAudienceService.resolve(body.filter)
         if (rows.isEmpty()) throw CustomException(ErrorCode.MAIL_RECIPIENT_UNAVAILABLE)
+        if (body.expectedCount != rows.size) throw CustomException(ErrorCode.MAIL_AUDIENCE_CHANGED)
 
-        val campaign = mailCampaignService.create(body, userService.getUser(username), rows)
+        val creator = userService.getUser(username)
+        val campaign = try {
+            mailCampaignService.create(body, creator, rows)
+        } catch (e: DataIntegrityViolationException) {
+            return body.requestId?.let { mailCampaignService.findSummaryByRequestId(it) } ?: throw e
+        }
         log.info("[AUDIT] action=START_MAIL_CAMPAIGN campaignId={} by={} targetCount={}", campaign.id, username, rows.size)
         mailCampaignSender.sendDueAsync()
         return mailCampaignService.getSummary(campaign.id)
