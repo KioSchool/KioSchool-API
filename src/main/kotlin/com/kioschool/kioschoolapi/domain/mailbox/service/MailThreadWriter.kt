@@ -119,6 +119,14 @@ class MailThreadWriter(
         mailMessageRepository.save(message)
     }
 
+    /** SMTP로 보낸 인증 메일의 반송도 같은 웹훅으로 오므로, 메일함에 없는 메일이면 아무것도 하지 않는다. */
+    @Transactional
+    fun markBounced(emailId: String, at: LocalDateTime) {
+        val message = mailMessageRepository.findByResendEmailId(emailId) ?: return
+        message.bouncedAt = at
+        mailMessageRepository.save(message)
+    }
+
     private fun fill(message: MailMessage, email: ResendThreadEmail, thread: MailThread) {
         val from = MailAddressParser.parse(email.from)
         message.thread = thread

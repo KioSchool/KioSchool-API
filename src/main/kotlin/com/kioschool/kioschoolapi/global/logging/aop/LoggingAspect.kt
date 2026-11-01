@@ -168,7 +168,7 @@ class LoggingAspect(private val objectMapper: ObjectMapper) {
                 .toTypedArray()
 
             is Collection<*> -> obj.filter { it !is Continuation<*> }.map { filterWebObjects(it) }
-            is ServletRequest, is ServletResponse, is MultipartFile, is Continuation<*> -> "[NON_SERIALIZABLE]"
+            is ServletRequest, is ServletResponse, is MultipartFile, is ByteArray, is Continuation<*> -> "[NON_SERIALIZABLE]"
             else -> obj
         }
     }

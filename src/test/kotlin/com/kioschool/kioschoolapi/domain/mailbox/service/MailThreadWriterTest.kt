@@ -238,6 +238,23 @@ class MailThreadWriterTest : DescribeSpec({
         }
     }
 
+    describe("markBounced") {
+        it("저장된 메일에 시각을 남긴다") {
+            val at = LocalDateTime.of(2026, 11, 2, 0, 0)
+            messages["m1"] = MailMessage(resendEmailId = "m1")
+
+            sut.markBounced("m1", at)
+
+            messages.getValue("m1").bouncedAt shouldBe at
+        }
+
+        it("모르는 메일이면 행을 만들지 않는다") {
+            sut.markBounced("smtp-mail", LocalDateTime.of(2026, 11, 2, 0, 0))
+
+            messages.size shouldBe 0
+        }
+    }
+
     describe("recordOutbound") {
         fun record(thread: MailThread? = null, workspace: com.kioschool.kioschoolapi.domain.workspace.entity.Workspace? = null, campaignRecipientId: Long? = null) =
             sut.recordOutbound("m1", SampleEntity.user, workspace, campaignRecipientId, thread, "제목", "내용", "<p>내용</p>", "owner@test.com")

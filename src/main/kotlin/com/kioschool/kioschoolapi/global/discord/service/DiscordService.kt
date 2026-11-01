@@ -111,6 +111,17 @@ class DiscordService(
         send(message)
     }
 
+    // 메일 내용은 외부 채널에 남기지 않으므로 제목과 보낸 사람을 넣지 않는다
+    fun sendNewMail() {
+        val message =
+            """## [새 메일]
+            |새 메일이 왔어요.
+            |바로가기: $baseUrl/super-admin/mail
+            """.trimMargin()
+
+        send(message)
+    }
+
     private fun send(message: String) {
         discordApi.executeWebhook(webhookUrl, DiscordWebhookRequest(message)).execute()
     }
