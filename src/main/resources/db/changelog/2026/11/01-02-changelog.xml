@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS"
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+  <changeSet author="ji-inpark" id="mail-campaign-1">
+    <createTable tableName="mail_campaign">
+      <column autoIncrement="true" name="id" type="BIGINT">
+        <constraints nullable="false" primaryKey="true"/>
+      </column>
+      <column name="subject" type="TEXT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="body_template" type="TEXT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="button_label" type="TEXT"/>
+      <column name="button_url_template" type="TEXT"/>
+      <column name="filter_json" type="TEXT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="created_by_user_id" type="BIGINT"/>
+      <column name="purge_at" type="TIMESTAMP WITHOUT TIME ZONE">
+        <constraints nullable="false"/>
+      </column>
+      <column name="status" type="VARCHAR(20)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="created_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+      <column name="updated_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+    </createTable>
+    <addForeignKeyConstraint
+      constraintName="fk_mail_campaign_created_by_user"
+      baseTableName="mail_campaign" baseColumnNames="created_by_user_id"
+      referencedTableName="user" referencedColumnNames="id"
+      onDelete="SET NULL"/>
+    <createIndex indexName="idx_mail_campaign_purge_at" tableName="mail_campaign">
+      <column name="purge_at"/>
+    </createIndex>
+  </changeSet>
+
+  <changeSet author="ji-inpark" id="mail-campaign-2">
+    <createTable tableName="mail_campaign_recipient">
+      <column autoIncrement="true" name="id" type="BIGINT">
+        <constraints nullable="false" primaryKey="true"/>
+      </column>
+      <column name="campaign_id" type="BIGINT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="workspace_id" type="BIGINT"/>
+      <column name="workspace_name" type="VARCHAR(255)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="email" type="TEXT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="name" type="VARCHAR(255)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="status" type="VARCHAR(20)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="failure_reason" type="VARCHAR(255)"/>
+      <column name="resend_email_id" type="VARCHAR(255)"/>
+      <column name="attempt" type="INT" defaultValueNumeric="0">
+        <constraints nullable="false"/>
+      </column>
+      <column name="claimed_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+      <column name="sent_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+      <column name="created_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+      <column name="updated_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+    </createTable>
+    <addForeignKeyConstraint
+      constraintName="fk_mail_campaign_recipient_campaign"
+      baseTableName="mail_campaign_recipient" baseColumnNames="campaign_id"
+      referencedTableName="mail_campaign" referencedColumnNames="id"
+      onDelete="CASCADE"/>
+    <addForeignKeyConstraint
+      constraintName="fk_mail_campaign_recipient_workspace"
+      baseTableName="mail_campaign_recipient" baseColumnNames="workspace_id"
+      referencedTableName="workspace" referencedColumnNames="id"
+      onDelete="SET NULL"/>
+    <createIndex indexName="idx_mail_campaign_recipient_campaign_status" tableName="mail_campaign_recipient">
+      <column name="campaign_id"/>
+      <column name="status"/>
+    </createIndex>
+    <createIndex indexName="idx_mail_campaign_recipient_status_claimed_at" tableName="mail_campaign_recipient">
+      <column name="status"/>
+      <column name="claimed_at"/>
+    </createIndex>
+    <createIndex indexName="idx_mail_campaign_recipient_resend_email_id" tableName="mail_campaign_recipient">
+      <column name="resend_email_id"/>
+    </createIndex>
+  </changeSet>
+
+  <changeSet author="ji-inpark" id="mail-campaign-3">
+    <addForeignKeyConstraint
+      constraintName="fk_mail_message_campaign_recipient"
+      baseTableName="mail_message" baseColumnNames="campaign_recipient_id"
+      referencedTableName="mail_campaign_recipient" referencedColumnNames="id"
+      onDelete="SET NULL"/>
+    <addColumn tableName="user">
+      <column name="mail_unsubscribed_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+      <column name="mail_unsubscribe_token" type="VARCHAR(64)">
+        <constraints unique="true" uniqueConstraintName="uk_user_mail_unsubscribe_token"/>
+      </column>
+    </addColumn>
+  </changeSet>
+</databaseChangeLog>
