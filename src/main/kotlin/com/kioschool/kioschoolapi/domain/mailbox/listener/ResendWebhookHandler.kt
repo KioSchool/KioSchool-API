@@ -1,5 +1,6 @@
 package com.kioschool.kioschoolapi.domain.mailbox.listener
 
+import com.kioschool.kioschoolapi.domain.mailbox.campaign.service.MailCampaignQueue
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailSyncService
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailThreadWriter
 import com.kioschool.kioschoolapi.global.discord.service.DiscordService
@@ -23,6 +24,7 @@ data class ResendWebhookEvent(
 class ResendWebhookHandler(
     private val mailSyncService: MailSyncService,
     private val mailThreadWriter: MailThreadWriter,
+    private val mailCampaignQueue: MailCampaignQueue,
     private val discordService: DiscordService,
     private val mailRetryScheduler: MailRetryScheduler,
     @Qualifier("taskExecutor")
@@ -60,7 +62,10 @@ class ResendWebhookHandler(
             }
 
             EMAIL_SENT -> event.threadId?.let { mailSyncService.syncThread(it) }
-            EMAIL_BOUNCED -> event.emailId?.let { mailThreadWriter.markBounced(it, LocalDateTime.now()) }
+            EMAIL_BOUNCED -> event.emailId?.let {
+                mailThreadWriter.markBounced(it, LocalDateTime.now())
+                mailCampaignQueue.markBounced(it)
+            }
         }
     }
 

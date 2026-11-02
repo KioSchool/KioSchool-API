@@ -6,6 +6,7 @@ import com.kioschool.kioschoolapi.global.portone.api.PortoneApi
 import com.kioschool.kioschoolapi.global.resend.api.ResendInboxApi
 import com.kioschool.kioschoolapi.global.turnstile.api.TurnstileApi
 import okhttp3.OkHttpClient
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import retrofit2.Retrofit
@@ -70,10 +71,11 @@ class RetrofitConfiguration {
     @Bean("resendInboxApi")
     fun resendInboxApi(
         okHttpClient: OkHttpClient,
-        objectMapper: ObjectMapper
+        objectMapper: ObjectMapper,
+        @Value("\${resend.base-url}") baseUrl: String,
     ): ResendInboxApi {
         return Retrofit.Builder()
-            .baseUrl("https://api.resend.com/")
+            .baseUrl(baseUrl)
             .client(
                 okHttpClient.newBuilder().apply {
                     writeTimeout(RESEND_CALL_TIMEOUT_SECONDS, TimeUnit.SECONDS)

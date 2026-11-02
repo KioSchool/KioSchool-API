@@ -15,7 +15,7 @@ data class SendMailRequestBody(
 
     @field:LogMasked
     @field:NotBlank(message = "내용을 입력해 주세요.")
-    @field:Size(max = 10000, message = "내용은 10000자를 넘을 수 없습니다.")
+    @field:Size(max = 50000, message = "내용이 너무 깁니다.")
     val content: String,
 
     // 응답을 못 받아 다시 눌러도 같은 메일이 두 번 나가지 않도록 화면이 만든 요청 번호
@@ -23,5 +23,4 @@ data class SendMailRequestBody(
     val requestId: String? = null,
 ) {
     fun normalizedSubject(): String = subject.trim()
-    fun normalizedContent(): String = content.trim()
 }

@@ -1,8 +1,10 @@
 package com.kioschool.kioschoolapi.domain.mailbox.facade
 
 import com.kioschool.kioschoolapi.domain.email.service.EmailService
+import com.kioschool.kioschoolapi.domain.mailbox.dto.common.MailPreviewDto
 import com.kioschool.kioschoolapi.domain.mailbox.dto.common.MailThreadDetailDto
 import com.kioschool.kioschoolapi.domain.mailbox.dto.common.MailThreadSummaryDto
+import com.kioschool.kioschoolapi.domain.mailbox.dto.request.MailPreviewRequestBody
 import com.kioschool.kioschoolapi.domain.mailbox.dto.request.ReplyMailRequestBody
 import com.kioschool.kioschoolapi.domain.mailbox.dto.request.SendMailRequestBody
 import com.kioschool.kioschoolapi.domain.mailbox.entity.MailThread
@@ -12,6 +14,7 @@ import com.kioschool.kioschoolapi.domain.mailbox.repository.MailAttachmentReposi
 import com.kioschool.kioschoolapi.domain.mailbox.repository.MailMessageRepository
 import com.kioschool.kioschoolapi.domain.mailbox.repository.MailThreadRepository
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailBodyRenderer
+import com.kioschool.kioschoolapi.domain.mailbox.service.MailHtmlSanitizer
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailPurgeService
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailSyncService
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailThreadWriter
@@ -48,6 +51,7 @@ class MailFacade(
     private val mailSyncService: MailSyncService,
     private val mailPurgeService: MailPurgeService,
     private val mailBodyRenderer: MailBodyRenderer,
+    private val mailHtmlSanitizer: MailHtmlSanitizer,
     private val resendInboxClient: ResendInboxClient,
     private val resendAttachmentDownloader: ResendAttachmentDownloader,
     private val mailRecipientGuard: MailRecipientGuard,
@@ -68,15 +72,16 @@ class MailFacade(
         val workspace = workspaceService.getWorkspace(body.workspaceId)
         val to = recipientOf(workspace)
         val subject = body.normalizedSubject()
-        val content = body.normalizedContent()
+        val content = cleanContent(body.content)
         val html = mailBodyRenderer.render(content)
+        val text = mailBodyRenderer.renderText(content)
         val sender = userService.getUser(username)
 
         val emailId = callResend {
-            resendInboxClient.sendNew(to, subject, html, content, emptyMap(), "mail-new-${body.requestId ?: UUID.randomUUID()}")
+            resendInboxClient.sendNew(to, subject, html, text, emptyMap(), "mail-new-${body.requestId ?: UUID.randomUUID()}")
         }
 
-        record(emailId, sender, workspace, null, subject, content, html, to)
+        record(emailId, sender, workspace, null, subject, text, html, to)
     }
 
     fun reply(username: String, threadId: Long, body: ReplyMailRequestBody): MailThreadDetailDto {
@@ -90,8 +95,9 @@ class MailFacade(
         }
 
         val target = messages.lastOrNull { it.direction == MailDirection.INBOUND } ?: latest
-        val content = body.normalizedContent()
+        val content = cleanContent(body.content)
         val html = mailBodyRenderer.render(content)
+        val text = mailBodyRenderer.renderText(content)
         val sender = userService.getUser(username)
 
         val emailId = callResend {
@@ -99,14 +105,16 @@ class MailFacade(
                 thread.resendThreadId,
                 target.resendEmailId,
                 html,
-                content,
+                text,
                 "mail-reply-${thread.id}-${latest.id}-${content.hashCode()}",
             )
         }
 
-        record(emailId, sender, thread.workspace, thread, thread.subject.orEmpty(), content, html, thread.counterpartEmail)
+        record(emailId, sender, thread.workspace, thread, thread.subject.orEmpty(), text, html, thread.counterpartEmail)
         return getThread(threadId)
     }
+
+    fun preview(body: MailPreviewRequestBody): MailPreviewDto = MailPreviewDto(mailBodyRenderer.render(body.content))
 
     fun resolve(threadId: Long): MailThreadDetailDto = toDetailDto(mailThreadWriter.resolve(threadId))
 
@@ -135,6 +143,13 @@ class MailFacade(
             }
         }
         if (!downloaded) throw CustomException(ErrorCode.MAIL_ATTACHMENT_UNAVAILABLE)
+    }
+
+    private fun cleanContent(content: String): String {
+        val cleaned = mailHtmlSanitizer.clean(content)
+        if (mailHtmlSanitizer.isBlank(cleaned)) throw CustomException(ErrorCode.INVALID_INPUT, "내용을 입력해 주세요.")
+        if (mailHtmlSanitizer.hasInvalidLink(content)) throw CustomException(ErrorCode.MAIL_TEMPLATE_INVALID)
+        return cleaned
     }
 
     private fun contentDisposition(filename: String?): String {

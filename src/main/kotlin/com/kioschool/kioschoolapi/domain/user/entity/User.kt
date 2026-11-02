@@ -34,6 +34,13 @@ class User(
     // 탈퇴 시각. 탈퇴 계정은 지우지 않고 개인정보만 익명값으로 바꾼다(주점·주문 기록이 이 계정을 가리킨다).
     var withdrawnAt: LocalDateTime? = null
 
+    // 여러 곳 발송의 수신 거부. 토큰이 응답에 실리면 다른 사람이 대신 거부할 수 있으므로 내보내지 않는다.
+    @JsonIgnore
+    var mailUnsubscribedAt: LocalDateTime? = null
+
+    @JsonIgnore
+    var mailUnsubscribeToken: String? = null
+
     @JsonIgnore
     fun getWorkspaces() = members.map { it.workspace }.sortedBy { it.id }
 }

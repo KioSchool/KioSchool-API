@@ -31,6 +31,8 @@ object LogMasking {
         "content",
         "context",
         "channelEtc",
+        // 메일 수신 거부 링크의 토큰
+        "token",
     )
 
     /** 로그 직렬화 전용 복사본. 원래 [base]와 HTTP 응답은 바뀌지 않는다. */

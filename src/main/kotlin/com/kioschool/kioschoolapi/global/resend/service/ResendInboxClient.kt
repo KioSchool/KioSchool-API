@@ -32,7 +32,27 @@ class ResendInboxClient(
         if (!mailRecipientGuard.isAllowed(to)) {
             throw ResendSendException("허용되지 않은 수신 도메인")
         }
+        return createAndSendDraft(to, subject, html, text, headers, idempotencyKey)
+    }
 
+    // 로그인한 사람의 주소로 보내는 시험 발송은 실제 운영진에게 잘못 나갈 일이 없어 허용 도메인을 보지 않는다
+    fun sendToOwnAddress(
+        to: String,
+        subject: String,
+        html: String,
+        text: String,
+        headers: Map<String, String>,
+        idempotencyKey: String,
+    ): String = createAndSendDraft(to, subject, html, text, headers, idempotencyKey)
+
+    private fun createAndSendDraft(
+        to: String,
+        subject: String,
+        html: String,
+        text: String,
+        headers: Map<String, String>,
+        idempotencyKey: String,
+    ): String {
         val draft = successBody(
             resendInboxApi.createDraft(
                 authorization,
@@ -128,8 +148,14 @@ class ResendInboxClient(
 
     private fun ensureSuccess(response: Response<*>) {
         if (response.isSuccessful) return
-        throw ResendSendException("Resend 응답 ${response.code()}")
+        throw ResendSendException("Resend 응답 ${response.code()} ${errorReasonOf(response)}".trimEnd())
     }
+
+    // 원인을 알 수 있게 Resend가 알려 준 사유를 남긴다. 사유에 받는 주소가 들어 있을 수 있어 가린다.
+    private fun errorReasonOf(response: Response<*>): String =
+        response.errorBody()?.string().orEmpty()
+            .replace(EMAIL_ADDRESS, "***")
+            .take(MAX_ERROR_REASON_LENGTH)
 
     companion object {
         private const val PAGE_SIZE = 100
@@ -139,5 +165,7 @@ class ResendInboxClient(
         private const val MAX_RETRY_DELAY_MILLIS = 5000L
         private val QUOTA_ERRORS = listOf("daily_quota_exceeded", "monthly_quota_exceeded")
         private val LINE_BREAKS = Regex("[\\r\\n]+")
+        private val EMAIL_ADDRESS = Regex("[^\\s\"'<>:,]+@[^\\s\"'<>:,]+")
+        private const val MAX_ERROR_REASON_LENGTH = 300
     }
 }

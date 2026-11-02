@@ -9,8 +9,6 @@ data class ReplyMailRequestBody(
 
     @field:LogMasked
     @field:NotBlank(message = "내용을 입력해 주세요.")
-    @field:Size(max = 10000, message = "내용은 10000자를 넘을 수 없습니다.")
+    @field:Size(max = 50000, message = "내용이 너무 깁니다.")
     val content: String,
-) {
-    fun normalizedContent(): String = content.trim()
-}
+)

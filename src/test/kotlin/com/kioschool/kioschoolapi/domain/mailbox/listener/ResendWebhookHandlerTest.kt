@@ -1,5 +1,6 @@
 package com.kioschool.kioschoolapi.domain.mailbox.listener
 
+import com.kioschool.kioschoolapi.domain.mailbox.campaign.service.MailCampaignQueue
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailSyncResult
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailSyncService
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailThreadWriter
@@ -16,7 +17,8 @@ class ResendWebhookHandlerTest : DescribeSpec({
     val writer = mockk<MailThreadWriter>(relaxed = true)
     val discord = mockk<DiscordService>(relaxed = true)
     val scheduler = mockk<MailRetryScheduler>()
-    val sut = ResendWebhookHandler(sync, writer, discord, scheduler, java.util.concurrent.Executor { it.run() })
+    val queue = mockk<MailCampaignQueue>(relaxed = true)
+    val sut = ResendWebhookHandler(sync, writer, queue, discord, scheduler, java.util.concurrent.Executor { it.run() })
     val scheduled = mutableListOf<Runnable>()
     val delays = mutableListOf<Duration>()
 
@@ -61,6 +63,12 @@ class ResendWebhookHandlerTest : DescribeSpec({
             sut.handle(ResendWebhookEvent("email.bounced", null, null, "e1"))
 
             verify(exactly = 1) { writer.markBounced("e1", any()) }
+        }
+
+        it("email.bounced가 수신자 메일이면 그 수신자를 실패로 바꾼다") {
+            sut.handle(ResendWebhookEvent("email.bounced", null, null, "e1"))
+
+            verify(exactly = 1) { queue.markBounced("e1") }
         }
 
         it("모르는 이벤트는 무시한다") {

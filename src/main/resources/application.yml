@@ -113,7 +113,8 @@ turnstile:
   secret-key: "${TURNSTILE_SECRET_KEY:}"
 
 resend:
-  api-key: "${RESEND_API_KEY:}"
+  base-url: "${RESEND_BASE_URL:https://api.resend.com/}"
+  api-key: "${RESEND_API_KEY:${MAIL_PASSWORD:}}"
   webhook-secret: "${RESEND_WEBHOOK_SECRET:}"
 
 mail:
@@ -122,6 +123,10 @@ mail:
   # 이 도메인으로만 보낸다. 비어 있으면 모두 막고, prod만 *로 모두 허용한다
   allowed-recipient-domains: "${MAIL_ALLOWED_RECIPIENT_DOMAINS:kio-school.com}"
   retention-days: 365
+  # 수신 거부 메일 헤더(List-Unsubscribe)가 부르는 API 주소
+  api-base-url: "${MAIL_API_BASE_URL:http://localhost:8080/api}"
+  campaign:
+    daily-limit: 70
 
 inquiry:
   guard:

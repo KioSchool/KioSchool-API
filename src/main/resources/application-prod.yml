@@ -20,6 +20,7 @@ discord:
   webhook-url: "${DISCORD_WEBHOOK_URL}"
 mail:
   allowed-recipient-domains: "*"
+  api-base-url: "https://api.kio-school.com"
 kioschool:
   base-url: "https://kio-school.com"
   cookie:

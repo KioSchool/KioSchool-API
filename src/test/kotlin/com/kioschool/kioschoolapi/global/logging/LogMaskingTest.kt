@@ -23,6 +23,12 @@ class LogMaskingTest : DescribeSpec({
     val base = jacksonObjectMapper()
     val mapper = LogMasking.loggingMapper(base)
 
+    describe("maskValue") {
+        it("hides the mail unsubscribe token") {
+            LogMasking.maskValue("token", "abc") shouldBe LogMasking.MASK
+        }
+    }
+
     describe("loggingMapper") {
         it("masks personal fields in nested objects and lists, keeping ids and product names") {
             val json = mapper.writeValueAsString(

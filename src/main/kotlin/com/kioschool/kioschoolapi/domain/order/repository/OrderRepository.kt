@@ -1,5 +1,6 @@
 package com.kioschool.kioschoolapi.domain.order.repository
 
+import com.kioschool.kioschoolapi.domain.order.dto.common.WorkspaceOrderStats
 import com.kioschool.kioschoolapi.domain.order.entity.Order
 import com.kioschool.kioschoolapi.domain.order.entity.OrderSession
 import com.kioschool.kioschoolapi.global.common.enums.OrderStatus
@@ -44,6 +45,22 @@ interface OrderRepository : JpaRepository<Order, Long> {
         GROUP BY o.orderSession.id
     """)
     fun sumValidOrdersByOrderSessionIds(@Param("orderSessionIds") orderSessionIds: Collection<Long>): List<Array<Any>>
+
+    // 기간 안에 취소 아닌 주문이 있는 주점. daily_order_statistic은 0건 생략과 집계 시점 차이가 있어 쓰지 않는다.
+    @Query("""
+        SELECT new com.kioschool.kioschoolapi.domain.order.dto.common.WorkspaceOrderStats(
+            o.workspace.id, COUNT(o), SUM(o.totalPrice), COUNT(DISTINCT FUNCTION('date', o.createdAt)), MIN(o.createdAt), MAX(o.createdAt)
+        )
+        FROM Order o
+        WHERE o.createdAt >= :start
+          AND o.createdAt < :end
+          AND o.status != com.kioschool.kioschoolapi.global.common.enums.OrderStatus.CANCELLED
+        GROUP BY o.workspace.id
+    """)
+    fun findWorkspaceOrderStats(
+        @Param("start") start: LocalDateTime,
+        @Param("end") end: LocalDateTime,
+    ): List<WorkspaceOrderStats>
 
     fun findAllByWorkspaceId(workspaceId: Long): List<Order>
 
