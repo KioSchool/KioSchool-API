@@ -1,6 +1,7 @@
 package com.kioschool.kioschoolapi.domain.mailbox.campaign.service
 
 import com.kioschool.kioschoolapi.domain.email.service.EmailService
+import com.kioschool.kioschoolapi.domain.email.service.SchoolResolver
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailAudienceFilter
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailAudiencePreview
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailAudienceRow
@@ -59,14 +60,13 @@ class MailAudienceService(
     private fun audienceOf(filter: MailAudienceFilter): Audience {
         val start = filter.from.atStartOfDay()
         val end = filter.to.plusDays(1).atStartOfDay()
-        val orderStats = orderRepository.findWorkspaceOrderStats(start, end, filter.minOrders).associateBy { it.workspaceId }
-        if (orderStats.isEmpty()) return Audience()
+        val minOrders = if (filter.workspaceIds != null) ANY_ORDER else filter.minOrders
+        val orderStats = orderRepository.findWorkspaceOrderStats(start, end, minOrders).associateBy { it.workspaceId }
+        if (filter.workspaceIds == null && orderStats.isEmpty()) return Audience()
 
         val resolver = emailService.getSchoolResolver()
-        val schoolDomains = filter.schoolName?.takeIf { it.isNotBlank() }?.let { resolver.domainsOf(it) }
-        val workspaces = workspaceRepository.findAllById(orderStats.keys)
+        val workspaces = candidatesOf(filter, orderStats.keys, resolver)
             .filter { it.id !in filter.excludedWorkspaceIds }
-            .filter { schoolDomains == null || it.owner.email?.substringAfter("@") in schoolDomains }
             .sortedBy { it.id }
 
         val withdrawn = workspaces.filter { it.owner.withdrawnAt != null }
@@ -84,7 +84,7 @@ class MailAudienceService(
         return Audience(
             targets = targets.map { workspace ->
                 val sent = lastSent[workspace.id]
-                toRow(workspace, resolver.schoolOf(workspace.owner.email), orderStats.getValue(workspace.id)).copy(
+                toRow(workspace, resolver.schoolOf(workspace.owner.email), orderStats[workspace.id]).copy(
                     topMenu = topMenus[workspace.id],
                     insightCardCount = insightCounts[workspace.id] ?: 0,
                     lastSentAt = sent?.sentAt,
@@ -96,6 +96,14 @@ class MailAudienceService(
             unsubscribedCount = unsubscribed.size,
             withdrawnCount = withdrawn.size,
         )
+    }
+
+    private fun candidatesOf(filter: MailAudienceFilter, orderedWorkspaceIds: Set<Long>, resolver: SchoolResolver): List<Workspace> {
+        filter.workspaceIds?.let { return workspaceRepository.findAllById(it) }
+
+        val schoolDomains = filter.schoolName?.takeIf { it.isNotBlank() }?.let { resolver.domainsOf(it) }
+        return workspaceRepository.findAllById(orderedWorkspaceIds)
+            .filter { schoolDomains == null || it.owner.email?.substringAfter("@") in schoolDomains }
     }
 
     // 0원 상품은 직원 호출 같은 요청으로 쓰는 곳이 많아 메뉴에서 뺀다
@@ -120,17 +128,21 @@ class MailAudienceService(
             .mapValues { (_, sent) -> sent.maxBy { it.sentAt } }
     }
 
-    private fun toRow(workspace: Workspace, schoolName: String, stats: WorkspaceOrderStats) = MailAudienceRow(
+    private fun toRow(workspace: Workspace, schoolName: String, stats: WorkspaceOrderStats?) = MailAudienceRow(
         workspaceId = workspace.id,
         workspaceName = workspace.name,
         schoolName = schoolName,
         ownerName = workspace.owner.name,
         ownerEmail = workspace.owner.email.orEmpty(),
         tableCount = workspace.tableCount,
-        orderCount = stats.orderCount,
-        revenue = stats.revenue,
-        operatingDays = stats.operatingDays,
-        firstOperatingDate = stats.firstOrderAt.toLocalDate(),
-        lastOperatingDate = stats.lastOrderAt.toLocalDate(),
+        orderCount = stats?.orderCount ?: 0,
+        revenue = stats?.revenue ?: 0,
+        operatingDays = stats?.operatingDays ?: 0,
+        firstOperatingDate = stats?.firstOrderAt?.toLocalDate(),
+        lastOperatingDate = stats?.lastOrderAt?.toLocalDate(),
     )
+
+    companion object {
+        private const val ANY_ORDER = 1L
+    }
 }

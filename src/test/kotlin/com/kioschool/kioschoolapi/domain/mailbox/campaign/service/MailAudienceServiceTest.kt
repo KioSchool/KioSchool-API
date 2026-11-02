@@ -74,6 +74,63 @@ class MailAudienceServiceTest : DescribeSpec({
         every { recipientRepository.findSentByWorkspaceIds(any()) } returns emptyList()
     }
 
+    describe("직접 고른 주점") {
+        fun picked(vararg ids: Long) = MailAudienceFilter(from, to, 15, "세종대학교", emptySet(), ids.toSet())
+
+        it("고른 주점만 받고 주문 수와 학교 조건은 보지 않는다") {
+            every { orderRepository.findWorkspaceOrderStats(any(), any(), any()) } returns listOf(
+                WorkspaceOrderStats(1, 3, 1000, 1, at, at),
+                WorkspaceOrderStats(2, 50, 900000, 3, at, at),
+            )
+            every { workspaceRepository.findAllById(setOf(1L)) } returns listOf(workspace(1))
+
+            val row = sut.resolve(picked(1)).single()
+
+            row.workspaceId shouldBe 1L
+            row.orderCount shouldBe 3
+            verify { orderRepository.findWorkspaceOrderStats(from.atStartOfDay(), to.plusDays(1).atStartOfDay(), 1) }
+        }
+
+        it("기간 안에 주문이 없어도 받고 값은 0과 빈칸이 된다") {
+            every { orderRepository.findWorkspaceOrderStats(any(), any(), any()) } returns emptyList()
+            every { workspaceRepository.findAllById(setOf(3L)) } returns listOf(workspace(3))
+
+            val row = sut.resolve(picked(3)).single()
+
+            row.workspaceId shouldBe 3L
+            row.orderCount shouldBe 0
+            row.revenue shouldBe 0
+            row.operatingDays shouldBe 0
+            row.firstOperatingDate shouldBe null
+            row.lastOperatingDate shouldBe null
+        }
+
+        it("고른 주점이어도 탈퇴·이메일 없음·수신 거부는 받지 않는다") {
+            val workspaces = listOf(
+                workspace(1),
+                workspace(2, withdrawnAt = at),
+                workspace(3, email = null),
+                workspace(4, unsubscribedAt = at),
+            )
+            every { orderRepository.findWorkspaceOrderStats(any(), any(), any()) } returns emptyList()
+            every { workspaceRepository.findAllById(setOf(1L, 2L, 3L, 4L)) } returns workspaces
+
+            val preview = sut.preview(picked(1, 2, 3, 4), 0, 10)
+
+            preview.targetCount shouldBe 1
+            preview.withdrawnCount shouldBe 1
+            preview.noEmailCount shouldBe 1
+            preview.unsubscribedCount shouldBe 1
+        }
+
+        it("아무도 고르지 않으면 대상이 없다") {
+            every { orderRepository.findWorkspaceOrderStats(any(), any(), any()) } returns listOf(WorkspaceOrderStats(1, 20, 1000, 1, at, at))
+            every { workspaceRepository.findAllById(emptySet<Long>()) } returns emptyList()
+
+            sut.resolve(picked()) shouldBe emptyList()
+        }
+    }
+
     describe("resolve") {
         it("기간 안 주문 수가 minOrders 이상인 주점만 고른다. to 날짜의 주문도 포함한다") {
             stub(workspace(1))
