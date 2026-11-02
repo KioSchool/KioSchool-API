@@ -9,6 +9,7 @@ import com.kioschool.kioschoolapi.domain.order.event.OrderSessionExpectedEndAtCh
 import com.kioschool.kioschoolapi.domain.order.event.OrderStatusChangedEvent
 import com.kioschool.kioschoolapi.domain.order.facade.OrderFacade
 import com.kioschool.kioschoolapi.domain.order.service.OrderService
+import com.kioschool.kioschoolapi.domain.product.entity.Product
 import com.kioschool.kioschoolapi.domain.product.service.ProductService
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.factory.SampleEntity
@@ -229,6 +230,50 @@ class OrderFacadeTest : DescribeSpec({
             sut.createOrder(workspaceId, "dummy_hash", "customer", listOf(OrderProductRequestBody(1L, 1)))
 
             assertEquals(null, savedOrder.captured.paymentMethod)
+        }
+    }
+
+    describe("createOrder 수량 검증") {
+        val workspaceId = 1L
+
+        beforeTest {
+            every { workspaceService.getWorkspace(workspaceId) } returns SampleEntity.workspace
+            every {
+                workspaceService.getWorkspaceTableByHash(SampleEntity.workspace, "dummy_hash")
+            } returns SampleEntity.workspaceTable.apply { orderSession = SampleEntity.orderSession }
+        }
+
+        listOf(0, -1, OrderFacade.MAX_ORDER_QUANTITY + 1).forEach { quantity ->
+            it("수량이 $quantity 이면 주문을 만들지 않는다") {
+                val ex = assertThrows<CustomException> {
+                    sut.createOrder(workspaceId, "dummy_hash", "customer", listOf(OrderProductRequestBody(1L, quantity)))
+                }
+                assertEquals(ErrorCode.INVALID_ORDER_QUANTITY, ex.errorCode)
+
+                verify(exactly = 0) { orderService.getOrderNumber(any()) }
+                verify(exactly = 0) { orderService.saveOrder(any<Order>()) }
+            }
+        }
+
+        it("합계가 Int 범위를 넘으면 주문을 만들지 않는다") {
+            val expensive = Product(
+                name = "expensive",
+                description = "",
+                price = Int.MAX_VALUE / 2,
+                workspace = SampleEntity.workspace
+            )
+
+            every { orderService.getOrderNumber(workspaceId) } returns 1
+            every { orderService.saveOrder(any<Order>()) } answers { it.invocation.args[0] as Order }
+            every { productService.validateProducts(workspaceId, any()) } just Runs
+            every { productService.getAllProductsByCondition(workspaceId) } returns listOf(expensive)
+
+            val ex = assertThrows<CustomException> {
+                sut.createOrder(workspaceId, "dummy_hash", "customer", listOf(OrderProductRequestBody(expensive.id, 3)))
+            }
+            assertEquals(ErrorCode.INVALID_ORDER_QUANTITY, ex.errorCode)
+
+            verify(exactly = 0) { orderService.saveOrderAndSendWebsocketMessage(any<Order>(), any()) }
         }
     }
 

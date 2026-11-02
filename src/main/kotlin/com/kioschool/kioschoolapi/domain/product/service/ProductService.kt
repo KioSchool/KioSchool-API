@@ -1,5 +1,7 @@
 package com.kioschool.kioschoolapi.domain.product.service
 
+import com.kioschool.kioschoolapi.domain.product.dto.common.ProductCategoryDto
+import com.kioschool.kioschoolapi.domain.product.dto.common.ProductDto
 import com.kioschool.kioschoolapi.domain.product.entity.Product
 import com.kioschool.kioschoolapi.domain.product.entity.ProductCategory
 import com.kioschool.kioschoolapi.domain.product.repository.CustomProductRepository
@@ -11,11 +13,13 @@ import com.kioschool.kioschoolapi.global.cache.annotation.ProductCategoriesUpdat
 import com.kioschool.kioschoolapi.global.cache.annotation.ProductCategoryUpdateEvent
 import com.kioschool.kioschoolapi.global.cache.annotation.ProductUpdateEvent
 import com.kioschool.kioschoolapi.global.cache.annotation.ProductsUpdateEvent
+import com.kioschool.kioschoolapi.global.cache.constant.CacheNames
 import com.kioschool.kioschoolapi.global.common.enums.ProductStatus
 import com.kioschool.kioschoolapi.global.error.ErrorCode
 import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import jakarta.transaction.Transactional
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 
@@ -93,6 +97,17 @@ class ProductService(
 
     fun getAllProductCategories(workspaceId: Long): List<ProductCategory> {
         return productCategoryRepository.findAllByWorkspaceIdOrderByIndexAsc(workspaceId)
+    }
+
+    // 캐시가 맞으면 본문을 건너뛰므로 접근 확인은 부르는 쪽에서 먼저 한다.
+    @Cacheable(cacheNames = [CacheNames.PRODUCTS], key = "#workspaceId")
+    fun getCachedProducts(workspaceId: Long): List<ProductDto> {
+        return getAllProductsByCondition(workspaceId).map { ProductDto.of(it) }
+    }
+
+    @Cacheable(cacheNames = [CacheNames.PRODUCT_CATEGORIES], key = "#workspaceId")
+    fun getCachedProductCategories(workspaceId: Long): List<ProductCategoryDto> {
+        return getAllProductCategories(workspaceId).map { ProductCategoryDto.of(it) }
     }
 
     fun getImageUrl(workspaceId: Long, productId: Long, file: MultipartFile?): String? {

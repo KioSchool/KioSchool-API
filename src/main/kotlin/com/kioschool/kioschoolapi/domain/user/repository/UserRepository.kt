@@ -8,6 +8,8 @@ import java.time.LocalDateTime
 
 @Repository
 interface UserRepository : JpaRepository<User, Long> {
+    fun findByMailUnsubscribeToken(mailUnsubscribeToken: String): User?
+
     fun findByLoginId(loginId: String): User?
 
     fun findByEmail(email: String): User?

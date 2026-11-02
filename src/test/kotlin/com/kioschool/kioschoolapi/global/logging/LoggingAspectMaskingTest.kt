@@ -45,5 +45,26 @@ class LoggingAspectMaskingTest : DescribeSpec({
             logged shouldNotContain "kim@"
             logged shouldNotContain "홍길동"
         }
+
+        it("does not log raw byte array arguments") {
+            val raw = """{"from":"kim@korea.ac.kr"}""".toByteArray()
+            val signature = mockk<MethodSignature>(relaxed = true) {
+                every { declaringType } returns SampleController::class.java
+                every { name } returns "receive"
+                every { parameterNames } returns arrayOf("body")
+            }
+            val joinPoint = mockk<ProceedingJoinPoint> {
+                every { this@mockk.signature } returns signature
+                every { args } returns arrayOf(raw)
+                every { proceed() } returns null
+            }
+            appender.list.clear()
+
+            sut.logExecutionTime(joinPoint)
+
+            val logged = appender.list.joinToString("\n") { it.formattedMessage }
+            logged shouldContain "[NON_SERIALIZABLE]"
+            logged shouldNotContain java.util.Base64.getEncoder().encodeToString(raw)
+        }
     }
 })

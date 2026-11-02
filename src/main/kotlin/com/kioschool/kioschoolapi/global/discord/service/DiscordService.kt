@@ -111,6 +111,27 @@ class DiscordService(
         send(message)
     }
 
+    // 메일 내용은 외부 채널에 남기지 않으므로 제목과 보낸 사람을 넣지 않는다
+    fun sendNewMail() {
+        val message =
+            """## [새 메일]
+            |새 메일이 왔어요.
+            |바로가기: $baseUrl/super-admin/mail
+            """.trimMargin()
+
+        send(message)
+    }
+
+    // 제목과 보낸 사람은 넣지 않는다
+    fun sendMailSyncFailed() {
+        val message =
+            """## [메일 동기화 실패]
+            |새 메일을 가져오지 못했어요. 서버 로그와 Resend 메일함을 확인해 주세요.
+            """.trimMargin()
+
+        send(message)
+    }
+
     private fun send(message: String) {
         discordApi.executeWebhook(webhookUrl, DiscordWebhookRequest(message)).execute()
     }

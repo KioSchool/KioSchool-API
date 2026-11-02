@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS"
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+  <!-- 가입 인증 코드의 시도 횟수와 만료 시각. 배포 전에 발급한 코드는 expires_at이 비어 있어 만료로 처리된다(다시 받으면 됨). -->
+  <changeSet author="ji-inpark" id="email-code-attempts-1">
+    <addColumn schemaName="public" tableName="email_code">
+      <column name="attempt_count" type="INTEGER" defaultValueNumeric="0">
+        <constraints nullable="false"/>
+      </column>
+      <column name="expires_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+    </addColumn>
+  </changeSet>
+
+</databaseChangeLog>
