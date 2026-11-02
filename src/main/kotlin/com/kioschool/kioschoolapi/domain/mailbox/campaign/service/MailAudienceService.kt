@@ -1,9 +1,8 @@
 package com.kioschool.kioschoolapi.domain.mailbox.campaign.service
 
 import com.kioschool.kioschoolapi.domain.email.service.EmailService
-import com.kioschool.kioschoolapi.domain.email.service.SchoolResolver
+import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailAudience
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailAudienceFilter
-import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailAudiencePreview
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailAudienceRow
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.repository.MailCampaignRecipientRepository
 import com.kioschool.kioschoolapi.domain.insight.repository.DailyInsightCardRepository
@@ -13,10 +12,9 @@ import com.kioschool.kioschoolapi.domain.order.repository.OrderRepository
 import com.kioschool.kioschoolapi.domain.workspace.entity.Workspace
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepository
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.data.domain.PageImpl
-import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Service
@@ -33,41 +31,28 @@ class MailAudienceService(
     private class LastSent(val subject: String, val sentAt: LocalDateTime, val replied: Boolean)
 
     private class Audience(
-        val targets: List<MailAudienceRow> = emptyList(),
-        val noEmailCount: Int = 0,
-        val unsubscribedCount: Int = 0,
-        val withdrawnCount: Int = 0,
+        val targets: List<MailAudienceRow>,
+        val noEmailCount: Int,
+        val unsubscribedCount: Int,
+        val withdrawnCount: Int,
     )
 
     @Transactional(readOnly = true)
-    fun resolve(filter: MailAudienceFilter): List<MailAudienceRow> = audienceOf(filter).targets
-
-    @Transactional(readOnly = true)
-    fun preview(filter: MailAudienceFilter, page: Int, size: Int): MailAudiencePreview {
-        val audience = audienceOf(filter)
-        val pageable = PageRequest.of(page, size)
-        val slice = audience.targets.drop(pageable.offset.toInt()).take(size)
-        return MailAudiencePreview(
-            targetCount = audience.targets.size,
-            noEmailCount = audience.noEmailCount,
-            unsubscribedCount = audience.unsubscribedCount,
-            withdrawnCount = audience.withdrawnCount,
-            dailyLimit = dailyLimit,
-            content = PageImpl(slice, pageable, audience.targets.size.toLong()),
-        )
+    fun list(from: LocalDate, to: LocalDate): MailAudience {
+        val audience = audienceOf(workspaceRepository.findAllWithOwner(), from, to)
+        return MailAudience(audience.targets, audience.noEmailCount, audience.unsubscribedCount, audience.withdrawnCount, dailyLimit)
     }
 
-    private fun audienceOf(filter: MailAudienceFilter): Audience {
-        val start = filter.from.atStartOfDay()
-        val end = filter.to.plusDays(1).atStartOfDay()
-        val minOrders = if (filter.workspaceIds != null) ANY_ORDER else filter.minOrders
-        val orderStats = orderRepository.findWorkspaceOrderStats(start, end, minOrders).associateBy { it.workspaceId }
-        if (filter.workspaceIds == null && orderStats.isEmpty()) return Audience()
+    @Transactional(readOnly = true)
+    fun resolve(filter: MailAudienceFilter): List<MailAudienceRow> =
+        audienceOf(workspaceRepository.findAllWithOwnerByIdIn(filter.workspaceIds), filter.from, filter.to).targets
 
+    private fun audienceOf(candidates: List<Workspace>, from: LocalDate, to: LocalDate): Audience {
+        val start = from.atStartOfDay()
+        val end = to.plusDays(1).atStartOfDay()
+        val orderStats = orderRepository.findWorkspaceOrderStats(start, end).associateBy { it.workspaceId }
         val resolver = emailService.getSchoolResolver()
-        val workspaces = candidatesOf(filter, orderStats.keys, resolver)
-            .filter { it.id !in filter.excludedWorkspaceIds }
-            .sortedBy { it.id }
+        val workspaces = candidates.sortedBy { it.id }
 
         val withdrawn = workspaces.filter { it.owner.withdrawnAt != null }
         val active = workspaces - withdrawn.toSet()
@@ -78,7 +63,7 @@ class MailAudienceService(
 
         val targetIds = targets.map { it.id }
         val topMenus = topMenusOf(targetIds, start, end)
-        val insightCounts = insightCardCountsOf(targetIds, filter)
+        val insightCounts = insightCardCountsOf(targetIds, from, to)
         val lastSent = lastSentOf(targetIds)
 
         return Audience(
@@ -98,14 +83,6 @@ class MailAudienceService(
         )
     }
 
-    private fun candidatesOf(filter: MailAudienceFilter, orderedWorkspaceIds: Set<Long>, resolver: SchoolResolver): List<Workspace> {
-        filter.workspaceIds?.let { return workspaceRepository.findAllById(it) }
-
-        val schoolDomains = filter.schoolName?.takeIf { it.isNotBlank() }?.let { resolver.domainsOf(it) }
-        return workspaceRepository.findAllById(orderedWorkspaceIds)
-            .filter { schoolDomains == null || it.owner.email?.substringAfter("@") in schoolDomains }
-    }
-
     // 0원 상품은 직원 호출 같은 요청으로 쓰는 곳이 많아 메뉴에서 뺀다
     private fun topMenusOf(workspaceIds: List<Long>, start: LocalDateTime, end: LocalDateTime): Map<Long, String> {
         if (workspaceIds.isEmpty()) return emptyMap()
@@ -114,9 +91,9 @@ class MailAudienceService(
             .mapValues { (_, sales) -> sales.maxWith(compareBy({ it.quantity }, { it.productName })).productName }
     }
 
-    private fun insightCardCountsOf(workspaceIds: List<Long>, filter: MailAudienceFilter): Map<Long, Long> {
+    private fun insightCardCountsOf(workspaceIds: List<Long>, from: LocalDate, to: LocalDate): Map<Long, Long> {
         if (workspaceIds.isEmpty()) return emptyMap()
-        return dailyInsightCardRepository.countByWorkspaceIds(workspaceIds, filter.from, filter.to)
+        return dailyInsightCardRepository.countByWorkspaceIds(workspaceIds, from, to)
             .associate { (workspaceId, count) -> (workspaceId as Number).toLong() to (count as Number).toLong() }
     }
 
@@ -141,8 +118,4 @@ class MailAudienceService(
         firstOperatingDate = stats?.firstOrderAt?.toLocalDate(),
         lastOperatingDate = stats?.lastOrderAt?.toLocalDate(),
     )
-
-    companion object {
-        private const val ANY_ORDER = 1L
-    }
 }

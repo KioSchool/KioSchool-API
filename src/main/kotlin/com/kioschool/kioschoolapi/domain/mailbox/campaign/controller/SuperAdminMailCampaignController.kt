@@ -1,7 +1,6 @@
 package com.kioschool.kioschoolapi.domain.mailbox.campaign.controller
 
-import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailAudienceFilter
-import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailAudiencePreview
+import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailAudience
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailCampaignDetailDto
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailCampaignPreviewDto
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailCampaignPreviewRequestBody
@@ -13,8 +12,10 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import org.springframework.data.domain.Page
+import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.*
+import java.time.LocalDate
 
 @Tag(name = "Super Admin Mail Campaign Controller")
 @RestController
@@ -22,14 +23,13 @@ import org.springframework.web.bind.annotation.*
 class SuperAdminMailCampaignController(
     private val mailCampaignFacade: MailCampaignFacade,
 ) {
-    @Operation(summary = "받을 주점 미리보기", description = "조건에 맞는 주점과 제외 사유별 수를 조회합니다.")
-    @PostMapping("/audience")
-    fun previewAudience(
-        @RequestBody @Valid filter: MailAudienceFilter,
-        @RequestParam(defaultValue = "0") page: Int,
-        @RequestParam(defaultValue = "20") size: Int,
-    ): MailAudiencePreview {
-        return mailCampaignFacade.preview(filter, page, size)
+    @Operation(summary = "받을 주점 목록", description = "보낼 수 있는 모든 주점과 기간 안의 값, 보낼 수 없는 사유별 수를 조회합니다.")
+    @GetMapping("/audience")
+    fun getAudience(
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) from: LocalDate,
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) to: LocalDate,
+    ): MailAudience {
+        return mailCampaignFacade.audience(from, to)
     }
 
     @Operation(summary = "메일 미리보기", description = "첫 주점의 값으로 실제 메일과 같은 HTML을 만듭니다.")

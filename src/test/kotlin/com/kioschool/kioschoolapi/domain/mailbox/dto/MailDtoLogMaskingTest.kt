@@ -2,7 +2,7 @@ package com.kioschool.kioschoolapi.domain.mailbox.dto
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailAudienceFilter
-import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailAudiencePreview
+import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailAudience
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailAudienceRow
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailCampaignRecipientDto
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailCampaignPreviewDto
@@ -24,7 +24,6 @@ import com.kioschool.kioschoolapi.global.logging.util.LogMasking
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.string.shouldNotContain
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
-import org.springframework.data.domain.PageImpl
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -68,7 +67,7 @@ class MailDtoLogMaskingTest : DescribeSpec({
         }
 
         it("여러 곳 발송의 요청과 응답에 내용과 개인정보가 남지 않는다") {
-            val filter = MailAudienceFilter(LocalDate.of(2026, 9, 1), LocalDate.of(2026, 10, 31), 15)
+            val filter = MailAudienceFilter(LocalDate.of(2026, 9, 1), LocalDate.of(2026, 10, 31), setOf(1L))
             val logged = listOf(
                 MailCampaignRequestBody(filter, "비밀 제목", "<p>비밀 내용</p>"),
                 MailCampaignPreviewRequestBody(filter, "비밀 제목", "<p>비밀 내용</p>"),
@@ -77,10 +76,7 @@ class MailDtoLogMaskingTest : DescribeSpec({
                 MailPreviewDto("<p>비밀 내용</p>"),
                 MailCampaignSummaryDto(1, "비밀 제목", MailCampaignStatus.SENDING, 1, 0, 1, 0, 0, "비밀 팀원", at),
                 MailCampaignRecipientDto(1, 2, "주점", "비밀 이름", "secret@test.com", MailRecipientStatus.SENT, null, at),
-                MailAudiencePreview(
-                    1, 0, 0, 0, 70,
-                    PageImpl(listOf(MailAudienceRow(2, "주점", "건국대학교", "비밀 이름", "secret@test.com", lastSentSubject = "비밀 제목"))),
-                ),
+                MailAudience(listOf(MailAudienceRow(2, "주점", "건국대학교", "비밀 이름", "secret@test.com", lastSentSubject = "비밀 제목")), 0, 0, 0, 70),
             ).joinToString { mapper.writeValueAsString(it) }
 
             logged shouldNotContain "비밀"

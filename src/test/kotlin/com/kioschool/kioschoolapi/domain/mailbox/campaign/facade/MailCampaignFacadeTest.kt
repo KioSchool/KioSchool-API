@@ -62,7 +62,7 @@ class MailCampaignFacadeTest : DescribeSpec({
     fun sut(guard: MailRecipientGuard = MailRecipientGuard("*")) =
         MailCampaignFacade(service, audience, renderer, composer, sender, userService, unsubscribe, client, guard, 70)
 
-    val filter = MailAudienceFilter(LocalDate.of(2026, 9, 1), LocalDate.of(2026, 10, 31), 15)
+    val filter = MailAudienceFilter(LocalDate.of(2026, 9, 1), LocalDate.of(2026, 10, 31), setOf(1L, 2L))
     val body = MailCampaignRequestBody(filter, "{주점 이름} 안내", "<p>{사장 이름}님</p>", 2, "req-1")
     val rows = listOf(MailAudienceRow(1, "달빛", "건국대학교", "김사장", "a@konkuk.ac.kr"), MailAudienceRow(2, "별빛", "건국대학교", "이사장", "b@konkuk.ac.kr"))
     val appender = ListAppender<ILoggingEvent>().apply { start() }

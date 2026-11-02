@@ -31,7 +31,7 @@ data class MailCampaignRequestBody(
     fun normalizedSubject(): String = subject.trim()
 }
 
-// 입력 중에도 부르므로 비어 있어도 된다
+// 제목이나 내용을 쓰기 전에도 볼 수 있어서 비어 있어도 된다
 data class MailCampaignPreviewRequestBody(
     @field:Valid
     val filter: MailAudienceFilter,

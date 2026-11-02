@@ -3,7 +3,6 @@ package com.kioschool.kioschoolapi.domain.mailbox.campaign.dto
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.service.MailAudienceStats
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.service.MailTemplateValues
 import com.kioschool.kioschoolapi.global.logging.annotation.LogMasked
-import org.springframework.data.domain.Page
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -40,11 +39,10 @@ data class MailAudienceRow(
     fun toTemplateValues() = MailTemplateValues(workspaceName, ownerName, workspaceId, toStats())
 }
 
-data class MailAudiencePreview(
-    val targetCount: Int,
+data class MailAudience(
+    val rows: List<MailAudienceRow>,
     val noEmailCount: Int,
     val unsubscribedCount: Int,
     val withdrawnCount: Int,
     val dailyLimit: Int,
-    val content: Page<MailAudienceRow>,
 )

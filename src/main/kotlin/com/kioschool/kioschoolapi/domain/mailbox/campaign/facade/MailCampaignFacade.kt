@@ -1,7 +1,6 @@
 package com.kioschool.kioschoolapi.domain.mailbox.campaign.facade
 
-import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailAudienceFilter
-import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailAudiencePreview
+import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailAudience
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailCampaignDetailDto
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailCampaignPreviewDto
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailCampaignPreviewRequestBody
@@ -26,6 +25,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.data.domain.Page
 import org.springframework.stereotype.Component
+import java.time.LocalDate
 import java.util.UUID
 
 @Component
@@ -44,8 +44,7 @@ class MailCampaignFacade(
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
-    fun preview(filter: MailAudienceFilter, page: Int, size: Int): MailAudiencePreview =
-        mailAudienceService.preview(filter, page, size)
+    fun audience(from: LocalDate, to: LocalDate): MailAudience = mailAudienceService.list(from, to)
 
     fun previewMail(body: MailCampaignPreviewRequestBody): MailCampaignPreviewDto {
         mailTemplateRenderer.validateValues(body.subject, body.content)
