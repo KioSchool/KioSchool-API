@@ -264,12 +264,13 @@ class MailFacadeTest : DescribeSpec({
             }
         }
 
-        it("허용 도메인 밖 상대면 보내지 않는다") {
+        it("허용 도메인 밖 상대에게도 답장한다") {
             every { messageRepository.findAllByThreadOrderBySentAtAscIdAsc(thread) } returns listOf(message(1, MailDirection.INBOUND))
+            every { client.reply(any(), any(), any(), any(), any()) } returns "new"
 
-            shouldThrow<CustomException> { sut(MailRecipientGuard("kio-school.com")).reply("admin", 1, ReplyMailRequestBody(1, "내용")) }
-                .errorCode shouldBe ErrorCode.MAIL_RECIPIENT_UNAVAILABLE
-            verify { client wasNot Called }
+            sut(MailRecipientGuard("kio-school.com")).reply("admin", 1, ReplyMailRequestBody(1, "내용"))
+
+            verify(exactly = 1) { client.reply(any(), any(), any(), any(), any()) }
         }
 
         it("없는 대화면 MAIL_THREAD_NOT_FOUND") {
