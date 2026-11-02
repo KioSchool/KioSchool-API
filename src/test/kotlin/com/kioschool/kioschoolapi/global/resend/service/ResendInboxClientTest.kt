@@ -50,6 +50,14 @@ class ResendInboxClientTest : DescribeSpec({
             verify { api wasNot Called }
         }
 
+        it("본인 주소로 보낼 때는 허용 도메인 밖이어도 보낸다") {
+            val guarded = ResendInboxClient("key", "inbox", api, MailRecipientGuard("kio-school.com"), 0)
+            every { api.createDraft(any(), "k-draft", "inbox", any()) } returns ok(ResendIdResponse("draft"))
+            every { api.sendDraft(any(), "k-send", "inbox", "draft", any()) } returns ok(ResendIdResponse("email"))
+
+            guarded.sendToOwnAddress("me@gmail.com", "s", "h", "t", emptyMap(), "k") shouldBe "email"
+        }
+
         it("초안 생성과 발송에 각각 다른 Idempotency-Key를 쓴다") {
             every { api.createDraft(any(), "k-draft", "inbox", any()) } returns ok(ResendIdResponse("draft"))
             every { api.sendDraft(any(), "k-send", "inbox", "draft", any()) } returns ok(ResendIdResponse("email"))

@@ -30,7 +30,6 @@ import com.kioschool.kioschoolapi.factory.SampleEntity
 import com.kioschool.kioschoolapi.global.common.enums.UserRole
 import com.kioschool.kioschoolapi.global.error.ErrorCode
 import com.kioschool.kioschoolapi.global.error.exception.CustomException
-import com.kioschool.kioschoolapi.global.resend.service.MailRecipientGuard
 import com.kioschool.kioschoolapi.global.resend.service.ResendInboxClient
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
@@ -59,8 +58,7 @@ class MailCampaignFacadeTest : DescribeSpec({
     val service = MailCampaignService(campaignRepository, recipientRepository, workspaceRepository, mapper, sanitizer, 365)
     val composer = MailCampaignComposer(renderer, bodyRenderer, "https://kio-school.com", "https://api.kio-school.com")
 
-    fun sut(guard: MailRecipientGuard = MailRecipientGuard("*")) =
-        MailCampaignFacade(service, audience, renderer, composer, sender, userService, unsubscribe, client, guard, 70)
+    fun sut() = MailCampaignFacade(service, audience, renderer, composer, sender, userService, unsubscribe, client, 70)
 
     val filter = MailAudienceFilter(LocalDate.of(2026, 9, 1), LocalDate.of(2026, 10, 31), setOf(1L, 2L))
     val body = MailCampaignRequestBody(filter, "{주점 이름} 안내", "<p>{사장 이름}님</p>", 2, "req-1")
@@ -287,7 +285,7 @@ class MailCampaignFacadeTest : DescribeSpec({
 
         it("본인 이메일로 첫 주점 값을 넣어 [테스트]를 제목 앞에 붙여 보낸다") {
             val subject = slot<String>()
-            every { client.sendNew("test@test.com", capture(subject), any(), any(), any(), any()) } returns "e"
+            every { client.sendToOwnAddress("test@test.com", capture(subject), any(), any(), any(), any()) } returns "e"
 
             sut().test("admin", body)
 
@@ -295,10 +293,13 @@ class MailCampaignFacadeTest : DescribeSpec({
             verify(exactly = 0) { campaignRepository.save(any<MailCampaign>()) }
         }
 
-        it("허용 도메인 밖이면 보내지 않는다") {
-            shouldThrow<CustomException> { sut(MailRecipientGuard("kio-school.com")).test("admin", body) }
-                .errorCode shouldBe ErrorCode.MAIL_RECIPIENT_UNAVAILABLE
-            verify { client wasNot Called }
+        it("본인 주소라서 허용 도메인 검사 없이 보낸다") {
+            every { client.sendToOwnAddress(any(), any(), any(), any(), any(), any()) } returns "e"
+
+            sut().test("admin", body)
+
+            verify(exactly = 1) { client.sendToOwnAddress("test@test.com", any(), any(), any(), any(), any()) }
+            verify(exactly = 0) { client.sendNew(any(), any(), any(), any(), any(), any()) }
         }
     }
 })

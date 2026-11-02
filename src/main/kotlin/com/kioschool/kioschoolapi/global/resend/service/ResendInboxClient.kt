@@ -32,7 +32,27 @@ class ResendInboxClient(
         if (!mailRecipientGuard.isAllowed(to)) {
             throw ResendSendException("허용되지 않은 수신 도메인")
         }
+        return createAndSendDraft(to, subject, html, text, headers, idempotencyKey)
+    }
 
+    // 로그인한 사람의 주소로 보내는 시험 발송은 실제 운영진에게 잘못 나갈 일이 없어 허용 도메인을 보지 않는다
+    fun sendToOwnAddress(
+        to: String,
+        subject: String,
+        html: String,
+        text: String,
+        headers: Map<String, String>,
+        idempotencyKey: String,
+    ): String = createAndSendDraft(to, subject, html, text, headers, idempotencyKey)
+
+    private fun createAndSendDraft(
+        to: String,
+        subject: String,
+        html: String,
+        text: String,
+        headers: Map<String, String>,
+        idempotencyKey: String,
+    ): String {
         val draft = successBody(
             resendInboxApi.createDraft(
                 authorization,

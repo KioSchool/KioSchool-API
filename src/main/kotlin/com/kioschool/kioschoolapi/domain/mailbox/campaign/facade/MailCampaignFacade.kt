@@ -16,7 +16,6 @@ import com.kioschool.kioschoolapi.domain.mailbox.service.MailUnsubscribeService
 import com.kioschool.kioschoolapi.domain.user.service.UserService
 import com.kioschool.kioschoolapi.global.error.ErrorCode
 import com.kioschool.kioschoolapi.global.error.exception.CustomException
-import com.kioschool.kioschoolapi.global.resend.service.MailRecipientGuard
 import com.kioschool.kioschoolapi.global.resend.service.ResendDailyLimitException
 import com.kioschool.kioschoolapi.global.resend.service.ResendInboxClient
 import com.kioschool.kioschoolapi.global.resend.service.ResendSendException
@@ -38,7 +37,6 @@ class MailCampaignFacade(
     private val userService: UserService,
     private val mailUnsubscribeService: MailUnsubscribeService,
     private val resendInboxClient: ResendInboxClient,
-    private val mailRecipientGuard: MailRecipientGuard,
     @Value("\${mail.campaign.daily-limit}")
     private val dailyLimit: Int,
 ) {
@@ -60,7 +58,7 @@ class MailCampaignFacade(
         val user = userService.getUser(username)
         val email = user.email
         val first = mailAudienceService.resolve(body.filter).firstOrNull()
-        if (email.isNullOrBlank() || first == null || !mailRecipientGuard.isAllowed(email)) {
+        if (email.isNullOrBlank() || first == null) {
             throw CustomException(ErrorCode.MAIL_RECIPIENT_UNAVAILABLE)
         }
 
@@ -71,7 +69,7 @@ class MailCampaignFacade(
         )
 
         try {
-            resendInboxClient.sendNew(
+            resendInboxClient.sendToOwnAddress(
                 email,
                 "$TEST_PREFIX${mail.subject}",
                 mail.html,
