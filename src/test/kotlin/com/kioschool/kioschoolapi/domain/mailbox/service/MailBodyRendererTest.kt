@@ -72,6 +72,10 @@ class MailBodyRendererTest : DescribeSpec({
             sut.renderText("""<p><a href="https://x.com">https://x.com</a></p>""") shouldBe "https://x.com"
         }
 
+        it("글자 모양이 바뀌는 자리의 띄어쓰기를 지우지 않는다") {
+            sut.renderText("<p><strong>굵은 글 </strong>보통 글 </p>") shouldBe "굵은 글 보통 글"
+        }
+
         it("HTML을 문자 그대로 적지 않는다") {
             sut.renderText("<p>a &amp; b &lt;c&gt;</p>") shouldBe "a & b <c>"
         }

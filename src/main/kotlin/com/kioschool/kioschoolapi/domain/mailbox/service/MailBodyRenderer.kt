@@ -38,17 +38,19 @@ class MailBodyRenderer(
 
     private fun blockText(element: Element): String? = when (element.tagName()) {
         "hr" -> HORIZONTAL_RULE
-        "ul" -> element.children().joinToString("\n") { "- ${inlineText(it)}" }
-        "ol" -> element.children().withIndex().joinToString("\n") { (index, item) -> "${index + 1}. ${inlineText(item)}" }
-        else -> inlineText(element).ifBlank { null }
+        "ul" -> element.children().joinToString("\n") { "- ${lineText(it)}" }
+        "ol" -> element.children().withIndex().joinToString("\n") { (index, item) -> "${index + 1}. ${lineText(item)}" }
+        else -> lineText(element).ifBlank { null }
     }
+
+    private fun lineText(element: Element): String = inlineText(element).trimEnd(' ')
 
     private fun inlineText(node: Node): String = when {
         node is TextNode -> node.wholeText
         node is Element && node.tagName() == "br" -> "\n"
         node is Element && node.tagName() == "a" -> linkText(node)
         else -> node.childNodes().joinToString("") { inlineText(it) }
-    }.trimEnd(' ')
+    }
 
     private fun linkText(link: Element): String {
         val label = link.text()
