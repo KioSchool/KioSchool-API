@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS"
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+  <changeSet author="ji-inpark" id="mailbox-1">
+    <createTable tableName="mail_thread">
+      <column autoIncrement="true" name="id" type="BIGINT">
+        <constraints nullable="false" primaryKey="true"/>
+      </column>
+      <column name="resend_thread_id" type="VARCHAR(255)">
+        <constraints nullable="false" unique="true" uniqueConstraintName="uk_mail_thread_resend_thread_id"/>
+      </column>
+      <column name="subject" type="TEXT"/>
+      <column name="workspace_id" type="BIGINT"/>
+      <column name="counterpart_email" type="TEXT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="counterpart_name" type="TEXT"/>
+      <column name="last_message_at" type="TIMESTAMP WITHOUT TIME ZONE">
+        <constraints nullable="false"/>
+      </column>
+      <column name="last_direction" type="VARCHAR(20)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="purge_at" type="TIMESTAMP WITHOUT TIME ZONE">
+        <constraints nullable="false"/>
+      </column>
+      <column name="last_read_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+      <column name="resolved_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+      <column name="spam_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+      <column name="has_inbound" type="BOOLEAN" defaultValueBoolean="false">
+        <constraints nullable="false"/>
+      </column>
+      <column name="from_campaign" type="BOOLEAN" defaultValueBoolean="false">
+        <constraints nullable="false"/>
+      </column>
+      <column name="created_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+      <column name="updated_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+    </createTable>
+    <addForeignKeyConstraint
+      constraintName="fk_mail_thread_workspace"
+      baseTableName="mail_thread" baseColumnNames="workspace_id"
+      referencedTableName="workspace" referencedColumnNames="id"
+      onDelete="SET NULL"/>
+    <createIndex indexName="idx_mail_thread_workspace_id" tableName="mail_thread">
+      <column name="workspace_id"/>
+    </createIndex>
+    <createIndex indexName="idx_mail_thread_purge_at" tableName="mail_thread">
+      <column name="purge_at"/>
+    </createIndex>
+    <createIndex indexName="idx_mail_thread_last_message_at" tableName="mail_thread">
+      <column name="last_message_at"/>
+    </createIndex>
+  </changeSet>
+
+  <changeSet author="ji-inpark" id="mailbox-2">
+    <createTable tableName="mail_message">
+      <column autoIncrement="true" name="id" type="BIGINT">
+        <constraints nullable="false" primaryKey="true"/>
+      </column>
+      <column name="resend_email_id" type="VARCHAR(255)">
+        <constraints nullable="false" unique="true" uniqueConstraintName="uk_mail_message_resend_email_id"/>
+      </column>
+      <column name="thread_id" type="BIGINT"/>
+      <column name="direction" type="VARCHAR(20)"/>
+      <column name="from_email" type="TEXT"/>
+      <column name="from_name" type="TEXT"/>
+      <column name="to_email" type="TEXT"/>
+      <column name="subject" type="TEXT"/>
+      <column name="text_body" type="TEXT"/>
+      <column name="html_body" type="TEXT"/>
+      <column name="sent_by_user_id" type="BIGINT"/>
+      <column name="workspace_hint_id" type="BIGINT"/>
+      <column name="campaign_recipient_id" type="BIGINT"/>
+      <column name="sent_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+      <column name="bounced_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+      <column name="created_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+      <column name="updated_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+    </createTable>
+    <addForeignKeyConstraint
+      constraintName="fk_mail_message_thread"
+      baseTableName="mail_message" baseColumnNames="thread_id"
+      referencedTableName="mail_thread" referencedColumnNames="id"
+      onDelete="CASCADE"/>
+    <addForeignKeyConstraint
+      constraintName="fk_mail_message_sent_by_user"
+      baseTableName="mail_message" baseColumnNames="sent_by_user_id"
+      referencedTableName="user" referencedColumnNames="id"
+      onDelete="SET NULL"/>
+    <addForeignKeyConstraint
+      constraintName="fk_mail_message_workspace_hint"
+      baseTableName="mail_message" baseColumnNames="workspace_hint_id"
+      referencedTableName="workspace" referencedColumnNames="id"
+      onDelete="SET NULL"/>
+    <createIndex indexName="idx_mail_message_thread_id" tableName="mail_message">
+      <column name="thread_id"/>
+    </createIndex>
+  </changeSet>
+
+  <changeSet author="ji-inpark" id="mailbox-3">
+    <createTable tableName="mail_attachment">
+      <column autoIncrement="true" name="id" type="BIGINT">
+        <constraints nullable="false" primaryKey="true"/>
+      </column>
+      <column name="message_id" type="BIGINT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="resend_attachment_id" type="VARCHAR(255)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="filename" type="TEXT"/>
+      <column name="size" type="BIGINT"/>
+      <column name="created_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+      <column name="updated_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+    </createTable>
+    <addForeignKeyConstraint
+      constraintName="fk_mail_attachment_message"
+      baseTableName="mail_attachment" baseColumnNames="message_id"
+      referencedTableName="mail_message" referencedColumnNames="id"
+      onDelete="CASCADE"/>
+    <addUniqueConstraint
+      constraintName="uk_mail_attachment_message_resend"
+      tableName="mail_attachment"
+      columnNames="message_id, resend_attachment_id"/>
+  </changeSet>
+
+  <changeSet author="ji-inpark" id="mailbox-4">
+    <createTable tableName="mail_deleted_thread">
+      <column autoIncrement="true" name="id" type="BIGINT">
+        <constraints nullable="false" primaryKey="true"/>
+      </column>
+      <column name="resend_thread_id" type="VARCHAR(255)">
+        <constraints nullable="false" unique="true" uniqueConstraintName="uk_mail_deleted_thread_resend_thread_id"/>
+      </column>
+      <column name="deleted_at" type="TIMESTAMP WITHOUT TIME ZONE">
+        <constraints nullable="false"/>
+      </column>
+      <column name="created_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+      <column name="updated_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+    </createTable>
+  </changeSet>
+</databaseChangeLog>
