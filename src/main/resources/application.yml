@@ -114,7 +114,7 @@ turnstile:
 
 resend:
   base-url: "${RESEND_BASE_URL:https://api.resend.com/}"
-  api-key: "${RESEND_API_KEY:}"
+  api-key: "${RESEND_API_KEY:${MAIL_PASSWORD:}}"
   webhook-secret: "${RESEND_WEBHOOK_SECRET:}"
 
 mail:
