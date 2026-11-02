@@ -1,9 +1,11 @@
 package com.kioschool.kioschoolapi.domain.mailbox.service
 
 import io.kotest.core.spec.style.DescribeSpec
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
+import org.jsoup.Jsoup
 import org.thymeleaf.spring6.SpringTemplateEngine
 import org.thymeleaf.templatemode.TemplateMode
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver
@@ -58,8 +60,18 @@ class MailBodyRendererTest : DescribeSpec({
 
             html shouldContain "margin:0 0 12px;text-align:center;\">가운데"
             html shouldContain "text-align:right;\">오른쪽"
-            html.split("text-align").size shouldBe 3
+            Jsoup.parse(html).select("p").first { it.text() == "왼쪽" }.attr("style") shouldNotContain "text-align"
             html shouldNotContain "data-align"
+        }
+
+        it("메일 프로그램이 body 스타일을 지워도 배경과 카드가 남도록 표로 감싼다") {
+            val document = Jsoup.parse(sut.render("<p>본문</p>", "https://kio-school.com/mail/unsubscribe?token=abc"))
+            val card = document.selectFirst("table[bgcolor=#f6f7f9] table[bgcolor=#ffffff] td")
+
+            card.shouldNotBeNull()
+            card.text() shouldContain "본문"
+            card.text() shouldContain "수신 거부"
+            card.attr("style") shouldContain "font-family"
         }
 
         it("수신 거부 링크가 없으면 넣지 않는다") {
