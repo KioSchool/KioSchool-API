@@ -7,6 +7,7 @@ import com.kioschool.kioschoolapi.domain.mailbox.campaign.enums.MailRecipientSta
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.repository.MailCampaignRecipientRepository
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.repository.MailCampaignRepository
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailBodyRenderer
+import com.kioschool.kioschoolapi.domain.mailbox.service.MailHtmlSanitizer
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailSyncService
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailUnsubscribeService
 import com.kioschool.kioschoolapi.domain.user.entity.User
@@ -24,6 +25,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
 import io.mockk.*
+import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
 import org.thymeleaf.spring6.SpringTemplateEngine
 import org.thymeleaf.templatemode.TemplateMode
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver
@@ -45,17 +47,17 @@ class MailCampaignSenderTest : DescribeSpec({
             }
         )
     }
-    val queue = MailCampaignQueue(campaignRepository, recipientRepository, unsubscribeService, 365)
-    val composer = MailCampaignComposer(MailTemplateRenderer(), MailBodyRenderer(engine), "https://kio-school.com", "https://api.kio-school.com")
+    val mapper = Jackson2ObjectMapperBuilder.json().build<com.fasterxml.jackson.databind.ObjectMapper>()
+    val queue = MailCampaignQueue(campaignRepository, recipientRepository, unsubscribeService, mapper, 365)
+    val sanitizer = MailHtmlSanitizer()
+    val composer = MailCampaignComposer(MailTemplateRenderer(sanitizer), MailBodyRenderer(engine, sanitizer), "https://kio-school.com", "https://api.kio-school.com")
     lateinit var sut: MailCampaignSender
 
     val noon = LocalDateTime.of(2026, 11, 2, 12, 0)
     val recipients = mutableListOf<MailCampaignRecipient>()
     val campaign = MailCampaign(
         subject = "{주점 이름} 안내",
-        bodyTemplate = "{사장 이름}님 안녕하세요",
-        buttonLabel = null,
-        buttonUrlTemplate = null,
+        bodyTemplate = "<p>{사장 이름}님 안녕하세요</p>",
         filterJson = "{}",
         createdBy = null,
         purgeAt = noon.plusDays(1),
@@ -250,7 +252,7 @@ class MailCampaignSenderTest : DescribeSpec({
         }
 
         it("주점 이름의 <b>가 메일 HTML에서 이스케이프된다") {
-            campaign.bodyTemplate = "{주점 이름} 안내"
+            campaign.bodyTemplate = "<p>{주점 이름} 안내</p>"
             val html = slot<String>()
             every { client.sendNew(any(), any(), capture(html), any(), any(), any()) } returns "email-id"
             addRecipient(1, workspace(1, name = "달빛<b>포차"))
@@ -259,7 +261,7 @@ class MailCampaignSenderTest : DescribeSpec({
 
             html.captured shouldContain "달빛&lt;b&gt;포차"
             html.captured shouldNotContain "달빛<b>포차"
-            campaign.bodyTemplate = "{사장 이름}님 안녕하세요"
+            campaign.bodyTemplate = "<p>{사장 이름}님 안녕하세요</p>"
         }
 
         it("List-Unsubscribe와 List-Unsubscribe-Post 헤더, 수신 거부 링크를 넣는다") {
@@ -289,6 +291,20 @@ class MailCampaignSenderTest : DescribeSpec({
             verify { sync.recordOutbound("email-id", null, ws, 1, null, "주점1 안내", any(), any(), "o1@kio-school.com") }
             recipients.single().resendEmailId shouldBe "email-id"
             recipients.single().sentAt shouldBe noon
+        }
+
+        it("시작할 때 고정한 고른 기간 값을 메일에 넣는다") {
+            campaign.bodyTemplate = "<p>{주문 수}건 {매출} {인기 메뉴}</p>"
+            val html = slot<String>()
+            val text = slot<String>()
+            every { client.sendNew(any(), any(), capture(html), capture(text), any(), any()) } returns "email-id"
+            addRecipient(1).statsJson = mapper.writeValueAsString(MailAudienceStats(orderCount = 1812, revenue = 2000, topMenu = "김치전"))
+
+            sut.sendDue(noon)
+
+            html.captured shouldContain "1,812건 2,000원 김치전"
+            text.captured shouldContain "1,812건 2,000원 김치전"
+            campaign.bodyTemplate = "<p>{사장 이름}님 안녕하세요</p>"
         }
 
         it("10분 넘게 SENDING인 행은 PENDING으로 돌려 같은 키로 다시 보낸다") {

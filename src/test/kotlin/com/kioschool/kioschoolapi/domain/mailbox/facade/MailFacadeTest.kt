@@ -2,6 +2,7 @@ package com.kioschool.kioschoolapi.domain.mailbox.facade
 
 import com.kioschool.kioschoolapi.domain.email.service.EmailService
 import com.kioschool.kioschoolapi.domain.email.service.SchoolResolver
+import com.kioschool.kioschoolapi.domain.mailbox.dto.request.MailPreviewRequestBody
 import com.kioschool.kioschoolapi.domain.mailbox.dto.request.ReplyMailRequestBody
 import com.kioschool.kioschoolapi.domain.mailbox.dto.request.SendMailRequestBody
 import com.kioschool.kioschoolapi.domain.mailbox.entity.MailAttachment
@@ -12,6 +13,7 @@ import com.kioschool.kioschoolapi.domain.mailbox.repository.MailAttachmentReposi
 import com.kioschool.kioschoolapi.domain.mailbox.repository.MailMessageRepository
 import com.kioschool.kioschoolapi.domain.mailbox.repository.MailThreadRepository
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailBodyRenderer
+import com.kioschool.kioschoolapi.domain.mailbox.service.MailHtmlSanitizer
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailPurgeService
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailSyncService
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailThreadWriter
@@ -51,7 +53,7 @@ class MailFacadeTest : DescribeSpec({
     val emailService = mockk<EmailService>()
 
     fun sut(guard: MailRecipientGuard = MailRecipientGuard("*")) = MailFacade(
-        threadRepository, messageRepository, attachmentRepository, writer, sync, purge, renderer, client,
+        threadRepository, messageRepository, attachmentRepository, writer, sync, purge, renderer, MailHtmlSanitizer(), client,
         downloader, guard, workspaceService, userService, emailService,
     )
 
@@ -59,7 +61,8 @@ class MailFacadeTest : DescribeSpec({
 
     beforeTest {
         clearAllMocks()
-        every { renderer.render(any(), any(), any()) } returns "<html/>"
+        every { renderer.render(any(), any()) } returns "<html/>"
+        every { renderer.renderText(any()) } returns "내용"
         every { userService.getUser("admin") } returns SampleEntity.user
         every { emailService.getSchoolResolver() } returns SchoolResolver(emptyMap())
     }
@@ -115,6 +118,33 @@ class MailFacadeTest : DescribeSpec({
             sut().sendNew("admin", body)
 
             verify(exactly = 1) { client.sendNew("owner@test.com", "제목", "<html/>", "내용", emptyMap(), any()) }
+        }
+
+        it("내용이 비어 있으면 INVALID_INPUT이고 보내지 않는다") {
+            every { workspaceService.getWorkspace(9) } returns owner()
+
+            shouldThrow<CustomException> { sut().sendNew("admin", SendMailRequestBody(9, "제목", "<p> </p>")) }
+                .errorCode shouldBe ErrorCode.INVALID_INPUT
+            verify { client wasNot Called }
+        }
+
+        it("https가 아닌 링크가 있으면 MAIL_TEMPLATE_INVALID이고 보내지 않는다") {
+            every { workspaceService.getWorkspace(9) } returns owner()
+
+            shouldThrow<CustomException> {
+                sut().sendNew("admin", SendMailRequestBody(9, "제목", """<p><a href="http://x.com">링크</a></p>"""))
+            }.errorCode shouldBe ErrorCode.MAIL_TEMPLATE_INVALID
+            verify { client wasNot Called }
+        }
+
+        it("정리한 HTML로 메일과 글자 본문을 만든다") {
+            every { workspaceService.getWorkspace(9) } returns owner()
+            every { client.sendNew(any(), any(), any(), any(), any(), any()) } returns "email"
+
+            sut().sendNew("admin", SendMailRequestBody(9, "제목", "<p>안녕<script>x</script></p>"))
+
+            verify { renderer.render("<p>안녕</p>", any()) }
+            verify { renderer.renderText("<p>안녕</p>") }
         }
 
         it("같은 요청 번호로 다시 보내면 같은 Idempotency-Key를 쓴다") {
@@ -247,6 +277,12 @@ class MailFacadeTest : DescribeSpec({
 
             shouldThrow<CustomException> { sut().reply("admin", 404, ReplyMailRequestBody(1, "내용")) }
                 .errorCode shouldBe ErrorCode.MAIL_THREAD_NOT_FOUND
+        }
+    }
+
+    describe("preview") {
+        it("실제 메일과 같은 HTML을 돌려준다") {
+            sut().preview(MailPreviewRequestBody("<p>내용</p>")).html shouldBe "<html/>"
         }
     }
 

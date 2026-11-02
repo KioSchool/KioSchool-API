@@ -6,6 +6,7 @@ import ch.qos.logback.core.read.ListAppender
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailAudienceFilter
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailAudienceRow
+import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailCampaignPreviewRequestBody
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailCampaignRequestBody
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.entity.MailCampaign
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.entity.MailCampaignRecipient
@@ -14,11 +15,13 @@ import com.kioschool.kioschoolapi.domain.mailbox.campaign.enums.MailRecipientSta
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.repository.MailCampaignRecipientRepository
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.repository.MailCampaignRepository
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.service.MailAudienceService
+import com.kioschool.kioschoolapi.domain.mailbox.campaign.service.MailAudienceStats
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.service.MailCampaignComposer
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.service.MailCampaignSender
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.service.MailCampaignService
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.service.MailTemplateRenderer
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailBodyRenderer
+import com.kioschool.kioschoolapi.domain.mailbox.service.MailHtmlSanitizer
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailUnsubscribeService
 import com.kioschool.kioschoolapi.domain.user.entity.User
 import com.kioschool.kioschoolapi.domain.user.service.UserService
@@ -50,21 +53,23 @@ class MailCampaignFacadeTest : DescribeSpec({
     val unsubscribe = mockk<MailUnsubscribeService>()
     val client = mockk<ResendInboxClient>()
     val bodyRenderer = mockk<MailBodyRenderer>()
-    val renderer = MailTemplateRenderer()
-    val service = MailCampaignService(campaignRepository, recipientRepository, workspaceRepository, ObjectMapper().findAndRegisterModules(), 365)
+    val sanitizer = MailHtmlSanitizer()
+    val renderer = MailTemplateRenderer(sanitizer)
+    val mapper = ObjectMapper().findAndRegisterModules()
+    val service = MailCampaignService(campaignRepository, recipientRepository, workspaceRepository, mapper, sanitizer, 365)
     val composer = MailCampaignComposer(renderer, bodyRenderer, "https://kio-school.com", "https://api.kio-school.com")
 
     fun sut(guard: MailRecipientGuard = MailRecipientGuard("*")) =
         MailCampaignFacade(service, audience, renderer, composer, sender, userService, unsubscribe, client, guard, 70)
 
     val filter = MailAudienceFilter(LocalDate.of(2026, 9, 1), LocalDate.of(2026, 10, 31), 15)
-    val body = MailCampaignRequestBody(filter, "{주점 이름} 안내", "{사장 이름}님", null, null, 2, "req-1")
+    val body = MailCampaignRequestBody(filter, "{주점 이름} 안내", "<p>{사장 이름}님</p>", 2, "req-1")
     val rows = listOf(MailAudienceRow(1, "달빛", "건국대학교", "김사장", "a@konkuk.ac.kr"), MailAudienceRow(2, "별빛", "건국대학교", "이사장", "b@konkuk.ac.kr"))
     val appender = ListAppender<ILoggingEvent>().apply { start() }
     (LoggerFactory.getLogger(MailCampaignFacade::class.java) as Logger).addAppender(appender)
 
     fun campaign(status: MailCampaignStatus = MailCampaignStatus.SENDING) = MailCampaign(
-        subject = "s", bodyTemplate = "b", buttonLabel = null, buttonUrlTemplate = null, filterJson = "{}", createdBy = null,
+        subject = "s", bodyTemplate = "b", filterJson = "{}", createdBy = null,
         purgeAt = java.time.LocalDateTime.of(2027, 1, 1, 0, 0), status = status,
     )
 
@@ -79,7 +84,8 @@ class MailCampaignFacadeTest : DescribeSpec({
         every { recipientRepository.saveAll(any<List<MailCampaignRecipient>>()) } answers { firstArg() }
         every { recipientRepository.countByCampaignGroupByStatus(any()) } returns emptyList()
         every { workspaceRepository.getReferenceById(any()) } returns SampleEntity.workspace
-        every { bodyRenderer.render(any(), any(), any()) } returns "<html/>"
+        every { bodyRenderer.render(any(), any()) } returns "<html/>"
+        every { bodyRenderer.renderText(any()) } returns "내용"
         every { unsubscribe.tokenFor(any()) } returns "tok"
     }
 
@@ -153,10 +159,63 @@ class MailCampaignFacadeTest : DescribeSpec({
         }
 
         it("템플릿이 잘못되면 만들지 않는다") {
-            shouldThrow<CustomException> { sut().start("admin", body.copy(subject = "{학교}")) }
+            shouldThrow<CustomException> { sut().start("admin", body.copy(subject = "{모름}")) }
                 .errorCode shouldBe ErrorCode.MAIL_TEMPLATE_INVALID
 
             verify(exactly = 0) { campaignRepository.save(any<MailCampaign>()) }
+        }
+    }
+
+    describe("start의 내용") {
+        it("정리한 HTML과 고른 기간 값을 저장한다") {
+            val campaignSaved = slot<MailCampaign>()
+            val recipients = slot<List<MailCampaignRecipient>>()
+            every { campaignRepository.save(capture(campaignSaved)) } answers { firstArg() }
+            every { recipientRepository.saveAll(capture(recipients)) } answers { firstArg() }
+            every { audience.resolve(filter) } returns listOf(MailAudienceRow(1, "달빛", "건국대학교", "김사장", "a@konkuk.ac.kr", orderCount = 812))
+
+            sut().start("admin", body.copy(content = "<p>안녕<script>x</script></p>", expectedCount = 1))
+
+            campaignSaved.captured.bodyTemplate shouldBe "<p>안녕</p>"
+            mapper.readValue(recipients.captured.single().statsJson, MailAudienceStats::class.java).orderCount shouldBe 812
+        }
+
+        it("내용이 비어 있으면 만들지 않는다") {
+            shouldThrow<CustomException> { sut().start("admin", body.copy(content = "<p> </p>")) }
+                .errorCode shouldBe ErrorCode.MAIL_TEMPLATE_INVALID
+        }
+    }
+
+    describe("previewMail") {
+        val previewBody = MailCampaignPreviewRequestBody(filter, "{주점 이름} 안내", "<p>{사장 이름}님</p>")
+
+        it("첫 주점의 값으로 제목과 받는 사람을 돌려준다") {
+            val preview = sut().previewMail(previewBody)
+
+            preview.subject shouldBe "달빛 안내"
+            preview.workspaceName shouldBe "달빛"
+            preview.ownerEmail shouldBe "a@konkuk.ac.kr"
+            preview.html shouldBe "<html/>"
+            verify { bodyRenderer.render("<p>김사장님</p>", any()) }
+        }
+
+        it("받을 주점이 없으면 값 자리를 그대로 보여준다") {
+            every { audience.resolve(filter) } returns emptyList()
+
+            val preview = sut().previewMail(previewBody)
+
+            preview.subject shouldBe "{주점 이름} 안내"
+            preview.workspaceName shouldBe null
+            verify { bodyRenderer.render("<p>{사장 이름}님</p>", any()) }
+        }
+
+        it("모르는 값이 있으면 MAIL_TEMPLATE_INVALID") {
+            shouldThrow<CustomException> { sut().previewMail(previewBody.copy(content = "<p>{모름}</p>")) }
+                .errorCode shouldBe ErrorCode.MAIL_TEMPLATE_INVALID
+        }
+
+        it("입력 전이어서 내용이 비어 있어도 된다") {
+            sut().previewMail(previewBody.copy(subject = "", content = "")).html shouldBe "<html/>"
         }
     }
 

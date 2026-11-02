@@ -1,5 +1,6 @@
 package com.kioschool.kioschoolapi.domain.mailbox.campaign.service
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.entity.MailCampaignRecipient
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.enums.MailCampaignStatus
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.enums.MailRecipientStatus
@@ -23,6 +24,7 @@ sealed interface MailCampaignClaim {
         val email: String,
         val workspace: Workspace,
         val ownerName: String,
+        val stats: MailAudienceStats,
         val createdBy: User?,
         val content: MailCampaignContent,
         val unsubscribeToken: String,
@@ -35,6 +37,7 @@ class MailCampaignQueue(
     private val mailCampaignRepository: MailCampaignRepository,
     private val mailCampaignRecipientRepository: MailCampaignRecipientRepository,
     private val mailUnsubscribeService: MailUnsubscribeService,
+    private val objectMapper: ObjectMapper,
     @Value("\${mail.retention-days}")
     private val retentionDays: Long,
 ) {
@@ -74,8 +77,9 @@ class MailCampaignQueue(
             email = email,
             workspace = workspace,
             ownerName = owner.name,
+            stats = recipient.statsJson?.let { objectMapper.readValue(it, MailAudienceStats::class.java) } ?: MailAudienceStats(),
             createdBy = campaign.createdBy,
-            content = MailCampaignContent(campaign.subject, campaign.bodyTemplate, campaign.buttonLabel, campaign.buttonUrlTemplate),
+            content = MailCampaignContent(campaign.subject, campaign.bodyTemplate),
             unsubscribeToken = mailUnsubscribeService.tokenFor(owner),
         )
     }

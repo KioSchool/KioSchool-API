@@ -5,13 +5,17 @@ import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailAudienceFilter
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailAudiencePreview
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailAudienceRow
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailCampaignRecipientDto
+import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailCampaignPreviewDto
+import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailCampaignPreviewRequestBody
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailCampaignRequestBody
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailCampaignSummaryDto
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.enums.MailCampaignStatus
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.enums.MailRecipientStatus
 import com.kioschool.kioschoolapi.domain.mailbox.dto.common.MailAttachmentDto
 import com.kioschool.kioschoolapi.domain.mailbox.dto.common.MailMessageDto
+import com.kioschool.kioschoolapi.domain.mailbox.dto.common.MailPreviewDto
 import com.kioschool.kioschoolapi.domain.mailbox.dto.common.MailThreadDetailDto
+import com.kioschool.kioschoolapi.domain.mailbox.dto.request.MailPreviewRequestBody
 import com.kioschool.kioschoolapi.domain.mailbox.dto.request.ReplyMailRequestBody
 import com.kioschool.kioschoolapi.domain.mailbox.dto.request.SendMailRequestBody
 import com.kioschool.kioschoolapi.domain.mailbox.enum.MailDirection
@@ -66,12 +70,16 @@ class MailDtoLogMaskingTest : DescribeSpec({
         it("여러 곳 발송의 요청과 응답에 내용과 개인정보가 남지 않는다") {
             val filter = MailAudienceFilter(LocalDate.of(2026, 9, 1), LocalDate.of(2026, 10, 31), 15)
             val logged = listOf(
-                MailCampaignRequestBody(filter, "비밀 제목", "비밀 내용", "설문", "https://secret.example.com/?t=1"),
+                MailCampaignRequestBody(filter, "비밀 제목", "<p>비밀 내용</p>"),
+                MailCampaignPreviewRequestBody(filter, "비밀 제목", "<p>비밀 내용</p>"),
+                MailCampaignPreviewDto("비밀 제목", "<p>비밀 내용</p>", "주점", "secret@test.com"),
+                MailPreviewRequestBody("<p>비밀 내용</p>"),
+                MailPreviewDto("<p>비밀 내용</p>"),
                 MailCampaignSummaryDto(1, "비밀 제목", MailCampaignStatus.SENDING, 1, 0, 1, 0, 0, "비밀 팀원", at),
                 MailCampaignRecipientDto(1, 2, "주점", "비밀 이름", "secret@test.com", MailRecipientStatus.SENT, null, at),
                 MailAudiencePreview(
                     1, 0, 0, 0, 70,
-                    PageImpl(listOf(MailAudienceRow(2, "주점", "건국대학교", "비밀 이름", "secret@test.com"))),
+                    PageImpl(listOf(MailAudienceRow(2, "주점", "건국대학교", "비밀 이름", "secret@test.com", lastSentSubject = "비밀 제목"))),
                 ),
             ).joinToString { mapper.writeValueAsString(it) }
 

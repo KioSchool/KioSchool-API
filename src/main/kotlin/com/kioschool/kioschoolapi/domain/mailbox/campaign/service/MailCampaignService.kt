@@ -11,6 +11,7 @@ import com.kioschool.kioschoolapi.domain.mailbox.campaign.enums.MailCampaignStat
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.enums.MailRecipientStatus
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.repository.MailCampaignRecipientRepository
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.repository.MailCampaignRepository
+import com.kioschool.kioschoolapi.domain.mailbox.service.MailHtmlSanitizer
 import com.kioschool.kioschoolapi.domain.user.entity.User
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepository
 import com.kioschool.kioschoolapi.global.error.ErrorCode
@@ -29,6 +30,7 @@ class MailCampaignService(
     private val mailCampaignRecipientRepository: MailCampaignRecipientRepository,
     private val workspaceRepository: WorkspaceRepository,
     private val objectMapper: ObjectMapper,
+    private val mailHtmlSanitizer: MailHtmlSanitizer,
     @Value("\${mail.retention-days}")
     private val retentionDays: Long,
 ) {
@@ -37,9 +39,7 @@ class MailCampaignService(
         val campaign = mailCampaignRepository.save(
             MailCampaign(
                 subject = body.normalizedSubject(),
-                bodyTemplate = body.normalizedContent(),
-                buttonLabel = body.normalizedButtonLabel(),
-                buttonUrlTemplate = body.normalizedButtonUrl(),
+                bodyTemplate = mailHtmlSanitizer.clean(body.content),
                 filterJson = objectMapper.writeValueAsString(body.filter),
                 createdBy = createdBy,
                 purgeAt = LocalDateTime.now().plusDays(retentionDays),
@@ -54,6 +54,7 @@ class MailCampaignService(
                     workspaceName = it.workspaceName,
                     email = it.ownerEmail,
                     name = it.ownerName,
+                    statsJson = objectMapper.writeValueAsString(it.toStats()),
                 )
             }
         )

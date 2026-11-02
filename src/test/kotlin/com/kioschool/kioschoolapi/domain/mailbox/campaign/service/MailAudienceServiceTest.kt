@@ -3,6 +3,11 @@ package com.kioschool.kioschoolapi.domain.mailbox.campaign.service
 import com.kioschool.kioschoolapi.domain.email.service.EmailService
 import com.kioschool.kioschoolapi.domain.email.service.SchoolResolver
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailAudienceFilter
+import com.kioschool.kioschoolapi.domain.insight.repository.DailyInsightCardRepository
+import com.kioschool.kioschoolapi.domain.mailbox.campaign.repository.MailCampaignRecipientRepository
+import com.kioschool.kioschoolapi.domain.order.dto.common.WorkspaceMenuSales
+import com.kioschool.kioschoolapi.domain.order.dto.common.WorkspaceOrderStats
+import com.kioschool.kioschoolapi.domain.order.repository.OrderProductRepository
 import com.kioschool.kioschoolapi.domain.order.repository.OrderRepository
 import com.kioschool.kioschoolapi.domain.user.entity.User
 import com.kioschool.kioschoolapi.domain.workspace.entity.Workspace
@@ -21,9 +26,12 @@ import java.time.LocalDateTime
 
 class MailAudienceServiceTest : DescribeSpec({
     val orderRepository = mockk<OrderRepository>()
+    val orderProductRepository = mockk<OrderProductRepository>()
     val workspaceRepository = mockk<WorkspaceRepository>()
+    val insightRepository = mockk<DailyInsightCardRepository>()
+    val recipientRepository = mockk<MailCampaignRecipientRepository>()
     val emailService = mockk<EmailService>()
-    val sut = MailAudienceService(orderRepository, workspaceRepository, emailService, 70)
+    val sut = MailAudienceService(orderRepository, orderProductRepository, workspaceRepository, insightRepository, recipientRepository, emailService, 70)
     val from = LocalDate.of(2026, 9, 1)
     val to = LocalDate.of(2026, 10, 31)
     val at = LocalDateTime.of(2026, 10, 1, 0, 0)
@@ -52,13 +60,18 @@ class MailAudienceServiceTest : DescribeSpec({
         MailAudienceFilter(from, to, minOrders, schoolName, excluded)
 
     fun stub(vararg workspaces: Workspace) {
-        every { orderRepository.findWorkspaceIdsWithOrders(any(), any(), any()) } returns workspaces.map { it.id }
+        every { orderRepository.findWorkspaceOrderStats(any(), any(), any()) } returns workspaces.map {
+            WorkspaceOrderStats(it.id, 20, 300000, 2, at, at.plusDays(1))
+        }
         every { workspaceRepository.findAllById(any()) } returns workspaces.toList()
     }
 
     beforeTest {
         clearAllMocks()
         every { emailService.getSchoolResolver() } returns SchoolResolver(mapOf("konkuk.ac.kr" to "건국대학교", "sejong.ac.kr" to "세종대학교"))
+        every { orderProductRepository.findMenuSales(any(), any(), any()) } returns emptyList()
+        every { insightRepository.countByWorkspaceIds(any(), any(), any()) } returns emptyList()
+        every { recipientRepository.findSentByWorkspaceIds(any()) } returns emptyList()
     }
 
     describe("resolve") {
@@ -68,7 +81,7 @@ class MailAudienceServiceTest : DescribeSpec({
             sut.resolve(filter(minOrders = 15)).map { it.workspaceId } shouldBe listOf(1L)
 
             verify {
-                orderRepository.findWorkspaceIdsWithOrders(from.atStartOfDay(), to.plusDays(1).atStartOfDay(), 15)
+                orderRepository.findWorkspaceOrderStats(from.atStartOfDay(), to.plusDays(1).atStartOfDay(), 15)
             }
         }
 
@@ -81,6 +94,60 @@ class MailAudienceServiceTest : DescribeSpec({
             row.schoolName shouldBe "건국대학교"
             row.ownerName shouldBe "사장1"
             row.ownerEmail shouldBe "o1@konkuk.ac.kr"
+        }
+
+        it("주문 수, 매출, 운영일, 테이블 수를 담는다") {
+            stub(workspace(1))
+
+            val row = sut.resolve(filter()).single()
+
+            row.orderCount shouldBe 20
+            row.revenue shouldBe 300000
+            row.operatingDays shouldBe 2
+            row.firstOperatingDate shouldBe at.toLocalDate()
+            row.lastOperatingDate shouldBe at.toLocalDate().plusDays(1)
+            row.tableCount shouldBe 1
+        }
+
+        it("가장 많이 팔린 메뉴를 고른다") {
+            stub(workspace(1))
+            every { orderProductRepository.findMenuSales(listOf(1L), any(), any()) } returns listOf(
+                WorkspaceMenuSales(1, "라면", 3),
+                WorkspaceMenuSales(1, "김치전", 9),
+            )
+
+            sut.resolve(filter()).single().topMenu shouldBe "김치전"
+        }
+
+        it("기간 안의 인사이트 카드 수를 센다") {
+            stub(workspace(1))
+            every { insightRepository.countByWorkspaceIds(listOf(1L), from, to) } returns listOf(arrayOf(1L, 3L))
+
+            sut.resolve(filter()).single().insightCardCount shouldBe 3
+        }
+
+        it("가장 최근에 보낸 메일과 답장 여부를 담는다") {
+            stub(workspace(1))
+            every { recipientRepository.findSentByWorkspaceIds(listOf(1L)) } returns listOf(
+                arrayOf(1L, "지난 설문", at, true),
+                arrayOf(1L, "최근 설문", at.plusDays(5), false),
+            )
+
+            val row = sut.resolve(filter()).single()
+
+            row.lastSentSubject shouldBe "최근 설문"
+            row.lastSentAt shouldBe at.plusDays(5)
+            row.lastReplied shouldBe false
+        }
+
+        it("보낸 적이 없으면 비워 둔다") {
+            stub(workspace(1))
+
+            val row = sut.resolve(filter()).single()
+
+            row.lastSentAt shouldBe null
+            row.insightCardCount shouldBe 0
+            row.topMenu shouldBe null
         }
 
         it("schoolName이 있으면 그 학교 도메인만 고른다") {
@@ -102,7 +169,7 @@ class MailAudienceServiceTest : DescribeSpec({
         }
 
         it("주문이 있는 주점이 없으면 주점을 조회하지 않는다") {
-            every { orderRepository.findWorkspaceIdsWithOrders(any(), any(), any()) } returns emptyList()
+            every { orderRepository.findWorkspaceOrderStats(any(), any(), any()) } returns emptyList()
 
             sut.resolve(filter()).size shouldBe 0
 

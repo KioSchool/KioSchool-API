@@ -1,7 +1,9 @@
 package com.kioschool.kioschoolapi.domain.mailbox.controller
 
+import com.kioschool.kioschoolapi.domain.mailbox.dto.common.MailPreviewDto
 import com.kioschool.kioschoolapi.domain.mailbox.dto.common.MailThreadDetailDto
 import com.kioschool.kioschoolapi.domain.mailbox.dto.common.MailThreadSummaryDto
+import com.kioschool.kioschoolapi.domain.mailbox.dto.request.MailPreviewRequestBody
 import com.kioschool.kioschoolapi.domain.mailbox.dto.request.ReplyMailRequestBody
 import com.kioschool.kioschoolapi.domain.mailbox.dto.request.SendMailRequestBody
 import com.kioschool.kioschoolapi.domain.mailbox.enum.MailThreadStatus
@@ -56,6 +58,12 @@ class SuperAdminMailController(
         @RequestBody @Valid body: ReplyMailRequestBody,
     ): MailThreadDetailDto {
         return mailFacade.reply(username, threadId, body)
+    }
+
+    @Operation(summary = "메일 미리보기", description = "실제 메일과 같은 HTML을 만듭니다.")
+    @PostMapping("/preview")
+    fun preview(@RequestBody @Valid body: MailPreviewRequestBody): MailPreviewDto {
+        return mailFacade.preview(body)
     }
 
     @Operation(summary = "답장 없이 완료", description = "새 메일이 오면 다시 답장 필요로 돌아갑니다.")

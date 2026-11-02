@@ -14,10 +14,6 @@ class MailCampaign(
     @Column(columnDefinition = "TEXT")
     var bodyTemplate: String,
     @Column(columnDefinition = "TEXT")
-    var buttonLabel: String?,
-    @Column(columnDefinition = "TEXT")
-    var buttonUrlTemplate: String?,
-    @Column(columnDefinition = "TEXT")
     var filterJson: String,
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by_user_id")

@@ -71,7 +71,7 @@ class MailPurgeTest : DescribeSpec({
         }
 
         it("purgeAt이 지난 캠페인과 수신자를 지운다. SENDING 캠페인은 조회에서 뺀다") {
-            val expired = MailCampaign("s", "b", null, null, "{}", null, java.time.LocalDateTime.of(2026, 1, 1, 0, 0), MailCampaignStatus.DONE)
+            val expired = MailCampaign("s", "b", "{}", null, java.time.LocalDateTime.of(2026, 1, 1, 0, 0), MailCampaignStatus.DONE)
             every { repository.findAllByPurgeAtBefore(any(), any()) } returns emptyList()
             every { campaignRepository.findAllByPurgeAtBeforeAndStatusNot(any(), MailCampaignStatus.SENDING, any()) } returns listOf(expired)
 

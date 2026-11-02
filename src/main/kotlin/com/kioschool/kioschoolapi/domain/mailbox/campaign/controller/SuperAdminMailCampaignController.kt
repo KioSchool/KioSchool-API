@@ -3,6 +3,8 @@ package com.kioschool.kioschoolapi.domain.mailbox.campaign.controller
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailAudienceFilter
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailAudiencePreview
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailCampaignDetailDto
+import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailCampaignPreviewDto
+import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailCampaignPreviewRequestBody
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailCampaignRequestBody
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailCampaignSummaryDto
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.facade.MailCampaignFacade
@@ -28,6 +30,12 @@ class SuperAdminMailCampaignController(
         @RequestParam(defaultValue = "20") size: Int,
     ): MailAudiencePreview {
         return mailCampaignFacade.preview(filter, page, size)
+    }
+
+    @Operation(summary = "메일 미리보기", description = "첫 주점의 값으로 실제 메일과 같은 HTML을 만듭니다.")
+    @PostMapping("/preview")
+    fun preview(@RequestBody @Valid body: MailCampaignPreviewRequestBody): MailCampaignPreviewDto {
+        return mailCampaignFacade.previewMail(body)
     }
 
     @Operation(summary = "나에게 테스트 발송", description = "첫 주점의 값으로 본인 계정 이메일에 보냅니다.")

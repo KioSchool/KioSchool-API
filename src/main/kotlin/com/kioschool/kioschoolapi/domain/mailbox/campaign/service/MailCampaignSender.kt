@@ -65,7 +65,7 @@ class MailCampaignSender(
     /** 오늘 더 보낼 수 없으면 false를 돌려준다. */
     private fun sendOne(claim: MailCampaignClaim.Send, now: LocalDateTime): Boolean {
         val workspace = claim.workspace
-        val values = MailTemplateValues(workspace.name, claim.ownerName, workspace.id)
+        val values = MailTemplateValues(workspace.name, claim.ownerName, workspace.id, claim.stats)
         val mail = mailCampaignComposer.compose(claim.content, values, claim.unsubscribeToken)
 
         val emailId = try {

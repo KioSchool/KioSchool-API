@@ -55,6 +55,21 @@ interface MailCampaignRecipientRepository : JpaRepository<MailCampaignRecipient,
 
     fun findByResendEmailId(resendEmailId: String): MailCampaignRecipient?
 
+    // 행: [workspaceId, 받은 제목, 보낸 시각, 답장 여부]. 메일 행이 없으면 값을 넣기 전 제목을 쓴다.
+    @Query(
+        """
+        SELECT r.workspace.id, COALESCE(m.subject, c.subject), r.sentAt, COALESCE(t.hasInbound, false)
+        FROM MailCampaignRecipient r
+        JOIN r.campaign c
+        LEFT JOIN MailMessage m ON m.campaignRecipientId = r.id
+        LEFT JOIN m.thread t
+        WHERE r.status = com.kioschool.kioschoolapi.domain.mailbox.campaign.enums.MailRecipientStatus.SENT
+          AND r.sentAt IS NOT NULL
+          AND r.workspace.id IN :workspaceIds
+        """
+    )
+    fun findSentByWorkspaceIds(@Param("workspaceIds") workspaceIds: Collection<Long>): List<Array<Any?>>
+
     // 행: [상태, 수]
     @Query("SELECT r.status, COUNT(r) FROM MailCampaignRecipient r WHERE r.campaign = :campaign GROUP BY r.status")
     fun countByCampaignGroupByStatus(@Param("campaign") campaign: MailCampaign): List<Array<Any>>

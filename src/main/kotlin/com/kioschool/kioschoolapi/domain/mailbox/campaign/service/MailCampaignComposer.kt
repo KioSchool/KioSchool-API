@@ -1,15 +1,12 @@
 package com.kioschool.kioschoolapi.domain.mailbox.campaign.service
 
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailBodyRenderer
-import com.kioschool.kioschoolapi.domain.mailbox.service.MailButton
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 
 data class MailCampaignContent(
     val subject: String,
     val bodyTemplate: String,
-    val buttonLabel: String?,
-    val buttonUrlTemplate: String?,
 )
 
 data class ComposedMail(
@@ -28,31 +25,20 @@ class MailCampaignComposer(
     @Value("\${mail.api-base-url}")
     private val apiBaseUrl: String,
 ) {
-    fun compose(content: MailCampaignContent, values: MailTemplateValues, unsubscribeToken: String): ComposedMail {
-        val subject = mailTemplateRenderer.renderText(content.subject, values)
-        val body = mailTemplateRenderer.renderText(content.bodyTemplate, values)
-        val button = buttonOf(content, values)
+    /** 받을 주점이 아직 없는 미리보기는 [values] 없이 값 자리를 그대로 둔다. */
+    fun compose(content: MailCampaignContent, values: MailTemplateValues?, unsubscribeToken: String): ComposedMail {
+        val subject = values?.let { mailTemplateRenderer.renderText(content.subject, it) } ?: content.subject
+        val body = values?.let { mailTemplateRenderer.renderHtml(content.bodyTemplate, it) } ?: content.bodyTemplate
         val unsubscribeUrl = "$baseUrl/mail/unsubscribe?token=$unsubscribeToken"
 
         return ComposedMail(
             subject = subject,
-            html = mailBodyRenderer.render(body, button, unsubscribeUrl),
-            text = textOf(body, button, unsubscribeUrl),
+            html = mailBodyRenderer.render(body, unsubscribeUrl),
+            text = "${mailBodyRenderer.renderText(body)}\n\n수신 거부: $unsubscribeUrl",
             headers = mapOf(
                 "List-Unsubscribe" to "<$apiBaseUrl/mail/unsubscribe?token=$unsubscribeToken>",
                 "List-Unsubscribe-Post" to "List-Unsubscribe=One-Click",
             ),
         )
-    }
-
-    private fun buttonOf(content: MailCampaignContent, values: MailTemplateValues): MailButton? {
-        val label = content.buttonLabel ?: return null
-        val url = content.buttonUrlTemplate ?: return null
-        return MailButton(mailTemplateRenderer.renderText(label, values), mailTemplateRenderer.renderUrl(url, values))
-    }
-
-    private fun textOf(body: String, button: MailButton?, unsubscribeUrl: String): String {
-        val buttonLine = button?.let { "\n\n${it.label}: ${it.url}" }.orEmpty()
-        return "$body$buttonLine\n\n수신 거부: $unsubscribeUrl"
     }
 }

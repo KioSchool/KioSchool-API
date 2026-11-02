@@ -3,6 +3,8 @@ package com.kioschool.kioschoolapi.domain.mailbox.campaign.facade
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailAudienceFilter
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailAudiencePreview
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailCampaignDetailDto
+import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailCampaignPreviewDto
+import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailCampaignPreviewRequestBody
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailCampaignRequestBody
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.dto.MailCampaignSummaryDto
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.service.MailAudienceService
@@ -11,7 +13,6 @@ import com.kioschool.kioschoolapi.domain.mailbox.campaign.service.MailCampaignCo
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.service.MailCampaignSender
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.service.MailCampaignService
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.service.MailTemplateRenderer
-import com.kioschool.kioschoolapi.domain.mailbox.campaign.service.MailTemplateValues
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailUnsubscribeService
 import com.kioschool.kioschoolapi.domain.user.service.UserService
 import com.kioschool.kioschoolapi.global.error.ErrorCode
@@ -46,6 +47,14 @@ class MailCampaignFacade(
     fun preview(filter: MailAudienceFilter, page: Int, size: Int): MailAudiencePreview =
         mailAudienceService.preview(filter, page, size)
 
+    fun previewMail(body: MailCampaignPreviewRequestBody): MailCampaignPreviewDto {
+        mailTemplateRenderer.validateValues(body.subject, body.content)
+
+        val first = mailAudienceService.resolve(body.filter).firstOrNull()
+        val mail = mailCampaignComposer.compose(MailCampaignContent(body.subject, body.content), first?.toTemplateValues(), PREVIEW_TOKEN)
+        return MailCampaignPreviewDto(mail.subject, mail.html, first?.workspaceName, first?.ownerEmail)
+    }
+
     fun test(username: String, body: MailCampaignRequestBody) {
         validate(body)
 
@@ -57,8 +66,8 @@ class MailCampaignFacade(
         }
 
         val mail = mailCampaignComposer.compose(
-            contentOf(body),
-            MailTemplateValues(first.workspaceName, first.ownerName, first.workspaceId),
+            MailCampaignContent(body.normalizedSubject(), body.content),
+            first.toTemplateValues(),
             mailUnsubscribeService.tokenFor(user),
         )
 
@@ -122,22 +131,11 @@ class MailCampaignFacade(
     }
 
     private fun validate(body: MailCampaignRequestBody) {
-        mailTemplateRenderer.validate(
-            body.normalizedSubject(),
-            body.normalizedContent(),
-            body.normalizedButtonLabel(),
-            body.normalizedButtonUrl(),
-        )
+        mailTemplateRenderer.validate(body.normalizedSubject(), body.content)
     }
-
-    private fun contentOf(body: MailCampaignRequestBody) = MailCampaignContent(
-        subject = body.normalizedSubject(),
-        bodyTemplate = body.normalizedContent(),
-        buttonLabel = body.normalizedButtonLabel(),
-        buttonUrlTemplate = body.normalizedButtonUrl(),
-    )
 
     companion object {
         private const val TEST_PREFIX = "[테스트] "
+        private const val PREVIEW_TOKEN = "preview"
     }
 }

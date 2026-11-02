@@ -24,4 +24,6 @@ class MailCampaignRecipient(
     var attempt: Int = 0,
     var claimedAt: LocalDateTime? = null,
     var sentAt: LocalDateTime? = null,
+    @Column(columnDefinition = "TEXT")
+    var statsJson: String? = null,
 ) : BaseEntity()
