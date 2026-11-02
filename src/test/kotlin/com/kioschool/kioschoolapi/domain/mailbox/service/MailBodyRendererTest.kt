@@ -72,6 +72,12 @@ class MailBodyRendererTest : DescribeSpec({
             card.text() shouldContain "본문"
             card.text() shouldContain "수신 거부"
             card.attr("style") shouldContain "font-family"
+            card.attr("bgcolor") shouldBe "#ffffff"
+            card.attr("style") shouldContain "background-color:#ffffff"
+            val page = document.selectFirst("table[bgcolor=#f6f7f9] > tbody > tr > td")
+            page.shouldNotBeNull()
+            page.attr("bgcolor") shouldBe "#f6f7f9"
+            page.attr("style") shouldContain "background-color:#f6f7f9"
         }
 
         it("수신 거부 링크가 없으면 넣지 않는다") {
