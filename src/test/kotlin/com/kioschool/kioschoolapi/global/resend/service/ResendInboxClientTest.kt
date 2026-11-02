@@ -7,6 +7,7 @@ import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
 import io.mockk.*
 import okhttp3.ResponseBody.Companion.toResponseBody
@@ -125,6 +126,21 @@ class ResendInboxClientTest : DescribeSpec({
                 sut.sendNew("secret@b.com", "s", "h", "t", emptyMap(), "k")
             }
 
+            thrown.message.orEmpty() shouldNotContain "secret"
+        }
+
+        it("Resend가 알려 준 실패 사유를 메시지에 남기고 주소는 가린다") {
+            every { api.createDraft(any(), any(), any(), any()) } returns fail(
+                400,
+                """{"name":"validation_error","message":"Invalid to: secret@b.com"}""",
+            )
+
+            val thrown = shouldThrow<ResendSendException> {
+                sut.sendNew("secret@b.com", "s", "h", "t", emptyMap(), "k")
+            }
+
+            thrown.message.orEmpty() shouldContain "400"
+            thrown.message.orEmpty() shouldContain "validation_error"
             thrown.message.orEmpty() shouldNotContain "secret"
         }
 

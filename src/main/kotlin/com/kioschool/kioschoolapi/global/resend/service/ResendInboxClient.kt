@@ -148,8 +148,14 @@ class ResendInboxClient(
 
     private fun ensureSuccess(response: Response<*>) {
         if (response.isSuccessful) return
-        throw ResendSendException("Resend 응답 ${response.code()}")
+        throw ResendSendException("Resend 응답 ${response.code()} ${errorReasonOf(response)}".trimEnd())
     }
+
+    // 원인을 알 수 있게 Resend가 알려 준 사유를 남긴다. 사유에 받는 주소가 들어 있을 수 있어 가린다.
+    private fun errorReasonOf(response: Response<*>): String =
+        response.errorBody()?.string().orEmpty()
+            .replace(EMAIL_ADDRESS, "***")
+            .take(MAX_ERROR_REASON_LENGTH)
 
     companion object {
         private const val PAGE_SIZE = 100
@@ -159,5 +165,7 @@ class ResendInboxClient(
         private const val MAX_RETRY_DELAY_MILLIS = 5000L
         private val QUOTA_ERRORS = listOf("daily_quota_exceeded", "monthly_quota_exceeded")
         private val LINE_BREAKS = Regex("[\\r\\n]+")
+        private val EMAIL_ADDRESS = Regex("[^\\s\"'<>:,]+@[^\\s\"'<>:,]+")
+        private const val MAX_ERROR_REASON_LENGTH = 300
     }
 }
