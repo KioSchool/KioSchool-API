@@ -45,6 +45,23 @@ class MailBodyRendererTest : DescribeSpec({
             html shouldNotContain "data-mail-button"
         }
 
+        it("한 줄에 놓인 버튼 사이만 띄운다") {
+            val html = sut.render(
+                """<p><a data-mail-button="solid" href="https://x.com/a">진한</a><a data-mail-button="line" href="https://x.com/b">테두리</a></p><p><a data-mail-button="solid" href="https://x.com/c">혼자</a></p>"""
+            )
+
+            html.split("margin-left:8px").size shouldBe 2
+        }
+
+        it("정렬 표시를 인라인 스타일로 바꾸고 표시 속성을 지운다") {
+            val html = sut.render("""<p data-align="center">가운데</p><h2 data-align="right">오른쪽</h2><p>왼쪽</p>""")
+
+            html shouldContain "margin:0 0 12px;text-align:center;\">가운데"
+            html shouldContain "text-align:right;\">오른쪽"
+            html.split("text-align").size shouldBe 3
+            html shouldNotContain "data-align"
+        }
+
         it("수신 거부 링크가 없으면 넣지 않는다") {
             sut.render("<p>내용</p>") shouldNotContain "수신 거부"
         }
@@ -66,6 +83,12 @@ class MailBodyRendererTest : DescribeSpec({
         it("링크와 버튼의 주소를 글자 뒤에 적는다") {
             sut.renderText("""<p><a href="https://x.com">사이트</a></p><p><a data-mail-button="solid" href="https://y.com">설문</a></p>""") shouldBe
                 "사이트 (https://x.com)\n\n설문: https://y.com"
+        }
+
+        it("한 줄에 놓인 버튼은 줄을 나눠 적는다") {
+            sut.renderText(
+                """<p><a data-mail-button="solid" href="https://x.com/a">설문</a><a data-mail-button="line" href="https://x.com/b">둘러보기</a></p>"""
+            ) shouldBe "설문: https://x.com/a\n둘러보기: https://x.com/b"
         }
 
         it("글자가 주소와 같으면 한 번만 적는다") {

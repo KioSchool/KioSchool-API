@@ -1,5 +1,6 @@
 package com.kioschool.kioschoolapi.domain.mailbox.service
 
+import com.kioschool.kioschoolapi.domain.mailbox.service.MailHtmlSanitizer.Companion.ALIGN_ATTRIBUTE
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailHtmlSanitizer.Companion.BUTTON_ATTRIBUTE
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailHtmlSanitizer.Companion.BUTTON_LINE
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailHtmlSanitizer.Companion.BUTTON_SOLID
@@ -32,8 +33,17 @@ class MailBodyRenderer(
     private fun styled(contentHtml: String): String {
         val document = mailHtmlSanitizer.parse(contentHtml)
         STYLES.forEach { (selector, style) -> document.select(selector).attr("style", style) }
+        document.select("a[$BUTTON_ATTRIBUTE] + a[$BUTTON_ATTRIBUTE]").forEach { it.appendStyle("margin-left:8px;") }
         document.select("a[$BUTTON_ATTRIBUTE]").removeAttr(BUTTON_ATTRIBUTE)
+        document.select("[$ALIGN_ATTRIBUTE]").forEach {
+            it.appendStyle("text-align:${it.attr(ALIGN_ATTRIBUTE)};")
+            it.removeAttr(ALIGN_ATTRIBUTE)
+        }
         return document.body().html()
+    }
+
+    private fun Element.appendStyle(style: String) {
+        attr("style", attr("style") + style)
     }
 
     private fun blockText(element: Element): String? = when (element.tagName()) {
@@ -56,6 +66,7 @@ class MailBodyRenderer(
         val label = link.text()
         val href = link.attr("href")
         return when {
+            link.hasAttr(BUTTON_ATTRIBUTE) && link.previousElementSibling()?.hasAttr(BUTTON_ATTRIBUTE) == true -> "\n$label: $href"
             link.hasAttr(BUTTON_ATTRIBUTE) -> "$label: $href"
             href.isEmpty() || href == label -> label
             else -> "$label ($href)"
@@ -66,7 +77,7 @@ class MailBodyRenderer(
         private const val TEMPLATE = "mailMessage"
         private const val HORIZONTAL_RULE = "---"
         private const val BUTTON_BASE =
-            "display:inline-block;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none;"
+            "display:inline-block;margin:4px 0;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none;"
 
         // 뒤의 선택자가 앞의 스타일을 덮어쓴다
         private val STYLES = listOf(

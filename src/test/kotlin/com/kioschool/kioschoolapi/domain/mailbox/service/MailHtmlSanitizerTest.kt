@@ -52,6 +52,20 @@ class MailHtmlSanitizerTest : DescribeSpec({
         }
     }
 
+    describe("정렬") {
+        it("문단과 제목의 가운데·오른쪽 정렬 표시를 남긴다") {
+            sut.clean("""<p data-align="center">글</p>""") shouldBe """<p data-align="center">글</p>"""
+            sut.clean("""<h2 data-align="right">제목</h2>""") shouldBe """<h2 data-align="right">제목</h2>"""
+            sut.clean("""<h3 data-align="center">작은 제목</h3>""") shouldBe """<h3 data-align="center">작은 제목</h3>"""
+        }
+
+        it("모르는 정렬 값과 다른 태그의 정렬 표시를 지운다") {
+            sut.clean("""<p data-align="evil">글</p>""") shouldBe "<p>글</p>"
+            sut.clean("""<ul><li data-align="center">글</li></ul>""") shouldNotContain "data-align"
+            sut.clean("""<a data-align="center" href="https://x.com">링크</a>""") shouldNotContain "data-align"
+        }
+    }
+
     describe("isBlank") {
         it("글자가 없으면 true") {
             sut.isBlank("") shouldBe true

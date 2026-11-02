@@ -12,12 +12,18 @@ class MailHtmlSanitizer {
     private val safelist = Safelist()
         .addTags("p", "br", "strong", "b", "em", "i", "u", "h2", "h3", "ul", "ol", "li", "hr", "a")
         .addAttributes("a", "href", BUTTON_ATTRIBUTE)
+        .addAttributes("p", ALIGN_ATTRIBUTE)
+        .addAttributes("h2", ALIGN_ATTRIBUTE)
+        .addAttributes("h3", ALIGN_ATTRIBUTE)
         .addProtocols("a", "href", "https")
 
     fun clean(html: String): String {
         val document = parseBody(Jsoup.clean(html, "", safelist, mailOutputSettings()))
         document.select("a[$BUTTON_ATTRIBUTE]").forEach {
             if (it.attr(BUTTON_ATTRIBUTE) !in BUTTON_VARIANTS) it.removeAttr(BUTTON_ATTRIBUTE)
+        }
+        document.select("[$ALIGN_ATTRIBUTE]").forEach {
+            if (it.attr(ALIGN_ATTRIBUTE) !in ALIGNMENTS) it.removeAttr(ALIGN_ATTRIBUTE)
         }
         return document.body().html()
     }
@@ -44,5 +50,7 @@ class MailHtmlSanitizer {
         const val BUTTON_SOLID = "solid"
         const val BUTTON_LINE = "line"
         private val BUTTON_VARIANTS = setOf(BUTTON_SOLID, BUTTON_LINE)
+        const val ALIGN_ATTRIBUTE = "data-align"
+        private val ALIGNMENTS = setOf("center", "right")
     }
 }
