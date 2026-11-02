@@ -90,10 +90,8 @@ class MailFacade(
         val messages = mailMessageRepository.findAllByThreadOrderBySentAtAscIdAsc(thread)
         val latest = messages.lastOrNull()
         if (latest == null || latest.id != body.lastMessageId) throw CustomException(ErrorCode.MAIL_THREAD_STALE)
-        if (!mailRecipientGuard.isAllowed(thread.counterpartEmail)) {
-            throw CustomException(ErrorCode.MAIL_RECIPIENT_UNAVAILABLE)
-        }
 
+        // 답장 상대는 이 메일함과 이미 주고받은 주소이므로 허용 도메인을 확인하지 않는다
         val target = messages.lastOrNull { it.direction == MailDirection.INBOUND } ?: latest
         val content = cleanContent(body.content)
         val html = mailBodyRenderer.render(content)

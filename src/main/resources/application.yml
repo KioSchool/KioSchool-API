@@ -120,7 +120,7 @@ resend:
 mail:
   # 메일함 주소가 아니라 ID여야 한다. 웹훅의 inbox_id와 비교한다
   inbox-id: "${MAIL_INBOX_ID:}"
-  # 이 도메인으로만 보낸다. 비어 있으면 모두 막고, prod만 *로 모두 허용한다
+  # 새 메일과 여러 곳 발송은 이 도메인으로만 보낸다(답장은 제외). 비어 있으면 모두 막고, prod만 *로 모두 허용한다
   allowed-recipient-domains: "${MAIL_ALLOWED_RECIPIENT_DOMAINS:kio-school.com}"
   retention-days: 365
   # 수신 거부 메일 헤더(List-Unsubscribe)가 부르는 API 주소
