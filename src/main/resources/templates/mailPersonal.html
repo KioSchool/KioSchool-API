@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+</head>
+<body>
+<!--/* 사람이 쓴 메일처럼 보이도록 배경과 카드를 넣지 않는다. 답장에 인용하거나 대화 화면에서 인용을 뺄 때 data-mail-* 속성으로 찾는다 */-->
+<div data-mail-content style="font-family:'Apple SD Gothic Neo', 'NanumGothic', 'Malgun Gothic', sans-serif;font-size:14px;line-height:1.6;overflow-wrap:anywhere;" th:utext="${contentHtml}">내용</div>
+<div th:if="${quoteHtml != null}" data-mail-quote style="margin-top:24px;font-family:'Apple SD Gothic Neo', 'NanumGothic', 'Malgun Gothic', sans-serif;font-size:14px;line-height:1.6;overflow-wrap:anywhere;" th:utext="${quoteHtml}">이전 메일</div>
+</body>
+</html>

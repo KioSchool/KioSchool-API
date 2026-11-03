@@ -92,9 +92,29 @@ class MailBodyRendererTest : DescribeSpec({
         }
     }
 
-    describe("renderReply") {
+    describe("renderPersonal") {
+        it("배경과 카드 없이 보통 메일처럼 그린다") {
+            val document = Jsoup.parse(sut.renderPersonal("<p>새 내용</p>"))
+
+            document.selectFirst("[data-mail-content]")!!.text() shouldBe "새 내용"
+            document.select("table").size shouldBe 0
+            document.html() shouldNotContain "background"
+            document.html() shouldNotContain "border-radius"
+        }
+
+        it("일반 링크 색은 메일 프로그램에 맡기고 버튼은 버튼으로 그린다") {
+            val document = Jsoup.parse(
+                sut.renderPersonal(
+                    """<p><a href="https://a.com">링크</a></p><p><a href="https://b.com" data-mail-button="solid">버튼</a></p>""",
+                ),
+            )
+
+            document.selectFirst("""a[href="https://a.com"]""")!!.attr("style") shouldBe ""
+            document.selectFirst("""a[href="https://b.com"]""")!!.attr("style") shouldContain "background:#eb6d09"
+        }
+
         it("내용 뒤에 인용을 넣고 수신 거부 문구는 넣지 않는다") {
-            val html = sut.renderReply("<p>새 내용</p>", "<blockquote>이전 내용</blockquote>")
+            val html = sut.renderPersonal("<p>새 내용</p>", "<blockquote>이전 내용</blockquote>")
             val document = Jsoup.parse(html)
 
             document.selectFirst("[data-mail-content]")!!.text() shouldBe "새 내용"
@@ -103,9 +123,8 @@ class MailBodyRendererTest : DescribeSpec({
         }
 
         it("인용이 없으면 인용 칸을 넣지 않는다") {
-            val document = Jsoup.parse(sut.renderReply("<p>새 내용</p>", null))
+            val document = Jsoup.parse(sut.renderPersonal("<p>새 내용</p>"))
 
-            document.selectFirst("[data-mail-content]")!!.text() shouldBe "새 내용"
             document.select("[data-mail-quote]").size shouldBe 0
         }
     }

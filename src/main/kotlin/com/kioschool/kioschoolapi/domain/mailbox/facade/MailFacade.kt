@@ -75,7 +75,7 @@ class MailFacade(
         val to = recipientOf(workspace)
         val subject = body.normalizedSubject()
         val content = cleanContent(body.content)
-        val html = mailBodyRenderer.render(content)
+        val html = mailBodyRenderer.renderPersonal(content)
         val text = mailBodyRenderer.renderText(content)
         val sender = userService.getUser(username)
 
@@ -97,7 +97,7 @@ class MailFacade(
         val target = messages.lastOrNull { it.direction == MailDirection.INBOUND } ?: latest
         val content = cleanContent(body.content)
         val quote = mailQuoteBuilder.build(latest)
-        val html = mailBodyRenderer.renderReply(content, quote?.html)
+        val html = mailBodyRenderer.renderPersonal(content, quote?.html)
         val text = listOfNotNull(mailBodyRenderer.renderText(content), quote?.text).joinToString("\n\n")
         val sender = userService.getUser(username)
 
@@ -115,7 +115,15 @@ class MailFacade(
         return getThread(threadId)
     }
 
-    fun preview(body: MailPreviewRequestBody): MailPreviewDto = MailPreviewDto(mailBodyRenderer.render(body.content))
+    fun preview(body: MailPreviewRequestBody): MailPreviewDto = MailPreviewDto(mailBodyRenderer.renderPersonal(body.content))
+
+    fun previewReply(threadId: Long, body: MailPreviewRequestBody): MailPreviewDto {
+        val thread = mailThreadRepository.findByIdOrNull(threadId)
+            ?: throw CustomException(ErrorCode.MAIL_THREAD_NOT_FOUND)
+        val latest = mailMessageRepository.findAllByThreadOrderBySentAtAscIdAsc(thread).lastOrNull()
+        val quote = latest?.let { mailQuoteBuilder.build(it) }
+        return MailPreviewDto(mailBodyRenderer.renderPersonal(body.content, quote?.html))
+    }
 
     fun resolve(threadId: Long): MailThreadDetailDto = toDetailDto(mailThreadWriter.resolve(threadId))
 
