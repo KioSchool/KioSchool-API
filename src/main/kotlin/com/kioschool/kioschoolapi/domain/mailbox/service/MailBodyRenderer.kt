@@ -16,18 +16,21 @@ class MailBodyRenderer(
     private val templateEngine: SpringTemplateEngine,
     private val mailHtmlSanitizer: MailHtmlSanitizer,
 ) {
-    fun render(contentHtml: String, unsubscribeUrl: String? = null): String =
-        process(contentHtml, unsubscribeUrl, null)
-
-    fun renderReply(contentHtml: String, quoteHtml: String?): String = process(contentHtml, null, quoteHtml)
-
-    private fun process(contentHtml: String, unsubscribeUrl: String?, quoteHtml: String?): String {
+    fun render(contentHtml: String, unsubscribeUrl: String? = null): String {
         val context = Context().apply {
-            setVariable("contentHtml", styled(contentHtml))
+            setVariable("contentHtml", styled(contentHtml, STYLES))
             setVariable("unsubscribeUrl", unsubscribeUrl)
-            setVariable("quoteHtml", quoteHtml)
         }
         return templateEngine.process(TEMPLATE, context)
+    }
+
+    // 개별 메일과 답장은 사람이 쓴 메일처럼 보내므로 카드 틀과 링크 색을 쓰지 않는다
+    fun renderPersonal(contentHtml: String, quoteHtml: String? = null): String {
+        val context = Context().apply {
+            setVariable("contentHtml", styled(contentHtml, PERSONAL_STYLES))
+            setVariable("quoteHtml", quoteHtml)
+        }
+        return templateEngine.process(PERSONAL_TEMPLATE, context)
     }
 
     fun renderText(contentHtml: String): String =
@@ -36,9 +39,9 @@ class MailBodyRenderer(
             .joinToString("\n\n")
 
     // 메일 프로그램은 <style>을 지우는 곳이 많아 태그마다 스타일을 직접 넣는다
-    private fun styled(contentHtml: String): String {
+    private fun styled(contentHtml: String, styles: List<Pair<String, String>>): String {
         val document = mailHtmlSanitizer.parse(contentHtml)
-        STYLES.forEach { (selector, style) -> document.select(selector).attr("style", style) }
+        styles.forEach { (selector, style) -> document.select(selector).attr("style", style) }
         document.select("a[$BUTTON_ATTRIBUTE] + a[$BUTTON_ATTRIBUTE]").forEach { it.appendStyle("margin-left:8px;") }
         document.select("a[$BUTTON_ATTRIBUTE]").removeAttr(BUTTON_ATTRIBUTE)
         document.select("[$ALIGN_ATTRIBUTE]").forEach {
@@ -81,6 +84,8 @@ class MailBodyRenderer(
 
     companion object {
         private const val TEMPLATE = "mailMessage"
+        private const val PERSONAL_TEMPLATE = "mailPersonal"
+        private const val LINK_SELECTOR = "a"
         private const val HORIZONTAL_RULE = "---"
         private const val BUTTON_BASE =
             "display:inline-block;margin:4px 0;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none;"
@@ -93,10 +98,11 @@ class MailBodyRenderer(
             "ul, ol" to "margin:0 0 12px;padding-left:20px;",
             "li" to "margin:0 0 4px;",
             "li > p" to "margin:0;",
-            "a" to "color:#eb6d09;",
+            LINK_SELECTOR to "color:#eb6d09;",
             "hr" to "margin:20px 0;border:0;border-top:1px solid #e5e7eb;",
             "a[$BUTTON_ATTRIBUTE=$BUTTON_SOLID]" to "${BUTTON_BASE}background:#eb6d09;color:#ffffff;",
             "a[$BUTTON_ATTRIBUTE=$BUTTON_LINE]" to "${BUTTON_BASE}background:#ffffff;color:#eb6d09;border:1px solid #eb6d09;",
         )
+        private val PERSONAL_STYLES = STYLES.filterNot { (selector, _) -> selector == LINK_SELECTOR }
     }
 }
