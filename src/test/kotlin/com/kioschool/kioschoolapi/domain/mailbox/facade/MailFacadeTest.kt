@@ -15,6 +15,7 @@ import com.kioschool.kioschoolapi.domain.mailbox.repository.MailThreadRepository
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailBodyRenderer
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailHtmlSanitizer
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailPurgeService
+import com.kioschool.kioschoolapi.domain.mailbox.service.MailQuoteBuilder
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailSyncService
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailThreadWriter
 import com.kioschool.kioschoolapi.domain.user.service.UserService
@@ -53,7 +54,7 @@ class MailFacadeTest : DescribeSpec({
     val emailService = mockk<EmailService>()
 
     fun sut(guard: MailRecipientGuard = MailRecipientGuard("*")) = MailFacade(
-        threadRepository, messageRepository, attachmentRepository, writer, sync, purge, renderer, MailHtmlSanitizer(), client,
+        threadRepository, messageRepository, attachmentRepository, writer, sync, purge, renderer, MailHtmlSanitizer(), MailQuoteBuilder(MailHtmlSanitizer()), client,
         downloader, guard, workspaceService, userService, emailService,
     )
 
@@ -62,6 +63,7 @@ class MailFacadeTest : DescribeSpec({
     beforeTest {
         clearAllMocks()
         every { renderer.render(any(), any()) } returns "<html/>"
+        every { renderer.renderReply(any(), any()) } returns "<html/>"
         every { renderer.renderText(any()) } returns "내용"
         every { userService.getUser("admin") } returns SampleEntity.user
         every { emailService.getSchoolResolver() } returns SchoolResolver(emptyMap())
@@ -105,6 +107,21 @@ class MailFacadeTest : DescribeSpec({
             detail.messages.single().id shouldBe 1
             detail.schoolName shouldBe "test.com"
             verify(exactly = 1) { writer.markRead(1) }
+        }
+
+        it("보낸 메일에서 우리가 붙인 인용은 내려주지 않는다") {
+            val thread = SampleEntity.newMailThread(workspace = SampleEntity.workspace)
+            every { writer.markRead(1) } returns thread
+            every { messageRepository.findAllByThreadOrderBySentAtAscIdAsc(thread) } returns listOf(
+                message(1, MailDirection.OUTBOUND).apply {
+                    htmlBody = """<div data-mail-content>새 내용</div><div data-mail-quote>이전 내용</div>"""
+                },
+            )
+
+            val html = sut().getThread(1).messages.single().htmlBody.orEmpty()
+
+            html shouldContain "새 내용"
+            (html.contains("이전 내용")) shouldBe false
         }
     }
 
@@ -241,6 +258,21 @@ class MailFacadeTest : DescribeSpec({
             sut().reply("admin", 1, ReplyMailRequestBody(3, "내용"))
 
             verify(exactly = 1) { client.reply("t1", "second", "<html/>", "내용", any()) }
+        }
+
+        it("가장 최근 메일을 인용해 보낸다") {
+            every { messageRepository.findAllByThreadOrderBySentAtAscIdAsc(thread) } returns listOf(
+                message(1, MailDirection.INBOUND).apply { fromEmail = "a@test.com"; textBody = "받은 내용" },
+                message(2, MailDirection.OUTBOUND).apply { fromEmail = "b@test.com"; textBody = "우리 답장" },
+            )
+            every { client.reply(any(), any(), any(), any(), any()) } returns "new"
+
+            sut().reply("admin", 1, ReplyMailRequestBody(2, "내용"))
+
+            verify(exactly = 1) { renderer.renderReply(any(), match { it!!.contains("우리 답장") && !it.contains("받은 내용") }) }
+            verify(exactly = 1) {
+                client.reply("t1", "e1", "<html/>", match { it.startsWith("내용\n\n") && it.contains("> 우리 답장") }, any())
+            }
         }
 
         it("받은 메일이 없으면 마지막 보낸 메일에 이어서 보낸다") {

@@ -24,7 +24,12 @@ data class MailThreadDetailDto(
     val messages: List<MailMessageDto>,
 ) {
     companion object {
-        fun of(thread: MailThread, schoolName: String?, messages: List<MailMessage>) = MailThreadDetailDto(
+        fun of(
+            thread: MailThread,
+            schoolName: String?,
+            messages: List<MailMessage>,
+            visibleHtml: (MailMessage) -> String?,
+        ) = MailThreadDetailDto(
             id = thread.id,
             subject = thread.subject,
             status = thread.status(),
@@ -35,7 +40,7 @@ data class MailThreadDetailDto(
             counterpartEmail = thread.counterpartEmail,
             lastMessageAt = thread.lastMessageAt,
             schoolName = schoolName,
-            messages = messages.map { MailMessageDto.of(it) },
+            messages = messages.map { MailMessageDto.of(it, visibleHtml(it)) },
         )
     }
 }
@@ -57,14 +62,14 @@ data class MailMessageDto(
     val attachments: List<MailAttachmentDto>,
 ) {
     companion object {
-        fun of(message: MailMessage) = MailMessageDto(
+        fun of(message: MailMessage, htmlBody: String?) = MailMessageDto(
             id = message.id,
             direction = message.direction,
             fromName = message.fromName,
             fromEmail = message.fromEmail,
             sentByName = message.sentBy?.name,
             textBody = message.textBody,
-            htmlBody = message.htmlBody,
+            htmlBody = htmlBody,
             sentAt = message.sentAt,
             bounced = message.bouncedAt != null,
             attachments = message.attachments.map { MailAttachmentDto.of(it) },
