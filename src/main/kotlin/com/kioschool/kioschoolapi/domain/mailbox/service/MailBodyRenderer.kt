@@ -16,10 +16,16 @@ class MailBodyRenderer(
     private val templateEngine: SpringTemplateEngine,
     private val mailHtmlSanitizer: MailHtmlSanitizer,
 ) {
-    fun render(contentHtml: String, unsubscribeUrl: String? = null): String {
+    fun render(contentHtml: String, unsubscribeUrl: String? = null): String =
+        process(contentHtml, unsubscribeUrl, null)
+
+    fun renderReply(contentHtml: String, quoteHtml: String?): String = process(contentHtml, null, quoteHtml)
+
+    private fun process(contentHtml: String, unsubscribeUrl: String?, quoteHtml: String?): String {
         val context = Context().apply {
             setVariable("contentHtml", styled(contentHtml))
             setVariable("unsubscribeUrl", unsubscribeUrl)
+            setVariable("quoteHtml", quoteHtml)
         }
         return templateEngine.process(TEMPLATE, context)
     }

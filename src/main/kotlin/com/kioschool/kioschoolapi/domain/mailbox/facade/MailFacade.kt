@@ -16,6 +16,7 @@ import com.kioschool.kioschoolapi.domain.mailbox.repository.MailThreadRepository
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailBodyRenderer
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailHtmlSanitizer
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailPurgeService
+import com.kioschool.kioschoolapi.domain.mailbox.service.MailQuoteBuilder
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailSyncService
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailThreadWriter
 import com.kioschool.kioschoolapi.domain.user.entity.User
@@ -52,6 +53,7 @@ class MailFacade(
     private val mailPurgeService: MailPurgeService,
     private val mailBodyRenderer: MailBodyRenderer,
     private val mailHtmlSanitizer: MailHtmlSanitizer,
+    private val mailQuoteBuilder: MailQuoteBuilder,
     private val resendInboxClient: ResendInboxClient,
     private val resendAttachmentDownloader: ResendAttachmentDownloader,
     private val mailRecipientGuard: MailRecipientGuard,
@@ -94,8 +96,9 @@ class MailFacade(
         // 답장 상대는 이 메일함과 이미 주고받은 주소이므로 허용 도메인을 확인하지 않는다
         val target = messages.lastOrNull { it.direction == MailDirection.INBOUND } ?: latest
         val content = cleanContent(body.content)
-        val html = mailBodyRenderer.render(content)
-        val text = mailBodyRenderer.renderText(content)
+        val quote = mailQuoteBuilder.build(latest)
+        val html = mailBodyRenderer.renderReply(content, quote?.html)
+        val text = listOfNotNull(mailBodyRenderer.renderText(content), quote?.text).joinToString("\n\n")
         val sender = userService.getUser(username)
 
         val emailId = callResend {
@@ -194,7 +197,7 @@ class MailFacade(
     private fun toDetailDto(thread: MailThread): MailThreadDetailDto {
         val messages = mailMessageRepository.findAllByThreadOrderBySentAtAscIdAsc(thread)
         val schoolName = thread.workspace?.let { emailService.getSchoolResolver().schoolOf(it.owner.email) }
-        return MailThreadDetailDto.of(thread, schoolName, messages)
+        return MailThreadDetailDto.of(thread, schoolName, messages, mailQuoteBuilder::visibleHtml)
     }
 
     companion object {
