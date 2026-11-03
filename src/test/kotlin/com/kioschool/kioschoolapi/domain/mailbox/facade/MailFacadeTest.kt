@@ -63,7 +63,7 @@ class MailFacadeTest : DescribeSpec({
     beforeTest {
         clearAllMocks()
         every { renderer.render(any(), any()) } returns "<html/>"
-        every { renderer.renderReply(any(), any()) } returns "<html/>"
+        every { renderer.renderPersonal(any(), any()) } returns "<html/>"
         every { renderer.renderText(any()) } returns "내용"
         every { userService.getUser("admin") } returns SampleEntity.user
         every { emailService.getSchoolResolver() } returns SchoolResolver(emptyMap())
@@ -160,7 +160,7 @@ class MailFacadeTest : DescribeSpec({
 
             sut().sendNew("admin", SendMailRequestBody(9, "제목", "<p>안녕<script>x</script></p>"))
 
-            verify { renderer.render("<p>안녕</p>", any()) }
+            verify { renderer.renderPersonal("<p>안녕</p>", any()) }
             verify { renderer.renderText("<p>안녕</p>") }
         }
 
@@ -269,7 +269,7 @@ class MailFacadeTest : DescribeSpec({
 
             sut().reply("admin", 1, ReplyMailRequestBody(2, "내용"))
 
-            verify(exactly = 1) { renderer.renderReply(any(), match { it!!.contains("우리 답장") && !it.contains("받은 내용") }) }
+            verify(exactly = 1) { renderer.renderPersonal(any(), match { it!!.contains("우리 답장") && !it.contains("받은 내용") }) }
             verify(exactly = 1) {
                 client.reply("t1", "e1", "<html/>", match { it.startsWith("내용\n\n") && it.contains("> 우리 답장") }, any())
             }
@@ -316,6 +316,32 @@ class MailFacadeTest : DescribeSpec({
     describe("preview") {
         it("실제 메일과 같은 HTML을 돌려준다") {
             sut().preview(MailPreviewRequestBody("<p>내용</p>")).html shouldBe "<html/>"
+
+            verify(exactly = 1) { renderer.renderPersonal("<p>내용</p>", null) }
+        }
+    }
+
+    describe("previewReply") {
+        val thread = SampleEntity.newMailThread(resendThreadId = "t1", lastDirection = MailDirection.INBOUND)
+
+        it("가장 최근 메일을 인용한 HTML을 돌려주고 읽음으로 바꾸지 않는다") {
+            every { threadRepository.findByIdOrNull(1) } returns thread
+            every { messageRepository.findAllByThreadOrderBySentAtAscIdAsc(thread) } returns listOf(
+                message(1, MailDirection.INBOUND).apply { fromEmail = "a@test.com"; textBody = "받은 내용" },
+                message(2, MailDirection.OUTBOUND).apply { fromEmail = "b@test.com"; textBody = "우리 답장" },
+            )
+            every { renderer.renderPersonal("<p>내용</p>", match { it!!.contains("우리 답장") }) } returns "<quoted/>"
+
+            sut().previewReply(1, MailPreviewRequestBody("<p>내용</p>")).html shouldBe "<quoted/>"
+
+            verify(exactly = 0) { writer.markRead(any()) }
+        }
+
+        it("없는 대화면 MAIL_THREAD_NOT_FOUND") {
+            every { threadRepository.findByIdOrNull(404) } returns null
+
+            shouldThrow<CustomException> { sut().previewReply(404, MailPreviewRequestBody("<p>내용</p>")) }
+                .errorCode shouldBe ErrorCode.MAIL_THREAD_NOT_FOUND
         }
     }
 
