@@ -30,6 +30,13 @@ class MailHtmlSanitizer {
 
     fun parse(html: String): Document = parseBody(clean(html))
 
+    // 인용하는 메일은 밖에서 온 HTML일 수 있어, 글과 표 모양만 남기고 스크립트와 스타일은 지운다
+    fun parseQuote(html: String): Document {
+        val document = parseBody(Jsoup.clean(html, "", Safelist.relaxed(), mailOutputSettings()))
+        document.select("img:not([src])").remove()
+        return document
+    }
+
     fun isBlank(html: String): Boolean {
         val document = parse(html)
         return document.text().replace(' ', ' ').isBlank() && document.select("a[$BUTTON_ATTRIBUTE][href]").isEmpty()

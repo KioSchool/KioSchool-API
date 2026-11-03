@@ -92,6 +92,24 @@ class MailBodyRendererTest : DescribeSpec({
         }
     }
 
+    describe("renderReply") {
+        it("내용 뒤에 인용을 넣고 수신 거부 문구는 넣지 않는다") {
+            val html = sut.renderReply("<p>새 내용</p>", "<blockquote>이전 내용</blockquote>")
+            val document = Jsoup.parse(html)
+
+            document.selectFirst("[data-mail-content]")!!.text() shouldBe "새 내용"
+            document.selectFirst("[data-mail-quote] blockquote")!!.text() shouldBe "이전 내용"
+            html shouldNotContain "수신 거부"
+        }
+
+        it("인용이 없으면 인용 칸을 넣지 않는다") {
+            val document = Jsoup.parse(sut.renderReply("<p>새 내용</p>", null))
+
+            document.selectFirst("[data-mail-content]")!!.text() shouldBe "새 내용"
+            document.select("[data-mail-quote]").size shouldBe 0
+        }
+    }
+
     describe("renderText") {
         it("문단과 목록, 구분선을 줄바꿈으로 바꾼다") {
             sut.renderText("<h2>제목</h2><p>첫 줄<br>둘째 줄</p><ul><li><p>항목</p></li></ul><ol><li>하나</li></ol><hr><p>끝</p>") shouldBe
