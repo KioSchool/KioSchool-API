@@ -143,6 +143,8 @@ class UserService(
         user.name = WITHDRAWN_NAME
         user.email = withdrawnEmail(user)
         user.withdrawnAt = now
+        user.mailUnsubscribeToken = null
+        user.mailUnsubscribedAt = null
         return userRepository.save(user)
     }
 

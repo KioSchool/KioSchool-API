@@ -73,6 +73,7 @@ dependencies {
     implementation("org.liquibase:liquibase-core:4.24.0")
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0")
     implementation("io.github.openfeign.querydsl:querydsl-jpa:6.10.1")
+    implementation("org.jsoup:jsoup:1.17.2")
     implementation("com.squareup.okhttp3:okhttp:4.10.0")
     implementation("com.google.code.gson:gson:2.10.1")
     implementation("com.squareup.retrofit2:retrofit:2.9.0")

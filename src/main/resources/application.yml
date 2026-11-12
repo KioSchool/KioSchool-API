@@ -112,6 +112,22 @@ turnstile:
   # 비어 있으면 검증을 건너뛴다. 프론트 site key 배포 후에 설정해야 정상 접수가 막히지 않는다
   secret-key: "${TURNSTILE_SECRET_KEY:}"
 
+resend:
+  base-url: "${RESEND_BASE_URL:https://api.resend.com/}"
+  api-key: "${RESEND_API_KEY:${MAIL_PASSWORD:}}"
+  webhook-secret: "${RESEND_WEBHOOK_SECRET:}"
+
+mail:
+  # 메일함 주소가 아니라 ID여야 한다. 웹훅의 inbox_id와 비교한다
+  inbox-id: "${MAIL_INBOX_ID:}"
+  # 새 메일과 여러 곳 발송은 이 도메인으로만 보낸다(답장은 제외). 비어 있으면 모두 막고, prod만 *로 모두 허용한다
+  allowed-recipient-domains: "${MAIL_ALLOWED_RECIPIENT_DOMAINS:kio-school.com}"
+  retention-days: 365
+  # 수신 거부 메일 헤더(List-Unsubscribe)가 부르는 API 주소
+  api-base-url: "${MAIL_API_BASE_URL:http://localhost:8080/api}"
+  campaign:
+    daily-limit: 70
+
 inquiry:
   guard:
     email:

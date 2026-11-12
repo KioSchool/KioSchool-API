@@ -31,6 +31,9 @@ class StompHandler(
                 if (!isAccessible(token, accessor)) throw CustomException(ErrorCode.WORKSPACE_INACCESSIBLE)
             }
 
+            // 주문 채널 메시지는 서버만 보낸다. 클라이언트는 구독만 한다.
+            StompCommand.SEND -> throw CustomException(ErrorCode.ACCESS_DENIED)
+
             else -> {}
         }
 
@@ -42,7 +45,13 @@ class StompHandler(
 
     fun isAccessible(token: String, accessor: StompHeaderAccessor): Boolean {
         val username = jwtProvider.getLoginId(token)
-        val workspaceId = accessor.destination!!.filter { it.isDigit() }.toLong()
+        // 구독 경로는 /sub/order/{주점 id} 형식만 받는다.
+        val workspaceId = ORDER_DESTINATION.matchEntire(accessor.destination ?: return false)
+            ?.groupValues?.get(1)?.toLongOrNull() ?: return false
         return workspaceService.isAccessible(username, workspaceId)
+    }
+
+    companion object {
+        private val ORDER_DESTINATION = Regex("/sub/order/(\\d+)")
     }
 }

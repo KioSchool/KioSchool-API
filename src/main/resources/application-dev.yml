@@ -18,6 +18,8 @@ websocket:
   allowed-origins: "https://dev.kio-school.com"
 discord:
   webhook-url: "${DISCORD_WEBHOOK_URL}"
+mail:
+  api-base-url: "https://dev-api.kio-school.com"
 kioschool:
   base-url: "https://dev.kio-school.com"
   cookie:

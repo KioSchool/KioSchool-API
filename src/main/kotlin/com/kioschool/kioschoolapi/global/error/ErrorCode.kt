@@ -51,12 +51,14 @@ enum class ErrorCode(
     NO_ORDER_SESSION(HttpStatus.BAD_REQUEST, "테이블이 사용상태가 아니라 주문을 받을 수 없습니다. 주점 관리자에게 문의하세요."),
     ORDER_SESSION_ALREADY_EXIST(HttpStatus.BAD_REQUEST, "이미 테이블이 사용상태입니다."),
     TABLE_HASH_IS_NULL(HttpStatus.BAD_REQUEST, "주문 URL이 유효하지 않습니다. 주점 관리자에게 문의하세요."),
+    INVALID_ORDER_QUANTITY(HttpStatus.BAD_REQUEST, "주문 수량이 올바르지 않습니다."),
 
     // Account / Toss
     BANK_NOT_FOUND(HttpStatus.NOT_FOUND, "은행을 찾을 수 없습니다."),
     BANK_TOSS_NAME_NOT_FOUND(HttpStatus.BAD_REQUEST, "해당 은행은 토스 명칭이 등록되어 있지 않습니다."),
     ACCOUNT_HOLDER_NOT_FOUND(HttpStatus.NOT_FOUND, "계좌 정보를 조회할 수 없습니다. 은행과 계좌번호를 다시 확인해주세요. 은행 점검 시간일 수도 있습니다."),
     DIFFERENT_ACCOUNT_NUMBER(HttpStatus.BAD_REQUEST, "토스 계좌와 사용자 계좌가 일치하지 않습니다."),
+    INVALID_TOSS_ACCOUNT_URL(HttpStatus.BAD_REQUEST, "토스 송금 QR이 아닙니다. 토스 앱의 송금 QR 코드를 올려주세요."),
 
     // Donation
     DONATION_CLICK_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 후원 클릭입니다."),
@@ -65,6 +67,8 @@ enum class ErrorCode(
     DUPLICATE_EMAIL_DOMAIN(HttpStatus.BAD_REQUEST, "이미 등록된 도메인입니다."),
     NOT_VERIFIED_EMAIL_DOMAIN(HttpStatus.UNPROCESSABLE_ENTITY, "허용되지 않은 이메일 도메인입니다."),
     EMAIL_SEND_FAILURE(HttpStatus.INTERNAL_SERVER_ERROR, "이메일 전송에 실패했습니다."),
+    EMAIL_CODE_EXPIRED(HttpStatus.BAD_REQUEST, "인증 코드가 만료되었습니다. 인증 코드를 다시 받아 주세요."),
+    EMAIL_CODE_ATTEMPTS_EXCEEDED(HttpStatus.BAD_REQUEST, "인증 코드를 여러 번 틀렸습니다. 인증 코드를 다시 받아 주세요."),
 
     // Inquiry
     INQUIRY_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 문의입니다."),
@@ -74,6 +78,18 @@ enum class ErrorCode(
     INQUIRY_IMAGE_TOO_LARGE(HttpStatus.PAYLOAD_TOO_LARGE, "이미지 한 장의 크기는 5MB를 넘을 수 없습니다."),
     INQUIRY_IMAGE_TYPE_NOT_ALLOWED(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "JPEG, PNG, WebP 이미지만 첨부할 수 있습니다."),
     INQUIRY_RATE_LIMIT_EXCEEDED(HttpStatus.TOO_MANY_REQUESTS, "문의 접수 횟수 제한을 초과했습니다. 잠시 후 다시 시도해 주세요."),
+
+    // Mail
+    MAIL_THREAD_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 대화입니다."),
+    MAIL_THREAD_STALE(HttpStatus.CONFLICT, "그사이 새 메일이 왔습니다. 새 메일을 확인한 뒤 다시 보내 주세요."),
+    MAIL_RECIPIENT_UNAVAILABLE(HttpStatus.BAD_REQUEST, "메일을 받을 수 있는 주소가 없습니다."),
+    MAIL_DAILY_LIMIT_EXCEEDED(HttpStatus.TOO_MANY_REQUESTS, "오늘 보낼 수 있는 메일을 모두 보냈습니다. 내일 다시 시도해 주세요."),
+    MAIL_SEND_FAILURE(HttpStatus.BAD_GATEWAY, "메일 서비스와 연결하지 못했습니다. 잠시 후 다시 시도해 주세요."),
+    MAIL_ATTACHMENT_UNAVAILABLE(HttpStatus.GONE, "내려받을 수 없는 파일입니다."),
+    MAIL_CAMPAIGN_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 발송입니다."),
+    MAIL_AUDIENCE_CHANGED(HttpStatus.CONFLICT, "받을 주점이 바뀌었습니다. 다시 확인한 뒤 보내 주세요."),
+    MAIL_TEMPLATE_INVALID(HttpStatus.BAD_REQUEST, "메일 내용을 확인해 주세요. 쓸 수 없는 값이 있거나 링크가 올바르지 않습니다."),
+    MAIL_UNSUBSCRIBE_TOKEN_INVALID(HttpStatus.NOT_FOUND, "링크가 올바르지 않습니다."),
 
     // Security
     AUTHENTICATION_REQUIRED(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다."),

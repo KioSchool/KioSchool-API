@@ -475,6 +475,22 @@ class UserServiceTest : DescribeSpec({
             verify(exactly = 0) { repository.delete(any()) }
         }
 
+        it("clears the mail unsubscribe token and time") {
+            val user = withdrawingUser().apply {
+                mailUnsubscribeToken = "token"
+                mailUnsubscribedAt = LocalDateTime.of(2026, 10, 1, 0, 0)
+            }
+
+            every { acquisitionSurveyRepository.findByUser(user) } returns null
+            every { passwordEncoder.encode(any()) } returns "random-hash"
+            every { repository.save(user) } returns user
+
+            sut.withdraw(user)
+
+            user.mailUnsubscribeToken shouldBe null
+            user.mailUnsubscribedAt shouldBe null
+        }
+
         // 가입 아이디는 20자까지라 더 길면 새 가입자와 겹치지 않는다
         it("uses a login id longer than any id a new user can register") {
             val user = withdrawingUser()

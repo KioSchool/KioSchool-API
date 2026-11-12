@@ -49,6 +49,9 @@ class OrderFacade(
         val table = workspaceService.getWorkspaceTableByHash(workspace, tableHash)
         val currentOrderSession = table.orderSession ?: throw CustomException(ErrorCode.NO_ORDER_SESSION)
 
+        if (rawOrderProducts.any { it.quantity !in 1..MAX_ORDER_QUANTITY }) {
+            throw CustomException(ErrorCode.INVALID_ORDER_QUANTITY)
+        }
         productService.validateProducts(workspaceId, productIds)
 
         val orderNumber = orderService.getOrderNumber(workspaceId)
@@ -77,8 +80,11 @@ class OrderFacade(
             )
         }
 
+        val totalPrice = orderProducts.sumOf { it.productPrice.toLong() * it.quantity }
+        if (totalPrice > Int.MAX_VALUE) throw CustomException(ErrorCode.INVALID_ORDER_QUANTITY)
+
         order.orderProducts.addAll(orderProducts)
-        order.totalPrice = orderProducts.sumOf { it.totalPrice }
+        order.totalPrice = totalPrice.toInt()
         return OrderDto.of(
             orderService.saveOrderAndSendWebsocketMessage(
                 order,
@@ -420,5 +426,10 @@ class OrderFacade(
         val pageable = org.springframework.data.domain.PageRequest.of(page, size)
         return orderService.getAllOrdersGlobal(workspaceId, startDate, endDate, parsedStatuses, pageable)
             .map { SuperAdminOrderDto.of(it) }
+    }
+
+    companion object {
+        // 한 주문에서 상품 하나를 이보다 많이 담는 경우는 없다.
+        const val MAX_ORDER_QUANTITY = 999
     }
 }

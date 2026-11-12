@@ -1,5 +1,7 @@
 package com.kioschool.kioschoolapi.product.facade
 
+import com.kioschool.kioschoolapi.domain.product.dto.common.ProductCategoryDto
+import com.kioschool.kioschoolapi.domain.product.dto.common.ProductDto
 import com.kioschool.kioschoolapi.domain.product.entity.Product
 import com.kioschool.kioschoolapi.domain.product.entity.ProductCategory
 import com.kioschool.kioschoolapi.domain.product.event.ProductChangedEvent
@@ -79,14 +81,15 @@ class ProductFacadeTest : DescribeSpec({
         it("should return products") {
             val username = "username"
             val workspaceId = 1L
-            val products = listOf(SampleEntity.product)
+            val products = listOf(ProductDto.of(SampleEntity.product))
             every { workspaceService.checkAccessible(username, workspaceId) } just Runs
-            every { productService.getAllProductsByCondition(workspaceId) } returns products
+            every { productService.getCachedProducts(workspaceId) } returns products
 
-            sut.getProducts(username, workspaceId)
+            val result = sut.getProducts(username, workspaceId)
 
+            assertEquals(products, result)
             verify { workspaceService.checkAccessible(username, workspaceId) }
-            verify { productService.getAllProductsByCondition(workspaceId) }
+            verify { productService.getCachedProducts(workspaceId) }
         }
 
         it("should throw CustomException(WORKSPACE_INACCESSIBLE)") {
@@ -105,7 +108,7 @@ class ProductFacadeTest : DescribeSpec({
             assertEquals(ErrorCode.WORKSPACE_INACCESSIBLE, ex.errorCode)
 
             verify { workspaceService.checkAccessible(username, workspaceId) }
-            verify(exactly = 0) { productService.getAllProductsByCondition(workspaceId) }
+            verify(exactly = 0) { productService.getCachedProducts(workspaceId) }
         }
     }
 
@@ -130,12 +133,13 @@ class ProductFacadeTest : DescribeSpec({
     describe("getProductCategories by workspaceId") {
         it("should return product categories") {
             val workspaceId = 1L
-            val productCategories = listOf(SampleEntity.productCategory)
-            every { productService.getAllProductCategories(workspaceId) } returns productCategories
+            val productCategories = listOf(ProductCategoryDto.of(SampleEntity.productCategory))
+            every { productService.getCachedProductCategories(workspaceId) } returns productCategories
 
-            sut.getProductCategories(workspaceId)
+            val result = sut.getProductCategories(workspaceId)
 
-            verify { productService.getAllProductCategories(workspaceId) }
+            assertEquals(productCategories, result)
+            verify { productService.getCachedProductCategories(workspaceId) }
         }
     }
 
@@ -143,14 +147,15 @@ class ProductFacadeTest : DescribeSpec({
         it("should return product categories") {
             val username = "username"
             val workspaceId = 1L
-            val productCategories = listOf(SampleEntity.productCategory)
+            val productCategories = listOf(ProductCategoryDto.of(SampleEntity.productCategory))
             every { workspaceService.checkAccessible(username, workspaceId) } just Runs
-            every { productService.getAllProductCategories(workspaceId) } returns productCategories
+            every { productService.getCachedProductCategories(workspaceId) } returns productCategories
 
-            sut.getProductCategories(username, workspaceId)
+            val result = sut.getProductCategories(username, workspaceId)
 
+            assertEquals(productCategories, result)
             verify { workspaceService.checkAccessible(username, workspaceId) }
-            verify { productService.getAllProductCategories(workspaceId) }
+            verify { productService.getCachedProductCategories(workspaceId) }
         }
 
         it("should throw CustomException(WORKSPACE_INACCESSIBLE)") {
@@ -169,7 +174,7 @@ class ProductFacadeTest : DescribeSpec({
             assertEquals(ErrorCode.WORKSPACE_INACCESSIBLE, ex.errorCode)
 
             verify { workspaceService.checkAccessible(username, workspaceId) }
-            verify(exactly = 0) { productService.getAllProductCategories(workspaceId) }
+            verify(exactly = 0) { productService.getCachedProductCategories(workspaceId) }
         }
     }
 
