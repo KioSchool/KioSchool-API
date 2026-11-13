@@ -112,9 +112,8 @@ class AccountFacade(
 
     fun registerTossAccountAuto(username: String): UserDto {
         val user = userService.getUser(username)
-        val account = user.account ?: throw IllegalStateException("계좌가 등록되어 있지 않습니다.")
-        val tossName = account.bank.tossName ?: throw CustomException(ErrorCode.BANK_TOSS_NAME_NOT_FOUND)
-        account.tossAccountUrl = tossService.generateTossAccountUrl(tossName, account.accountNumber)
+        val account = user.account ?: throw CustomException(ErrorCode.ACCOUNT_NOT_REGISTERED)
+        account.tossAccountUrl = tossService.generateTossAccountUrl(account.bank.code, account.accountNumber)
         val saved = userService.saveUser(user)
         log.info(
             "[AUDIT] action=REGISTER_TOSS_ACCOUNT_AUTO loginId={} accountLast4={}",

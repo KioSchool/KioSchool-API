@@ -15,19 +15,14 @@ class TossServiceTest : DescribeSpec({
     val sut = TossService()
 
     describe("generateTossAccountUrl") {
-        it("should encode Korean bank name") {
-            val result = sut.generateTossAccountUrl("카카오뱅크", "3333280467267")
-            result shouldBe "supertoss://send?bank=%EC%B9%B4%EC%B9%B4%EC%98%A4%EB%B1%85%ED%81%AC&accountNo=3333280467267&origin=qr"
+        it("builds a bankCode link so every bank opens in Toss") {
+            sut.generateTossAccountUrl("090", "3333280467267") shouldBe
+                "supertoss://send?bankCode=090&accountNo=3333280467267&origin=qr"
         }
 
-        it("should encode mixed English and Korean bank name") {
-            val result = sut.generateTossAccountUrl("NH농협은행", "3521375642063")
-            result shouldBe "supertoss://send?bank=NH%EB%86%8D%ED%98%91%EC%9D%80%ED%96%89&accountNo=3521375642063&origin=qr"
-        }
-
-        it("should encode bank name starting with English prefix") {
-            val result = sut.generateTossAccountUrl("KB국민은행", "81870200066427")
-            result shouldBe "supertoss://send?bank=KB%EA%B5%AD%EB%AF%BC%EC%9D%80%ED%96%89&accountNo=81870200066427&origin=qr"
+        it("keeps digits only in the account number") {
+            sut.generateTossAccountUrl("088", "110-473 870869") shouldBe
+                "supertoss://send?bankCode=088&accountNo=110473870869&origin=qr"
         }
     }
 
@@ -47,10 +42,8 @@ class TossServiceTest : DescribeSpec({
             sut.extractBankNameFromUrl(url) shouldBe null
         }
 
-        it("generateTossAccountUrl and extractBankNameFromUrl should be inverse operations") {
-            val tossName = "IBK기업은행"
-            val url = sut.generateTossAccountUrl(tossName, "12345")
-            sut.extractBankNameFromUrl(url) shouldBe tossName
+        it("returns null for a bankCode link") {
+            sut.extractBankNameFromUrl("supertoss://send?bankCode=003&accountNo=12345&origin=qr") shouldBe null
         }
     }
 
