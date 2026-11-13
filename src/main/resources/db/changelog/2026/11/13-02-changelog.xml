@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS"
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+  <!-- 카카오페이 송금 링크. NULL = 꺼짐. 기존 계좌는 채우지 않고 꺼진 채로 둔다(운영진이 켜야 보임). -->
+  <changeSet author="ji-inpark" id="account-kakaopay-url-1">
+    <addColumn schemaName="public" tableName="account">
+      <column name="kakao_pay_account_url" type="VARCHAR(255)"/>
+    </addColumn>
+  </changeSet>
+
+</databaseChangeLog>

@@ -4,4 +4,5 @@ package com.kioschool.kioschoolapi.global.common.enums
 enum class PaymentMethod {
     TOSS,
     BANK_TRANSFER,
+    KAKAOPAY,
 }
