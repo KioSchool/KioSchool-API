@@ -1,5 +1,6 @@
 package com.kioschool.kioschoolapi.domain.mailbox.service
 
+import com.kioschool.kioschoolapi.domain.mailbox.signature.dto.MailSignatureBlock
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -156,6 +157,53 @@ class MailBodyRendererTest : DescribeSpec({
 
         it("HTML을 문자 그대로 적지 않는다") {
             sut.renderText("<p>a &amp; b &lt;c&gt;</p>") shouldBe "a & b <c>"
+        }
+    }
+
+    describe("빈 줄") {
+        it("편집기에서 엔터로 만든 빈 문단을 한 줄로 남긴다") {
+            val doc = Jsoup.parse(sut.renderPersonal("<p>안녕하세요</p><p></p><p> </p><p>본문</p>"))
+            val paragraphs = doc.select("[data-mail-content] > p")
+
+            paragraphs.size shouldBe 4
+            paragraphs[1].html() shouldBe "<br>"
+            paragraphs[2].html() shouldBe "<br>"
+            paragraphs[3].text() shouldBe "본문"
+        }
+
+        it("버튼만 있는 문단은 건드리지 않는다") {
+            val html = sut.render("""<p><a data-mail-button="solid" href="https://x.com">설문</a></p>""")
+
+            html shouldNotContain "<br>"
+        }
+    }
+
+    describe("서명 자리") {
+        val signature = MailSignatureBlock("""<div style="color:#888888;"><a href="mailto:a@b.com" style="color:#888888;">a@b.com</a></div>""", "--\n서명")
+
+        it("첫 번째 서명 자리에 서명을 넣고 나머지 자리는 지운다") {
+            val html = sut.renderPersonal("""<p>안녕</p><div data-mail-signature=""></div><div data-mail-signature=""></div>""", signature = signature)
+
+            html.split("mailto:a@b.com\"").size shouldBe 2
+            html shouldNotContain "data-mail-signature"
+        }
+
+        it("본문 링크 색이 서명 링크 스타일을 덮지 않는다") {
+            val doc = Jsoup.parse(sut.render("""<p>안녕</p><div data-mail-signature=""></div>""", signature = signature))
+
+            doc.selectFirst("a[href=mailto:a@b.com]")!!.attr("style") shouldBe "color:#888888;"
+        }
+
+        it("서명이 없으면 자리만 지운다") {
+            val html = sut.renderPersonal("""<p>안녕</p><div data-mail-signature=""></div>""")
+
+            html shouldNotContain "data-mail-signature"
+            html shouldNotContain "mailto:"
+        }
+
+        it("글 버전에는 서명 글을 한 번만 넣는다") {
+            sut.renderText("""<p>안녕</p><div data-mail-signature=""></div><div data-mail-signature=""></div>""", signature) shouldBe
+                "안녕\n\n--\n서명"
         }
     }
 })

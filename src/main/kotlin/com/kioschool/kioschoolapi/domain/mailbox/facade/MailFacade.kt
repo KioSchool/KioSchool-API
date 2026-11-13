@@ -19,6 +19,7 @@ import com.kioschool.kioschoolapi.domain.mailbox.service.MailPurgeService
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailQuoteBuilder
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailSyncService
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailThreadWriter
+import com.kioschool.kioschoolapi.domain.mailbox.signature.service.MailSignatureService
 import com.kioschool.kioschoolapi.domain.user.entity.User
 import com.kioschool.kioschoolapi.domain.user.service.UserService
 import com.kioschool.kioschoolapi.domain.workspace.entity.Workspace
@@ -60,6 +61,7 @@ class MailFacade(
     private val workspaceService: WorkspaceService,
     private val userService: UserService,
     private val emailService: EmailService,
+    private val mailSignatureService: MailSignatureService,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -75,9 +77,10 @@ class MailFacade(
         val to = recipientOf(workspace)
         val subject = body.normalizedSubject()
         val content = cleanContent(body.content)
-        val html = mailBodyRenderer.renderPersonal(content)
-        val text = mailBodyRenderer.renderText(content)
         val sender = userService.getUser(username)
+        val signature = mailSignatureService.personalBlock(sender)
+        val html = mailBodyRenderer.renderPersonal(content, signature = signature)
+        val text = mailBodyRenderer.renderText(content, signature)
 
         val emailId = callResend {
             resendInboxClient.sendNew(to, subject, html, text, emptyMap(), "mail-new-${body.requestId ?: UUID.randomUUID()}")
@@ -96,10 +99,11 @@ class MailFacade(
         // 답장 상대는 이 메일함과 이미 주고받은 주소이므로 허용 도메인을 확인하지 않는다
         val target = messages.lastOrNull { it.direction == MailDirection.INBOUND } ?: latest
         val content = cleanContent(body.content)
-        val quote = mailQuoteBuilder.build(latest)
-        val html = mailBodyRenderer.renderPersonal(content, quote?.html)
-        val text = listOfNotNull(mailBodyRenderer.renderText(content), quote?.text).joinToString("\n\n")
         val sender = userService.getUser(username)
+        val signature = mailSignatureService.personalBlock(sender)
+        val quote = mailQuoteBuilder.build(latest)
+        val html = mailBodyRenderer.renderPersonal(content, quote?.html, signature)
+        val text = listOfNotNull(mailBodyRenderer.renderText(content, signature), quote?.text).joinToString("\n\n")
 
         val emailId = callResend {
             resendInboxClient.reply(
@@ -115,14 +119,18 @@ class MailFacade(
         return getThread(threadId)
     }
 
-    fun preview(body: MailPreviewRequestBody): MailPreviewDto = MailPreviewDto(mailBodyRenderer.renderPersonal(body.content))
+    fun preview(username: String, body: MailPreviewRequestBody): MailPreviewDto {
+        val signature = mailSignatureService.personalBlock(userService.getUser(username))
+        return MailPreviewDto(mailBodyRenderer.renderPersonal(body.content, signature = signature))
+    }
 
-    fun previewReply(threadId: Long, body: MailPreviewRequestBody): MailPreviewDto {
+    fun previewReply(username: String, threadId: Long, body: MailPreviewRequestBody): MailPreviewDto {
         val thread = mailThreadRepository.findByIdOrNull(threadId)
             ?: throw CustomException(ErrorCode.MAIL_THREAD_NOT_FOUND)
         val latest = mailMessageRepository.findAllByThreadOrderBySentAtAscIdAsc(thread).lastOrNull()
         val quote = latest?.let { mailQuoteBuilder.build(it) }
-        return MailPreviewDto(mailBodyRenderer.renderPersonal(body.content, quote?.html))
+        val signature = mailSignatureService.personalBlock(userService.getUser(username))
+        return MailPreviewDto(mailBodyRenderer.renderPersonal(body.content, quote?.html, signature))
     }
 
     fun resolve(threadId: Long): MailThreadDetailDto = toDetailDto(mailThreadWriter.resolve(threadId))

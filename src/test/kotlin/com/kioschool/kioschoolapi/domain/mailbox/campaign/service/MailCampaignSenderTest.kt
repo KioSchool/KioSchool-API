@@ -10,6 +10,7 @@ import com.kioschool.kioschoolapi.domain.mailbox.service.MailBodyRenderer
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailHtmlSanitizer
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailSyncService
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailUnsubscribeService
+import com.kioschool.kioschoolapi.domain.mailbox.signature.dto.MailSignatureBlock
 import com.kioschool.kioschoolapi.domain.user.entity.User
 import com.kioschool.kioschoolapi.domain.workspace.entity.Workspace
 import com.kioschool.kioschoolapi.domain.workspace.entity.WorkspaceSetting
@@ -89,6 +90,8 @@ class MailCampaignSenderTest : DescribeSpec({
         campaign.status = MailCampaignStatus.SENDING
         campaign.purgeAt = noon.plusDays(1)
         setId(campaign, 1)
+        campaign.bodyTemplate = "<p>{사장 이름}님 안녕하세요</p>"
+        campaign.signatureJson = null
         every { recipientRepository.findNextPendingForUpdate() } answers {
             recipients.firstOrNull { it.status == MailRecipientStatus.PENDING && it.campaign.status == MailCampaignStatus.SENDING }
         }
@@ -108,6 +111,21 @@ class MailCampaignSenderTest : DescribeSpec({
     }
 
     describe("sendDue") {
+        it("발송을 만들 때 저장한 서명을 서명 자리에 넣는다") {
+            campaign.bodyTemplate = """<p>{사장 이름}님 안녕하세요</p><div data-mail-signature=""></div>"""
+            campaign.signatureJson = mapper.writeValueAsString(MailSignatureBlock("<div>팀 서명</div>", "--\n팀 서명"))
+            addRecipient(1)
+            val html = slot<String>()
+            val text = slot<String>()
+            every { client.sendNew(any(), any(), capture(html), capture(text), any(), any()) } returns "email-id"
+
+            sut.sendDue(noon)
+
+            html.captured shouldContain "<div>팀 서명</div>"
+            html.captured shouldNotContain "data-mail-signature"
+            text.captured shouldContain "팀 서명"
+        }
+
         it("하루 한도 70곳까지만 보내고 나머지는 PENDING으로 둔다") {
             (1L..75L).forEach { addRecipient(it) }
 

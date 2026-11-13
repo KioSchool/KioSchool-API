@@ -18,6 +18,8 @@ import com.kioschool.kioschoolapi.domain.mailbox.service.MailPurgeService
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailQuoteBuilder
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailSyncService
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailThreadWriter
+import com.kioschool.kioschoolapi.domain.mailbox.signature.dto.MailSignatureBlock
+import com.kioschool.kioschoolapi.domain.mailbox.signature.service.MailSignatureService
 import com.kioschool.kioschoolapi.domain.user.service.UserService
 import com.kioschool.kioschoolapi.domain.workspace.service.WorkspaceService
 import com.kioschool.kioschoolapi.factory.SampleEntity
@@ -52,10 +54,11 @@ class MailFacadeTest : DescribeSpec({
     val workspaceService = mockk<WorkspaceService>()
     val userService = mockk<UserService>()
     val emailService = mockk<EmailService>()
+    val signatureService = mockk<MailSignatureService>()
 
     fun sut(guard: MailRecipientGuard = MailRecipientGuard("*")) = MailFacade(
         threadRepository, messageRepository, attachmentRepository, writer, sync, purge, renderer, MailHtmlSanitizer(), MailQuoteBuilder(MailHtmlSanitizer()), client,
-        downloader, guard, workspaceService, userService, emailService,
+        downloader, guard, workspaceService, userService, emailService, signatureService,
     )
 
     val at = LocalDateTime.of(2026, 11, 1, 12, 0)
@@ -63,8 +66,9 @@ class MailFacadeTest : DescribeSpec({
     beforeTest {
         clearAllMocks()
         every { renderer.render(any(), any()) } returns "<html/>"
-        every { renderer.renderPersonal(any(), any()) } returns "<html/>"
-        every { renderer.renderText(any()) } returns "내용"
+        every { renderer.renderPersonal(any(), any(), any()) } returns "<html/>"
+        every { renderer.renderText(any(), any()) } returns "내용"
+        every { signatureService.personalBlock(any()) } returns null
         every { userService.getUser("admin") } returns SampleEntity.user
         every { emailService.getSchoolResolver() } returns SchoolResolver(emptyMap())
     }
@@ -160,8 +164,20 @@ class MailFacadeTest : DescribeSpec({
 
             sut().sendNew("admin", SendMailRequestBody(9, "제목", "<p>안녕<script>x</script></p>"))
 
-            verify { renderer.renderPersonal("<p>안녕</p>", any()) }
-            verify { renderer.renderText("<p>안녕</p>") }
+            verify { renderer.renderPersonal("<p>안녕</p>", any(), any()) }
+            verify { renderer.renderText("<p>안녕</p>", any()) }
+        }
+
+        it("보내는 사람의 서명을 메일과 글자 본문에 넣는다") {
+            val signature = MailSignatureBlock("<div>서명</div>", "--\n서명")
+            every { workspaceService.getWorkspace(9) } returns owner()
+            every { client.sendNew(any(), any(), any(), any(), any(), any()) } returns "email"
+            every { signatureService.personalBlock(SampleEntity.user) } returns signature
+
+            sut().sendNew("admin", SendMailRequestBody(9, "제목", "<p>안녕</p><div data-mail-signature></div>"))
+
+            verify { renderer.renderPersonal(any(), null, signature) }
+            verify { renderer.renderText(any(), signature) }
         }
 
         it("같은 요청 번호로 다시 보내면 같은 Idempotency-Key를 쓴다") {
@@ -269,7 +285,7 @@ class MailFacadeTest : DescribeSpec({
 
             sut().reply("admin", 1, ReplyMailRequestBody(2, "내용"))
 
-            verify(exactly = 1) { renderer.renderPersonal(any(), match { it!!.contains("우리 답장") && !it.contains("받은 내용") }) }
+            verify(exactly = 1) { renderer.renderPersonal(any(), match { it!!.contains("우리 답장") && !it.contains("받은 내용") }, any()) }
             verify(exactly = 1) {
                 client.reply("t1", "e1", "<html/>", match { it.startsWith("내용\n\n") && it.contains("> 우리 답장") }, any())
             }
@@ -315,9 +331,9 @@ class MailFacadeTest : DescribeSpec({
 
     describe("preview") {
         it("실제 메일과 같은 HTML을 돌려준다") {
-            sut().preview(MailPreviewRequestBody("<p>내용</p>")).html shouldBe "<html/>"
+            sut().preview("admin", MailPreviewRequestBody("<p>내용</p>")).html shouldBe "<html/>"
 
-            verify(exactly = 1) { renderer.renderPersonal("<p>내용</p>", null) }
+            verify(exactly = 1) { renderer.renderPersonal("<p>내용</p>", null, null) }
         }
     }
 
@@ -330,9 +346,9 @@ class MailFacadeTest : DescribeSpec({
                 message(1, MailDirection.INBOUND).apply { fromEmail = "a@test.com"; textBody = "받은 내용" },
                 message(2, MailDirection.OUTBOUND).apply { fromEmail = "b@test.com"; textBody = "우리 답장" },
             )
-            every { renderer.renderPersonal("<p>내용</p>", match { it!!.contains("우리 답장") }) } returns "<quoted/>"
+            every { renderer.renderPersonal("<p>내용</p>", match { it!!.contains("우리 답장") }, any()) } returns "<quoted/>"
 
-            sut().previewReply(1, MailPreviewRequestBody("<p>내용</p>")).html shouldBe "<quoted/>"
+            sut().previewReply("admin", 1, MailPreviewRequestBody("<p>내용</p>")).html shouldBe "<quoted/>"
 
             verify(exactly = 0) { writer.markRead(any()) }
         }
@@ -340,7 +356,7 @@ class MailFacadeTest : DescribeSpec({
         it("없는 대화면 MAIL_THREAD_NOT_FOUND") {
             every { threadRepository.findByIdOrNull(404) } returns null
 
-            shouldThrow<CustomException> { sut().previewReply(404, MailPreviewRequestBody("<p>내용</p>")) }
+            shouldThrow<CustomException> { sut().previewReply("admin", 404, MailPreviewRequestBody("<p>내용</p>")) }
                 .errorCode shouldBe ErrorCode.MAIL_THREAD_NOT_FOUND
         }
     }

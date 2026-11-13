@@ -23,6 +23,8 @@ import com.kioschool.kioschoolapi.domain.mailbox.campaign.service.MailTemplateRe
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailBodyRenderer
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailHtmlSanitizer
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailUnsubscribeService
+import com.kioschool.kioschoolapi.domain.mailbox.signature.dto.MailSignatureBlock
+import com.kioschool.kioschoolapi.domain.mailbox.signature.service.MailSignatureService
 import com.kioschool.kioschoolapi.domain.user.entity.User
 import com.kioschool.kioschoolapi.domain.user.service.UserService
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepository
@@ -51,6 +53,7 @@ class MailCampaignFacadeTest : DescribeSpec({
     val userService = mockk<UserService>()
     val unsubscribe = mockk<MailUnsubscribeService>()
     val client = mockk<ResendInboxClient>()
+    val signatureService = mockk<MailSignatureService>()
     val bodyRenderer = mockk<MailBodyRenderer>()
     val sanitizer = MailHtmlSanitizer()
     val renderer = MailTemplateRenderer(sanitizer)
@@ -58,7 +61,7 @@ class MailCampaignFacadeTest : DescribeSpec({
     val service = MailCampaignService(campaignRepository, recipientRepository, workspaceRepository, mapper, sanitizer, 365)
     val composer = MailCampaignComposer(renderer, bodyRenderer, "https://kio-school.com", "https://api.kio-school.com")
 
-    fun sut() = MailCampaignFacade(service, audience, renderer, composer, sender, userService, unsubscribe, client, 70)
+    fun sut() = MailCampaignFacade(service, audience, renderer, composer, sender, userService, unsubscribe, client, 70, signatureService)
 
     val filter = MailAudienceFilter(LocalDate.of(2026, 9, 1), LocalDate.of(2026, 10, 31), setOf(1L, 2L))
     val body = MailCampaignRequestBody(filter, "{주점 이름} 안내", "<p>{사장 이름}님</p>", 2, "req-1")
@@ -82,12 +85,23 @@ class MailCampaignFacadeTest : DescribeSpec({
         every { recipientRepository.saveAll(any<List<MailCampaignRecipient>>()) } answers { firstArg() }
         every { recipientRepository.countByCampaignGroupByStatus(any()) } returns emptyList()
         every { workspaceRepository.getReferenceById(any()) } returns SampleEntity.workspace
-        every { bodyRenderer.render(any(), any()) } returns "<html/>"
-        every { bodyRenderer.renderText(any()) } returns "내용"
+        every { bodyRenderer.render(any(), any(), any()) } returns "<html/>"
+        every { bodyRenderer.renderText(any(), any()) } returns "내용"
+        every { signatureService.teamBlock() } returns null
         every { unsubscribe.tokenFor(any()) } returns "tok"
     }
 
     describe("start") {
+        it("시작할 때 팀 공용 서명을 발송에 함께 저장한다") {
+            every { signatureService.teamBlock() } returns MailSignatureBlock("<div>팀 서명</div>", "--\n팀 서명")
+            val saved = slot<MailCampaign>()
+            every { campaignRepository.save(capture(saved)) } answers { firstArg() }
+
+            sut().start("admin", body)
+
+            saved.captured.signatureJson.orEmpty() shouldContain "팀 서명"
+        }
+
         it("시작 시 대상을 수신자 행으로 고정하고 [AUDIT] 로그를 남긴다") {
             val saved = slot<List<MailCampaignRecipient>>()
             every { recipientRepository.saveAll(capture(saved)) } answers { firstArg() }
@@ -194,7 +208,7 @@ class MailCampaignFacadeTest : DescribeSpec({
             preview.workspaceName shouldBe "달빛"
             preview.ownerEmail shouldBe "a@konkuk.ac.kr"
             preview.html shouldBe "<html/>"
-            verify { bodyRenderer.render("<p>김사장님</p>", any()) }
+            verify { bodyRenderer.render("<p>김사장님</p>", any(), any()) }
         }
 
         it("받을 주점이 없으면 값 자리를 그대로 보여준다") {
@@ -204,7 +218,7 @@ class MailCampaignFacadeTest : DescribeSpec({
 
             preview.subject shouldBe "{주점 이름} 안내"
             preview.workspaceName shouldBe null
-            verify { bodyRenderer.render("<p>{사장 이름}님</p>", any()) }
+            verify { bodyRenderer.render("<p>{사장 이름}님</p>", any(), any()) }
         }
 
         it("모르는 값이 있으면 MAIL_TEMPLATE_INVALID") {
