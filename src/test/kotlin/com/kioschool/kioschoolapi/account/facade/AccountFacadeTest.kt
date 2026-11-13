@@ -46,6 +46,10 @@ class AccountFacadeTest : DescribeSpec({
         mockkObject(userRepository)
         mockkObject(portoneService)
         mockkObject(tossService)
+        // 링크 문자열은 진짜 TossService로 만든다. 특정 값을 보는 테스트는 따로 덮어쓴다.
+        every { tossService.generateTossAccountUrl(any(), any()) } answers {
+            TossService().generateTossAccountUrl(firstArg(), secondArg())
+        }
     }
 
     afterTest {
@@ -368,11 +372,11 @@ class AccountFacadeTest : DescribeSpec({
         }
     }
 
-    describe("registerAccount · 계좌번호와 카카오페이") {
+    describe("registerAccount · 계좌번호와 송금 링크") {
         val kookmin = Bank(name = "KB국민은행", code = "004")
         val shinhan = Bank(name = "신한은행", code = "088")
 
-        it("계좌번호의 숫자만으로 조회하고 저장한다") {
+        it("첫 계좌는 숫자만 저장하고 토스·카카오페이를 둘 다 켠다") {
             val newAccount = Account(bank = shinhan, accountNumber = "11012345678", accountHolder = "김운영")
             val user = SampleEntity.user.apply { account = null }
 
@@ -382,13 +386,41 @@ class AccountFacadeTest : DescribeSpec({
             every { accountService.createAccount(shinhan, "11012345678", "김운영") } returns newAccount
             every { userService.saveUser(any()) } answers { firstArg() }
 
-            sut.registerAccount("username", 2L, "110-123 45678")
+            val result = sut.registerAccount("username", 2L, "110-123 45678")
 
             verify { portoneService.getAccountHolder("088", "11012345678") }
             verify { accountService.createAccount(shinhan, "11012345678", "김운영") }
+            result.account?.tossAccountUrl shouldBe "supertoss://send?bankCode=088&accountNo=11012345678&origin=qr"
+            result.account?.kakaoPayAccountUrl shouldBe
+                "https://link.kakaopay.com/t/money/to/bank?bank_code=088&bank_account_number=11012345678"
         }
 
-        it("카카오페이를 켜 둔 운영진이 계좌를 바꾸면 새 계좌로 링크를 다시 만든다") {
+        it("둘 다 켜 둔 운영진이 계좌를 바꾸면 둘 다 새 계좌로 다시 연결한다") {
+            val user = SampleEntity.user.apply {
+                account = Account(
+                    bank = kookmin,
+                    accountNumber = "12345678901234",
+                    accountHolder = "김운영",
+                    tossAccountUrl = "supertoss://send?bank=%EA%B5%AD%EB%AF%BC%EC%9D%80%ED%96%89&accountNo=12345678901234&origin=qr",
+                    kakaoPayAccountUrl = "https://link.kakaopay.com/t/money/to/bank?bank_code=004&bank_account_number=12345678901234"
+                )
+            }
+            val newAccount = Account(bank = shinhan, accountNumber = "11012345678", accountHolder = "김운영")
+
+            every { bankService.getBank(2L) } returns shinhan
+            every { portoneService.getAccountHolder("088", "11012345678") } returns "김운영"
+            every { userService.getUser("username") } returns user
+            every { accountService.createAccount(shinhan, "11012345678", "김운영") } returns newAccount
+            every { userService.saveUser(any()) } answers { firstArg() }
+
+            val result = sut.registerAccount("username", 2L, "11012345678")
+
+            result.account?.tossAccountUrl shouldBe "supertoss://send?bankCode=088&accountNo=11012345678&origin=qr"
+            result.account?.kakaoPayAccountUrl shouldBe
+                "https://link.kakaopay.com/t/money/to/bank?bank_code=088&bank_account_number=11012345678"
+        }
+
+        it("토스를 꺼 둔 운영진이 계좌를 바꾸면 토스는 꺼진 채로, 카카오페이만 새 계좌로 다시 만든다") {
             val user = SampleEntity.user.apply {
                 account = Account(
                     bank = kookmin,
@@ -409,9 +441,10 @@ class AccountFacadeTest : DescribeSpec({
 
             result.account?.kakaoPayAccountUrl shouldBe
                 "https://link.kakaopay.com/t/money/to/bank?bank_code=088&bank_account_number=11012345678"
+            result.account?.tossAccountUrl shouldBe null
         }
 
-        it("카카오페이를 켜지 않은 운영진은 계좌를 바꿔도 꺼진 채로 둔다") {
+        it("둘 다 꺼 둔 운영진은 계좌를 바꿔도 둘 다 꺼진 채로 둔다") {
             val user = SampleEntity.user.apply {
                 account = Account(bank = kookmin, accountNumber = "12345678901234", accountHolder = "김운영")
             }
@@ -426,6 +459,7 @@ class AccountFacadeTest : DescribeSpec({
             val result = sut.registerAccount("username", 2L, "11012345678")
 
             result.account?.kakaoPayAccountUrl shouldBe null
+            result.account?.tossAccountUrl shouldBe null
         }
     }
 

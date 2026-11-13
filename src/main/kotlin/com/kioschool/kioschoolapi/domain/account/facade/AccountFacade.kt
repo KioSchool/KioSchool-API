@@ -71,20 +71,27 @@ class AccountFacade(
         val accountHolder = portoneService.getAccountHolder(bank.code, digits)
 
         val user = userService.getUser(username)
-        // 계좌를 바꾸면 계좌 행이 새로 생긴다. 카카오페이를 켜 둔 운영진은 새 계좌로 링크를 다시 만들어 켜 둔 채로 둔다.
-        val kakaoPayWasOn = user.account?.kakaoPayAccountUrl != null
+        // 처음 등록하면 토스·카카오페이를 둘 다 켠다. 계좌를 바꾸면 계좌 행이 새로 생기므로,
+        // 이전 계좌에서 켜 둔 방법만 새 계좌로 다시 만들고 꺼 둔 방법은 꺼진 채로 둔다.
+        val previous = user.account
+        val tossOn = previous == null || previous.tossAccountUrl != null
+        val kakaoPayOn = previous == null || previous.kakaoPayAccountUrl != null
         val account = accountService.createAccount(bank, digits, accountHolder)
-        if (kakaoPayWasOn) {
+        if (tossOn) {
+            account.tossAccountUrl = tossService.generateTossAccountUrl(bank.code, digits)
+        }
+        if (kakaoPayOn) {
             account.kakaoPayAccountUrl = kakaoPayService.generateKakaoPayAccountUrl(bank.code, digits)
         }
         user.account = account
         val saved = userService.saveUser(user)
         log.info(
-            "[AUDIT] action=REGISTER_ACCOUNT loginId={} bankId={} accountLast4={} kakaoPay={}",
+            "[AUDIT] action=REGISTER_ACCOUNT loginId={} bankId={} accountLast4={} toss={} kakaoPay={}",
             username,
             bankId,
             digits.takeLast(4),
-            kakaoPayWasOn
+            tossOn,
+            kakaoPayOn
         )
         return UserDto.of(saved)
     }
