@@ -5,15 +5,16 @@ import com.kioschool.kioschoolapi.global.error.ErrorCode
 import com.kioschool.kioschoolapi.global.error.exception.CustomException
 import org.springframework.stereotype.Service
 import java.net.URLDecoder
-import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
 @Service
 class TossService {
 
-    fun generateTossAccountUrl(tossName: String, accountNumber: String): String {
-        val encodedBankName = URLEncoder.encode(tossName, StandardCharsets.UTF_8)
-        return "supertoss://send?bank=$encodedBankName&accountNo=$accountNumber&origin=qr"
+    // 은행 이름(bank=) 대신 금융결제원 은행 코드(bankCode=)를 넘기면 토스 명칭이 없는 은행도 열린다.
+    // 손님 화면이 뒤에 &amount=를 붙여 연다.
+    fun generateTossAccountUrl(bankCode: String, accountNumber: String): String {
+        val digits = accountNumber.filter { it.isDigit() }
+        return "${TOSS_SEND_URL_PREFIX}bankCode=$bankCode&accountNo=$digits&origin=qr"
     }
 
     fun removeAmountQueryFromAccountUrl(accountUrl: String): String {

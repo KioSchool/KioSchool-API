@@ -22,7 +22,10 @@ class AdminAccountController(
         return accountFacade.getAllBanks()
     }
 
-    @Operation(summary = "계좌 등록", description = "계좌를 등록합니다. 예금주명은 은행 조회값을 사용합니다.")
+    @Operation(
+        summary = "계좌 등록",
+        description = "계좌를 등록합니다. 예금주명은 은행 조회값을 사용합니다. 처음 등록하면 토스·카카오페이 송금이 함께 켜지고, 계좌를 바꾸면 켜 둔 방법만 새 계좌로 다시 연결됩니다."
+    )
     @PostMapping("/account")
     fun registerAccount(
         @AdminUsername username: String,
@@ -68,14 +71,33 @@ class AdminAccountController(
     }
 
     @Operation(
-        summary = "토스 계좌 URL 자동 생성",
-        description = "등록된 계좌의 은행 토스 명칭을 이용해 토스 URL을 자동으로 생성합니다. QR 없이 등록 가능한 은행에 한합니다."
+        summary = "토스 송금 켜기",
+        description = "등록된 계좌의 은행 코드와 계좌번호로 토스 송금 링크를 만들어 손님 결제 화면에 보이게 합니다."
     )
     @PostMapping("/toss-account/auto")
     fun registerTossAccountAuto(
         @AdminUsername username: String
     ): UserDto {
         return accountFacade.registerTossAccountAuto(username)
+    }
+
+    @Operation(
+        summary = "카카오페이 송금 켜기",
+        description = "등록된 계좌의 은행 코드와 계좌번호로 카카오페이 송금 링크를 만들어 손님 결제 화면에 보이게 합니다."
+    )
+    @PostMapping("/kakaopay-account")
+    fun registerKakaoPayAccount(
+        @AdminUsername username: String
+    ): UserDto {
+        return accountFacade.registerKakaoPayAccount(username)
+    }
+
+    @Operation(summary = "카카오페이 송금 끄기", description = "카카오페이 송금 링크를 지워 손님 결제 화면에서 뺍니다.")
+    @DeleteMapping("/kakaopay-account")
+    fun deleteKakaoPayAccount(
+        @AdminUsername username: String
+    ): UserDto {
+        return accountFacade.deleteKakaoPayAccount(username)
     }
 
 }

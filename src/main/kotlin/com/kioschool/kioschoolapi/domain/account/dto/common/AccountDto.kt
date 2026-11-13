@@ -10,6 +10,7 @@ data class AccountDto(
     val accountNumber: String,
     val accountHolder: String,
     val tossAccountUrl: String?,
+    val kakaoPayAccountUrl: String?,
     val createdAt: LocalDateTime?,
     val updatedAt: LocalDateTime?
 ) {
@@ -21,6 +22,7 @@ data class AccountDto(
                 accountNumber = account.accountNumber,
                 accountHolder = account.accountHolder,
                 tossAccountUrl = account.tossAccountUrl,
+                kakaoPayAccountUrl = account.kakaoPayAccountUrl,
                 createdAt = account.createdAt,
                 updatedAt = account.updatedAt
             )
