@@ -1,5 +1,7 @@
 package com.kioschool.kioschoolapi.account.facade
 
+import com.kioschool.kioschoolapi.domain.account.entity.Account
+import com.kioschool.kioschoolapi.domain.account.entity.Bank
 import com.kioschool.kioschoolapi.domain.account.facade.AccountFacade
 import com.kioschool.kioschoolapi.domain.account.service.AccountService
 import com.kioschool.kioschoolapi.domain.account.service.BankService
@@ -8,9 +10,11 @@ import com.kioschool.kioschoolapi.domain.user.service.UserService
 import com.kioschool.kioschoolapi.factory.SampleEntity
 import com.kioschool.kioschoolapi.global.error.ErrorCode
 import com.kioschool.kioschoolapi.global.error.exception.CustomException
+import com.kioschool.kioschoolapi.global.kakaopay.service.KakaoPayService
 import com.kioschool.kioschoolapi.global.portone.service.PortoneService
 import com.kioschool.kioschoolapi.global.toss.service.TossService
 import io.kotest.core.spec.style.DescribeSpec
+import io.kotest.matchers.shouldBe
 import io.mockk.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.assertThrows
@@ -23,8 +27,17 @@ class AccountFacadeTest : DescribeSpec({
     val userRepository = mockk<UserRepository>()
     val portoneService = mockk<PortoneService>()
     val tossService = mockk<TossService>()
+    val kakaoPayService = KakaoPayService()
 
-    val sut = AccountFacade(bankService, accountService, userService, userRepository, portoneService, tossService)
+    val sut = AccountFacade(
+        bankService,
+        accountService,
+        userService,
+        userRepository,
+        portoneService,
+        tossService,
+        kakaoPayService
+    )
 
     beforeTest {
         mockkObject(bankService)
@@ -111,7 +124,7 @@ class AccountFacadeTest : DescribeSpec({
         it("PortOne 조회값을 예금주명으로 저장한다") {
             val username = "username"
             val bankId = 1L
-            val accountNumber = "accountNumber"
+            val accountNumber = "1234567890"
             val realAccountHolder = "박지인(모임통장)"
 
             every { bankService.getBank(bankId) } returns SampleEntity.bank
@@ -151,7 +164,7 @@ class AccountFacadeTest : DescribeSpec({
         it("PortOne 조회에 실패하면 계좌를 저장하지 않는다") {
             val username = "username"
             val bankId = 1L
-            val accountNumber = "accountNumber"
+            val accountNumber = "1234567890"
 
             every { bankService.getBank(bankId) } returns SampleEntity.bank
             every {
@@ -373,6 +386,121 @@ class AccountFacadeTest : DescribeSpec({
 
             verify { userService.getUser(username) }
             verify { userService.saveUser(any()) }
+        }
+    }
+
+    describe("registerAccount · 계좌번호와 카카오페이") {
+        val kookmin = Bank(name = "KB국민은행", code = "004")
+        val shinhan = Bank(name = "신한은행", code = "088")
+
+        it("계좌번호의 숫자만으로 조회하고 저장한다") {
+            val newAccount = Account(bank = shinhan, accountNumber = "11012345678", accountHolder = "김운영")
+            val user = SampleEntity.user.apply { account = null }
+
+            every { bankService.getBank(2L) } returns shinhan
+            every { portoneService.getAccountHolder("088", "11012345678") } returns "김운영"
+            every { userService.getUser("username") } returns user
+            every { accountService.createAccount(shinhan, "11012345678", "김운영") } returns newAccount
+            every { userService.saveUser(any()) } answers { firstArg() }
+
+            sut.registerAccount("username", 2L, "110-123 45678")
+
+            verify { portoneService.getAccountHolder("088", "11012345678") }
+            verify { accountService.createAccount(shinhan, "11012345678", "김운영") }
+        }
+
+        it("카카오페이를 켜 둔 운영진이 계좌를 바꾸면 새 계좌로 링크를 다시 만든다") {
+            val user = SampleEntity.user.apply {
+                account = Account(
+                    bank = kookmin,
+                    accountNumber = "12345678901234",
+                    accountHolder = "김운영",
+                    kakaoPayAccountUrl = "https://link.kakaopay.com/t/money/to/bank?bank_code=004&bank_account_number=12345678901234"
+                )
+            }
+            val newAccount = Account(bank = shinhan, accountNumber = "11012345678", accountHolder = "김운영")
+
+            every { bankService.getBank(2L) } returns shinhan
+            every { portoneService.getAccountHolder("088", "11012345678") } returns "김운영"
+            every { userService.getUser("username") } returns user
+            every { accountService.createAccount(shinhan, "11012345678", "김운영") } returns newAccount
+            every { userService.saveUser(any()) } answers { firstArg() }
+
+            val result = sut.registerAccount("username", 2L, "11012345678")
+
+            result.account?.kakaoPayAccountUrl shouldBe
+                "https://link.kakaopay.com/t/money/to/bank?bank_code=088&bank_account_number=11012345678"
+        }
+
+        it("카카오페이를 켜지 않은 운영진은 계좌를 바꿔도 꺼진 채로 둔다") {
+            val user = SampleEntity.user.apply {
+                account = Account(bank = kookmin, accountNumber = "12345678901234", accountHolder = "김운영")
+            }
+            val newAccount = Account(bank = shinhan, accountNumber = "11012345678", accountHolder = "김운영")
+
+            every { bankService.getBank(2L) } returns shinhan
+            every { portoneService.getAccountHolder("088", "11012345678") } returns "김운영"
+            every { userService.getUser("username") } returns user
+            every { accountService.createAccount(shinhan, "11012345678", "김운영") } returns newAccount
+            every { userService.saveUser(any()) } answers { firstArg() }
+
+            val result = sut.registerAccount("username", 2L, "11012345678")
+
+            result.account?.kakaoPayAccountUrl shouldBe null
+        }
+    }
+
+    describe("registerKakaoPayAccount") {
+        it("등록된 계좌의 은행 코드와 계좌번호로 카카오페이 링크를 저장한다") {
+            val user = SampleEntity.user.apply {
+                account = Account(
+                    bank = Bank(name = "KB국민은행", code = "004"),
+                    accountNumber = "12345678901234",
+                    accountHolder = "김운영"
+                )
+            }
+
+            every { userService.getUser("username") } returns user
+            every { userService.saveUser(any()) } answers { firstArg() }
+
+            val result = sut.registerKakaoPayAccount("username")
+
+            result.account?.kakaoPayAccountUrl shouldBe
+                "https://link.kakaopay.com/t/money/to/bank?bank_code=004&bank_account_number=12345678901234"
+            verify { userService.saveUser(user) }
+        }
+
+        it("계좌가 없으면 켤 수 없다") {
+            val user = SampleEntity.user.apply { account = null }
+
+            every { userService.getUser("username") } returns user
+
+            val ex = assertThrows<CustomException> {
+                sut.registerKakaoPayAccount("username")
+            }
+            assertEquals(ErrorCode.ACCOUNT_NOT_REGISTERED, ex.errorCode)
+            verify(exactly = 0) { userService.saveUser(any()) }
+        }
+    }
+
+    describe("deleteKakaoPayAccount") {
+        it("카카오페이 링크를 지워 손님 화면에서 뺀다") {
+            val user = SampleEntity.user.apply {
+                account = Account(
+                    bank = Bank(name = "KB국민은행", code = "004"),
+                    accountNumber = "12345678901234",
+                    accountHolder = "김운영",
+                    kakaoPayAccountUrl = "https://link.kakaopay.com/t/money/to/bank?bank_code=004&bank_account_number=12345678901234"
+                )
+            }
+
+            every { userService.getUser("username") } returns user
+            every { userService.saveUser(any()) } answers { firstArg() }
+
+            val result = sut.deleteKakaoPayAccount("username")
+
+            result.account?.kakaoPayAccountUrl shouldBe null
+            verify { userService.saveUser(user) }
         }
     }
 })

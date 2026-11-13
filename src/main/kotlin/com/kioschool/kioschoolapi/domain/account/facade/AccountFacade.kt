@@ -9,6 +9,7 @@ import com.kioschool.kioschoolapi.domain.user.repository.UserRepository
 import com.kioschool.kioschoolapi.domain.user.service.UserService
 import com.kioschool.kioschoolapi.global.error.ErrorCode
 import com.kioschool.kioschoolapi.global.error.exception.CustomException
+import com.kioschool.kioschoolapi.global.kakaopay.service.KakaoPayService
 import com.kioschool.kioschoolapi.global.portone.service.PortoneService
 import com.kioschool.kioschoolapi.global.toss.service.TossService
 import org.slf4j.LoggerFactory
@@ -22,7 +23,8 @@ class AccountFacade(
     private val userService: UserService,
     private val userRepository: UserRepository,
     private val portoneService: PortoneService,
-    private val tossService: TossService
+    private val tossService: TossService,
+    private val kakaoPayService: KakaoPayService
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -63,17 +65,26 @@ class AccountFacade(
         bankId: Long,
         accountNumber: String
     ): UserDto {
+        // 카카오페이 송금 링크는 하이픈이 있으면 열리지 않으므로 숫자만 저장한다.
+        val digits = accountNumber.filter { it.isDigit() }
         val bank = bankService.getBank(bankId)
-        val accountHolder = portoneService.getAccountHolder(bank.code, accountNumber)
+        val accountHolder = portoneService.getAccountHolder(bank.code, digits)
 
         val user = userService.getUser(username)
-        user.account = accountService.createAccount(bank, accountNumber, accountHolder)
+        // 계좌를 바꾸면 계좌 행이 새로 생긴다. 카카오페이를 켜 둔 운영진은 새 계좌로 링크를 다시 만들어 켜 둔 채로 둔다.
+        val kakaoPayWasOn = user.account?.kakaoPayAccountUrl != null
+        val account = accountService.createAccount(bank, digits, accountHolder)
+        if (kakaoPayWasOn) {
+            account.kakaoPayAccountUrl = kakaoPayService.generateKakaoPayAccountUrl(bank.code, digits)
+        }
+        user.account = account
         val saved = userService.saveUser(user)
         log.info(
-            "[AUDIT] action=REGISTER_ACCOUNT loginId={} bankId={} accountLast4={}",
+            "[AUDIT] action=REGISTER_ACCOUNT loginId={} bankId={} accountLast4={} kakaoPay={}",
             username,
             bankId,
-            accountNumber.takeLast(4)
+            digits.takeLast(4),
+            kakaoPayWasOn
         )
         return UserDto.of(saved)
     }
@@ -127,6 +138,28 @@ class AccountFacade(
         user.account?.tossAccountUrl = null
         val saved = userService.saveUser(user)
         log.info("[AUDIT] action=DELETE_TOSS_ACCOUNT loginId={}", username)
+        return UserDto.of(saved)
+    }
+
+    fun registerKakaoPayAccount(username: String): UserDto {
+        val user = userService.getUser(username)
+        val account = user.account ?: throw CustomException(ErrorCode.ACCOUNT_NOT_REGISTERED)
+        account.kakaoPayAccountUrl =
+            kakaoPayService.generateKakaoPayAccountUrl(account.bank.code, account.accountNumber)
+        val saved = userService.saveUser(user)
+        log.info(
+            "[AUDIT] action=REGISTER_KAKAOPAY_ACCOUNT loginId={} accountLast4={}",
+            username,
+            account.accountNumber.takeLast(4)
+        )
+        return UserDto.of(saved)
+    }
+
+    fun deleteKakaoPayAccount(username: String): UserDto {
+        val user = userService.getUser(username)
+        user.account?.kakaoPayAccountUrl = null
+        val saved = userService.saveUser(user)
+        log.info("[AUDIT] action=DELETE_KAKAOPAY_ACCOUNT loginId={}", username)
         return UserDto.of(saved)
     }
 

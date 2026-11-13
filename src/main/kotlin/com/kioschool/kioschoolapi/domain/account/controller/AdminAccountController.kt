@@ -78,4 +78,23 @@ class AdminAccountController(
         return accountFacade.registerTossAccountAuto(username)
     }
 
+    @Operation(
+        summary = "카카오페이 송금 켜기",
+        description = "등록된 계좌의 은행 코드와 계좌번호로 카카오페이 송금 링크를 만들어 손님 결제 화면에 보이게 합니다."
+    )
+    @PostMapping("/kakaopay-account")
+    fun registerKakaoPayAccount(
+        @AdminUsername username: String
+    ): UserDto {
+        return accountFacade.registerKakaoPayAccount(username)
+    }
+
+    @Operation(summary = "카카오페이 송금 끄기", description = "카카오페이 송금 링크를 지워 손님 결제 화면에서 뺍니다.")
+    @DeleteMapping("/kakaopay-account")
+    fun deleteKakaoPayAccount(
+        @AdminUsername username: String
+    ): UserDto {
+        return accountFacade.deleteKakaoPayAccount(username)
+    }
+
 }

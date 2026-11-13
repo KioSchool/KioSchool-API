@@ -25,6 +25,7 @@ object LogMasking {
         "accountHolder",
         "accountUrl",
         "tossAccountUrl",
+        "kakaoPayAccountUrl",
         "ownerName",
         // 문의·답변 본문과 가입 경로 설문의 자유 입력
         "subject",

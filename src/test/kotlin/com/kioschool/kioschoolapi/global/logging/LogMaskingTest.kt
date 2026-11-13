@@ -27,6 +27,13 @@ class LogMaskingTest : DescribeSpec({
         it("hides the mail unsubscribe token") {
             LogMasking.maskValue("token", "abc") shouldBe LogMasking.MASK
         }
+
+        it("hides the kakaopay link because it carries the account number") {
+            LogMasking.maskValue(
+                "kakaoPayAccountUrl",
+                "https://link.kakaopay.com/t/money/to/bank?bank_code=004&bank_account_number=12345678901234"
+            ) shouldBe LogMasking.MASK
+        }
     }
 
     describe("loggingMapper") {
