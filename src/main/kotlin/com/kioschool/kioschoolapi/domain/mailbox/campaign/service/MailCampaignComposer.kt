@@ -1,12 +1,15 @@
 package com.kioschool.kioschoolapi.domain.mailbox.campaign.service
 
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailBodyRenderer
+import com.kioschool.kioschoolapi.domain.mailbox.signature.dto.MailSignatureBlock
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 
 data class MailCampaignContent(
     val subject: String,
     val bodyTemplate: String,
+    /** 본문의 서명 자리에 넣을 팀 공용 서명. 발송을 만들 때 값을 저장해 두고 끝까지 같은 서명을 쓴다. */
+    val signature: MailSignatureBlock? = null,
 )
 
 data class ComposedMail(
@@ -33,8 +36,8 @@ class MailCampaignComposer(
 
         return ComposedMail(
             subject = subject,
-            html = mailBodyRenderer.render(body, unsubscribeUrl),
-            text = "${mailBodyRenderer.renderText(body)}\n\n수신 거부: $unsubscribeUrl",
+            html = mailBodyRenderer.render(body, unsubscribeUrl, content.signature),
+            text = "${mailBodyRenderer.renderText(body, content.signature)}\n\n수신 거부: $unsubscribeUrl",
             headers = mapOf(
                 "List-Unsubscribe" to "<$apiBaseUrl/mail/unsubscribe?token=$unsubscribeToken>",
                 "List-Unsubscribe-Post" to "List-Unsubscribe=One-Click",

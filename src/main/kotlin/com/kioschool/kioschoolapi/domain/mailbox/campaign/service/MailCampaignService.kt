@@ -12,6 +12,7 @@ import com.kioschool.kioschoolapi.domain.mailbox.campaign.enums.MailRecipientSta
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.repository.MailCampaignRecipientRepository
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.repository.MailCampaignRepository
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailHtmlSanitizer
+import com.kioschool.kioschoolapi.domain.mailbox.signature.dto.MailSignatureBlock
 import com.kioschool.kioschoolapi.domain.user.entity.User
 import com.kioschool.kioschoolapi.domain.workspace.repository.WorkspaceRepository
 import com.kioschool.kioschoolapi.global.error.ErrorCode
@@ -35,7 +36,12 @@ class MailCampaignService(
     private val retentionDays: Long,
 ) {
     @Transactional
-    fun create(body: MailCampaignRequestBody, createdBy: User, rows: List<MailAudienceRow>): MailCampaign {
+    fun create(
+        body: MailCampaignRequestBody,
+        createdBy: User,
+        rows: List<MailAudienceRow>,
+        signature: MailSignatureBlock? = null,
+    ): MailCampaign {
         val campaign = mailCampaignRepository.save(
             MailCampaign(
                 subject = body.normalizedSubject(),
@@ -44,6 +50,7 @@ class MailCampaignService(
                 createdBy = createdBy,
                 purgeAt = LocalDateTime.now().plusDays(retentionDays),
                 requestId = body.requestId,
+                signatureJson = signature?.let { objectMapper.writeValueAsString(it) },
             )
         )
         mailCampaignRecipientRepository.saveAll(

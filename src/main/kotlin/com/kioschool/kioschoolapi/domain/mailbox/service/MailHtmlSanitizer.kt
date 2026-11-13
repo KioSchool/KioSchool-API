@@ -10,11 +10,12 @@ import org.springframework.stereotype.Component
 @Component
 class MailHtmlSanitizer {
     private val safelist = Safelist()
-        .addTags("p", "br", "strong", "b", "em", "i", "u", "h2", "h3", "ul", "ol", "li", "hr", "a")
+        .addTags("p", "br", "strong", "b", "em", "i", "u", "h2", "h3", "ul", "ol", "li", "hr", "a", "div")
         .addAttributes("a", "href", BUTTON_ATTRIBUTE)
         .addAttributes("p", ALIGN_ATTRIBUTE)
         .addAttributes("h2", ALIGN_ATTRIBUTE)
         .addAttributes("h3", ALIGN_ATTRIBUTE)
+        .addAttributes("div", SIGNATURE_ATTRIBUTE)
         .addProtocols("a", "href", "https")
 
     fun clean(html: String): String {
@@ -25,6 +26,22 @@ class MailHtmlSanitizer {
         document.select("[$ALIGN_ATTRIBUTE]").forEach {
             if (it.attr(ALIGN_ATTRIBUTE) !in ALIGNMENTS) it.removeAttr(ALIGN_ATTRIBUTE)
         }
+        // div는 서명 자리 표시로만 쓴다. 자리 표시가 아닌 div는 글만 남기고, 자리 표시는 속을 비운다.
+        document.select("div").forEach {
+            if (it.hasAttr(SIGNATURE_ATTRIBUTE)) {
+                it.empty()
+                it.attr(SIGNATURE_ATTRIBUTE, "")
+            } else {
+                it.unwrap()
+            }
+        }
+        return document.body().html()
+    }
+
+    /** 인사말처럼 서명 자리가 들어가면 안 되는 HTML을 정리한다. */
+    fun cleanWithoutSignature(html: String): String {
+        val document = parseBody(clean(html))
+        document.select("div[$SIGNATURE_ATTRIBUTE]").remove()
         return document.body().html()
     }
 
@@ -59,5 +76,6 @@ class MailHtmlSanitizer {
         private val BUTTON_VARIANTS = setOf(BUTTON_SOLID, BUTTON_LINE)
         const val ALIGN_ATTRIBUTE = "data-align"
         private val ALIGNMENTS = setOf("center", "right")
+        const val SIGNATURE_ATTRIBUTE = "data-mail-signature"
     }
 }

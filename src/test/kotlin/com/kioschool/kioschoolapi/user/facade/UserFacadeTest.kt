@@ -18,6 +18,7 @@ import com.kioschool.kioschoolapi.global.security.AuthCookieManager
 import com.kioschool.kioschoolapi.global.security.JwtProvider
 import com.kioschool.kioschoolapi.global.template.TemplateService
 import io.kotest.core.spec.style.DescribeSpec
+import com.kioschool.kioschoolapi.domain.mailbox.signature.service.MailSignatureService
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldStartWith
 import io.mockk.*
@@ -40,6 +41,7 @@ class UserFacadeTest : DescribeSpec({
     val authCookieManager = AuthCookieManager(true, Duration.ofMinutes(30), Duration.ofDays(7))
 
     val eventPublisher = mockk<ApplicationEventPublisher>(relaxed = true)
+    val mailSignatureService = mockk<MailSignatureService>(relaxed = true)
 
     val sut = UserFacade(
         userService,
@@ -49,7 +51,8 @@ class UserFacadeTest : DescribeSpec({
         discordService,
         jwtProvider,
         authCookieManager,
-        eventPublisher
+        eventPublisher,
+        mailSignatureService,
     )
 
     fun MockHttpServletResponse.setCookies() = getHeaders("Set-Cookie")
@@ -682,6 +685,7 @@ class UserFacadeTest : DescribeSpec({
                 userService.checkPassword(user, "pw")
                 userSessionService.deleteAllOf(user)
                 emailService.deleteAllEmailCodes("kim@korea.ac.kr")
+                mailSignatureService.deleteMine(user)
                 userService.withdraw(user, any())
             }
             verify { discordService.sendUserWithdraw(user.id, 0) }

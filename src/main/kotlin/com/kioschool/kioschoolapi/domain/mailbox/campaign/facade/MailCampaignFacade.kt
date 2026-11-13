@@ -13,6 +13,7 @@ import com.kioschool.kioschoolapi.domain.mailbox.campaign.service.MailCampaignSe
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.service.MailCampaignService
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.service.MailTemplateRenderer
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailUnsubscribeService
+import com.kioschool.kioschoolapi.domain.mailbox.signature.service.MailSignatureService
 import com.kioschool.kioschoolapi.domain.user.service.UserService
 import com.kioschool.kioschoolapi.global.error.ErrorCode
 import com.kioschool.kioschoolapi.global.error.exception.CustomException
@@ -39,6 +40,7 @@ class MailCampaignFacade(
     private val resendInboxClient: ResendInboxClient,
     @Value("\${mail.campaign.daily-limit}")
     private val dailyLimit: Int,
+    private val mailSignatureService: MailSignatureService,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -48,7 +50,8 @@ class MailCampaignFacade(
         mailTemplateRenderer.validateValues(body.subject, body.content)
 
         val first = mailAudienceService.resolve(body.filter).firstOrNull()
-        val mail = mailCampaignComposer.compose(MailCampaignContent(body.subject, body.content), first?.toTemplateValues(), PREVIEW_TOKEN)
+        val content = MailCampaignContent(body.subject, body.content, mailSignatureService.teamBlock())
+        val mail = mailCampaignComposer.compose(content, first?.toTemplateValues(), PREVIEW_TOKEN)
         return MailCampaignPreviewDto(mail.subject, mail.html, first?.workspaceName, first?.ownerEmail)
     }
 
@@ -63,7 +66,7 @@ class MailCampaignFacade(
         }
 
         val mail = mailCampaignComposer.compose(
-            MailCampaignContent(body.normalizedSubject(), body.content),
+            MailCampaignContent(body.normalizedSubject(), body.content, mailSignatureService.teamBlock()),
             first.toTemplateValues(),
             mailUnsubscribeService.tokenFor(user),
         )
@@ -98,7 +101,7 @@ class MailCampaignFacade(
 
         val creator = userService.getUser(username)
         val campaign = try {
-            mailCampaignService.create(body, creator, rows)
+            mailCampaignService.create(body, creator, rows, mailSignatureService.teamBlock())
         } catch (e: DataIntegrityViolationException) {
             return body.requestId?.let { mailCampaignService.findSummaryByRequestId(it) } ?: throw e
         }

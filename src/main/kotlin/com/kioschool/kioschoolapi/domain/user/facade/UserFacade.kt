@@ -1,6 +1,7 @@
 package com.kioschool.kioschoolapi.domain.user.facade
 
 import com.kioschool.kioschoolapi.domain.email.service.EmailService
+import com.kioschool.kioschoolapi.domain.mailbox.signature.service.MailSignatureService
 import com.kioschool.kioschoolapi.domain.user.dto.common.SuperAdminUserDto
 import com.kioschool.kioschoolapi.domain.user.dto.common.UserDto
 import com.kioschool.kioschoolapi.domain.user.entity.User
@@ -38,6 +39,7 @@ class UserFacade(
     private val jwtProvider: JwtProvider,
     private val authCookieManager: AuthCookieManager,
     private val eventPublisher: ApplicationEventPublisher,
+    private val mailSignatureService: MailSignatureService,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -155,6 +157,7 @@ class UserFacade(
         val workspaceIds = user.getWorkspaces().map { it.id }
         userSessionService.deleteAllOf(user)
         user.email?.let { emailService.deleteAllEmailCodes(it) }
+        mailSignatureService.deleteMine(user)
         userService.withdraw(user)
 
         evictWorkspaceCachesAfterCommit(workspaceIds)

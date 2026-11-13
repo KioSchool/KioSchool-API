@@ -62,17 +62,21 @@ class SuperAdminMailController(
 
     @Operation(summary = "메일 미리보기", description = "실제 메일과 같은 HTML을 만듭니다.")
     @PostMapping("/preview")
-    fun preview(@RequestBody @Valid body: MailPreviewRequestBody): MailPreviewDto {
-        return mailFacade.preview(body)
+    fun preview(
+        @AdminUsername username: String,
+        @RequestBody @Valid body: MailPreviewRequestBody,
+    ): MailPreviewDto {
+        return mailFacade.preview(username, body)
     }
 
     @Operation(summary = "답장 미리보기", description = "가장 최근 메일을 인용한, 실제 답장과 같은 HTML을 만듭니다.")
     @PostMapping("/threads/{threadId}/reply/preview")
     fun previewReply(
+        @AdminUsername username: String,
         @PathVariable threadId: Long,
         @RequestBody @Valid body: MailPreviewRequestBody,
     ): MailPreviewDto {
-        return mailFacade.previewReply(threadId, body)
+        return mailFacade.previewReply(username, threadId, body)
     }
 
     @Operation(summary = "답장 없이 완료", description = "새 메일이 오면 다시 답장 필요로 돌아갑니다.")
