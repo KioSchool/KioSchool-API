@@ -51,18 +51,41 @@ class MailSignatureRendererTest : DescribeSpec({
 
         it("이메일은 mailto, 도메인은 https 링크로 감싸고 회색으로 칠한다") {
             val doc = Jsoup.parseBodyFragment(sut.render(full)!!.html)
-            val links = doc.select("a")
+            val links = doc.select("a").toList().filter { it.select("img").isEmpty() }
 
             links.map { it.attr("href") } shouldBe listOf("mailto:contact@kio-school.com", "https://kio-school.com")
-            links.forEach { it.attr("style") shouldContain "color:#888888" }
+            links.forEach { it.attr("style") shouldContain "color:#999999" }
         }
 
         it("링크가 될 수 없는 값은 글 그대로 둔다") {
-            val values = full.copy(contacts = listOf(MailSignatureContact("Tel", "010-1234-5678")))
+            val values = full.copy(contacts = listOf(MailSignatureContact("Tel", "010-1234-5678")), showLogo = false)
             val doc = Jsoup.parseBodyFragment(sut.render(values)!!.html)
 
             doc.select("a").size shouldBe 0
             doc.text() shouldContain "010-1234-5678"
+        }
+
+        it("주황 1px 선으로 시작하고, 이름·영문 이름·소속/직함을 한 줄에 둔다") {
+            val doc = Jsoup.parseBodyFragment(sut.render(full)!!.html)
+            val identity = doc.selectFirst("strong")!!.parent()!!
+
+            doc.html() shouldContain "border-top:1px solid #eb6d09"
+            identity.text() shouldBe "박지인PARK JIN·키오스쿨 / 운영 담당"
+        }
+
+        it("로고와 한 줄 문구를 한 줄에 두고 로고를 누르면 사이트로 간다") {
+            val doc = Jsoup.parseBodyFragment(sut.render(full)!!.html)
+            val cells = doc.select("table td")
+
+            cells.size shouldBe 2
+            cells[0].selectFirst("a")!!.attr("href") shouldBe "https://kio-school.com"
+            cells[1].text() shouldBe "축제 주점 주문을 더 간단하게"
+        }
+
+        it("이름이 없으면 소속 앞에 가운뎃점을 넣지 않는다") {
+            val doc = Jsoup.parseBodyFragment(sut.render(MailSignatureValues(organization = "키오스쿨", jobTitle = "리더", showLogo = false))!!.html)
+
+            doc.text() shouldBe "키오스쿨 / 리더"
         }
 
         it("비운 칸은 줄째 그리지 않는다") {
