@@ -7,6 +7,7 @@ import com.kioschool.kioschoolapi.domain.mailbox.campaign.enums.MailRecipientSta
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.repository.MailCampaignRecipientRepository
 import com.kioschool.kioschoolapi.domain.mailbox.campaign.repository.MailCampaignRepository
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailUnsubscribeService
+import com.kioschool.kioschoolapi.domain.mailbox.signature.dto.MailSignatureBlock
 import com.kioschool.kioschoolapi.domain.user.entity.User
 import com.kioschool.kioschoolapi.domain.workspace.entity.Workspace
 import org.springframework.beans.factory.annotation.Value
@@ -79,7 +80,11 @@ class MailCampaignQueue(
             ownerName = owner.name,
             stats = recipient.statsJson?.let { objectMapper.readValue(it, MailAudienceStats::class.java) } ?: MailAudienceStats(),
             createdBy = campaign.createdBy,
-            content = MailCampaignContent(campaign.subject, campaign.bodyTemplate),
+            content = MailCampaignContent(
+                campaign.subject,
+                campaign.bodyTemplate,
+                campaign.signatureJson?.let { objectMapper.readValue(it, MailSignatureBlock::class.java) },
+            ),
             unsubscribeToken = mailUnsubscribeService.tokenFor(owner),
         )
     }

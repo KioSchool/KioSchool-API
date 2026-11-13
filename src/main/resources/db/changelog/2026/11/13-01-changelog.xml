@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS"
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+  <changeSet author="ji-inpark" id="mail-signature-1">
+    <createTable tableName="mail_signature">
+      <column autoIncrement="true" name="id" type="BIGINT">
+        <constraints nullable="false" primaryKey="true"/>
+      </column>
+      <column name="user_id" type="BIGINT">
+        <constraints unique="true" uniqueConstraintName="uk_mail_signature_user_id"/>
+      </column>
+      <column name="greeting_html" type="TEXT" defaultValue="">
+        <constraints nullable="false"/>
+      </column>
+      <column name="name" type="VARCHAR(100)"/>
+      <column name="english_name" type="VARCHAR(100)"/>
+      <column name="organization" type="VARCHAR(100)"/>
+      <column name="job_title" type="VARCHAR(100)"/>
+      <column name="contacts_json" type="TEXT" defaultValue="[]">
+        <constraints nullable="false"/>
+      </column>
+      <column name="slogan" type="VARCHAR(200)"/>
+      <column name="show_logo" type="BOOLEAN" defaultValueBoolean="true">
+        <constraints nullable="false"/>
+      </column>
+      <column name="created_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+      <column name="updated_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+    </createTable>
+    <addForeignKeyConstraint
+      constraintName="fk_mail_signature_user"
+      baseTableName="mail_signature" baseColumnNames="user_id"
+      referencedTableName="user" referencedColumnNames="id"
+      onDelete="CASCADE"/>
+  </changeSet>
+
+  <!-- 팀 공용(user_id가 NULL)은 한 줄만 둔다 -->
+  <changeSet author="ji-inpark" id="mail-signature-2">
+    <sql>CREATE UNIQUE INDEX uk_mail_signature_team ON mail_signature ((user_id IS NULL)) WHERE user_id IS NULL</sql>
+    <rollback>
+      <sql>DROP INDEX uk_mail_signature_team</sql>
+    </rollback>
+  </changeSet>
+
+  <!-- 한 줄 문구는 아직 정하지 않아 비워 둔다. 슈퍼어드민 설정 화면에서 넣는다 -->
+  <changeSet author="ji-inpark" id="mail-signature-3">
+    <insert tableName="mail_signature">
+      <column name="greeting_html" value="&lt;p&gt;안녕하세요, 키오스쿨입니다.&lt;/p&gt;"/>
+      <column name="name" value="키오스쿨 팀"/>
+      <column name="english_name" value="KIOSCHOOL"/>
+      <column name="contacts_json" value='[{"label":"Email","value":"contact@kio-school.com"},{"label":"Web","value":"kio-school.com"}]'/>
+      <column name="show_logo" valueBoolean="true"/>
+      <column name="created_at" valueComputed="NOW()"/>
+      <column name="updated_at" valueComputed="NOW()"/>
+    </insert>
+  </changeSet>
+
+  <changeSet author="ji-inpark" id="mail-signature-4">
+    <addColumn tableName="mail_campaign">
+      <column name="signature_json" type="TEXT"/>
+    </addColumn>
+  </changeSet>
+</databaseChangeLog>

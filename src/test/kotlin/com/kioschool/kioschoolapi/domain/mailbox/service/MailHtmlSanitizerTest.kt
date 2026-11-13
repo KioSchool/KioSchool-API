@@ -82,6 +82,21 @@ class MailHtmlSanitizerTest : DescribeSpec({
         }
     }
 
+    describe("서명 자리 표시") {
+        it("서명 자리 div는 속을 비워 남기고 다른 div는 글만 남긴다") {
+            sut.clean("""<div>밖<span>글</span></div><div data-mail-signature="x" style="color:red">속</div>""") shouldBe
+                """밖글<div data-mail-signature=""></div>"""
+        }
+
+        it("자리 표시만 있으면 빈 내용으로 본다") {
+            sut.isBlank("""<div data-mail-signature=""></div>""") shouldBe true
+        }
+
+        it("인사말을 정리할 때는 서명 자리를 지운다") {
+            sut.cleanWithoutSignature("""<p>안녕하세요</p><div data-mail-signature=""></div>""") shouldBe "<p>안녕하세요</p>"
+        }
+    }
+
     describe("hasInvalidLink") {
         it("주소가 https가 아니어서 지워진 링크가 있으면 true") {
             sut.hasInvalidLink("""<p><a href="http://x.com">링크</a></p>""") shouldBe true

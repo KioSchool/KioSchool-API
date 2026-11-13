@@ -1,0 +1,13 @@
+<!--/* 메일 본문의 서명 자리에 넣는 조각. 메일 프로그램이 <style>을 지우므로 태그마다 스타일을 직접 넣는다. 여백·스타일 값은 MailSignatureRenderer가 정한다 */-->
+<div th:style="${s.containerStyle}">
+  <div style="width:64px;height:0;border-top:1px solid #c8c8c8;font-size:0;line-height:0;"></div>
+  <div th:if="${s.hasIdentity}" style="padding-top:24px;">
+    <div th:if="${s.name != null or s.englishName != null}"><strong th:if="${s.name != null}" style="font-size:16px;font-weight:700;color:#333333;" th:text="${s.name}">이름</strong><span th:if="${s.englishName != null}" th:style="${s.englishNameStyle}" th:text="${s.englishName}">영문 이름</span></div>
+    <div th:if="${s.roleLine != null}" style="color:#888888;" th:text="${s.roleLine}">소속 / 직함</div>
+  </div>
+  <div th:if="${s.hasDetails}" th:style="${s.detailsStyle}">
+    <div th:each="c : ${s.contacts}"><strong th:if="${c.label != null}" style="font-weight:700;color:#666666;" th:text="${c.label}">Email</strong><a th:if="${c.href != null}" th:href="${c.href}" th:style="${c.valueStyle}" th:text="${c.value}">값</a><span th:if="${c.href == null}" th:style="${c.valueStyle}" th:text="${c.value}">값</span></div>
+    <div th:if="${s.slogan != null}" style="color:#eb6d09;" th:text="${s.slogan}">한 줄 문구</div>
+  </div>
+  <div th:if="${s.logoUrl != null}" th:style="${s.logoStyle}"><img th:src="${s.logoUrl}" src="" width="58" height="28" alt="키오스쿨" style="display:block;width:58px;height:28px;border:0;"></div>
+</div>

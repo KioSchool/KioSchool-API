@@ -4,6 +4,8 @@ import com.kioschool.kioschoolapi.domain.mailbox.service.MailHtmlSanitizer.Compa
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailHtmlSanitizer.Companion.BUTTON_ATTRIBUTE
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailHtmlSanitizer.Companion.BUTTON_LINE
 import com.kioschool.kioschoolapi.domain.mailbox.service.MailHtmlSanitizer.Companion.BUTTON_SOLID
+import com.kioschool.kioschoolapi.domain.mailbox.service.MailHtmlSanitizer.Companion.SIGNATURE_ATTRIBUTE
+import com.kioschool.kioschoolapi.domain.mailbox.signature.dto.MailSignatureBlock
 import org.jsoup.nodes.Element
 import org.jsoup.nodes.Node
 import org.jsoup.nodes.TextNode
@@ -16,31 +18,42 @@ class MailBodyRenderer(
     private val templateEngine: SpringTemplateEngine,
     private val mailHtmlSanitizer: MailHtmlSanitizer,
 ) {
-    fun render(contentHtml: String, unsubscribeUrl: String? = null): String {
+    fun render(contentHtml: String, unsubscribeUrl: String? = null, signature: MailSignatureBlock? = null): String {
         val context = Context().apply {
-            setVariable("contentHtml", styled(contentHtml, STYLES))
+            setVariable("contentHtml", styled(contentHtml, STYLES, signature))
             setVariable("unsubscribeUrl", unsubscribeUrl)
         }
         return templateEngine.process(TEMPLATE, context)
     }
 
     // 개별 메일과 답장은 사람이 쓴 메일처럼 보내므로 카드 틀과 링크 색을 쓰지 않는다
-    fun renderPersonal(contentHtml: String, quoteHtml: String? = null): String {
+    fun renderPersonal(contentHtml: String, quoteHtml: String? = null, signature: MailSignatureBlock? = null): String {
         val context = Context().apply {
-            setVariable("contentHtml", styled(contentHtml, PERSONAL_STYLES))
+            setVariable("contentHtml", styled(contentHtml, PERSONAL_STYLES, signature))
             setVariable("quoteHtml", quoteHtml)
         }
         return templateEngine.process(PERSONAL_TEMPLATE, context)
     }
 
-    fun renderText(contentHtml: String): String =
-        mailHtmlSanitizer.parse(contentHtml).body().children()
-            .mapNotNull { blockText(it) }
+    fun renderText(contentHtml: String, signature: MailSignatureBlock? = null): String {
+        var signatureUsed = false
+        return mailHtmlSanitizer.parse(contentHtml).body().children()
+            .mapNotNull {
+                if (!it.isSignatureSlot()) return@mapNotNull blockText(it)
+                if (signatureUsed || signature == null) return@mapNotNull null
+                signatureUsed = true
+                signature.text
+            }
             .joinToString("\n\n")
+    }
 
     // 메일 프로그램은 <style>을 지우는 곳이 많아 태그마다 스타일을 직접 넣는다
-    private fun styled(contentHtml: String, styles: List<Pair<String, String>>): String {
+    private fun styled(contentHtml: String, styles: List<Pair<String, String>>, signature: MailSignatureBlock?): String {
         val document = mailHtmlSanitizer.parse(contentHtml)
+        // 편집기에서 엔터로 만든 빈 줄은 빈 <p>로 오는데, 높이가 없어 메일에서 사라지므로 줄바꿈을 넣어 한 줄로 남긴다
+        document.select("p").toList()
+            .filter { it.children().isEmpty() && it.text().isBlank() }
+            .forEach { it.empty().appendElement("br") }
         styles.forEach { (selector, style) -> document.select(selector).attr("style", style) }
         document.select("a[$BUTTON_ATTRIBUTE] + a[$BUTTON_ATTRIBUTE]").forEach { it.appendStyle("margin-left:8px;") }
         document.select("a[$BUTTON_ATTRIBUTE]").removeAttr(BUTTON_ATTRIBUTE)
@@ -48,8 +61,15 @@ class MailBodyRenderer(
             it.appendStyle("text-align:${it.attr(ALIGN_ATTRIBUTE)};")
             it.removeAttr(ALIGN_ATTRIBUTE)
         }
+        // 서명은 본문 스타일을 다 넣은 뒤에 끼워야 서명 자체의 스타일이 덮이지 않는다. 서명 자리는 첫 번째만 쓴다.
+        document.select("div[$SIGNATURE_ATTRIBUTE]").forEachIndexed { index, slot ->
+            if (index == 0 && signature != null) slot.before(signature.html)
+            slot.remove()
+        }
         return document.body().html()
     }
+
+    private fun Element.isSignatureSlot(): Boolean = tagName() == "div" && hasAttr(SIGNATURE_ATTRIBUTE)
 
     private fun Element.appendStyle(style: String) {
         attr("style", attr("style") + style)

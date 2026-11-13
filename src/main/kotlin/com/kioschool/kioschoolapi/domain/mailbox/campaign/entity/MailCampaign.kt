@@ -22,4 +22,7 @@ class MailCampaign(
     @Enumerated(EnumType.STRING)
     var status: MailCampaignStatus = MailCampaignStatus.SENDING,
     var requestId: String? = null,
+    /** 만들 때의 팀 공용 서명(HTML·글). 이 기능 전에 만든 발송은 null이라 서명 없이 나간다. */
+    @Column(columnDefinition = "TEXT")
+    var signatureJson: String? = null,
 ) : BaseEntity()
