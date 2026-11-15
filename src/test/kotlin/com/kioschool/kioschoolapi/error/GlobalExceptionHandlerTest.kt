@@ -53,6 +53,16 @@ class GlobalExceptionHandlerTest : DescribeSpec({
             response.statusCode.value() shouldBe 409
             response.body!!.errors shouldBe listOf(detail)
         }
+
+        it("CustomException이 details를 실어 오면 응답에 그대로 담는다") {
+            val details = mapOf("linkedSets" to listOf(mapOf("id" to 20L, "name" to "족발 막국수 세트")))
+            val response = sut.handleCustomException(
+                CustomException(ErrorCode.PRODUCT_USED_AS_SET_CONDITION, details = details),
+                request("/admin/product"),
+            )
+            response.statusCode.value() shouldBe 409
+            response.body!!.details shouldBe details
+        }
     }
 
     describe("handleConstraintViolation") {

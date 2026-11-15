@@ -45,6 +45,8 @@ enum class ErrorCode(
     NOT_FOUND_PRODUCT(HttpStatus.NOT_FOUND, "존재하지 않는 상품입니다."),
     NOT_SELLABLE_PRODUCT(HttpStatus.NOT_ACCEPTABLE, "판매할 수 없는 상품입니다."),
     CANNOT_DELETE_USING_PRODUCT_CATEGORY(HttpStatus.METHOD_NOT_ALLOWED, "해당 카테고리를 사용하는 상품이 존재합니다."),
+    PRODUCT_USED_AS_SET_CONDITION(HttpStatus.CONFLICT, "세트 구성품의 연결 상품으로 쓰이는 상품은 삭제할 수 없습니다."),
+    PRODUCT_TYPE_MISMATCH(HttpStatus.BAD_REQUEST, "상품 종류에 맞지 않는 요청입니다."),
 
     // Order
     EMPTY_ORDER_SESSION(HttpStatus.BAD_REQUEST, "예기치 않게 주문 내역이 없는 세션입니다. 세션 기록을 삭제하시겠습니까, 아니면 이대로 저장하시겠습니까?"),
@@ -52,6 +54,7 @@ enum class ErrorCode(
     ORDER_SESSION_ALREADY_EXIST(HttpStatus.BAD_REQUEST, "이미 테이블이 사용상태입니다."),
     TABLE_HASH_IS_NULL(HttpStatus.BAD_REQUEST, "주문 URL이 유효하지 않습니다. 주점 관리자에게 문의하세요."),
     INVALID_ORDER_QUANTITY(HttpStatus.BAD_REQUEST, "주문 수량이 올바르지 않습니다."),
+    NOT_FOUND_ORDER_PRODUCT_COMPONENT(HttpStatus.NOT_FOUND, "존재하지 않는 세트 구성품입니다."),
 
     // Account / Toss
     BANK_NOT_FOUND(HttpStatus.NOT_FOUND, "은행을 찾을 수 없습니다."),
