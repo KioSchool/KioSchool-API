@@ -22,6 +22,7 @@
 1. **Service 계층 간 호출 금지 (Strict Architecture)**:
    - `Service` 계층에서는 다른 `Service`를 직접 호출하면 절대 안 됩니다.
    - 타 트랜잭션/도메인의 Service를 호출해야 하는 로직은 **Facade 계층**으로 완전히 위임하여 오케스트레이션해야 합니다.
+   - `ServiceLayerDependencyTest`가 이 규칙을 검사합니다(`@Service`가 붙은 `*Service` 클래스의 생성자 기준). 규칙 도입 전부터 있던 의존성은 `LEGACY_SERVICE_DEPENDENCIES`에 있으며, 고치면 목록에서 빼고 새 항목은 넣지 않습니다.
 2. **관리자(Admin) 권한 검증**:
    - 관리자 기능을 처리하는 컨트롤러는 `Admin*` 접두사가 붙으며 `/admin/...` 엔드포인트에 매핑됩니다.
    - 커스텀 어노테이션인 `@AdminUsername username: String`을 파라미터로 사용하여 현재 요청한 관리자의 식별자를 깔끔하게 가져옵니다.
