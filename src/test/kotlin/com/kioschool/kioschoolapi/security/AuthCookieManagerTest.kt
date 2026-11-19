@@ -23,12 +23,12 @@ class AuthCookieManagerTest : DescribeSpec({
             sut.setTokens(response, "access", "1.secret")
 
             response.getHeaders("Set-Cookie") shouldContainExactly listOf(
-                "Authorization=access; Path=/; Max-Age=1800; Expires=${response.expiresOf(0)}; Secure; HttpOnly; SameSite=NONE",
-                "RefreshToken=1.secret; Path=/; Max-Age=604800; Expires=${response.expiresOf(1)}; Secure; HttpOnly; SameSite=NONE",
+                "Authorization=access; Path=/; Max-Age=1800; Expires=${response.expiresOf(0)}; Secure; HttpOnly; SameSite=LAX",
+                "RefreshToken=1.secret; Path=/; Max-Age=604800; Expires=${response.expiresOf(1)}; Secure; HttpOnly; SameSite=LAX",
             )
         }
 
-        it("secure가 꺼진 로컬에서는 SameSite=LAX로 내린다") {
+        it("secure가 꺼진 로컬에서는 Secure 속성만 뺀다") {
             val local = AuthCookieManager(false, Duration.ofMinutes(30), Duration.ofDays(7))
             val response = MockHttpServletResponse()
 
@@ -46,8 +46,8 @@ class AuthCookieManagerTest : DescribeSpec({
             sut.clearTokens(response)
 
             response.getHeaders("Set-Cookie") shouldContainExactly listOf(
-                "Authorization=; Path=/; Max-Age=0; Expires=Thu, 1 Jan 1970 00:00:00 GMT; Secure; HttpOnly; SameSite=NONE",
-                "RefreshToken=; Path=/; Max-Age=0; Expires=Thu, 1 Jan 1970 00:00:00 GMT; Secure; HttpOnly; SameSite=NONE",
+                "Authorization=; Path=/; Max-Age=0; Expires=Thu, 1 Jan 1970 00:00:00 GMT; Secure; HttpOnly; SameSite=LAX",
+                "RefreshToken=; Path=/; Max-Age=0; Expires=Thu, 1 Jan 1970 00:00:00 GMT; Secure; HttpOnly; SameSite=LAX",
             )
         }
     }

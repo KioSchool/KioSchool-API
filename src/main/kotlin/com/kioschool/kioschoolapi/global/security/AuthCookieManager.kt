@@ -13,6 +13,8 @@ import java.time.Duration
 /**
  * 인증 쿠키 두 개(access, refresh)를 한곳에서 만든다.
  * 쿠키 수명은 토큰 수명과 같게 둬서, 만료된 토큰은 브라우저가 아예 보내지 않게 한다.
+ * SameSite는 Lax다. 프론트와 API가 같은 사이트(kio-school.com)라 Lax로도 쿠키가 붙고,
+ * None이면 다른 사이트의 폼 제출에도 쿠키가 붙는데 CSRF 검사를 꺼 두어서 막을 곳이 없다.
  */
 @Component
 class AuthCookieManager(
@@ -47,7 +49,7 @@ class AuthCookieManager(
             .secure(isSecure)
             .path("/")
             .maxAge(maxAge)
-            .sameSite(if (isSecure) SameSite.NONE.name else SameSite.LAX.name)
+            .sameSite(SameSite.LAX.name)
             .build()
             .toString()
     }
